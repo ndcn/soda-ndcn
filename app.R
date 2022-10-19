@@ -167,7 +167,16 @@ plot_classes = function(l3 = m_org$data_class_norm, meta_s = m_org$meta, fill1 =
     tmp = sapply(as.character(l_melt$variable), function(x) strsplit(x, " ", fixed = T)[[1]][1])
     (tmp)
   }
-  ggbar_lipid_class_per_genotype_per_cellnumber = ggplot(l_melt, aes_string(x = "class", y = "value", fill = fill1)) +
+  
+   formula1=as.formula(paste(fill1, "~ class"))
+
+  cast_data1 = ((cast(l_melt, Genotype~class, sum)))
+  cast_data = ((cast(l_melt, formula1, sum))/ceiling(rowSums(cast(l_melt, formula1,sum))))
+  cast_data[,1]=cast_data1[,1]
+  melt_cast_data=melt(cast_data)
+  colnames(melt_cast_data)=c(fill1,"class","value")
+
+  ggbar_lipid_class_per_genotype_per_cellnumber=ggplot(melt_cast_data,aes_string(x="class", y="value", fill=fill1)) +
     geom_col(position = "dodge") + ylab("") + theme_bw()
   sum(l_melt$value[which(l_melt$class == "PC")]/3)
   ggbar_lipid_class_per_genotype_per_cellnumber
