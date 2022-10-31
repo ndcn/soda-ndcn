@@ -39,7 +39,7 @@ There are two types of users for this package:
 The diagram below summarizes the steps required to use this package:
 
 ![Overview of data visualization using the
-omicser](README-omicser-overview.png)
+omicser](man/figures/README-omicser-overview.png)
 
 Support for the following *post-QC* -omics data types has been tested:
 
