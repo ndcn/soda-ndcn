@@ -33,8 +33,6 @@
 #' @importFrom stats aggregate
 #'
 #' @export
-#'
-#' @noRd
 #
 import_lipid_data <- function(data,
                               blank_thr = 2,
