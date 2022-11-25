@@ -16,9 +16,6 @@ app_server <- function(input, output, session) {
                                  height = NULL)
 
   # make sure that plots colouring doesn't change after adding/removing plots
-  classDistributionSelected <- reactiveVal(NULL)
-  classComparisonSelected <- reactiveVal(NULL)
-  volcanoCategorySelected <- reactiveVal(NULL)
   volcanoComparisonSelected <- reactiveVal(NULL)
   heatmapLabelingSelected <- reactiveVal(NULL)
   heatmapDatasetSelected <- reactiveVal(NULL)
@@ -30,42 +27,118 @@ app_server <- function(input, output, session) {
     # paste("width:", input$dimension[1], "| height:", input$dimension[2], "\n",
     #       boxDimension$width, boxDimension$height)
   })
+  ########################################################### Data import begin
+  # Sample metadata
+  imp_meta_samples <- datamods::import_file_server(
+    id = "import_data_samples",
+    btn_show_data = FALSE,
+    trigger_return = "change"
+  )
 
-  # import data module
-  imported <- import_file_server(
+  # Lipidomics data
+  imported <- datamods::import_file_server(
     id = "lipid_data_import",
     btn_show_data = FALSE,
     trigger_return = "change"
     # show_data_in = "popup" # not in this version of datamods
   )
 
-  output$uiUpdateLipidData <- renderUI({
-    req(imported$data)
-
-    if(!is.null(imported$data())) {
-      tagList(
-        update_variables_ui(id = "update_lipid_data")
-      )
-    }
+  #Sample metadata : column selection
+  observe({
+    updateSelectInput(session = session,
+                      inputId = "samp_ID",
+                      choices = colnames(imp_meta_samples$data()))
+    updateSelectInput(session = session,
+                      inputId = "lips_groupcol",
+                      choices = colnames(imp_meta_samples$data()),
+                      selected = colnames(imp_meta_samples$data())[2])
+    updateSelectInput(session = session,
+                      inputId = "samp_typecol",
+                      choices = colnames(imp_meta_samples$data()),
+                      selected = colnames(imp_meta_samples$data())[3])
   })
 
+  # Lipids column selection
+  observe({
+    updateSelectInput(session = session,
+                      inputId = "lips_ID",
+                      choices = colnames(imported$data()))
+  })
+  ########################################################### Data import end
+
+  ########################################################### Update UI begin
+  # Sample metadata
+  output$uiUpdateSampleData <- renderUI({
+    req(imp_meta_samples$data)
+    if(!is.null(imp_meta_samples$data())) {
+      tagList(update_variables_ui(id = "update_meta_samples"))}})
+  updated_meta_samples <- update_variables_server(
+    id = "update_meta_samples",
+    data = imp_meta_samples$data()
+  )
+
+  # Lipidomics data
+  output$uiUpdateLipidData <- renderUI({
+    req(imported$data)
+    if(!is.null(imported$data())) {
+      tagList(update_variables_ui(id = "update_lipid_data"))}})
   updated_data <- update_variables_server(
     id = "update_lipid_data",
     data = imported$data()
   )
+  ########################################################### Update UI end
 
-  observe({
-    if(!is.null(imported$data())) {
-      print(sprintf("number of rows imported$data: %d", nrow(imported$data())))
-    }
-    if(!is.null(updated_data())) {
-      print(sprintf("number of rows updated_data: %d", nrow(updated_data())))
-    }
+  ########################################################### Filter UI
+
+  # Load lipids data
+  data <- reactive({
+    updated_data()
   })
 
-  # read the data
+  # Filter Lipidomics data
+  lips_filter <- filter_data_server(
+    id = "lips_filter_serv",
+    data = data,
+    widget_num = "slider",
+    widget_date = "slider",
+    label_na = "Missing"
+  )
+
+  observeEvent(lips_filter$filtered(), {
+    updateProgressBar(
+      session = session, id = "pbar",
+      value = nrow(lips_filter$filtered()), total = nrow(data())
+    )
+  })
+
+  output$table <- reactable::renderReactable({
+    reactable::reactable(lips_filter$filtered())
+  })
+
+
+
+  ########################################################### Import print begin
+  observe({
+    if(!is.null(imported$data())) {
+      print(sprintf("number of rows imported$data: %d", nrow(imported$data())))}
+    if(!is.null(updated_data())) {
+      print(sprintf("number of rows updated_data: %d", nrow(updated_data())))}
+    if(!is.null(imp_meta_samples$data())) {
+      print(sprintf("number of rows imp_meta_samples$data: %d", nrow(imp_meta_samples$data())))}
+    if(!is.null(updated_meta_samples())) {
+      print(sprintf("number of rows updated_meta_samples: %d", nrow(updated_meta_samples())))}
+    if(!is.null(imported$data()) & !is.null(imp_meta_samples$data())) {
+      print("SUCCESS")
+      # Have here the "Unclock lipids visualisation" thing once figured out
+      }
+    })
+  ########################################################### Import print end
+
+
+  #read the data
   m3_scl <- reactive({
     req(imported$data,
+        imp_meta_samples$data,
         input$blank_thr,
         input$blank_thr_nr_of_samples,
         input$group_thr_nr_of_samples)
@@ -76,13 +149,32 @@ app_server <- function(input, output, session) {
     } else {
       lipid_data <- updated_data()
     }
+    if(is.null(updated_meta_samples())){
+      samp_data <- imp_meta_samples$data()
+    } else {
+      samp_data <- updated_meta_samples()
+    }
+
+    # Set index cols (move the samp_data blocks to a separate function in fct_files)
+    samp_data = set_index(samp_data, input$samp_ID)
+    lipid_data = set_index(lipid_data, input$lips_ID)
+
+    # Format to numeric and remove NAs
+    lipid_data = table_to_numeric(lipid_data)
 
     if(!is.null(lipid_data)) {
-      m_org <- import_lipid_data(data = lipid_data,
-                                 blank_thr = as.numeric(input$blank_thr),
-                                 blank_thr_nr_of_samples = as.numeric(input$blank_thr_nr_of_samples),
-                                 group_thr_nr_of_samples = as.numeric(input$group_thr_nr_of_samples))
+      m_org = bundle_lips(samp_table = samp_data,
+                          lips_table = lipid_data,
+                          blank_thr = as.numeric(input$blank_thr),
+                          blank_thr_nr_of_samples = as.numeric(input$blank_thr_nr_of_samples),
+                          group_thr_nr_of_samples = as.numeric(input$group_thr_nr_of_samples),
+                          type_col = input$samp_typecol,
+                          group_col = input$lips_groupcol,
+                          pattern_blank = input$pattern_blank,
+                          pattern_qc = input$pattern_qc)
+
       cat("\n m3_scl calculated \n")
+
 
       return(m_org)
     } else {
@@ -90,47 +182,47 @@ app_server <- function(input, output, session) {
     }
   })
 
+
   mat <- reactive({
     req(m3_scl,
         input$dataset,
         input$norm,
-        input$scale,
+        # input$scale,
         input$labeling)
+
 
     if(is.null(m3_scl()))
       return(NULL)
 
-    meta_scl=m3_scl()$meta
-
     if(as.numeric(input$dataset) == 1 & input$norm == "class_norm") {
-      m3_scl1 <- m3_scl()$data_classNorm
+      m3_scl1 <- as.matrix(m3_scl()$data_classNorm)
     } else if(as.numeric(input$dataset) == 1 & input$norm == "lipid_norm") {
-      m3_scl1 <- m3_scl()$data_totLipidNorm
+      m3_scl1 <- as.matrix(m3_scl()$data_totLipidNorm)
     } else if(as.numeric(input$dataset) == 2 & input$norm == "class_norm") {
-      m3_scl1 <- m3_scl()$classData_totLipidNorm
+      m3_scl1 <- as.matrix(m3_scl()$classData_totLipidNorm)
     } else if(as.numeric(input$dataset) == 2 & input$norm == "lipid_norm") {
-      m3_scl1 <- m3_scl()$classData_totLipidNorm
+      m3_scl1 <- as.matrix(m3_scl()$classData_totLipidNorm)
     }
 
     # quick fix to remove meta data from the data, this needs fixing!!!!
-    meta_names <- c("sample_name", colnames(meta_scl))
-    m3_scl1 <- m3_scl1[, !(colnames(m3_scl1) %in% meta_names)]
+    # meta_names <- c("sample_name", colnames(meta_scl))
+    # m3_scl1 <- m3_scl1[, !(colnames(m3_scl1) %in% meta_names)]
 
-    tmp_rn <- rownames(m3_scl1)
+    tmp_rn <- rownames(m3_scl1) # this gets row names for some reason
 
     m3_scl1 <- if(input$scale) {
-      scale(m3_scl1)
+      m3_scl1 = scale(m3_scl1)
     } else {
       m3_scl1
     }
 
-    rownames(m3_scl1) <- tmp_rn
+    # rownames(m3_scl1) <- tmp_rn
     if(!is.null(input$labeling)) {
-      lab_ind <- which(colnames(meta_scl) %in% input$labeling)
+      lab_ind <- which(colnames(m3_scl()$samp_table) %in% input$labeling)
       if(length(input$labeling) == 1) {
-        rownames(m3_scl1) <- meta_scl[, input$labeling]
+        rownames(m3_scl1) <- m3_scl()$samp_table[, input$labeling]
       } else {
-        rownames(m3_scl1) <- apply(meta_scl[, input$labeling],
+        rownames(m3_scl1) <- apply(m3_scl()$samp_table[, input$labeling],
                                    1,
                                    paste,
                                    collapse = "_")
@@ -143,7 +235,7 @@ app_server <- function(input, output, session) {
 
     cat("\ninput$comparision=",input$comparisionClassDistribution,"\n")
 
-    comp_ind=which(colnames(meta_scl)%in%input$comparisionClassDistribution)
+    comp_ind=which(colnames(m3_scl()$samp_table)%in%input$comparisionClassDistribution)
 
     # group_m3=group_m3_=sapply(rownames(m3_scl1),FUN = function(x) strsplit(x,split = "__",fixed = T)[[1]][3]) #[input$comparision])
 
@@ -218,8 +310,8 @@ app_server <- function(input, output, session) {
     #names(m_org)
     # m3_scl1=m3_scl1_=m_org[[4]]
     # meta_scl=m_org[[6]]
-    meta_scl=m3_scl()[[6]]
-    m3_scl1=m3_scl()[[4]]
+    meta_scl=m3_scl()[[6]]# l4_long
+    m3_scl1=m3_scl()[[4]] # l3_2_long
     tmp_rn=rownames(m3_scl1)
 
     # input=list()
@@ -247,6 +339,16 @@ app_server <- function(input, output, session) {
   })
 
 
+  # Things for the saturation plot
+  # cls_db=reactive({
+  #   if(is.null(m3_scl())){
+  #     return(NULL)
+  #   }
+  #   ind_for_comp1_=which(colnames(m3_scl()$samp_table)==input$comparision4)
+  # })
+  #
+
+
   ### calculate everything for the volcano plot
   volcano_db <- reactive({
     ###
@@ -257,15 +359,12 @@ app_server <- function(input, output, session) {
     req(m3_scl,
         input$norm)
 
-    ind_for_comp1_ <- which(colnames(m3_scl()$meta) == input$siVolcanoCategory)
-    comp1_i <- unique(m3_scl()$meta[, ind_for_comp1_])
+    ind_for_comp1_ <- which(colnames(m3_scl()$samp_table) == input$siVolcanoCategory)
+    comp1_i <- unique(as.factor(m3_scl()$samp_table[, ind_for_comp1_]))
     comp1_ <- comp1_i[which(comp1_i %in% input$siVolcanoComparison)]
 
     # only start calculations if 2 groups are choosen.
     if (length(input$siVolcanoComparison) == 2) {
-      cat("\n#########################################################\n")
-      cat("#########################################################\n")
-      cat("Calculate volcano plot.\n\n")
 
       # which data to select
       inputCol <- switch(input$norm,
@@ -273,7 +372,7 @@ app_server <- function(input, output, session) {
                          "class_norm" = "data_classNorm")
 
       res <- generat_all_cls(l3 = m3_scl()[[inputCol]],
-                             meta_s = m3_scl()$meta,
+                             meta_s = m3_scl()$samp_table,
                              ind_for_comp1 = ind_for_comp1_,
                              comp1 = comp1_
       )
@@ -358,7 +457,7 @@ app_server <- function(input, output, session) {
               maximizable = TRUE,
               collapsible = FALSE,
               status = "primary",
-              plotOutput(outputId = "plotClassComparison",
+              plotlyOutput(outputId = "plotClassComparison",
                          height = boxDimension$height),
               sidebar = bs4Dash::boxSidebar(
                 id = "classComparisonSidebar",
@@ -430,20 +529,13 @@ app_server <- function(input, output, session) {
         input$showPlots)
 
     inputCol <- switch(input$norm,
-                       "lipid_norm" = "classData_totLipidNorm_melt",
-                       "class_norm" = "classData_classNorm_melt")
+                       "lipid_norm" = "classData_totLipidNorm",
+                       "class_norm" = "data_classNorm_melt")
 
-    ggly <- ggplotly(plot_classes(l3 = m3_scl()[[inputCol]],
-                                  meta_s = m3_scl()$meta,
-                                  fill1 = input$comparisionClassDistribution))
-    ggly |>
-      plotly::config(displaylogo = FALSE) |>
-      plotly::layout(xaxis = list(fixedrange = input$moveZoomPlots == "move"),
-                     yaxis = list(fixedrange = input$moveZoomPlots == "move"))
-  })
 
-  observeEvent(input$comparisionClassDistribution, {
-    classDistributionSelected(input$comparisionClassDistribution)
+    fig = plot_class_distribution(table = m3_scl()[[inputCol]],
+                                   samp_table = m3_scl()$samp_table,
+                                   group_col = input$comparisionClassDistribution)
   })
 
   output$uiComparisonClassDistribution <- renderUI({
@@ -452,32 +544,27 @@ app_server <- function(input, output, session) {
 
     selectInput(inputId = "comparisionClassDistribution",
                 label = "Select category comparision",
-                choices = colnames(m3_scl()$meta),
-                selected = classDistributionSelected(),
+                choices = colnames(m3_scl()$samp_table),
+                selected = input$lips_groupcol,
                 multiple = FALSE)
   })
 
 
   ### facetted bar plot
-  output$plotClassComparison <- renderPlot({
-    # for now this is a static plot
-    # this renders quite slow as a plotly plot
+  output$plotClassComparison <- renderPlotly({
     req(m3_scl,
         input$norm,
         input$comparisionClassComparison,
         input$showPlots)
 
     inputCol <- switch(input$norm,
-                       "lipid_norm" = "classData_totLipidNorm_melt",
-                       "class_norm" = "classData_classNorm_melt")
+                       "lipid_norm" = "classData_totLipidNorm",
+                       "class_norm" = "data_classNorm_melt")
 
-    plot_compare_classes(l4_2 = m3_scl()[[inputCol]],
-                         meta_s = m3_scl()$meta,
-                         compare1 = input$comparisionClassComparison)
-  })
-
-  observeEvent(input$comparisionClassComparison, {
-    classComparisonSelected(input$comparisionClassComparison)
+    class_comparison = plot_class_comparison(table = m3_scl()[[inputCol]],
+                                             samp_table = m3_scl()$samp_table,
+                                             group_col = input$comparisionClassComparison)
+    return(class_comparison)
   })
 
   output$uiComparisonClassComparison <- renderUI({
@@ -486,8 +573,8 @@ app_server <- function(input, output, session) {
 
     selectInput(inputId = "comparisionClassComparison",
                 label = "Select category comparision",
-                choices = colnames(m3_scl()$meta),
-                selected = classComparisonSelected(),
+                choices = colnames(m3_scl()$samp_table),
+                selected = input$lips_groupcol,
                 multiple = FALSE)
   })
 
@@ -497,17 +584,13 @@ app_server <- function(input, output, session) {
         input$siVolcanoComparison)
 
     if(length(input$siVolcanoComparison) == 2) {
-      ggly <- plot_class_volcano(all_cls = volcano_db())
+      fig <- plot_class_volcano(all_cls = volcano_db())
 
-      return(ggly |>
+      return(fig |>
                config(displaylogo = FALSE))
     } else {
       return(NULL)
     }
-  })
-
-  observeEvent(input$siVolcanoCategory, {
-    volcanoCategorySelected(input$siVolcanoCategory)
   })
 
   observeEvent(input$siVolcanoComparison, {
@@ -521,8 +604,8 @@ app_server <- function(input, output, session) {
 
     selectInput(inputId = "siVolcanoCategory",
                 label = "Select category",
-                colnames(m3_scl()$meta),
-                selected = volcanoCategorySelected(),
+                colnames(m3_scl()$samp_table),
+                selected = input$lips_groupcol,
                 multiple = FALSE)
   })
 
@@ -530,31 +613,23 @@ app_server <- function(input, output, session) {
     req(m3_scl,
         input$siVolcanoCategory)
 
-    selectInput(inputId = "siVolcanoComparison",
+    selectizeInput(inputId = "siVolcanoComparison",
                 label = "Select two to compare",
-                unique(m3_scl()$meta[, input$siVolcanoCategory]),
-                selected = volcanoComparisonSelected(),
-                multiple = TRUE)#,options = list(maxItems = 2))
+                unique(m3_scl()$samp_table[, input$siVolcanoCategory]),
+                selected = unique(m3_scl()$samp_table[, input$siVolcanoCategory])[1:2],
+                multiple = TRUE,
+                options = list(maxItems = 2))
   })
 
 
   ### Heatmap stuff
   observeEvent(input$show_heatmap, {
     req(mat)
+      mat = mat()
 
-    if("heatmap" %in% input$showPlots) {
-      mat <- mat()
-      # mat_classes <- mat_classes()
-
-      ht <- ht2 <- NULL
       if(!is.null(mat)) {
         ht <- ComplexHeatmap::Heatmap(t(mat))
         ht <- ComplexHeatmap::draw(ht)
-      }
-
-      isHeatmap(ht)
-
-      if(!is.null(ht)) {
         InteractiveComplexHeatmap::InteractiveComplexHeatmapWidget(input = input,
                                                                    output = output,
                                                                    session = session,
@@ -563,13 +638,12 @@ app_server <- function(input, output, session) {
                                                                    output_id =  "plotHeatmap",
                                                                    layout = "1-(2|3)",
                                                                    close_button = FALSE)
-      } else {
+      }else{
         output$plotHeatmap <- renderPlot({
           grid::grid.newpage()
           grid::grid.text("No row exists after filtering.")
         })
       }
-    }
   })
 
   output$uiHeatmapButton <- renderUI({
@@ -579,7 +653,7 @@ app_server <- function(input, output, session) {
       return()
 
     actionButton(inputId = "show_heatmap",
-                 label = "Generate_heatmap")
+                 label = "Generate heatmap")
   })
 
   observeEvent(input$labeling, {
@@ -598,7 +672,7 @@ app_server <- function(input, output, session) {
 
     selectInput(inputId = "labeling",
                 label = "Select labeling",
-                choices = colnames(m3_scl()$meta),
+                choices = colnames(m3_scl()$samp_table),
                 selected = heatmapLabelingSelected(),
                 multiple = TRUE)
   })
