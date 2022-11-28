@@ -11,87 +11,103 @@
 #'
 #' @importFrom reshape melt
 #' @importFrom ggplot2 ggplot aes_string geom_col ylab theme_bw
+#' @import plotly
+#' @import tidyr
+#' @import RColorBrewer
 #'
 #' @noRd
 #'
-plot_classes <- function(l3 = NULL,
-                         meta_s = NULL,
-                         fill1 = "Genotype") {
+plot_class_distribution <- function(table,
+                         samp_table,
+                         group_col) {
+  plot_data = get_class_plot_table(table, samp_table, group_col)
+  fig = plot_ly()
+  for (col in colnames(plot_data)) {
+    fig = fig %>% add_trace(x = rownames(plot_data), y = plot_data[,col], name = col, type  = "bar")
+    fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5))
+  }
+  fig
 
-  plot_data <- aggregate(x = l3$value,
-                         by = list(l3$class, l3[, fill1]),
-                         # correct the sum by the number of samples per group
-                         FUN = function(x) mean(x, na.rm = TRUE),
-                         drop = FALSE)
-
-  colnames(plot_data) <- c("class", fill1, "value")
-
-  ggbar_lipid_class_per_genotype_per_cellnumber <- ggplot2::ggplot(
-    data = plot_data,
-    ggplot2::aes_string(x = "class",
-                        y = "value",
-                        fill = fill1)
-  ) +
-    ggplot2::geom_col(position = "dodge") +
-    # ggplot2::geom_bar(position = "dodge",
-    #                   stat = "summary") +
-    ggplot2::ylab("")+
-    ggplot2::theme_bw()
-
-  return(ggbar_lipid_class_per_genotype_per_cellnumber)
+  return(fig)
 }
 
 
+get_subplot_dim = function(class_list){
+  return(ceiling(sqrt(length(class_list))))}
 
-#' @title Facetted bar plot showing the class distribution and samples
-#'
-#' @description Facetted bar plot showing the class distribution and samples.
-#'
-#' @param l4_2 data
-#' @param class_norm type of normalisation
-#' @param meta_s the meta data
-#' @param compare1 what comparison
-#'
-#' @return a ggplot2 object.
-#'
-#' @author Yassene Mohammed
-#' @author Rico Derks
-#'
-#' @importFrom ggplot2 ggplot aes_string geom_bar geom_point facet_wrap ylab
-#'     theme_bw theme element_blank unit element_text
-#'
-#' @noRd
-#'
-plot_compare_classes <- function(l4_2 = NULL,
-                                 meta_s = NULL,
-                                 compare1 = "Genotype") {
+get_subplot_titles = function(class_list){
+  dim = get_subplot_dim(class_list)
+  step = 1/dim
+  x = step/2
+  y = 0.97 - step
+  i = 1
+  annotations = c()
+  for (c in class_list) {
+    tmp_ann = list(
+      x = x,
+      y = y,
+      text = c,
+      xref = "paper",
+      yref = "paper",
+      xanchor = "center",
+      yanchor = "bottom",
+      showarrow = FALSE)
+    annotations[[i]] = tmp_ann
+    i = i + 1
+    x = x + step
+    if (x >= 1) {
+      x = step/2
+      y = y - step}}
+  annotations[[i]] = list(x = -0.08, y = 0.5, text = "Percentage of total lipid",
+                          font = list(size = 10),
+                          textangle = 270, showarrow = FALSE, xref='paper',
+                          yref='paper')
+  return(annotations)}
 
+plot_class_comparison = function(table,
+                                 samp_table,
+                                 group_col){
+  default_cols = c('#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf')
+  groups = unique(samp_table[,group_col])
+  class_list = colnames(table)
+  annotations = get_subplot_titles(class_list)
+  dims = get_subplot_dim(class_list)
+  plot_list = c()
+  cleared_groups = c()
+  j = 1
+  for (c in class_list) {
+    i = 1
+    subplot = plot_ly()
+    for (g in groups){
+      if (g %in% cleared_groups) {
+        first_bool = FALSE
+      }else{
+        first_bool = TRUE
+        cleared_groups = c(cleared_groups, g)
+      }
+      s = rownames(samp_table)[samp_table[, group_col] == g]
+      d = table[s, c]
+      m = mean(d)
+      subplot = subplot %>% add_trace(x = g, y = m, type  = "bar", name = g,
+                                      color = default_cols[i], alpha = 1,
+                                      legendgroup=i, showlegend = first_bool)
+      subplot = subplot %>% add_trace(x = g, y = d, type  = "box", boxpoints = "all",
+                                      pointpos = 0, name = g, color = default_cols[i],
+                                      line = list(color = 'rgb(100,100,100)'),
+                                      marker = list(color = 'rgb(100,100,100)'), alpha = 1,
+                                      legendgroup=i, showlegend = FALSE)
+      subplot = subplot %>% layout(xaxis= list(showticklabels = FALSE),
+                                   yaxis = list(tickfont = list(size = 8)))
+      i = i + 1
+    }
+    plot_list[[j]] = plotly_build(subplot)
+    j = j + 1
+  }
 
-  ggbar_class <- ggplot2::ggplot(data = l4_2,
-                                 ggplot2::aes_string(x = compare1,
-                                                     y = "value",
-                                                     fill = compare1)) +
-    ggplot2::geom_bar(position = "dodge",
-                      stat = "summary",
-                      fun.y = "mean_se")+
-    ggplot2::geom_boxplot(width = 0.2) +
-    ggplot2::geom_point() +
-    ggplot2::facet_wrap(~ class,
-                        ncol = 4,
-                        scales = "free")+
-    ggplot2::ylab("percentage of total lipid")+
-    ggplot2::theme_bw()+
-    ggplot2::theme(axis.title.x = ggplot2::element_blank(),
-                   axis.text.x = ggplot2::element_blank(),
-                   axis.ticks.x = ggplot2::element_blank(),
-                   legend.key.size = ggplot2::unit(1, "cm"), #change legend key size
-                   legend.key.height = ggplot2::unit(1, "cm"), #change legend key height
-                   legend.key.width = ggplot2::unit(1, "cm"), #change legend key width
-                   legend.title = ggplot2::element_text(size = 14), #change legend title font size
-                   legend.text = ggplot2::element_text(size = 10), #change legend text font size
-                   legend.position = "none")
-
-  return(ggbar_class)
+  fig = subplot(plot_list, nrows = dims, margin = 0.035, titleX = TRUE)
+  fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
+                       annotations = annotations)
+  return(fig)
 }
 
 

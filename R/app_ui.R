@@ -22,19 +22,39 @@ app_ui <- function(request) {
 
       #### sidebar menu ####
       bs4Dash::dashboardSidebar(
-        skin = "light",
-        sidebarMenu(
+        skin = "dark",
+        bs4Dash::sidebarMenu(
           menuItem(text = "Welcome",
                    tabName = "intro",
-                   icon = icon("home")),
-          menuItem(text = "File",
-                   tabName = "file",
-                   icon = icon("file-excel")),
+                   icon = shiny::icon("home")),
+          menuItem(text = "Data upload",
+                   tabName = "data_upload",
+                   icon = shiny::icon("file-excel"),
+                   menuSubItem(
+                     text = "Metadata",
+                     tabName = "sample_metadata_upload"),
+                   menuSubItem(
+                     text = "Lipidomics",
+                     tabName = "lipids_upload"),
+                   menuSubItem(
+                     text = "Proteomics",
+                     tabName = "proteo_upload"),
+                   menuSubItem(
+                     text = "Transcriptomics",
+                     tabName = "transcripto_upload")),
+
           menuItem(text = "Visualisation",
                    tabName = "visualisation",
-                   icon = icon("bar-chart-o"))
-        )
-      ),
+                   icon = shiny::icon("table"),
+                   menuSubItem(
+                     text = "Lipidomics",
+                     tabName = "vis_lipids"),
+                   menuSubItem(
+                     text = "Proteomics",
+                     tabName = "vis_prot"),
+                   menuSubItem(
+                     text = "Transcriptomics",
+                     tabName = "vis_trans")))),
 
       #### body ####
       dashboardBody(
@@ -52,94 +72,151 @@ app_ui <- function(request) {
               Shiny.onInputChange("dimension", dimension);
             });
             ')),
-
-        tabItems(
+        ###################################################### Introduction tab
+        tabItems(tabItem(tabName = "intro",
+                         includeMarkdown(app_sys("app/www/welcome.Rmd"))),
+          ############################################## Sample metadata upload
           tabItem(
-            tabName = "intro",
-            includeMarkdown(app_sys("app/www/welcome.Rmd"))
-          ), # end tabItem introduction
-          tabItem(
-            tabName = "file",
+            tabName = "sample_metadata_upload",
             fluidRow(
               column(
                 width = 8,
                 bs4Dash::tabsetPanel(
-                  id = "tabset_data",
-                  # type = "pills",
-                  tabPanel(
+                  id = "tabset_samples",
+                  shiny::tabPanel(
                     title = "Load data",
-                    import_file_ui(
-                      id = "lipid_data_import",
-                      title = TRUE,
+                    datamods::import_file_ui(
+                      id = "import_data_samples",
+                      title = shiny::tags$h3("Sample metadata"),
                       preview_data = TRUE,
-                      file_extensions = ".xlsx"
-                    )
-                  ),
-                  tabPanel(
-                    title = "Update data",
-                    uiOutput(outputId = "uiUpdateLipidData")
-                  )
-                )
-              ),
+                      file_extensions = ".csv")),
+                  shiny::tabPanel(
+                    title = "Update",
+                    uiOutput(outputId = "uiUpdateSampleData")))),
               column(
+                shiny::tags$h3("Select columns"),
                 width = 4,
-                wellPanel(
-                  checkboxInput(inputId = "scale",
-                                label = "Scale and center",
-                                value = TRUE,
-                  ),
-                  textInput(
-                    inputId = "blank_thr",
-                    label = "Nr of blanks threshold",
-                    value = "2",
-                    width = NULL,
-                    placeholder = NULL
-                  ),
-                  textInput(
-                    inputId = "blank_thr_nr_of_samples",
-                    label = "Proportion of samples above blank threshold",
-                    value = "0.8",
-                    width = NULL,
-                    placeholder = NULL
-                  ),
-                  textInput(
-                    inputId = "group_thr_nr_of_samples",
-                    label = "Proportion of samples from one group above blank threshold",
-                    value = "0.7",
-                    width = NULL,
-                    placeholder = NULL
-                  ),
-                  # checkboxInput("rem_zeros", "Remove zero dominated measurements"),
-                  # checkboxInput("cluster", "Apply clustering"),
-                  # uiOutput("comp1"),
-                ), # end wellPanel
-                wellPanel(
-                  selectInput(inputId = "norm",
-                              label = "Normalization",
-                              choices = c("Normalized to total class" = "class_norm",
-                                          "Normalized to total lipid" = "lipid_norm"),
-                              selected = "lipid_norm",
-                              multiple = FALSE)
-                ),
-                wellPanel(
-                  uiOutput(outputId = "info"),
-                  uiOutput(outputId = "comp2"),
-                  checkboxInput(inputId = "analysis1",
-                                label = "Apply disc. and red. analysis"),
-                  sliderInput(inputId = "alpha",
-                              label = "Alpha:",
-                              ticks = TRUE,
-                              min = 0.5,
-                              max = 0.95,
-                              value = 0.8,
-                              step = 0.01),
-                )
-              ),
-              verbatimTextOutput("dimension_display") # only for debugging
+                selectInput(inputId = "samp_ID",
+                            label = "Sample IDs",
+                            choices = NULL,
+                            multiple = FALSE),
+                helpText("Column containing the sample IDs."),
+                selectInput(inputId = "samp_typecol",
+                            label = "Sample type",
+                            choices = NULL,
+                            multiple = FALSE),
+                helpText("Column containing the sample types."),
+                textInput(inputId = "pattern_blank",
+                          label = "Blank pattern",
+                          value = "blank",
+                          placeholder = "Type pattern"),
+                helpText('Text pattern to autodect blanks samples from the above metioned "Sample type" column'),
+                textInput(inputId = "pattern_qc",
+                          label = "QC pattern",
+                          value = "qc",
+                          placeholder = "Type pattern"),
+                helpText('Text pattern to autodect QC samples from the above metioned "Sample type" column')
+              ))),
+          ################################################### Lipidomics upload
+          tabItem(
+            tabName = "lipids_upload",
+            fluidRow(
+              column(12,
+                bs4Dash::tabsetPanel(
+                  id = "tabset_data",
+                  shiny::tabPanel( # Load lipidomics data
+                    title = "Load data",
+                    fluidRow(
+                      column(8,
+                        datamods::import_file_ui(
+                          id = "lipid_data_import",
+                          title = shiny::tags$h4("Lipidomics data"),
+                          preview_data = TRUE,
+                          file_extensions = ".csv")),
+                      column(4,
+                             shiny::tags$h4("Select columns"),
+                             selectInput(inputId = "lips_ID",
+                                         label = "Sample IDs",
+                                         choices = NULL,
+                                         multiple = FALSE),
+                             helpText("Column containing the sample IDs."),
+                             selectInput(inputId = "lips_groupcol",
+                                         label = "Group filtering",
+                                         choices = NULL,
+                                         multiple = FALSE),
+                             helpText("Column containing the groups for each sample."),
+                             ))),
+
+
+
+                  shiny::tabPanel( # Update lipidomics data
+                    title = "Update",
+                    fluidRow(
+                      column(12,
+                             uiOutput(outputId = "uiUpdateLipidData")))),
+                  shiny::tabPanel( # Filter lipidomics data
+                    title = "Filter",
+                    fluidRow(
+                      column(8,
+                             filter_data_ui(id = "lips_filter_ui"),
+                             progressBar(
+                               id = "pbar",
+                               value = 100,
+                               total = 100,
+                               display_pct = TRUE),
+                             reactable::reactableOutput(outputId = "table"),
+                             ),
+                      column(4,
+                             checkboxInput(
+                               inputId = "scale",
+                               label = "Scale and center",
+                               value = TRUE),
+                             textInput(
+                               inputId = "blank_thr",
+                               label = "Nr of blanks threshold",
+                               value = "2",
+                               width = NULL,
+                               placeholder = NULL),
+                             textInput(
+                               inputId = "blank_thr_nr_of_samples",
+                               label = "Proportion of samples above blank threshold",
+                               value = "0.8",
+                               width = NULL,
+                               placeholder = NULL),
+                             textInput(
+                               inputId = "group_thr_nr_of_samples",
+                               label = "Proportion of samples from one group above blank threshold",
+                               value = "0.7",
+                               width = NULL,
+                               placeholder = NULL),
+                             helpText("Column to be used for group filtering."),
+                             selectInput(
+                               inputId = "norm",
+                               label = "Normalization",
+                               choices = c("Normalized to total class" = "class_norm",
+                                           "Normalized to total lipid" = "lipid_norm"),
+                               selected = "lipid_norm",
+                               multiple = FALSE),
+                             uiOutput(outputId = "info"),
+                             uiOutput(outputId = "comp2"),
+                             checkboxInput(
+                               inputId = "analysis1",
+                               label = "Apply disc. and red. analysis"),
+                             sliderInput(
+                               inputId = "alpha",
+                               label = "Alpha:",
+                               ticks = TRUE,
+                               min = 0.5,
+                               max = 0.95,
+                               value = 0.8,
+                               step = 0.01)
+                             )))),
+              ), # end column
             ) # end fluidRow
           ), # end tabItem file
+          ############################################ Lipidomics visualisation
           tabItem(
-            tabName = "visualisation",
+            tabName = "vis_lipids",
             fluidRow(
               column(
                 width = 4,

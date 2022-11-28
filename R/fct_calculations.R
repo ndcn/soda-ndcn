@@ -194,9 +194,6 @@ wilcox_pairwise_p_fc <- function(mat4,
   xx <- mat5[groups == case[1], ]
   yy <- mat5[groups == case[2], ]
 
-  dim(x)
-  dim(y)
-
   rem_ind_y <- unique(which(is.na(y), arr.ind = TRUE)[, 2])
   rem_ind_x <- unique(which(is.na(x), arr.ind = TRUE)[, 2])
   rem_ind <- unique(c(rem_ind_y, rem_ind_x))
