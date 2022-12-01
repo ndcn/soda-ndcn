@@ -4,153 +4,190 @@
 #'     DO NOT REMOVE.
 #' @import shiny
 #' @import datamods
+#' @import stringr
 #' @importFrom glmnet cv.glmnet
 #' @importFrom plotly plotlyOutput ggplotly renderPlotly config layout
 #' @importFrom ComplexHeatmap Heatmap draw
 #' @importFrom InteractiveComplexHeatmap InteractiveComplexHeatmapWidget
 #' @importFrom grid grid.newpage grid.text
 #'
+#'
 #' @noRd
 app_server <- function(input, output, session) {
   boxDimension <- reactiveValues(width = NULL,
                                  height = NULL)
 
-  # make sure that plots colouring doesn't change after adding/removing plots
+  # Initialise the plots
   volcanoComparisonSelected <- reactiveVal(NULL)
   heatmapLabelingSelected <- reactiveVal(NULL)
   heatmapDatasetSelected <- reactiveVal(NULL)
   isHeatmap <- reactiveVal(NULL)
 
-  # for debugging output the dimensions of the window and the calculated dimensions
-  # of the boxes (plots)
-  output$dimension_display <- renderText({
-    # paste("width:", input$dimension[1], "| height:", input$dimension[2], "\n",
-    #       boxDimension$width, boxDimension$height)
-  })
-  ########################################################### Data import begin
+  # Set up the color vector
+  #colour_list= brewer.pal(n = 9, name = 'Set1')
+  colour_list= brewer.pal(n = 8, name = 'Set2')
+
+  ################################################################# Data import
   # Sample metadata
-  imp_meta_samples <- datamods::import_file_server(
+  imported_samps <- datamods::import_file_server(
     id = "import_data_samples",
     btn_show_data = FALSE,
     trigger_return = "change"
   )
 
   # Lipidomics data
-  imported <- datamods::import_file_server(
+  imported_lips <- datamods::import_file_server(
     id = "lipid_data_import",
     btn_show_data = FALSE,
     trigger_return = "change"
-    # show_data_in = "popup" # not in this version of datamods
   )
 
   #Sample metadata : column selection
   observe({
     updateSelectInput(session = session,
                       inputId = "samp_ID",
-                      choices = colnames(imp_meta_samples$data()))
+                      choices = colnames(imported_samps$data()))
     updateSelectInput(session = session,
                       inputId = "lips_groupcol",
-                      choices = colnames(imp_meta_samples$data()),
-                      selected = colnames(imp_meta_samples$data())[2])
+                      choices = colnames(imported_samps$data()),
+                      selected = colnames(imported_samps$data())[2])
     updateSelectInput(session = session,
                       inputId = "samp_typecol",
-                      choices = colnames(imp_meta_samples$data()),
-                      selected = colnames(imp_meta_samples$data())[3])
+                      choices = colnames(imported_samps$data()),
+                      selected = colnames(imported_samps$data())[3])
   })
 
   # Lipids column selection
   observe({
     updateSelectInput(session = session,
                       inputId = "lips_ID",
-                      choices = colnames(imported$data()))
+                      choices = colnames(imported_lips$data()))
   })
-  ########################################################### Data import end
 
-  ########################################################### Update UI begin
+  ########################################################## Original data safe
+
+  # Save the original lipids data
+  lips_unsaved = TRUE
+  lips_safe = NULL
+  observe({
+    if(!is.null(imported_lips$data()) && lips_unsaved){
+      lips_save = imported_lips$data()
+      lips_unsaved = FALSE
+    }
+  })
+
+
+  ################################################################# Update data
+
   # Sample metadata
   output$uiUpdateSampleData <- renderUI({
-    req(imp_meta_samples$data)
-    if(!is.null(imp_meta_samples$data())) {
-      tagList(update_variables_ui(id = "update_meta_samples"))}})
+    req(imported_samps$data)
+    if(!is.null(imported_samps$data())) {
+      tagList(update_variables_ui(id = "update_samps"))}})
   updated_meta_samples <- update_variables_server(
-    id = "update_meta_samples",
-    data = imp_meta_samples$data()
+    id = "update_samps",
+    data = imported_samps$data()
   )
 
   # Lipidomics data
   output$uiUpdateLipidData <- renderUI({
-    req(imported$data)
-    if(!is.null(imported$data())) {
-      tagList(update_variables_ui(id = "update_lipid_data"))}})
-  updated_data <- update_variables_server(
-    id = "update_lipid_data",
-    data = imported$data()
-  )
-  ########################################################### Update UI end
-
-  ########################################################### Filter UI
-
-  # Load lipids data
-  data <- reactive({
-    updated_data()
-  })
-
-  # Filter Lipidomics data
-  lips_filter <- filter_data_server(
-    id = "lips_filter_serv",
-    data = data,
-    widget_num = "slider",
-    widget_date = "slider",
-    label_na = "Missing"
+    req(imported_lips$data)
+    if(!is.null(imported_lips$data())) {
+      tagList(update_variables_ui(id = "update_lips"))}})
+  updated_lips <- update_variables_server(
+    id = "update_lips",
+    data = imported_lips$data()
   )
 
-  observeEvent(lips_filter$filtered(), {
-    updateProgressBar(
-      session = session, id = "pbar",
-      value = nrow(lips_filter$filtered()), total = nrow(data())
-    )
-  })
-
-  output$table <- reactable::renderReactable({
-    reactable::reactable(lips_filter$filtered())
-  })
-
-
-
-  ########################################################### Import print begin
   observe({
-    if(!is.null(imported$data())) {
-      print(sprintf("number of rows imported$data: %d", nrow(imported$data())))}
-    if(!is.null(updated_data())) {
-      print(sprintf("number of rows updated_data: %d", nrow(updated_data())))}
-    if(!is.null(imp_meta_samples$data())) {
-      print(sprintf("number of rows imp_meta_samples$data: %d", nrow(imp_meta_samples$data())))}
-    if(!is.null(updated_meta_samples())) {
-      print(sprintf("number of rows updated_meta_samples: %d", nrow(updated_meta_samples())))}
-    if(!is.null(imported$data()) & !is.null(imp_meta_samples$data())) {
-      print("SUCCESS")
-      # Have here the "Unclock lipids visualisation" thing once figured out
-      }
-    })
-  ########################################################### Import print end
+    if(!is.null(updated_lips())) {
+      print("nrows updated:")
+      print(nrow(updated_lips()))
+      print("ncols updated:")
+      print(ncol(updated_lips()))
+    }
+  })
+
+  ################################################################# Filter data
+
+  observeEvent(input$reset_lips, {
+    print("RESET")
+  })
+  observeEvent(input$save_lips, {
+    print("SAVED")
+  })
+  observeEvent(input$display_lips, {
+    print("nrows :")
+    print(nrow(imported_lips$data()))
+    print("ncols :")
+    print(ncol(imported_lips$data()))
+    print(imported_lips$name())
+    print(imported_lips$status())
+  })
 
 
-  #read the data
-  m3_scl <- reactive({
-    req(imported$data,
-        imp_meta_samples$data,
+  ######################################## Process lipids for unsaturation plot
+  unsatplot_data = reactive({
+    req(imported_lips$data,
+        imported_samps$data,
+        input$unsatplot_groupcol_selection,
+        input$unsatplot_groups_selection)
+
+    if (!is.null(imported_lips$data())){
+      lips_table = imported_lips$data()
+      samp_table = imported_samps$data()
+      print(input$unsatplot_groups_selection)
+      print(length(input$unsatplot_groups_selection))
+
+      # Set index cols (move the samp_data blocks to a separate function in fct_files)
+      samp_table = set_index(samp_table, input$samp_ID)
+      lips_table = set_index(lips_table, input$lips_ID)
+
+
+      samp_table = get_samp_table(samp_table,
+                                  input$pattern_blank,
+                                  input$pattern_qc,
+                                  input$samp_typecol)
+
+
+      # Filter out non-sample rows from the lipids table
+      lips_table = lips_table[rownames(samp_table),]
+
+      # Do wilxocon test on the lipids table
+      wilcoxon_table = get_wilcoxon_table(lips_table = lips_table,
+                                          samp_table = samp_table,
+                                          selected_group = input$unsatplot_groupcol_selection,
+                                          groups = input$unsatplot_groups_selection)
+
+      # Get the unsaturation data from the lipids
+      unsaturation_data = get_unsaturation_data(lips_table)
+
+      # Combine wilcoxon test values with unsaturation data and return
+      unsatplot_data = get_unsatplot_data(unsaturation_data, wilcoxon_table)
+
+      return(unsatplot_data)
+    } else {
+      return(NULL)
+    }
+  })
+
+  ####################################### Process lipids data for visualisation
+  vistables_lips <- reactive({
+    req(imported_lips$data,
+        imported_samps$data,
         input$blank_thr,
         input$blank_thr_nr_of_samples,
         input$group_thr_nr_of_samples)
 
-    # this does not work correctly when a new file is uploaded!
-    if(is.null(updated_data())){
-      lipid_data <- imported$data()
-    } else {
-      lipid_data <- updated_data()
-    }
+    # Get lipid and sample data, from source or updated
+    # if(is.null(updated_lips())){
+    #   lipid_data <- imported_lips$data()
+    # } else {
+    #   lipid_data <- updated_lips()
+    # }
+    lipid_data <- imported_lips$data()
     if(is.null(updated_meta_samples())){
-      samp_data <- imp_meta_samples$data()
+      samp_data <- imported_samps$data()
     } else {
       samp_data <- updated_meta_samples()
     }
@@ -162,51 +199,44 @@ app_server <- function(input, output, session) {
     # Format to numeric and remove NAs
     lipid_data = table_to_numeric(lipid_data)
 
+    # Get tables formated to visualise lipids data
     if(!is.null(lipid_data)) {
-      m_org = bundle_lips(samp_table = samp_data,
-                          lips_table = lipid_data,
-                          blank_thr = as.numeric(input$blank_thr),
-                          blank_thr_nr_of_samples = as.numeric(input$blank_thr_nr_of_samples),
-                          group_thr_nr_of_samples = as.numeric(input$group_thr_nr_of_samples),
-                          type_col = input$samp_typecol,
-                          group_col = input$lips_groupcol,
-                          pattern_blank = input$pattern_blank,
-                          pattern_qc = input$pattern_qc)
-
-      cat("\n m3_scl calculated \n")
-
-
-      return(m_org)
+      vistables_lips = get_vistables_lips(samp_table = samp_data,
+                                          lips_table = lipid_data,
+                                          blank_thr = as.numeric(input$blank_thr),
+                                          blank_thr_nr_of_samples = as.numeric(input$blank_thr_nr_of_samples),
+                                          group_thr_nr_of_samples = as.numeric(input$group_thr_nr_of_samples),
+                                          type_col = input$samp_typecol,
+                                          group_col = input$lips_groupcol,
+                                          pattern_blank = input$pattern_blank,
+                                          pattern_qc = input$pattern_qc)
+      print("TETRA")
+      return(vistables_lips)
     } else {
       return(NULL)
     }
   })
 
-
   mat <- reactive({
-    req(m3_scl,
+    req(vistables_lips,
         input$dataset,
         input$norm,
-        # input$scale,
         input$labeling)
 
 
-    if(is.null(m3_scl()))
+    if(is.null(vistables_lips()))
       return(NULL)
 
     if(as.numeric(input$dataset) == 1 & input$norm == "class_norm") {
-      m3_scl1 <- as.matrix(m3_scl()$data_classNorm)
+      m3_scl1 <- as.matrix(vistables_lips()$data_classNorm)
     } else if(as.numeric(input$dataset) == 1 & input$norm == "lipid_norm") {
-      m3_scl1 <- as.matrix(m3_scl()$data_totLipidNorm)
+      m3_scl1 <- as.matrix(vistables_lips()$data_totLipidNorm)
     } else if(as.numeric(input$dataset) == 2 & input$norm == "class_norm") {
-      m3_scl1 <- as.matrix(m3_scl()$classData_totLipidNorm)
+      m3_scl1 <- as.matrix(vistables_lips()$classData_totLipidNorm)
     } else if(as.numeric(input$dataset) == 2 & input$norm == "lipid_norm") {
-      m3_scl1 <- as.matrix(m3_scl()$classData_totLipidNorm)
+      m3_scl1 <- as.matrix(vistables_lips()$classData_totLipidNorm)
     }
 
-    # quick fix to remove meta data from the data, this needs fixing!!!!
-    # meta_names <- c("sample_name", colnames(meta_scl))
-    # m3_scl1 <- m3_scl1[, !(colnames(m3_scl1) %in% meta_names)]
 
     tmp_rn <- rownames(m3_scl1) # this gets row names for some reason
 
@@ -218,11 +248,11 @@ app_server <- function(input, output, session) {
 
     # rownames(m3_scl1) <- tmp_rn
     if(!is.null(input$labeling)) {
-      lab_ind <- which(colnames(m3_scl()$samp_table) %in% input$labeling)
+      lab_ind <- which(colnames(vistables_lips()$samp_table) %in% input$labeling)
       if(length(input$labeling) == 1) {
-        rownames(m3_scl1) <- m3_scl()$samp_table[, input$labeling]
+        rownames(m3_scl1) <- vistables_lips()$samp_table[, input$labeling]
       } else {
-        rownames(m3_scl1) <- apply(m3_scl()$samp_table[, input$labeling],
+        rownames(m3_scl1) <- apply(vistables_lips()$samp_table[, input$labeling],
                                    1,
                                    paste,
                                    collapse = "_")
@@ -230,12 +260,12 @@ app_server <- function(input, output, session) {
     }
 
     cat("\ninput$dataset=",input$dataset,"\n")
-    cat("\nlength(m3_scl())=",length(m3_scl()),"\n")
+    cat("\nlength(vistables_lips())=",length(vistables_lips()),"\n")
     cat("\ndim(m3_scl1)=",dim(m3_scl1),"\n")
 
     cat("\ninput$comparision=",input$comparisionClassDistribution,"\n")
 
-    comp_ind=which(colnames(m3_scl()$samp_table)%in%input$comparisionClassDistribution)
+    comp_ind=which(colnames(vistables_lips()$samp_table)%in%input$comparisionClassDistribution)
 
     # group_m3=group_m3_=sapply(rownames(m3_scl1),FUN = function(x) strsplit(x,split = "__",fixed = T)[[1]][3]) #[input$comparision])
 
@@ -299,54 +329,8 @@ app_server <- function(input, output, session) {
     return(mat)
   })
 
-  mat_classes <- reactive({
-    req(m3_scl,
-        input$scale)
-
-    if(is.null(m3_scl()))
-      return(
-        NULL
-      )
-    #names(m_org)
-    # m3_scl1=m3_scl1_=m_org[[4]]
-    # meta_scl=m_org[[6]]
-    meta_scl=m3_scl()[[6]]# l4_long
-    m3_scl1=m3_scl()[[4]] # l3_2_long
-    tmp_rn=rownames(m3_scl1)
-
-    # input=list()
-    # input$comparision=colnames(meta_scl)[c(7)]
-    # input$labeling=colnames(meta_scl)[c(3,4,8)]
-    # input$scale=T
-
-    m3_scl1=if(input$scale){scale(m3_scl1)}else{m3_scl1}
-
-    rownames(m3_scl1)=tmp_rn
-    if(!is.null(input$labeling))
-    {
-
-      lab_ind=which(colnames(meta_scl)%in%input$labeling)
-      rownames(m3_scl1)=sapply(tmp_rn,
-                               FUN = function(x)
-                               {
-                                 s=strsplit(x,split = "__",fixed = T)[[1]][lab_ind]
-                                 paste(s,collapse = "_")
-                               }
-      )
-    }
-    mat_classes=m3_scl1
-    mat_classes
-  })
 
 
-  # Things for the saturation plot
-  # cls_db=reactive({
-  #   if(is.null(m3_scl())){
-  #     return(NULL)
-  #   }
-  #   ind_for_comp1_=which(colnames(m3_scl()$samp_table)==input$comparision4)
-  # })
-  #
 
 
   ### calculate everything for the volcano plot
@@ -356,11 +340,11 @@ app_server <- function(input, output, session) {
     # needs a nicer solution
     ###
 
-    req(m3_scl,
+    req(vistables_lips,
         input$norm)
 
-    ind_for_comp1_ <- which(colnames(m3_scl()$samp_table) == input$siVolcanoCategory)
-    comp1_i <- unique(as.factor(m3_scl()$samp_table[, ind_for_comp1_]))
+    ind_for_comp1_ <- which(colnames(vistables_lips()$samp_table) == input$siVolcanoCategory)
+    comp1_i <- unique(as.factor(vistables_lips()$samp_table[, ind_for_comp1_]))
     comp1_ <- comp1_i[which(comp1_i %in% input$siVolcanoComparison)]
 
     # only start calculations if 2 groups are choosen.
@@ -371,8 +355,8 @@ app_server <- function(input, output, session) {
                          "lipid_norm" = "data_totLipidNorm",
                          "class_norm" = "data_classNorm")
 
-      res <- generat_all_cls(l3 = m3_scl()[[inputCol]],
-                             meta_s = m3_scl()$samp_table,
+      res <- generat_all_cls(l3 = vistables_lips()[[inputCol]],
+                             meta_s = vistables_lips()$samp_table,
                              ind_for_comp1 = ind_for_comp1_,
                              comp1 = comp1_
       )
@@ -515,6 +499,29 @@ app_server <- function(input, output, session) {
             )
           } else {
             NULL
+          },
+          if("plot_unsat" %in% input$showPlots) {
+            # !!instead of setting the box height, set the plot height!!
+            bs4Dash::box(
+              id = "plot_unsat_box",
+              title = "Unsaturation plot",
+              width = boxDimension$width,
+              solidHeader = TRUE,
+              maximizable = TRUE,
+              collapsible = FALSE,
+              status = "primary",
+              plotlyOutput(outputId = "plot_unsat",
+                           height = boxDimension$height),
+              sidebar = bs4Dash::boxSidebar(
+                id = "unsatplot_sidebar",
+                width = 40,
+                uiOutput(outputId = "ui_unsatplot_groupcol"),
+                uiOutput(outputId = "ui_unsatplot_groups"),
+                uiOutput(outputId = "ui_unsatplot_classes")
+              )
+            )
+          } else {
+            NULL
           }
         ) # end fluidRow 2
       ) # end column
@@ -523,7 +530,7 @@ app_server <- function(input, output, session) {
 
   ### big bar plot showing class distribution
   output$plotlyClassDistribution <- renderPlotly({
-    req(m3_scl,
+    req(vistables_lips,
         input$norm,
         input$comparisionClassDistribution,
         input$showPlots)
@@ -533,26 +540,61 @@ app_server <- function(input, output, session) {
                        "class_norm" = "data_classNorm_melt")
 
 
-    fig = plot_class_distribution(table = m3_scl()[[inputCol]],
-                                   samp_table = m3_scl()$samp_table,
-                                   group_col = input$comparisionClassDistribution)
+    fig = plot_class_distribution(table = vistables_lips()[[inputCol]],
+                                  samp_table = vistables_lips()$samp_table,
+                                  group_col = input$comparisionClassDistribution,
+                                  colour_list = colour_list)
   })
 
   output$uiComparisonClassDistribution <- renderUI({
-    if (is.null(imported$data()))
+    if (is.null(imported_lips$data()))
       return()
 
     selectInput(inputId = "comparisionClassDistribution",
                 label = "Select category comparision",
-                choices = colnames(m3_scl()$samp_table),
+                choices = colnames(vistables_lips()$samp_table),
                 selected = input$lips_groupcol,
                 multiple = FALSE)
   })
 
 
+  # Unsaturation plot
+  output$plot_unsat <- renderPlotly({
+    req(unsatplot_data,
+        input$unsatplot_classes)
+    fig = plot_lipid_unsaturation(lips_class = input$unsatplot_classes,
+                                  unsatplot_data = unsatplot_data())
+  })
+
+  output$ui_unsatplot_groupcol <- renderUI({
+    selectInput(inputId = "unsatplot_groupcol_selection",
+                label = "Select group column",
+                choices = colnames(vistables_lips()$samp_table),
+                selected = input$lips_groupcol,
+                multiple = FALSE)
+
+  })
+  output$ui_unsatplot_groups <- renderUI({
+    req(input$unsatplot_groupcol_selection)
+    selectizeInput(inputId = "unsatplot_groups_selection",
+                   label = "Select groups",
+                   choices = unique(vistables_lips()$samp_table[, input$unsatplot_groupcol_selection]),
+                   selected = unique(vistables_lips()$samp_table[, input$unsatplot_groupcol_selection])[c(1,2)],
+                   multiple = TRUE,
+                   options = list(maxItems = 2))
+  })
+  output$ui_unsatplot_classes <- renderUI({
+    req(unsatplot_data)
+    selectInput(inputId = "unsatplot_classes",
+                label = "Select lipid class",
+                choices = names(unsatplot_data()),
+                selected = names(unsatplot_data())[1],
+                multiple = FALSE)
+  })
+
   ### facetted bar plot
   output$plotClassComparison <- renderPlotly({
-    req(m3_scl,
+    req(vistables_lips,
         input$norm,
         input$comparisionClassComparison,
         input$showPlots)
@@ -561,19 +603,20 @@ app_server <- function(input, output, session) {
                        "lipid_norm" = "classData_totLipidNorm",
                        "class_norm" = "data_classNorm_melt")
 
-    class_comparison = plot_class_comparison(table = m3_scl()[[inputCol]],
-                                             samp_table = m3_scl()$samp_table,
-                                             group_col = input$comparisionClassComparison)
+    class_comparison = plot_class_comparison(table = vistables_lips()[[inputCol]],
+                                             samp_table = vistables_lips()$samp_table,
+                                             group_col = input$comparisionClassComparison,
+                                             colour_list = colour_list)
     return(class_comparison)
   })
 
   output$uiComparisonClassComparison <- renderUI({
-    if (is.null(imported$data()))
+    if (is.null(imported_lips$data()))
       return()
 
     selectInput(inputId = "comparisionClassComparison",
                 label = "Select category comparision",
-                choices = colnames(m3_scl()$samp_table),
+                choices = colnames(vistables_lips()$samp_table),
                 selected = input$lips_groupcol,
                 multiple = FALSE)
   })
@@ -600,23 +643,23 @@ app_server <- function(input, output, session) {
   })
 
   output$uiVolcanoCategory <- renderUI({
-    req(m3_scl)
+    req(vistables_lips)
 
     selectInput(inputId = "siVolcanoCategory",
                 label = "Select category",
-                colnames(m3_scl()$samp_table),
+                colnames(vistables_lips()$samp_table),
                 selected = input$lips_groupcol,
                 multiple = FALSE)
   })
 
   output$uiVolcanoComparison <- renderUI({
-    req(m3_scl,
+    req(vistables_lips,
         input$siVolcanoCategory)
 
     selectizeInput(inputId = "siVolcanoComparison",
                 label = "Select two to compare",
-                unique(m3_scl()$samp_table[, input$siVolcanoCategory]),
-                selected = unique(m3_scl()$samp_table[, input$siVolcanoCategory])[1:2],
+                choices = unique(vistables_lips()$samp_table[, input$siVolcanoCategory]),
+                selected = unique(vistables_lips()$samp_table[, input$siVolcanoCategory])[1:2],
                 multiple = TRUE,
                 options = list(maxItems = 2))
   })
@@ -647,9 +690,9 @@ app_server <- function(input, output, session) {
   })
 
   output$uiHeatmapButton <- renderUI({
-    req(m3_scl)
+    req(vistables_lips)
 
-    if (is.null(imported$data()))
+    if (is.null(imported_lips$data()))
       return()
 
     actionButton(inputId = "show_heatmap",
@@ -665,22 +708,22 @@ app_server <- function(input, output, session) {
   })
 
   output$uiHeatmapLabeling <- renderUI({
-    req(m3_scl)
+    req(vistables_lips)
 
-    if (is.null(imported$data()))
+    if (is.null(imported_lips$data()))
       return()
 
     selectInput(inputId = "labeling",
                 label = "Select labeling",
-                choices = colnames(m3_scl()$samp_table),
+                choices = colnames(vistables_lips()$samp_table),
                 selected = heatmapLabelingSelected(),
                 multiple = TRUE)
   })
 
   output$uiHeatmapDataset <- renderUI({
-    req(m3_scl)
+    req(vistables_lips)
 
-    if (is.null(imported$data()))
+    if (is.null(imported_lips$data()))
       return()
 
     selectInput(inputId = "dataset",
