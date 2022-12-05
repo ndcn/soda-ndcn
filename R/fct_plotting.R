@@ -14,6 +14,7 @@
 #' @import plotly
 #' @import tidyr
 #' @import RColorBrewer
+#' @import pcaMethods
 #'
 #' @noRd
 #'
@@ -240,3 +241,96 @@ plot_lipid_unsaturation = function(lips_class, unsatplot_data){
                                                'eraseshape'))
   return(fig)
 }
+
+
+
+############################# PCA Additions
+
+hline <- function(y = 0, color = 'rgb(200, 200, 200)') {
+  list(
+    type = "line",
+    x0 = 0,
+    x1 = 1,
+    xref = "paper",
+    y0 = y,
+    y1 = y,
+    line = list(color = color)
+  )
+}
+
+
+vline <- function(x = 0, color = 'rgb(200, 200, 200)') {
+  list(
+    type = "line",
+    x0 = x,
+    x1 = x,
+    yref = "paper",
+    y0 = 0,
+    y1 = 1,
+    line = list(color = color)
+  )
+}
+
+circle = function(x, y, alpha = 0.95, len = 200){
+  N = length(x)
+  mypi = seq(0, 2 * pi, length = len)
+  r1 = sqrt(var(x) * qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  r2 = sqrt(var(y) * qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  list(
+    type = "circle",
+    xref = "x",
+    x0= -r1,
+    x1 = r1,
+    yref = "y",
+    y0 = -r2,
+    y1 = r2,
+    line = "black",
+    opacity = 0.2
+  )
+}
+
+get_pca_plot = function(data_table, meta_table, group_col, colour_list, nPcs = 2, scale = "none", cv = "none"){
+
+  # Find if completeObs
+  if (sum(is.na(data_table)) > 0) {
+    completeObs = FALSE
+  } else {
+    completeObs = TRUE
+  }
+
+  data_table[is.na(data_table)] = 0
+
+  # Get PCA data
+  pca_data = pcaMethods::pca(object = data_table,
+                             nPcs = nPcs,
+                             scale = scale,
+                             cv = cv,
+                             completeObs = completeObs)
+
+  # Plot PCA
+  fig = pca_plot(x = pca_data@scores[,'PC1'],
+                 y = pca_data@scores[,'PC2'],
+                 meta_table = meta_table,
+                 group_col = group_col,
+                 colour_list = colour_list)
+  return(fig)
+}
+
+pca_plot = function(x, y, meta_table, group_col, colour_list){
+  groups = unique(meta_table[,group_col])
+  fig = plot_ly(colors = colour_list)
+  i = 1
+  for (grp in groups) {
+    idx = which(meta_table[,group_col] == grp)
+    fig = fig %>% add_trace(x = x[idx], y = y[idx],
+                            name = grp, color = colour_list[i],
+                            type  = "scatter", mode = "markers",
+                            legendgroup=grp)
+    i = i + 1
+  }
+  fig = fig %>% layout(shapes = list(hline(0),
+                                     vline(0),
+                                     circle(x, y)))
+  return(fig)
+}
+

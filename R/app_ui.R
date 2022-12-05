@@ -250,7 +250,8 @@ app_ui <- function(request) {
                                                  "Class comparison" = "plotlyClassComparison",
                                                  "Volcano plot" = "volcano",
                                                  "Heatmap" = "heatmap",
-                                                 "Unsaturation plot" = "plot_unsat"),
+                                                 "Unsaturation plot" = "plot_unsat",
+                                                 "PCA" = "lips_pca"),
                                      selected = c("plotlyClassDistribution",
                                                   "plotlyClassComparison"))
               )

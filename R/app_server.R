@@ -136,8 +136,6 @@ app_server <- function(input, output, session) {
     if (!is.null(imported_lips$data())){
       lips_table = imported_lips$data()
       samp_table = imported_samps$data()
-      print(input$unsatplot_groups_selection)
-      print(length(input$unsatplot_groups_selection))
 
       # Set index cols (move the samp_data blocks to a separate function in fct_files)
       samp_table = set_index(samp_table, input$samp_ID)
@@ -170,6 +168,47 @@ app_server <- function(input, output, session) {
       return(NULL)
     }
   })
+
+
+  ######################################## Process lipids for PCA plot
+  lipspca_plot = reactive({
+    req(input$lipspca_groupcol_selection)
+
+    if (!is.null(imported_lips$data())){
+      lips_table = imported_lips$data()
+      samp_table = imported_samps$data()
+
+      print("LOLIGO")
+
+      # Set index cols (move the samp_data blocks to a separate function in fct_files)
+      samp_table = set_index(samp_table, input$samp_ID)
+      lips_table = set_index(lips_table, input$lips_ID)
+
+
+      samp_table = get_samp_table(samp_table,
+                                  input$pattern_blank,
+                                  input$pattern_qc,
+                                  input$samp_typecol)
+
+
+      # Filter out non-sample rows from the lipids table
+      lips_table = lips_table[rownames(samp_table),]
+
+
+      fig = get_pca_plot(data_table = lips_table,
+                         meta_table = samp_table,
+                         group_col = input$lipspca_groupcol_selection,
+                         colour_list = colour_list,
+                         nPcs = 2,
+                         scale = "none",
+                         cv = "none")
+
+      return(fig)
+    } else {
+      return(NULL)
+    }
+  })
+
 
   ####################################### Process lipids data for visualisation
   vistables_lips <- reactive({
@@ -522,6 +561,27 @@ app_server <- function(input, output, session) {
             )
           } else {
             NULL
+          },
+          if("lips_pca" %in% input$showPlots) {
+            # !!instead of setting the box height, set the plot height!!
+            bs4Dash::box(
+              id = "plot_lipspca_box",
+              title = "Principal Component Analysis (PCA)",
+              width = boxDimension$width,
+              solidHeader = TRUE,
+              maximizable = TRUE,
+              collapsible = FALSE,
+              status = "primary",
+              plotlyOutput(outputId = "plot_lipspca",
+                           height = boxDimension$height),
+              sidebar = bs4Dash::boxSidebar(
+                id = "lipspca_sidebar",
+                width = 40,
+                uiOutput(outputId = "ui_lipspca_groupcol")
+              )
+            )
+          } else {
+            NULL
           }
         ) # end fluidRow 2
       ) # end column
@@ -591,6 +651,25 @@ app_server <- function(input, output, session) {
                 selected = names(unsatplot_data())[1],
                 multiple = FALSE)
   })
+
+  # Lipids PCA plot
+
+  output$plot_lipspca <- renderPlotly({
+    req(lipspca_plot,
+        input$lipspca_groupcol_selection)
+
+    return(lipspca_plot())
+
+  })
+
+  output$ui_lipspca_groupcol <- renderUI({
+    selectInput(inputId = "lipspca_groupcol_selection",
+                label = "Select group column",
+                choices = colnames(vistables_lips()$samp_table),
+                selected = input$lips_groupcol,
+                multiple = FALSE)
+  })
+
 
   ### facetted bar plot
   output$plotClassComparison <- renderPlotly({
@@ -671,8 +750,11 @@ app_server <- function(input, output, session) {
       mat = mat()
 
       if(!is.null(mat)) {
+        print("CHECKPOINT 1")
         ht <- ComplexHeatmap::Heatmap(t(mat))
+        print("CHECKPOINT 2")
         ht <- ComplexHeatmap::draw(ht)
+        print("CHECKPOINT 3")
         InteractiveComplexHeatmap::InteractiveComplexHeatmapWidget(input = input,
                                                                    output = output,
                                                                    session = session,
@@ -681,6 +763,7 @@ app_server <- function(input, output, session) {
                                                                    output_id =  "plotHeatmap",
                                                                    layout = "1-(2|3)",
                                                                    close_button = FALSE)
+        print("CHECKPOINT 4")
       }else{
         output$plotHeatmap <- renderPlot({
           grid::grid.newpage()
