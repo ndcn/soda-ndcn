@@ -1,17 +1,18 @@
 Package: soda
 Title: Simple Omics Data Analysis
-Version: 0.1.0
+Version: 0.1.9000
 Authors@R: c(
     person("Yassene", "Mohammed", , "y.mohammed@lumc.nl", role = "aut",
            comment = c(ORCID = "0000-0003-3265-3332")),
     person("Rico", "Derks", , "r.j.e.derks@lumc.nl", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0002-8920-7133")),
-    person("Damien", "Olivier", , "d.olivier@lumc.nl", role = "aut")
+    person("Damien", "Olivier", , "d.olivier@lumc.nl", role = "aut",
+           comment = c(ORCID = ""))
   )
 Description: Shiny app for multi omics data visualization and analysis.
 License: MIT + file LICENSE
-URL: https://github.com/ricoderks/soda
-BugReports: https://github.com/ricoderks/soda/issues
+URL: https://github.com/ndcn/soda
+BugReports: https://github.com/ndcn/soda-ndcn/issues
 Imports: 
     bs4Dash,
     ComplexHeatmap,
@@ -23,10 +24,11 @@ Imports:
     grDevices,
     grid,
     InteractiveComplexHeatmap,
+    pcaMethods,
     plotly,
-    readxl,
+    RColorBrewer,
+    reactable,
     reshape,
-    rlang,
     shiny (>= 1.7.1),
     shinyjqui,
     shinyWidgets,
@@ -36,7 +38,8 @@ Imports:
     utils
 Remotes:
     bioc::ComplexHeatmap,
-    bioc::InteractiveComplexHeatmap
+    bioc::InteractiveComplexHeatmap,
+    bioc::pcaMethods
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

@@ -7,6 +7,7 @@
 #' @import shinyWidgets
 #' @import shinyjqui
 #' @import bs4Dash
+#' @importFrom reactable reactableOutput
 #' @importFrom utils packageVersion
 #'
 #' @noRd
