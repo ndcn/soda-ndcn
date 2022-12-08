@@ -32,6 +32,7 @@ get_lipid_classes = function(feature_list, uniques = TRUE){
     strsplit(x = x,
              split = " ",
              fixed = TRUE)[[1]][1])
+  classes = as.vector(classes)
   if (uniques) {
     return(unique(classes))}
   else{
@@ -254,15 +255,15 @@ get_class_plot_table = function(table, samp_table, group_col){
 }
 
 
-bundle_lips = function(samp_table,
-                       lips_table,
-                       blank_thr,
-                       blank_thr_nr_of_samples,
-                       group_thr_nr_of_samples,
-                       type_col,
-                       group_col,
-                       pattern_blank,
-                       pattern_qc){
+get_vistables_lips = function(samp_table,
+                              lips_table,
+                              blank_thr,
+                              blank_thr_nr_of_samples,
+                              group_thr_nr_of_samples,
+                              type_col,
+                              group_col,
+                              pattern_blank,
+                              pattern_qc){
 
 
   # Get lipid values normalised to total lipids and lipid classes
@@ -288,38 +289,221 @@ bundle_lips = function(samp_table,
                               pattern_qc,
                               type_col)
 
-  bundled_tables = list(
+  vistables_lips = list(
     samp_table = samp_table,
     data_classNorm = lips_classnorm,
     data_totLipidNorm = lips_totalnorm,
     data_classNorm_melt = lips_class,
     classData_totLipidNorm = lips_total
   )
-  return(bundled_tables)
+  return(vistables_lips)
 
 }
 
 
+################################################### Specific to saturation plot
+# Get a class and columns DF for a list of lipids
+get_lips_df = function(table){
+  species = colnames(table)
+  class_list = get_lipid_classes(feature_list = colnames(table),
+                                 uniques = F)
+  lips_df = data.frame(matrix(data = NA, nrow = length(class_list), ncol = 0))
+  lips_df[,"class"] = class_list
+  lips_df[,"species"] = species
+  return(lips_df)
+}
+
+# Get lipids metadata by evaluating the lipid type (TGs, simple, complex)
+get_lips_metadata = function(lips_list){
+  if (length(grep("TG",lips_list))>0){
+    cs_count = lips_selector_1(lips_list) # TG lipids
+  } else if (length(grep("/|_",lips_list)) > 0) {
+    cs_count = lips_selector_2(lips_list) # Complex lipids
+  }else{
+    cs_count = lips_selector_3(lips_list) # Simple lipids
+  }
+  return(cs_count)
+}
 
 
+# Lipid data selection for TGs
+lips_selector_1 = function(lips_list){
+
+  # Get carbon count
+  c_count = as.numeric(str_sub(lips_list,4,5))
+
+  # Get saturation count
+  s_count = as.numeric(str_sub(lips_list,7,-8))
+  return(list(
+    carbons = c_count,
+    saturations = s_count
+  ))
+}
 
 
-# test_func = function(samp_table,
-#                        lips_table,
-#                        blank_thr,
-#                        blank_thr_nr_of_samples,
-#                        group_thr_nr_of_samples,
-#                        type_col,
-#                        group_col,
-#                        pattern_blank,
-#                        pattern_qc){
-#   print(type_col)
-#   print(group_col)
-#   print(pattern_blank)
-#   print(pattern_qc)
-#   return("Truffles")
-# }
+# Lipid data selection for Complex lipids
+lips_selector_2 = function(lips_list) {
+  main_data=sapply(lips_list,function(x){
+    gsub("^.+?\\(","",strsplit(x,"/|_")[[1]][1])
+  })
+  c_count=sapply(main_data,function(x){strsplit(x,":",fixed = T)[[1]][1]})
+  c_count=as.numeric(gsub(".*?([0-9]+).*", "\\1",c_count))
+  s_count=sapply(main_data,function(x){as.numeric(strsplit(x,":",fixed = T)[[1]][2])})
+  s_count = as.vector(s_count)
+  return(list(
+    carbons = c_count,
+    saturations = s_count
+  ))
+}
 
 
+# Lipid data selection for simple lipids
+lips_selector_3 = function(lips_list){
+
+  # Get carbon count
+  c_count=sapply(lips_list,function(x){
+    gsub("^.+?\\(","",strsplit(x,":",fixed = T)[[1]][1])
+  })
+  c_count=sapply(c_count,function(x){
+    strsplit(x," ",fixed = T)[[1]][2]
+  })
+  c_count = as.vector(as.numeric(c_count))
+
+  # Get saturation count
+  s_count=sapply(lips_list,function(x){
+    gsub("\\)","",strsplit(x,":",fixed = T)[[1]][2])
+  })
+  s_count = as.vector(as.numeric(s_count))
+
+  return(list(
+    carbons = c_count,
+    saturations = s_count
+  ))
+}
+
+
+# Get double bond / saturation data for lipid species contained in a lipidomics table
+get_unsaturation_data = function(table){
+  lips_df = get_lips_df(table)
+  unsaturation_data = list()
+  for (c in unique(lips_df[, "class"])) {
+
+    # Get lipid species list
+    lips_list = which(lips_df[, "class"] == c)
+    lips_list = lips_df[lips_list, "species"]
+
+    # Determine lipid class
+    cs_count = get_lips_metadata(lips_list)
+
+    class_data = data.frame(matrix(data = NA, nrow = length(lips_list), ncol = 0))
+    class_data[,"species"] = lips_list
+    class_data[,"carbons"] = cs_count$carbons
+    class_data[,"saturation"] = cs_count$saturations
+
+    unsaturation_data[[c]] = class_data
+
+  }
+  return(unsaturation_data)
+}
+
+# Merge outputs from get_unsaturation_data and get_wilcoxon_table to create the staplot_data for saturation plots
+get_unsatplot_data = function(unsaturation_data, wilcoxon_table){
+  unsatplot_data = list()
+  for (lips_class in names(unsaturation_data)) {
+    species_list = unsaturation_data[[lips_class]]$species
+    class_data = wilcoxon_table[species_list,]
+    class_data$carbons = unsaturation_data[[lips_class]]$carbons
+    class_data$saturation = unsaturation_data[[lips_class]]$saturation
+    unsatplot_data[[lips_class]] = class_data
+  }
+  return(unsatplot_data)
+}
+
+
+################################################  Statistical tests
+
+# Wilcoxon test + BH adjust on lipids table
+get_wilcoxon_table = function(lips_table, samp_table, selected_group, groups) {
+
+  # data for group 1
+  samples_1 = samp_table[,selected_group] == groups[1]
+  samples_1 = lips_table[samples_1,]
+  samples_1 = as.matrix(samples_1)
+
+  # data for group 2
+  samples_2 = samp_table[,selected_group] == groups[2]
+  samples_2 = lips_table[samples_2,]
+  samples_2 = as.matrix(samples_2)
+
+  # Find columns with missing values
+  nacols_1 = unique(which(is.na(samples_1), arr.ind = T)[,2])
+  nacols_2 = unique(which(is.na(samples_2), arr.ind = T)[,2])
+  nacols = unique(c(nacols_1, nacols_2))
+
+  # Do wilcoxon test on each colum
+  pval_list = c()
+  fchange_list = c()
+
+  for (i in c(1:ncol(samples_1))) {
+
+    # If column has no NA values in any of the datasets
+    if (!i %in% nacols){
+
+      # Wilcoxon test
+      p_val = wilcox.test(samples_1[,i], samples_2[,i])$p.value
+      pval_list = c(pval_list, p_val)
+      fchange = median(samples_2[,i],na.rm = T)/median(samples_1[,i],na.rm = T)
+      fchange_list = c(fchange_list, fchange)
+
+      # If column has NA values in one of both datasets
+    } else {
+      pval_list = c(pval_list, 1)
+      fchange_list = c(fchange_list, 1)
+    }
+  }
+
+  # Woops I divided by 0 part 1 : If some of the values in fchange_list are 0
+  if(any(fchange_list==0)) {
+    tmp_min_fchange = min(fchange_list[-which(fchange==0)],
+                          1/fchange_list[-which(fchange==0)], na.rm = T)
+    fchange_list[which(fchange_list==0)]=2^(log2(tmp_min_fchange)-1)
+  }
+
+  # Woops I divided by 0 part 2 : If some of the values in fchange_list are inf
+  if(any(is.infinite(fchange_list)))
+  {
+    tmp_max_fchange=max(fchange_list)
+    fchange_list[which(is.infinite(fchange_list))]=2^(log2(tmp_max_fchange)+1)
+  }
+
+  # Woops I divided by 0 part 3 : No idea what this is
+  if(any(is.nan(fchange_list)))
+  {
+    fchange_list[which(is.nan(fchange_list))]=1
+  }
+
+  # p adjust using Benjamini-Hochberg
+  pval_list_adjusted = p.adjust(pval_list,method = "BH")
+
+  # Do -log10() on the adjusted pval for some reason. And round it, because reasons.
+  log_pval_list_adjusted = round(-log10(pval_list_adjusted), 1)
+
+  # Now do a random logFC, just do it. Also round and abs it, I don't make the rules
+  log_fc = abs(round(log2(fchange_list), 1))
+
+  # Set the names of the lists to the names of the features / columns
+  names(pval_list) = names(fchange_list) = names(pval_list_adjusted) = colnames(lips_table)
+  names(log_pval_list_adjusted) = names(log_fc) = colnames(lips_table)
+
+  wilcoxon_table = list(p_values = pval_list,
+                        foldchange = fchange_list,
+                        BH_adj_p = pval_list_adjusted,
+                        logP = log_pval_list_adjusted,
+                        logFC = log_fc)
+
+  wilcoxon_table = as.data.frame(wilcoxon_table)
+
+  return(wilcoxon_table)
+}
 
 

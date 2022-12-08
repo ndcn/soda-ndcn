@@ -14,17 +14,22 @@
 #' @import plotly
 #' @import tidyr
 #' @import RColorBrewer
+#' @import pcaMethods
 #'
 #' @noRd
 #'
 plot_class_distribution <- function(table,
                          samp_table,
-                         group_col) {
+                         group_col,
+                         colour_list) {
   plot_data = get_class_plot_table(table, samp_table, group_col)
-  fig = plot_ly()
+  i = 1
+  fig = plot_ly(colors = colour_list)
   for (col in colnames(plot_data)) {
-    fig = fig %>% add_trace(x = rownames(plot_data), y = plot_data[,col], name = col, type  = "bar")
+    fig = fig %>% add_trace(x = rownames(plot_data), y = plot_data[,col],
+                            name = col, color = colour_list[i], type  = "bar")
     fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5))
+    i = i + 1
   }
   fig
 
@@ -66,8 +71,8 @@ get_subplot_titles = function(class_list){
 
 plot_class_comparison = function(table,
                                  samp_table,
-                                 group_col){
-  default_cols = c('#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf')
+                                 group_col,
+                                 colour_list){
   groups = unique(samp_table[,group_col])
   class_list = colnames(table)
   annotations = get_subplot_titles(class_list)
@@ -77,7 +82,7 @@ plot_class_comparison = function(table,
   j = 1
   for (c in class_list) {
     i = 1
-    subplot = plot_ly()
+    subplot = plot_ly(colors = colour_list)
     for (g in groups){
       if (g %in% cleared_groups) {
         first_bool = FALSE
@@ -89,10 +94,10 @@ plot_class_comparison = function(table,
       d = table[s, c]
       m = mean(d)
       subplot = subplot %>% add_trace(x = g, y = m, type  = "bar", name = g,
-                                      color = default_cols[i], alpha = 1,
+                                      color = colour_list[i], alpha = 1,
                                       legendgroup=i, showlegend = first_bool)
       subplot = subplot %>% add_trace(x = g, y = d, type  = "box", boxpoints = "all",
-                                      pointpos = 0, name = g, color = default_cols[i],
+                                      pointpos = 0, name = g, color = colour_list[i],
                                       line = list(color = 'rgb(100,100,100)'),
                                       marker = list(color = 'rgb(100,100,100)'), alpha = 1,
                                       legendgroup=i, showlegend = FALSE)
@@ -208,5 +213,124 @@ hline <- function(y = 0, color = "blue") {
                 width = 1,
                 dash = "dash")
   )
+}
+
+# Plot double bond / saturation
+plot_lipid_unsaturation = function(lips_class, unsatplot_data){
+  fig = plot_ly(unsatplot_data[[lips_class]],
+                x = ~carbons,
+                y = ~saturation,
+                color = ~logP,
+                size = ~logFC,
+                mode = "markers",
+                sizes = ~c(5,40),
+                marker = list(sizemode ='diameter' , opacity = 0.5,sizeref=1),
+                showlegend=T,
+                type = "scatter")
+  fig = fig %>% layout(
+    legend= list(itemsizing='constant'),
+    title = paste0("Double bonds in ", lips_class),
+    xaxis = list(title = 'Total carobons'),
+    yaxis = list(title = 'Total double bonds')
+  )
+  fig = fig %>% config(modeBarButtonsToAdd = c('drawline',
+                                               'drawopenpath',
+                                               'drawclosedpath',
+                                               'drawcircle',
+                                               'drawrect',
+                                               'eraseshape'))
+  return(fig)
+}
+
+
+
+############################# PCA Additions
+
+hline <- function(y = 0, color = 'rgb(200, 200, 200)') {
+  list(
+    type = "line",
+    x0 = 0,
+    x1 = 1,
+    xref = "paper",
+    y0 = y,
+    y1 = y,
+    line = list(color = color)
+  )
+}
+
+
+vline <- function(x = 0, color = 'rgb(200, 200, 200)') {
+  list(
+    type = "line",
+    x0 = x,
+    x1 = x,
+    yref = "paper",
+    y0 = 0,
+    y1 = 1,
+    line = list(color = color)
+  )
+}
+
+circle = function(x, y, alpha = 0.95, len = 200){
+  N = length(x)
+  mypi = seq(0, 2 * pi, length = len)
+  r1 = sqrt(var(x) * qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  r2 = sqrt(var(y) * qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  list(
+    type = "circle",
+    xref = "x",
+    x0= -r1,
+    x1 = r1,
+    yref = "y",
+    y0 = -r2,
+    y1 = r2,
+    line = "black",
+    opacity = 0.2
+  )
+}
+
+get_pca_plot = function(data_table, meta_table, group_col, colour_list, nPcs = 2, scale = "none", cv = "none"){
+
+  # Find if completeObs
+  if (sum(is.na(data_table)) > 0) {
+    completeObs = FALSE
+  } else {
+    completeObs = TRUE
+  }
+
+  data_table[is.na(data_table)] = 0
+
+  # Get PCA data
+  pca_data = pcaMethods::pca(object = data_table,
+                             nPcs = nPcs,
+                             scale = scale,
+                             cv = cv,
+                             completeObs = completeObs)
+
+  # Plot PCA
+  fig = pca_plot(x = pca_data@scores[,'PC1'],
+                 y = pca_data@scores[,'PC2'],
+                 meta_table = meta_table,
+                 group_col = group_col,
+                 colour_list = colour_list)
+  return(fig)
+}
+
+pca_plot = function(x, y, meta_table, group_col, colour_list){
+  groups = unique(meta_table[,group_col])
+  fig = plot_ly(colors = colour_list)
+  i = 1
+  for (grp in groups) {
+    idx = which(meta_table[,group_col] == grp)
+    fig = fig %>% add_trace(x = x[idx], y = y[idx],
+                            name = grp, color = colour_list[i],
+                            type  = "scatter", mode = "markers",
+                            legendgroup=grp)
+    i = i + 1
+  }
+  fig = fig %>% layout(shapes = list(hline(0),
+                                     vline(0),
+                                     circle(x, y)))
+  return(fig)
 }
 
