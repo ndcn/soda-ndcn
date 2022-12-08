@@ -25,7 +25,7 @@ app_server <- function(input, output, session) {
 
   # Set up the color vector
   #colour_list= brewer.pal(n = 9, name = 'Set1')
-  colour_list= brewer.pal(n = 8, name = 'Set2')
+  colour_list= brewer.pal(n = 11, name = 'Spectral')
 
   ################################################################# Data import
   # Sample metadata
@@ -185,14 +185,14 @@ app_server <- function(input, output, session) {
       lips_table = set_index(lips_table, input$lips_ID)
 
 
-      samp_table = get_samp_table(samp_table,
-                                  input$pattern_blank,
-                                  input$pattern_qc,
-                                  input$samp_typecol)
+      # samp_table = get_samp_table(samp_table,
+      #                             input$pattern_blank,
+      #                             input$pattern_qc,
+      #                             input$samp_typecol)
 
 
       # Filter out non-sample rows from the lipids table
-      lips_table = lips_table[rownames(samp_table),]
+      # lips_table = lips_table[rownames(samp_table),]
 
 
       fig = get_pca_plot(data_table = lips_table,
