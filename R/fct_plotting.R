@@ -271,11 +271,30 @@ vline <- function(x = 0, color = 'rgb(200, 200, 200)') {
   )
 }
 
+#' @title Calculate Hoteling T2
+#'
+#' @description Calculate Hoteling T2 for the scores plot
+#'
+#' @param x numeric vector with x values
+#' @param y numeric vector with y values
+#' @param alpha numeric(1), confidence interval
+#' @param len numeric(1), number of points to create the ellipse
+#'
+#' @return A list is returned to be used in a plotly graph.
+#'
+#' @details This is a helper function which is used to create a confidence (Hotelling T2) interval for a
+#'     PCA score plot.
+#'
+#' @importFrom stats var qf
+#'
+#' @noRd
+#'
+#' @author Damien Olivier
 circle = function(x, y, alpha = 0.95, len = 200){
   N = length(x)
   mypi = seq(0, 2 * pi, length = len)
-  r1 = sqrt(var(x) * qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
-  r2 = sqrt(var(y) * qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  r1 = sqrt(stats::var(x) * stats::qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  r2 = sqrt(stats::var(y) * stats::qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
   list(
     type = "circle",
     xref = "x",
