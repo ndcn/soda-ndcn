@@ -1,6 +1,6 @@
 Package: soda
 Title: Simple Omics Data Analysis
-Version: 0.1.9000
+Version: 0.1.9001
 Authors@R: c(
     person("Yassene", "Mohammed", , "y.mohammed@lumc.nl", role = "aut",
            comment = c(ORCID = "0000-0003-3265-3332")),

@@ -505,7 +505,8 @@ app_server <- function(input, output, session) {
                            height = boxDimension$height),
               sidebar = bs4Dash::boxSidebar(
                 id = "volcanoPlotSidebar",
-                startOpen = length(volcanoComparisonSelected()) < 2,
+                # this causes the plot to be recalculated with the initial values
+                # startOpen = length(volcanoComparisonSelected()) < 2,
                 width = 40,
                 uiOutput(outputId = "uiVolcanoCategory"),
                 uiOutput(outputId = "uiVolcanoComparison")
