@@ -13,14 +13,6 @@
 #'
 #' @noRd
 
-credentials <- data.frame(
-  user = c("user1"), # mandatory
-  password = c("1234"), # mandatory
-  admin = c(FALSE),
-  comment = "Secure authentification mechanism for SODA",
-  stringsAsFactors = FALSE
-)
-
 app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
@@ -277,7 +269,7 @@ app_ui <- function(request) {
   )
 }
 
-app_ui <- secure_app(app_ui)
+app_ui <- shinymanager::secure_app(ui = app_ui)
 
 #' Add external Resources to the Application
 #'

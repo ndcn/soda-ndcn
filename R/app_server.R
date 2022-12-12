@@ -11,17 +11,26 @@
 #' @importFrom ComplexHeatmap Heatmap draw
 #' @importFrom InteractiveComplexHeatmap InteractiveComplexHeatmapWidget
 #' @importFrom grid grid.newpage grid.text
+#' @importFrom grDevices colorRampPalette
 #'
 #'
 #' @noRd
+#'
 app_server <- function(input, output, session) {
+  credentials <- data.frame(
+    user = c("user1", "user2"), # mandatory
+    password = c("1234", "monkey"), # mandatory
+    admin = c(FALSE, FALSE),
+    comment = "Secure authentification mechanism for SODA",
+    stringsAsFactors = FALSE
+  )
 
-  res_auth <- secure_server(
-    check_credentials = check_credentials(credentials)
+  res_auth <- shinymanager::secure_server(
+    check_credentials = shinymanager::check_credentials(db = credentials)
   )
 
   output$auth_output <- renderPrint({
-    reactiveValuesToList(res_auth)
+    reactiveValuesToList(x = res_auth)
   })
 
   boxDimension <- reactiveValues(width = NULL,
@@ -36,7 +45,7 @@ app_server <- function(input, output, session) {
   # Set up the color vector
   #colour_list= brewer.pal(n = 9, name = 'Set1')
   colour_list= brewer.pal(n = 11, name = 'Spectral')
-  colour_list = colorRampPalette(colour_list)(25)
+  colour_list = grDevices::colorRampPalette(colour_list)(25)
 
   ################################################################# Data import
   # Sample metadata
