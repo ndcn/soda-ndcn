@@ -270,7 +270,7 @@ app_ui <- function(request) {
   )
 }
 
-app_ui <- shinymanager::secure_app(ui = app_ui)
+# app_ui <- shinymanager::secure_app(ui = app_ui)
 
 # app_ui <- shinymanager::secure_app(ui = ui)
 

@@ -13,7 +13,6 @@
 #' @importFrom grid grid.newpage grid.text
 #' @importFrom grDevices colorRampPalette
 #'
-#'
 #' @noRd
 #'
 app_server <- function(input, output, session) {
