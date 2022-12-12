@@ -5,6 +5,7 @@
 #' @import shiny
 #' @import datamods
 #' @import stringr
+#' @import shinymanager
 #' @importFrom glmnet cv.glmnet
 #' @importFrom plotly plotlyOutput ggplotly renderPlotly config layout
 #' @importFrom ComplexHeatmap Heatmap draw
@@ -14,6 +15,15 @@
 #'
 #' @noRd
 app_server <- function(input, output, session) {
+
+  res_auth <- secure_server(
+    check_credentials = check_credentials(credentials)
+  )
+
+  output$auth_output <- renderPrint({
+    reactiveValuesToList(res_auth)
+  })
+
   boxDimension <- reactiveValues(width = NULL,
                                  height = NULL)
 
@@ -26,6 +36,7 @@ app_server <- function(input, output, session) {
   # Set up the color vector
   #colour_list= brewer.pal(n = 9, name = 'Set1')
   colour_list= brewer.pal(n = 11, name = 'Spectral')
+  colour_list = colorRampPalette(colour_list)(25)
 
   ################################################################# Data import
   # Sample metadata
