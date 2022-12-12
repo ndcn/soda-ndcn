@@ -13,20 +13,18 @@
 #' @importFrom grid grid.newpage grid.text
 #' @importFrom grDevices colorRampPalette
 #'
-#'
 #' @noRd
 #'
 app_server <- function(input, output, session) {
-  credentials <- data.frame(
-    user = c("user1", "user2"), # mandatory
-    password = c("1234", "monkey"), # mandatory
-    admin = c(FALSE, FALSE),
-    comment = "Secure authentification mechanism for SODA",
-    stringsAsFactors = FALSE
-  )
 
   res_auth <- shinymanager::secure_server(
-    check_credentials = shinymanager::check_credentials(db = credentials)
+    check_credentials = shinymanager::check_credentials(db = data.frame(
+      user = c("user1", "user2"), # mandatory
+      password = c("1234", "monkey"), # mandatory
+      admin = c(FALSE, FALSE),
+      comment = "Secure authentification mechanism for SODA",
+      stringsAsFactors = FALSE
+    ))
   )
 
   output$auth_output <- renderPrint({

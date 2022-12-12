@@ -1,6 +1,6 @@
 Package: soda
 Title: Simple Omics Data Analysis
-Version: 0.1.9002
+Version: 0.1.9005
 Authors@R: c(
     person("Yassene", "Mohammed", , "y.mohammed@lumc.nl", role = "aut",
            comment = c(ORCID = "0000-0003-3265-3332")),
@@ -37,12 +37,12 @@ Imports:
     stringr,
     tidyr,
     utils
+Suggests: 
+    testthat (>= 3.0.0)
 Remotes:
     bioc::ComplexHeatmap,
     bioc::InteractiveComplexHeatmap,
     bioc::pcaMethods
-Suggests: 
-    testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
