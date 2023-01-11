@@ -1,6 +1,7 @@
 library(shiny)
-library(markdown)
 library(shinydashboard)
+library(shinyWidgets)
+library(bs4Dash)
 library(R6)
 library(DT)
 library(markdown)
@@ -101,6 +102,10 @@ body_ui = function() {
       shinydashboard::tabItem(
         tabName = "lips_upload",
         soda_upload_lips_ui(id = "upload_lipidomics", head = T)
+      ),
+      shinydashboard::tabItem(
+        tabName = "lips_visual",
+        soda_visualise_lips_ui(id = "visualise_lipidomics")
       )
     )
   )

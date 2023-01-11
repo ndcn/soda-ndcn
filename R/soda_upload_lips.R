@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(shinyWidgets)
 
 #------------------------------------------------ Lipidomics data upload UI ----
 soda_upload_lips_ui = function(id, head = F) {
