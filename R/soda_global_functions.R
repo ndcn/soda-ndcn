@@ -152,3 +152,77 @@ get_subplot_titles = function(class_list){
                           yref='paper')
   return(annotations)}
 
+
+
+#----------------------------------------- Lipid upload class preview plots ----
+
+preview_class_plot = function(r6, total_cols, saved_cols, del_cols, blank_multiplier, sample_threshold, group_threshold){
+
+  total_values = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
+                                         uniques = F))
+  filtered_values_1 = rep(0,each=length(total_values))
+  names(filtered_values_1) = names(total_values)
+  filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered[,-del_cols]),
+                                              uniques = F))
+  for (n in names(filtered_values_2)){
+    filtered_values_1[n] = filtered_values_2[n]
+  }
+  
+  lip_class = c(names(total_values), names(total_values))
+  d_type = c(rep("kept", length(total_values)), rep("lost", length(total_values)))
+  # lip_val = c(round(100*(filtered_values_1/total_values),1), rep(100, length(total_values)) - round(100*(filtered_values_1/total_values),1))
+  lip_val = c(rep(100, length(total_values)) - round(100*(filtered_values_1/total_values),1), round(100*(filtered_values_1/total_values),1))
+  class_df = data.frame(lip_class, d_type, lip_val)
+  
+  filtered_values_2 = data.frame(filtered_values_2)
+  
+  plot_1 = ggplot(filtered_values_2,
+                  aes(x=Var1,
+                      y=Freq)) +
+    ggtitle("Total compound count")+
+    geom_bar(stat="identity",
+             fill = "#337ab7",
+             show.legend = FALSE) +
+    theme(
+      axis.title.y=element_blank(),
+      axis.title.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks.y=element_blank(),
+      plot.title = element_text(hjust = 0.5),
+      panel.background = element_rect(fill='transparent'),
+      plot.background = element_rect(fill='transparent', color=NA),
+      legend.background = element_rect(fill='transparent')
+    ) + 
+    coord_flip() + 
+    scale_y_reverse(limits = c(max(total_values), 0))
+  
+  
+  
+  plot_2 = ggplot(class_df,
+                  aes(
+                    fill=d_type ,
+                    y=lip_val,
+                    x=lip_class )) + 
+    ggtitle("Relative compound count")+
+    geom_bar(position="stack",
+             stat="identity",
+             show.legend = FALSE) + 
+    theme(
+      axis.title.y=element_blank(),
+      axis.title.x=element_blank(),
+      axis.text.y=element_text(hjust = 0.4),
+      axis.ticks.y=element_blank(),
+      axis.ticks.x=element_blank(),
+      plot.title = element_text(hjust = 0.5),
+      panel.background = element_rect(fill='transparent'),
+      plot.background = element_rect(fill='transparent', color=NA),
+      legend.background = element_rect(fill='transparent')
+    ) + 
+    scale_fill_manual(values = c("#f5f5f5", "#337ab7"))+
+    coord_flip()
+  
+  return(grid.arrange(plot_1, plot_2, ncol=2))
+}
+  
+
+

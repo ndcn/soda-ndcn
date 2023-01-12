@@ -26,7 +26,6 @@ soda_upload_lips_ui = function(id, head = F) {
         # Second column for data curation
         shiny::column(
           width = 4,
-          actionButton(ns("do"), "Click Me"),
           shiny::tags$h3("Select columns"),
           
           # Display preview or full table
@@ -50,8 +49,6 @@ soda_upload_lips_ui = function(id, head = F) {
         shiny::column(
           width = 6,
           shiny::h2("Filtered data"),
-          actionButton(ns("do"), "Click Me"),
-          shiny::br(),
           shinyWidgets::progressBar(
             id = ns("row_count_bar"),
             title = "Sample count",
@@ -66,12 +63,17 @@ soda_upload_lips_ui = function(id, head = F) {
             total = 100,
             unit_mark = "%"
           ),
-          shiny::br(),
-          plotly::plotlyOutput(
-            outputId = ns("class_plot"),
-            height = "300px"
+          shiny::fluidRow(
+            shiny::column(
+              width = 12,
+              shiny::plotOutput(
+                outputId = ns("class_bar_1"),
+                height = "300px"
+              )
+            )
           ),
           shiny::fluidRow(
+            actionButton(ns("do"), "Debug"),
             actionButton(ns("reset"), "Reset table"),
             actionButton(ns("save"), "Save filtering")
           )
@@ -79,6 +81,7 @@ soda_upload_lips_ui = function(id, head = F) {
         shiny::column(
           width = 3,
           shiny::h4("Feature filtering"),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           
           # Blank multiplier
           soda_get_col_ui(label ="Blank multiplier", desc = 'Multiplier: feature value for a sample should be above blank_multiplier x blank_mean'),
@@ -95,7 +98,49 @@ soda_upload_lips_ui = function(id, head = F) {
         ),
         shiny::column(
           width = 3,
-          shiny::h4("Sample filtering")
+          shiny::h4("Sample filtering"),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+          soda_get_col_ui(label ="Non-sample exclusion", desc = NULL),
+          shiny::checkboxInput(
+            inputId = ns("exclude_blanks"),
+            label = "Exclude blanks",
+            value = T
+          ),
+          shiny::checkboxInput(
+            inputId = ns("exclude_qcs"),
+            label = "Exclude QCs",
+            value = T
+          ),
+          shiny::checkboxInput(
+            inputId = ns("exclude_pools"),
+            label = "Exclude pools",
+            value = T
+          ),
+          shiny::actionButton(
+            inputId = ns("apply_non_samples"),
+            label = "Apply filter"
+          ),
+          shiny::br(),
+          soda_get_col_ui(label ="Metadata exclusion", desc = 'Exclude samples based on metadata values'),
+          shiny::selectInput(inputId = ns("exclusion_meta_col"), choices = NULL, label = NULL, multiple = F),
+          shiny::selectInput(inputId = ns("exclusion_meta_val"), choices = NULL, label = NULL, multiple = F),
+          shiny::selectizeInput(inputId = ns("exclusion_meta_row"), choices = NULL, label = NULL, multiple = T),
+          shiny::fluidRow(
+            shiny::actionButton(
+              inputId = ns("apply_meta_exclusion"),
+              label = "Apply filter"
+            ),
+            shiny::actionButton(
+              inputId = ns("clear_meta_exclusion"),
+              label = "Clear selection"
+            )
+          ),
+          soda_get_col_ui(label ="Manual sample exclusion", desc = 'Manually select samples to exclude'),
+          shiny::selectizeInput(inputId = ns("exclusion_manual"), choices = NULL, label = NULL, multiple = T),
+          shiny::actionButton(
+            inputId = ns("apply_manual_exclusion"),
+            label = "Apply filter"
+          ),
         )
       )
     )
@@ -135,6 +180,13 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           shiny::updateSelectInput(
             session = session,
             inputId = "select_sample_group",
+            choices = colnames(r6$meta_raw)
+          )
+          
+          # Update input for the filtering tab
+          shiny::updateSelectInput(
+            session = session,
+            inputId = "exclusion_meta_col",
             choices = colnames(r6$meta_raw)
           )
         }
@@ -181,8 +233,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       ## Filter tab
       # Declare reactive values for filtering
-      
-
       col_filters = shiny::reactiveVal(
         value = NULL
       )
@@ -195,6 +245,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       # Reactive values for column filtering
       shiny::observeEvent(col_filters(),{
         if (!is.null(r6$data_filtered)){
+          
           total_cols = ncol(r6$data_filtered)
           del_cols = blank_filter(data_table = r6$data_filtered,
                                   idx_blanks = r6$get_idx_blanks(),
@@ -211,42 +262,75 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           del_cols = setdiff(del_cols,saved_cols)
           remaining_cols = total_cols - length(del_cols)
           
-          
-          total_values = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
-                                                 uniques = F))
-          filtered_values_1 = rep(0,each=length(total_values))
-          names(filtered_values_1) = names(total_values)
-          filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered[,-del_cols]),
-                                                      uniques = F))
-          for (n in names(filtered_values_2)){
-            filtered_values_1[n] = filtered_values_2[n]
-          }
-          
-          class_matrix = matrix(nrow = 2, ncol = length(total_values))
-          class_matrix[1,] = round(100*(filtered_values_1/total_values),1)
-          class_matrix[2,] = rep(100, length(total_values)) - class_matrix[1,]
-          
-          fig = plot_ly(y = names(total_values),x = class_matrix[1,], type = 'bar', orientation = 'h',
-                        marker = list(color = "#337ab7"), name = "Percent kept")
-          fig = fig %>% add_trace(y = names(total_values),x = class_matrix[2,], marker = list(color = "#f5f5f5"), name = "Percent lost")
-          fig = fig %>% layout(barmode = 'stack',
-                               showlegend = FALSE,
-                               paper_bgcolor = "transparent",
-                               plot_bgcolor = "transparent")
-          
-          output$class_plot = plotly::renderPlotly(
-            expr = fig
+          output$class_bar_1 = shiny::renderPlot(
+            expr = preview_class_plot(r6 = r6,
+                                      total_cols = total_cols,
+                                      saved_cols = saved_cols,
+                                      del_cols = del_cols,
+                                      blank_multiplier = input$blank_multiplier,
+                                      sample_threshold = input$sample_threshold,
+                                      group_threshold = input$group_threshold),
+            bg = "transparent"
           )
+          
           shinyWidgets::updateProgressBar(
             session = session,
             id = "col_count_bar",
             value = remaining_cols,
             total = total_cols
           )
+          
+          # Update Manual sample exclusion
+          shiny::updateSelectizeInput(
+            session = session,
+            inputId = "exclusion_manual",
+            choices = rownames(r6$data_filtered)
+          )
+        }
+      })
+
+      # Reactive values for sample filtering
+      
+      # Metadata column value
+      shiny::observe({
+        if (!is.null(input$exclusion_meta_col)) {
+          shiny::updateSelectInput(
+            session = session,
+            inputId = "exclusion_meta_val",
+            choices = unique(r6$meta_raw[,input$exclusion_meta_col])
+          )
         }
       })
       
-
+      # Samples from that value
+      shiny::observe({
+        if (!is.null(input$exclusion_meta_val)) {
+          shiny::updateSelectizeInput(
+            session = session,
+            inputId = "exclusion_meta_row",
+            choices = r6$meta_raw[,input$select_id][r6$meta_raw[,input$exclusion_meta_col] == input$exclusion_meta_val],
+            selected = r6$meta_raw[,input$select_id][r6$meta_raw[,input$exclusion_meta_col] == input$exclusion_meta_val]
+          )
+        }
+      })
+      
+      shiny::observeEvent(input$apply_meta_exclusion, {
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "exclusion_meta_row",
+          selected = character(0)
+        )
+      })
+      
+      shiny::observeEvent(input$clear_meta_exclusion, {
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "exclusion_meta_row",
+          selected = character(0)
+        )
+      })
+      
+      
       # Reset button
       shiny::observeEvent(input$reset, {
         r6$set_filtered_data(id_col = input$select_id)
@@ -261,7 +345,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       # Debugging button
       observeEvent(input$do, {
-        print(r6$non_unique_ids_data)
+        print(r6$data_filtered)
       })
       
     }

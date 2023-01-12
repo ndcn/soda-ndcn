@@ -1,11 +1,22 @@
+# UI
 library(shiny)
 library(shinydashboard)
 library(shinyWidgets)
 library(bs4Dash)
+
+# OOP
 library(R6)
+
+# Data
 library(DT)
 library(markdown)
+
+# Plotting
+library(ggplot2)
 library(plotly)
+library(gridExtra)
+
+# colouring
 library(grDevices)
 library(RColorBrewer)
 
