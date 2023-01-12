@@ -17,20 +17,7 @@ soda_visualise_lips_ui = function(id) {
       )
     ),
     shiny::fluidRow(
-      shiny::span("truffles"),
-      shiny::plotOutput(
-        outputId = ns("plot_id_1")
-      ),
-      shiny::br(),
-      bs4Dash::box(
-        id = ns("class_comparison_box"),
-        title = "Class comparison",
-        solidHeader = TRUE,
-        maximizable = TRUE,
-        collapsible = FALSE,
-        status = "primary"
-      )
-      # shiny::uiOutput(outputId = ns("uiPlots"))
+      shiny::uiOutput(outputId = ns("uiPlots"))
     )
   )
 }
@@ -48,55 +35,55 @@ soda_visualise_lips_server = function(id, r6 = NULL) {
       
       # Render box
       
-      # output$uiPlots = renderUI({
-      #   shiny::tagList(
-      #     shiny::column(
-      #       width = 12,
-      #       shiny::fluidRow(
-      #         if ("class_distribution" %in% input$show_plots) {
-      #           bs4Dash::box(
-      #             id = "class_distribution_box",
-      #             title = "Class distribution",
-      #             width = 6,
-      #             solidHeader = TRUE,
-      #             maximizable = TRUE,
-      #             collapsible = FALSE,
-      #             status = "primary",
-      #             # plotlyOutput(outputId = "plotlyClassDistribution",
-      #             #              height = boxDimension$height),
-      #             # sidebar = bs4Dash::boxSidebar(
-      #             #   id = "classDistributionSidebar",
-      #             #   width = 40,
-      #             #   uiOutput(outputId = "uiComparisonClassDistribution")
-      #             # )
-      #           )
-      #         }else{
-      #           NULL
-      #         },
-      #         if ("class_comparison" %in% input$show_plots) {
-      #           bs4Dash::box(
-      #             id = "class_comparison_box",
-      #             title = "Class comparison",
-      #             width = 6,
-      #             solidHeader = TRUE,
-      #             maximizable = TRUE,
-      #             collapsible = FALSE,
-      #             status = "primary",
-      #             # plotlyOutput(outputId = "plotlyClassDistribution",
-      #             #              height = boxDimension$height),
-      #             # sidebar = bs4Dash::boxSidebar(
-      #             #   id = "classDistributionSidebar",
-      #             #   width = 40,
-      #             #   uiOutput(outputId = "uiComparisonClassDistribution")
-      #             # )
-      #           )
-      #         }else{
-      #           NULL
-      #         }
-      #       )
-      #     )
-      #   )
-      # })
+      output$uiPlots = renderUI({
+        shiny::tagList(
+          shiny::column(
+            width = 12,
+            shiny::fluidRow(
+              if ("class_distribution" %in% input$show_plots) {
+                bs4Dash::box(
+                  id = "class_distribution_box",
+                  title = "Class distribution",
+                  width = 6,
+                  solidHeader = TRUE,
+                  maximizable = TRUE,
+                  collapsible = FALSE,
+                  status = "primary"
+                  # plotlyOutput(outputId = "plotlyClassDistribution",
+                  #              height = boxDimension$height),
+                  # sidebar = bs4Dash::boxSidebar(
+                  #   id = "classDistributionSidebar",
+                  #   width = 40,
+                  #   uiOutput(outputId = "uiComparisonClassDistribution")
+                  # )
+                )
+              }else{
+                NULL
+              },
+              if ("class_comparison" %in% input$show_plots) {
+                bs4Dash::box(
+                  id = "class_comparison_box",
+                  title = "Class comparison",
+                  width = 6,
+                  solidHeader = TRUE,
+                  maximizable = TRUE,
+                  collapsible = FALSE,
+                  status = "primary"
+                  # plotlyOutput(outputId = "plotlyClassDistribution",
+                  #              height = boxDimension$height),
+                  # sidebar = bs4Dash::boxSidebar(
+                  #   id = "classDistributionSidebar",
+                  #   width = 40,
+                  #   uiOutput(outputId = "uiComparisonClassDistribution")
+                  # )
+                )
+              }else{
+                NULL
+              }
+            )
+          )
+        )
+      })
     }
   )
 }

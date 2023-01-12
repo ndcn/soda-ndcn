@@ -26,6 +26,7 @@ soda_upload_lips_ui = function(id, head = F) {
         # Second column for data curation
         shiny::column(
           width = 4,
+          actionButton(ns("do"), "Click Me"),
           shiny::tags$h3("Select columns"),
           
           # Display preview or full table
@@ -34,6 +35,7 @@ soda_upload_lips_ui = function(id, head = F) {
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
           shiny::selectInput(inputId = ns("select_id"), choices = NULL, label = NULL, multiple = F),
+          shiny::span(textOutput(outputId = ns("id_error")), style="color:red"),
           
           # Select group column
           soda_get_col_ui(label = "Group column", desc = "Metadata column with groups for each sample."),
@@ -46,21 +48,36 @@ soda_upload_lips_ui = function(id, head = F) {
       shiny::tagList(
         # First column displaying the effects of the parameters on the data
         shiny::column(
-          width = 4,
+          width = 6,
           shiny::h2("Filtered data"),
           actionButton(ns("do"), "Click Me"),
-          shiny::span("Row count:"),
-          shiny::span(textOutput(outputId = ns("row_count"))),
-          shiny::span("Column count:"),
-          shiny::span(textOutput(outputId = ns("col_count"))),
           shiny::br(),
+          shinyWidgets::progressBar(
+            id = ns("row_count_bar"),
+            title = "Sample count",
+            value = 199,
+            total = 199,
+            unit_mark = "%"
+          ),
+          shinyWidgets::progressBar(
+            id = ns("col_count_bar"),
+            title = "Feature count",
+            value = 0,
+            total = 100,
+            unit_mark = "%"
+          ),
+          shiny::br(),
+          plotly::plotlyOutput(
+            outputId = ns("class_plot"),
+            height = "300px"
+          ),
           shiny::fluidRow(
             actionButton(ns("reset"), "Reset table"),
             actionButton(ns("save"), "Save filtering")
           )
         ),
         shiny::column(
-          width = 4,
+          width = 3,
           shiny::h4("Feature filtering"),
           
           # Blank multiplier
@@ -77,7 +94,7 @@ soda_upload_lips_ui = function(id, head = F) {
           
         ),
         shiny::column(
-          width = 4,
+          width = 3,
           shiny::h4("Sample filtering")
         )
       )
@@ -164,72 +181,75 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       ## Filter tab
       # Declare reactive values for filtering
-      del_cols = shiny::reactiveVal(
-        value = NULL
-      )
-      saved_cols = shiny::reactiveVal(
-        value = NULL
-      )
-      remaining_cols = shiny::reactiveVal(
-        value = NULL
-      )
+      
 
-      # Make these value reactive to the UI
-      del_cols = shiny::reactive({
-        if (!is.null(r6$data_filtered)){
-          blank_filter(data_table = r6$data_filtered,
-                       idx_blanks = r6$get_idx_blanks(),
-                       blank_multiplier = as.numeric(input$blank_multiplier),
-                       sample_threshold = input$sample_threshold)
-        }
-      })
-      saved_cols = shiny::reactive({
-        if (!is.null(r6$data_filtered)){
-          group_filter(data_table = r6$data_filtered,
-                       meta_table = r6$meta_filtered,
-                       del_cols = del_cols(),
-                       idx_samples = r6$get_idx_samples(),
-                       idx_blanks = r6$get_idx_blanks(),
-                       col_group = r6$col_group,
-                       blank_multiplier = as.numeric(input$blank_multiplier),
-                       group_threshold = input$group_threshold)
-        }
+      col_filters = shiny::reactiveVal(
+        value = NULL
+      )
+      
+      col_filters = shiny::reactive({
+        list(input$blank_multiplier, input$sample_threshold, input$group_threshold)
       })
       
-      remaining_cols = shiny::reactive(({
+      
+      # Reactive values for column filtering
+      shiny::observeEvent(col_filters(),{
         if (!is.null(r6$data_filtered)){
-          ncol(r6$data_filtered) - length(del_cols()) + length(saved_cols())
+          total_cols = ncol(r6$data_filtered)
+          del_cols = blank_filter(data_table = r6$data_filtered,
+                                  idx_blanks = r6$get_idx_blanks(),
+                                  blank_multiplier = as.numeric(input$blank_multiplier),
+                                  sample_threshold = input$sample_threshold)
+          saved_cols = group_filter(data_table = r6$data_filtered,
+                                    meta_table = r6$meta_filtered,
+                                    del_cols = del_cols,
+                                    idx_samples = r6$get_idx_samples(),
+                                    idx_blanks = r6$get_idx_blanks(),
+                                    col_group = r6$col_group,
+                                    blank_multiplier = as.numeric(input$blank_multiplier),
+                                    group_threshold = input$group_threshold)
+          del_cols = setdiff(del_cols,saved_cols)
+          remaining_cols = total_cols - length(del_cols)
+          
+          
+          total_values = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
+                                                 uniques = F))
+          filtered_values_1 = rep(0,each=length(total_values))
+          names(filtered_values_1) = names(total_values)
+          filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered[,-del_cols]),
+                                                      uniques = F))
+          for (n in names(filtered_values_2)){
+            filtered_values_1[n] = filtered_values_2[n]
           }
-      }))
+          
+          class_matrix = matrix(nrow = 2, ncol = length(total_values))
+          class_matrix[1,] = round(100*(filtered_values_1/total_values),1)
+          class_matrix[2,] = rep(100, length(total_values)) - class_matrix[1,]
+          
+          fig = plot_ly(y = names(total_values),x = class_matrix[1,], type = 'bar', orientation = 'h',
+                        marker = list(color = "#337ab7"), name = "Percent kept")
+          fig = fig %>% add_trace(y = names(total_values),x = class_matrix[2,], marker = list(color = "#f5f5f5"), name = "Percent lost")
+          fig = fig %>% layout(barmode = 'stack',
+                               showlegend = FALSE,
+                               paper_bgcolor = "transparent",
+                               plot_bgcolor = "transparent")
+          
+          output$class_plot = plotly::renderPlotly(
+            expr = fig
+          )
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "col_count_bar",
+            value = remaining_cols,
+            total = total_cols
+          )
+        }
+      })
       
-      # Render text
-      if (!is.null(del_cols)) {
-        output$row_count = shiny::renderText({nrow(r6$data_filtered)})
-      }
-      
-      if (!is.null(del_cols)) {
-        output$col_count = shiny::renderText({
-          paste0(remaining_cols(),
-                 " out of ",
-                 ncol(r6$data_filtered),
-                 " (",
-                 round(100*(remaining_cols()/ncol(r6$data_filtered)),2),
-                 "%)")
-          })
-      }
-
 
       # Reset button
       shiny::observeEvent(input$reset, {
         r6$set_filtered_data(id_col = input$select_id)
-        output$col_count = shiny::renderText({
-          paste0(remaining_cols(),
-                 " out of ",
-                 ncol(r6$data_filtered),
-                 " (",
-                 round(100*(remaining_cols()/ncol(r6$data_filtered)),2),
-                 "%)")
-        })
       })
       
       # Save button
@@ -237,23 +257,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         r6$feature_filter(blank_multiplier = as.numeric(input$blank_multiplier),
                           sample_threshold = input$sample_threshold,
                           group_threshold = input$group_threshold)
-        output$col_count = shiny::renderText({
-          paste0(remaining_cols(),
-                 " out of ",
-                 ncol(r6$data_filtered),
-                 " (",
-                 round(100*(remaining_cols()/ncol(r6$data_filtered)),2),
-                 "%)")
-        })
       })
-
       
       # Debugging button
       observeEvent(input$do, {
-        print(paste0("Total features: ", ncol(r6$data_filtered)))
-        print(paste0("Remaining features: ", length(r6$data_filtered) - length(del_cols()) + length(saved_cols())))
-        print(remaining_cols()/ncol(r6$data_filtered))
-        print(ncol(r6$data_filtered))
+        print(r6$non_unique_ids_data)
       })
       
     }
