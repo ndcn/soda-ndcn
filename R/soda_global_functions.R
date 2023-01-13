@@ -19,9 +19,9 @@ get_col_means = function(table, row_ids) {
 }
 
 
-blank_filter = function(data_table, idx_blanks, blank_multiplier, sample_threshold) {
+blank_filter = function(data_table, blank_table, blank_multiplier, sample_threshold) {
   # Find features / columns below threshold
-  blank_means = get_col_means(table = data_table, row_ids = idx_blanks)
+  blank_means = get_col_means(table = blank_table, row_ids = rownames(blank_table))
   del_cols = c()
   data_table[is.na(data_table)] = 0
   total_samples = length(rownames(data_table))
@@ -36,9 +36,9 @@ blank_filter = function(data_table, idx_blanks, blank_multiplier, sample_thresho
 }
 
 
-group_filter = function(data_table, meta_table, del_cols, idx_samples, idx_blanks, col_group, blank_multiplier, group_threshold){
+group_filter = function(data_table, blank_table, meta_table, del_cols, idx_samples, col_group, blank_multiplier, group_threshold){
   # Salvage some of the features with a group filtering (same as above but applied to groups)
-  blank_means = get_col_means(table = data_table, row_ids = idx_blanks)
+  blank_means = get_col_means(table = blank_table, row_ids = rownames(blank_table))
   groups_total = table(meta_table[idx_samples, col_group])
   saved_cols = c()
   for (col in 1:length(del_cols)) {

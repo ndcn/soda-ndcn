@@ -114,7 +114,8 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         if (!is.null(input$select_id)){
           
           # Initialise filtered metadata with the ID column
-          r6$set_filtered_meta(id_col = input$select_id)
+          r6$set_col(col = input$select_id, type = "id_meta")
+          r6$set_filtered_meta()
           if (r6$non_unique_ids_meta){
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {

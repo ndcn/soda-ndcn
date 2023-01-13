@@ -25,6 +25,8 @@ Omics_data = R6::R6Class(
     data_class_table = NULL,
     
     ### Columns
+    col_id_meta = NULL,
+    col_id_data = NULL,
     col_type = NULL,
     col_group = NULL,
     
@@ -57,7 +59,7 @@ Omics_data = R6::R6Class(
     },
     ## Initialise or reset the filtered data
     # Data
-    set_filtered_data = function(id_col) {
+    set_filtered_data = function(id_col = self$col_id_data) {
       if (length(self$data_raw[, id_col]) != length(unique(self$data_raw[, id_col]))){
         self$data_filtered = NULL
         self$non_unique_ids_data = TRUE
@@ -70,7 +72,7 @@ Omics_data = R6::R6Class(
       self$data_filtered = table
     },
     # Metadata
-    set_filtered_meta = function(id_col) {
+    set_filtered_meta = function(id_col = self$col_id_meta) {
       if (length(self$meta_raw[, id_col]) != length(unique(self$meta_raw[, id_col]))){
         self$meta_filtered = NULL
         self$non_unique_ids_meta = TRUE
@@ -89,6 +91,10 @@ Omics_data = R6::R6Class(
         self$col_group = col
       } else if (type == "type") {
         self$col_type = col
+      } else if (type == "id_meta") {
+        self$col_id_meta = col
+      } else if (type == "id_data") {
+        self$col_id_data = col
       }
     },
     
@@ -118,17 +124,17 @@ Omics_data = R6::R6Class(
       
       # Find features / columns below threshold
       del_cols = blank_filter(data_table = self$data_filtered,
-                              idx_blanks = idx_blanks,
+                              blank_table = self$data_raw[self$get_idx_blanks(),-which(colnames(self$data_raw) == self$col_id_data)],
                               blank_multiplier = blank_multiplier,
                               sample_threshold = sample_threshold)
       
       # Salvage some of the features with a group filtering (same as above but applied to groups)
       if (!is.null(del_cols)) {
         salvaged_cols = group_filter(data_table = self$data_filtered,
+                                     blank_table = self$data_raw[self$get_idx_blanks(),-which(colnames(self$data_raw) == self$col_id_data)],
                                      meta_table= self$meta_filtered,
                                      del_cols = del_cols,
                                      idx_samples = idx_samples,
-                                     idx_blanks = idx_blanks,
                                      col_group = col_group,
                                      blank_multiplier = blank_multiplier,
                                      group_threshold = group_threshold)
@@ -142,31 +148,31 @@ Omics_data = R6::R6Class(
     },
     
     ## Index functions
-    get_idx_blanks = function() {
-      idx_blanks = get_idx_by_pattern(table = self$meta_filtered,
+    get_idx_blanks = function(table = self$meta_filtered) {
+      idx_blanks = get_idx_by_pattern(table = table,
                                       col = self$col_type,
                                       pattern = self$pattern_blank)
       if (length(idx_blanks) == 0) {idx_blanks = NULL}
       return(idx_blanks)
     },
-    get_idx_qcs = function() {
-      idx_qcs = get_idx_by_pattern(table = self$meta_filtered,
+    get_idx_qcs = function(table = self$meta_filtered) {
+      idx_qcs = get_idx_by_pattern(table = table,
                                    col = self$col_type,
                                    pattern = self$pattern_qc)
       if (length(idx_qcs) == 0) {idx_qcs = NULL}
       return(idx_qcs)
     },
-    get_idx_pools = function() {
-      idx_pools = get_idx_by_pattern(table = self$meta_filtered,
+    get_idx_pools = function(table = self$meta_filtered) {
+      idx_pools = get_idx_by_pattern(table = table,
                                      col = self$col_type,
                                      pattern = self$pattern_pool)
       if (length(idx_pools) == 0) {idx_pools = NULL}
       return(idx_pools)
     },
-    get_idx_samples = function(){
-      idx_blank = self$get_idx_blanks()
-      idx_qc = self$get_idx_qcs()
-      idx_pool = self$get_idx_pools()
+    get_idx_samples = function(table = self$meta_filtered){
+      idx_blank = self$get_idx_blanks(table)
+      idx_qc = self$get_idx_qcs(table)
+      idx_pool = self$get_idx_pools(table)
       idx_non_samples = c()
       
       idx_samples = rownames(self$meta_filtered)

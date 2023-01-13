@@ -155,6 +155,16 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       ## Upload tab
       
+      total_rows_raw = shiny::reactiveVal(
+        NULL
+      )
+      
+      total_rows_raw= shiny::reactive({
+        if (!is.null(r6$data_raw)) {
+          nrow(r6$data_raw)
+        }
+      })
+      
       # The selected file, if any
       userFile = reactive({
         validate(need(input$file, message = FALSE))
@@ -187,7 +197,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           shiny::updateSelectInput(
             session = session,
             inputId = "exclusion_meta_col",
-            choices = colnames(r6$meta_raw)
+            choices = colnames(r6$meta_filtered)
           )
         }
       })
@@ -207,15 +217,22 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         }
       })
       
+      # Set values to the R6 object
       shiny::observe({
         if (!is.null(input$select_id)){
           
           # Initialise filtered data with the ID column
-          r6$set_filtered_data(id_col = input$select_id)
+          r6$set_col(col = input$select_id, type = "id_data")
+          r6$set_filtered_data()
           if (r6$non_unique_ids_data){
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {
             output$id_error = shiny::renderText({NULL})
+            shiny::updateSelectizeInput(
+              session = session,
+              inputId = "exclusion_manual",
+              choices = rownames(r6$data_filtered)
+            )
           }
           
           # Set columns
@@ -232,6 +249,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       })
       
       ## Filter tab
+
       # Declare reactive values for filtering
       col_filters = shiny::reactiveVal(
         value = NULL
@@ -242,20 +260,28 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       })
       
       
+      row_filters = shiny::reactiveVal(
+        value = NULL
+      )
+      
+      row_filters = shiny::reactive({
+        list(input$apply_non_samples, input$apply_meta_exclusion, input$apply_manual_exclusion, input$reset)
+      })
+      
       # Reactive values for column filtering
       shiny::observeEvent(col_filters(),{
         if (!is.null(r6$data_filtered)){
           
           total_cols = ncol(r6$data_filtered)
           del_cols = blank_filter(data_table = r6$data_filtered,
-                                  idx_blanks = r6$get_idx_blanks(),
+                                  blank_table = r6$data_raw[r6$get_idx_blanks(),-which(colnames(r6$data_raw) == r6$col_id_data)],
                                   blank_multiplier = as.numeric(input$blank_multiplier),
                                   sample_threshold = input$sample_threshold)
           saved_cols = group_filter(data_table = r6$data_filtered,
+                                    blank_table = r6$data_raw[r6$get_idx_blanks(),-which(colnames(r6$data_raw) == r6$col_id_data)],
                                     meta_table = r6$meta_filtered,
                                     del_cols = del_cols,
                                     idx_samples = r6$get_idx_samples(),
-                                    idx_blanks = r6$get_idx_blanks(),
                                     col_group = r6$col_group,
                                     blank_multiplier = as.numeric(input$blank_multiplier),
                                     group_threshold = input$group_threshold)
@@ -280,16 +306,45 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
             total = total_cols
           )
           
-          # Update Manual sample exclusion
-          shiny::updateSelectizeInput(
-            session = session,
-            inputId = "exclusion_manual",
-            choices = rownames(r6$data_filtered)
-          )
+
         }
       })
 
       # Reactive values for sample filtering
+      
+      # Samples from that value
+      
+      # Apply non samples filter
+      observeEvent(input$apply_non_samples, {
+        del_non_samples = c()
+        
+        if (input$exclude_blanks){
+          del_non_samples = c(del_non_samples, r6$get_idx_blanks())
+        }
+        
+        if (input$exclude_blanks){
+          del_non_samples = c(del_non_samples, r6$get_idx_qcs())
+        }
+        
+        if (input$exclude_blanks){
+          del_non_samples = c(del_non_samples, r6$get_idx_pools())
+        }
+        del_non_samples = unique(del_non_samples)
+        if (!is.null(del_non_samples)){
+          r6$meta_filtered = r6$meta_filtered[-del_non_samples,]
+          r6$data_filtered = r6$data_filtered[-del_non_samples,]
+
+        }
+
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "row_count_bar",
+          value = nrow(r6$meta_filtered),
+          total = total_rows_raw()
+        )
+        
+      })
+      
       
       # Metadata column value
       shiny::observe({
@@ -297,24 +352,31 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           shiny::updateSelectInput(
             session = session,
             inputId = "exclusion_meta_val",
-            choices = unique(r6$meta_raw[,input$exclusion_meta_col])
+            choices = unique(r6$meta_filtered[,input$exclusion_meta_col])
           )
         }
       })
       
-      # Samples from that value
       shiny::observe({
         if (!is.null(input$exclusion_meta_val)) {
           shiny::updateSelectizeInput(
             session = session,
             inputId = "exclusion_meta_row",
-            choices = r6$meta_raw[,input$select_id][r6$meta_raw[,input$exclusion_meta_col] == input$exclusion_meta_val],
-            selected = r6$meta_raw[,input$select_id][r6$meta_raw[,input$exclusion_meta_col] == input$exclusion_meta_val]
+            choices = rownames(r6$meta_filtered)[r6$meta_filtered[,input$exclusion_meta_col] == input$exclusion_meta_val],
+            selected = rownames(r6$meta_filtered)[r6$meta_filtered[,input$exclusion_meta_col] == input$exclusion_meta_val]
           )
         }
       })
       
       shiny::observeEvent(input$apply_meta_exclusion, {
+        r6$data_filtered = r6$data_filtered[!(row.names(r6$data_filtered) %in% input$exclusion_meta_row), ]
+        r6$meta_filtered = r6$meta_filtered[!(row.names(r6$meta_filtered) %in% input$exclusion_meta_row), ]
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "row_count_bar",
+          value = nrow(r6$meta_filtered),
+          total = total_rows_raw()
+        )
         shiny::updateSelectizeInput(
           session = session,
           inputId = "exclusion_meta_row",
@@ -331,9 +393,44 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       })
       
       
+      
+      # Update Manual sample exclusion
+      shiny::observeEvent(row_filters(), {
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "exclusion_manual",
+          choices = rownames(r6$data_filtered)
+        )
+      })
+      
+      shiny::observeEvent(input$apply_manual_exclusion, {
+        r6$data_filtered = r6$data_filtered[!(row.names(r6$data_filtered) %in% input$exclusion_manual), ]
+        r6$meta_filtered = r6$meta_filtered[!(row.names(r6$meta_filtered) %in% input$exclusion_manual), ]
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "row_count_bar",
+          value = nrow(r6$meta_filtered),
+          total = total_rows_raw()
+        )
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "exclusion_manual",
+          selected = character(0)
+        )
+      })
+
+      
+      
       # Reset button
       shiny::observeEvent(input$reset, {
-        r6$set_filtered_data(id_col = input$select_id)
+        r6$set_filtered_meta()
+        r6$set_filtered_data()
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "row_count_bar",
+          value = nrow(r6$meta_filtered),
+          total = total_rows_raw()
+        )
       })
       
       # Save button
@@ -345,7 +442,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       # Debugging button
       observeEvent(input$do, {
-        print(r6$data_filtered)
+        print(nrow(r6$meta_filtered))
       })
       
     }
