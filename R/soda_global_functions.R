@@ -10,8 +10,8 @@ get_idx_by_pattern = function(table, col, pattern, row_names = T) {
 }
 
 #------------------------------------------------------ Filtering functions ----
-get_col_means = function(table, row_ids) {
-  means = colMeans(table[row_ids,], na.rm = TRUE)
+get_col_means = function(data_table) {
+  means = colMeans(data_table, na.rm = TRUE)
   means[is.na(means)] = 0
   return(means)
 }
@@ -19,7 +19,7 @@ get_col_means = function(table, row_ids) {
 
 blank_filter = function(data_table, blank_table, blank_multiplier, sample_threshold) {
   # Find features / columns below threshold
-  blank_means = get_col_means(table = blank_table, row_ids = rownames(blank_table))
+  blank_means = get_col_means(data_table = blank_table)
   del_cols = c()
   data_table[is.na(data_table)] = 0
   total_samples = length(rownames(data_table))
@@ -36,7 +36,7 @@ blank_filter = function(data_table, blank_table, blank_multiplier, sample_thresh
 
 group_filter = function(data_table, blank_table, meta_table, del_cols, col_group, blank_multiplier, group_threshold){
   # Salvage some of the features with a group filtering (same as above but applied to groups)
-  blank_means = get_col_means(table = blank_table, row_ids = rownames(blank_table))
+  blank_means = get_col_means(data_table = blank_table)
   groups_total = table(meta_table[, col_group])
   saved_cols = c()
   for (col in 1:length(del_cols)) {

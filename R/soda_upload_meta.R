@@ -178,15 +178,15 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       ############################ UPLOAD TAB ##################################
       
       # File name to upload
-      meta_file = reactive({
+      table_file = reactive({
         validate(need(input$file, message = FALSE))
         input$file
       })
       
       # Load data as raw metadata
       shiny::observe({
-        if (!is.null(meta_file()$datapath)){
-          r6$set_raw_meta(read.csv(meta_file()$datapath,
+        if (!is.null(table_file()$datapath)){
+          r6$set_raw_meta(read.csv(table_file()$datapath,
                                    header = T,
                                    sep = ",",
                                    check.names = FALSE))
@@ -212,7 +212,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
 
       # Output a preview or the whole table depending on the user input
       shiny::observe({
-        if (!is.null(meta_file()$datapath)) {
+        if (!is.null(table_file()$datapath)) {
           if (input$preview){
             output$raw_table = renderDataTable({
               DT::datatable(r6$meta_raw[1:min(max_rows, nrow(r6$meta_raw)),1:min(max_cols, ncol(r6$meta_raw))], options = list(paging = FALSE))

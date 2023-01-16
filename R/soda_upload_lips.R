@@ -20,8 +20,10 @@ soda_upload_lips_ui = function(id, head = F) {
           
           # Table preview box
           bs4Dash::box(
+            title = "Lipidomics table (raw)",
             width = 12,
-            DT::dataTableOutput(ns("table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;"
+            DT::dataTableOutput(ns("table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
+            collapsible = FALSE
           ),
           
           # Data upload
@@ -108,7 +110,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
     id,
     function(input, output, session) {
       
-      ## Upload tab
+      ############################ UPLOAD TAB ##################################
       
       total_rows_raw = shiny::reactiveVal(
         NULL
@@ -121,15 +123,15 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       })
       
       # The selected file, if any
-      userFile = reactive({
+      table_file = reactive({
         validate(need(input$file, message = FALSE))
         input$file
       })
       
       # The user's data, parsed into a data frame
       shiny::observe({
-        if (!is.null(userFile()$datapath)){
-          r6$set_raw_data(read.csv(userFile()$datapath,
+        if (!is.null(table_file()$datapath)){
+          r6$set_raw_data(read.csv(table_file()$datapath,
                                header = T,
                                sep = ",",
                                check.names = FALSE))
@@ -153,7 +155,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       # Output a preview or the whole table depending on the user input
       shiny::observe({
-        if (!is.null(userFile()$datapath)) {
+        if (!is.null(table_file()$datapath)) {
           if (input$preview){
             output$table = renderDataTable({
               DT::datatable(r6$data_raw[1:min(max_rows, nrow(r6$data_raw)),1:min(max_cols, ncol(r6$data_raw))], options = list(paging = FALSE))
@@ -172,16 +174,54 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           
           # Initialise filtered data with the ID column
           r6$set_col(col = input$select_id, type = "id_data")
+          r6$set_col(col = input$select_sample_group, type = "group")
           r6$set_filtered_data()
+
           if (r6$non_unique_ids_data){
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {
             output$id_error = shiny::renderText({NULL})
             r6$data_filtered = r6$data_filtered[rownames(r6$meta_filtered),]
+            
+            ##################################### HERE
+            if (!is.null(r6$data_filtered)) {
+              total_cols = ncol(r6$data_filtered)
+              del_cols = blank_filter(data_table = r6$data_filtered,
+                                      blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
+                                      blank_multiplier = as.numeric(input$blank_multiplier),
+                                      sample_threshold = input$sample_threshold)
+
+              saved_cols = group_filter(data_table = r6$data_filtered,
+                                        blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
+                                        meta_table = r6$meta_filtered,
+                                        del_cols = del_cols,
+                                        col_group = r6$col_group,
+                                        blank_multiplier = as.numeric(input$blank_multiplier),
+                                        group_threshold = input$group_threshold)
+
+
+              del_cols = setdiff(del_cols,saved_cols)
+              remaining_cols = total_cols - length(del_cols)
+
+              output$class_bar_1 = shiny::renderPlot(
+                expr = preview_class_plot(r6 = r6,
+                                          total_cols = total_cols,
+                                          del_cols = del_cols),
+                bg = "transparent"
+              )
+
+              shinyWidgets::updateProgressBar(
+                session = session,
+                id = "col_count_bar",
+                value = remaining_cols,
+                total = total_cols
+              )
+
+            }
+
           }
           
-          # Set columns
-          r6$set_col(col = input$select_sample_group, type = "group")
+
           
           # Get found groups
           unique_groups = unique(r6$meta_filtered[r6$get_idx_samples(), r6$col_group])
@@ -193,7 +233,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         }
       })
       
-      ## Filter tab
+      ############################ FILTER TAB ##################################
 
       # Declare reactive values for filtering
       col_filters = shiny::reactiveVal(

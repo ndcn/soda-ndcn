@@ -114,13 +114,10 @@ Omics_data = R6::R6Class(
     ## Filtering functions
     feature_filter = function(blank_multiplier, sample_threshold, group_threshold) {
       
-      idx_samples = self$get_idx_samples()
       idx_blanks = self$get_idx_blanks()
       col_group = self$col_group
       
-      
-      blank_means = colMeans(self$data_filtered[idx_blanks,], na.rm = TRUE)
-      blank_means[is.na(blank_means)] = 0
+      blank_means = get_col_means(data_table = self$data_raw[idx_blanks,])
       
       # Find features / columns below threshold
       del_cols = blank_filter(data_table = self$data_filtered,
