@@ -173,24 +173,16 @@ Omics_data = R6::R6Class(
       return(idx_pools)
     },
     get_idx_samples = function(table = self$meta_filtered){
-      idx_blank = self$get_idx_blanks(table)
-      idx_qc = self$get_idx_qcs(table)
-      idx_pool = self$get_idx_pools(table)
-      idx_non_samples = c()
-      
       idx_samples = rownames(self$meta_filtered)
-      if (!is.null(idx_blank)) {
-        idx_non_samples = c(idx_non_samples, idx_blank)
-      }
-      if (!is.null(idx_qc)) {
-        idx_non_samples = c(idx_non_samples, idx_qc)
-      }
-      if (!is.null(idx_pool)) {
-        idx_non_samples = c(idx_non_samples, idx_pool)
-      }
+      idx_non_samples = c(self$get_idx_blanks(table),
+                          self$get_idx_qcs(table),
+                          self$get_idx_pools(table))
+      
+      
+
       if (length(idx_non_samples) > 0) {
         idx_non_samples = sort(unique(idx_non_samples))
-        idx_samples = idx_samples[-idx_non_samples]
+        idx_samples = idx_samples[!(idx_samples %in% idx_non_samples)]
       }
       return(idx_samples)
     },

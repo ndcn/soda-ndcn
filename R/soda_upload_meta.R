@@ -16,12 +16,16 @@ soda_upload_meta_ui = function(id, head = F) {
         shiny::column(
           width = 9,
           shiny::h2("Upload metadata"),
+          
+          # Table preview box
           bs4Dash::box(
             title = "Sample metadata table (raw)",
             width = 12,
             DT::dataTableOutput(ns("raw_table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
             collapsible = FALSE
           ),
+          
+          # Data upload
           shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv"), width = "100%"),
           
           # Text feedback for blanks, QCs and pools found (text patterns)
