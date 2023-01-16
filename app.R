@@ -33,56 +33,56 @@ header_ui = function() {
   # Extract version
   version = gsub("[^0-9.-]", "", desc[3,1])  
   header = paste(name, "|", version, sep = " ")
-  shinydashboard::dashboardHeader(title = header)
+  bs4Dash::dashboardHeader(title = header)
 }
 
 #------------------------------------------------------------ Setup sidebar ----
 
 sidebar_ui = function() {
-  shinydashboard::dashboardSidebar(
-    shinydashboard::sidebarMenu(
+  bs4Dash::dashboardSidebar(
+    bs4Dash::sidebarMenu(
       
       # Welcome menu
-      shinydashboard::menuItem(
+      bs4Dash::menuItem(
         text = "Welcome",
         tabName = "welcome",
         icon = shiny::icon("home")),
       
       # Data upload and submenus
-      shinydashboard::menuItem(
+      bs4Dash::menuItem(
         text = "Data upload",
         tabName = "data_upload",
         icon = shiny::icon("upload"),
         
-        shinydashboard::menuSubItem(
+        bs4Dash::menuSubItem(
           text = "Metadata",
           tabName = "meta_upload"),
         
-        shinydashboard::menuSubItem(
+        bs4Dash::menuSubItem(
           text = "Lipidomics",
           tabName = "lips_upload")),
       
       # Data visualisation and submenus
-      shinydashboard::menuItem(
+      bs4Dash::menuItem(
         text = "Visualisation",
         tabName = "global_visual",
         icon = shiny::icon("chart-simple"),
         
-        shinydashboard::menuSubItem(
+        bs4Dash::menuSubItem(
           text = "Lipidomics",
           tabName = "lips_visual")),      
       
       # Help menu and submenus
-      shinydashboard::menuItem(
+      bs4Dash::menuItem(
         text = "Help",
         tabName = "help_global",
         icon = shiny::icon("circle-info"),
         
-        shinydashboard::menuSubItem(
+        bs4Dash::menuSubItem(
           text = "Table formats",
           tabName = "help_format"),
       
-        shinydashboard::menuSubItem(
+        bs4Dash::menuSubItem(
           text = "Data upload",
           tabName = "help_upload"))
     )
@@ -92,29 +92,29 @@ sidebar_ui = function() {
 
 #--------------------------------------------------------------- Setup body ----
 body_ui = function() {
-  shinydashboard::dashboardBody(
-    shinydashboard::tabItems(
-      shinydashboard::tabItem(
+  bs4Dash::dashboardBody(
+    bs4Dash::tabItems(
+      bs4Dash::tabItem(
         tabName = "welcome",
         soda_welcome()
       ),
-      shinydashboard::tabItem(
+      bs4Dash::tabItem(
         tabName = "help_format",
         soda_help("data_format")
       ),
-      shinydashboard::tabItem(
+      bs4Dash::tabItem(
         tabName = "help_upload",
         soda_help("data_upload")
       ),
-      shinydashboard::tabItem(
+      bs4Dash::tabItem(
         tabName = "meta_upload",
         soda_upload_meta_ui(id = "upload_metadata", head = F)
       ),
-      shinydashboard::tabItem(
+      bs4Dash::tabItem(
         tabName = "lips_upload",
         soda_upload_lips_ui(id = "upload_lipidomics", head = T)
       ),
-      shinydashboard::tabItem(
+      bs4Dash::tabItem(
         tabName = "lips_visual",
         soda_visualise_lips_ui(id = "visualise_lipidomics")
       )
@@ -130,7 +130,7 @@ body_ui = function() {
 header = header_ui()
 sidebar = sidebar_ui()
 body = body_ui()
-ui = shinydashboard::dashboardPage(header, sidebar, body)
+ui = bs4Dash::dashboardPage(header, sidebar, body)
 
 
 #------------------------------------------------------------------- Server ----

@@ -148,24 +148,27 @@ Omics_data = R6::R6Class(
     },
     
     ## Index functions
-    get_idx_blanks = function(table = self$meta_filtered) {
+    get_idx_blanks = function(table = self$meta_filtered, row_names = T) {
       idx_blanks = get_idx_by_pattern(table = table,
                                       col = self$col_type,
-                                      pattern = self$pattern_blank)
+                                      pattern = self$pattern_blank,
+                                      row_names = row_names)
       if (length(idx_blanks) == 0) {idx_blanks = NULL}
       return(idx_blanks)
     },
-    get_idx_qcs = function(table = self$meta_filtered) {
+    get_idx_qcs = function(table = self$meta_filtered, row_names = T) {
       idx_qcs = get_idx_by_pattern(table = table,
                                    col = self$col_type,
-                                   pattern = self$pattern_qc)
+                                   pattern = self$pattern_qc,
+                                   row_names = row_names)
       if (length(idx_qcs) == 0) {idx_qcs = NULL}
       return(idx_qcs)
     },
-    get_idx_pools = function(table = self$meta_filtered) {
+    get_idx_pools = function(table = self$meta_filtered, row_names = T) {
       idx_pools = get_idx_by_pattern(table = table,
                                      col = self$col_type,
-                                     pattern = self$pattern_pool)
+                                     pattern = self$pattern_pool,
+                                     row_names = row_names)
       if (length(idx_pools) == 0) {idx_pools = NULL}
       return(idx_pools)
     },

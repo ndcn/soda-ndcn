@@ -1,22 +1,22 @@
 library(shiny)
-library(shinydashboard)
+library(bs4Dash)
 library(shinyWidgets)
 
 #------------------------------------------------ Lipidomics data upload UI ----
 soda_upload_lips_ui = function(id, head = F) {
   
   ns = NS(id)
-  shiny::tabsetPanel(
+  bs4Dash::tabsetPanel(
     type = "tabs",
     shiny::tabPanel(
       title = "Upload",
-      shiny::tagList(
+      shiny::fluidRow(
         # First column with the table input and preview
         shiny::column(
           width = 8,
           shiny::h2("Upload lipidomics data"),
           shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv"), width = "100%"),
-          shinydashboard::box(
+          bs4Dash::box(
             width = 12,
             DT::dataTableOutput(ns("table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;"
           ),
@@ -44,7 +44,7 @@ soda_upload_lips_ui = function(id, head = F) {
     ),
     shiny::tabPanel(
       title = "Filter",
-      shiny::tagList(
+      shiny::fluidRow(
         # First column displaying the effects of the parameters on the data
         shiny::column(
           width = 6,

@@ -1,14 +1,12 @@
 #--------------------------------------------------- Global table functions ----
 
-#' @title get_idx_by_pattern
-#' @description returns the index of values matching a pattern in a given col
-#' for a given table.
-#' @param table data.frame, Input dataframe.
-#' @param col character, colomn to be searched.
-#' @param pattern character, pattern to be searched in col values.
-#' @return
-get_idx_by_pattern = function(table, col, pattern) {
-  return(grep(pattern = pattern, x = table[,col], ignore.case = TRUE))
+get_idx_by_pattern = function(table, col, pattern, row_names = T) {
+  if (row_names) {
+    out_idx = rownames(table)[grep(pattern = pattern, x = table[,col], ignore.case = TRUE)]
+  }else{
+    out_idx = grep(pattern = pattern, x = table[,col], ignore.case = TRUE)
+  }
+  return(out_idx)
 }
 
 #------------------------------------------------------ Filtering functions ----
