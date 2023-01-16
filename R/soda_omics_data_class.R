@@ -134,7 +134,6 @@ Omics_data = R6::R6Class(
                                      blank_table = self$data_raw[self$get_idx_blanks(),-which(colnames(self$data_raw) == self$col_id_data)],
                                      meta_table= self$meta_filtered,
                                      del_cols = del_cols,
-                                     idx_samples = idx_samples,
                                      col_group = col_group,
                                      blank_multiplier = blank_multiplier,
                                      group_threshold = group_threshold)

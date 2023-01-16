@@ -34,15 +34,15 @@ blank_filter = function(data_table, blank_table, blank_multiplier, sample_thresh
 }
 
 
-group_filter = function(data_table, blank_table, meta_table, del_cols, idx_samples, col_group, blank_multiplier, group_threshold){
+group_filter = function(data_table, blank_table, meta_table, del_cols, col_group, blank_multiplier, group_threshold){
   # Salvage some of the features with a group filtering (same as above but applied to groups)
   blank_means = get_col_means(table = blank_table, row_ids = rownames(blank_table))
-  groups_total = table(meta_table[idx_samples, col_group])
+  groups_total = table(meta_table[, col_group])
   saved_cols = c()
   for (col in 1:length(del_cols)) {
     threshold = blank_multiplier * blank_means[col]
-    ratio = which(data_table[idx_samples, col] > threshold)
-    ratio = table(meta_table[idx_samples, col_group][ratio])
+    ratio = which(data_table[, col] > threshold)
+    ratio = table(meta_table[, col_group][ratio])
     ratio = ratio/groups_total[names(ratio)]
     if (any(ratio >= group_threshold)) {
       saved_cols = c(saved_cols, col)

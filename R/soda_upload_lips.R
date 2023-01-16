@@ -177,6 +177,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {
             output$id_error = shiny::renderText({NULL})
+            r6$data_filtered = r6$data_filtered[rownames(r6$meta_filtered),]
           }
           
           # Set columns
@@ -210,14 +211,13 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           
           total_cols = ncol(r6$data_filtered)
           del_cols = blank_filter(data_table = r6$data_filtered,
-                                  blank_table = r6$data_raw[r6$get_idx_blanks(),-which(colnames(r6$data_raw) == r6$col_id_data)],
+                                  blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
                                   blank_multiplier = as.numeric(input$blank_multiplier),
                                   sample_threshold = input$sample_threshold)
           saved_cols = group_filter(data_table = r6$data_filtered,
-                                    blank_table = r6$data_raw[r6$get_idx_blanks(),-which(colnames(r6$data_raw) == r6$col_id_data)],
+                                    blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
                                     meta_table = r6$meta_filtered,
                                     del_cols = del_cols,
-                                    idx_samples = r6$get_idx_samples(),
                                     col_group = r6$col_group,
                                     blank_multiplier = as.numeric(input$blank_multiplier),
                                     group_threshold = input$group_threshold)
@@ -283,7 +283,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       # Debugging button
       observeEvent(input$do, {
-        print(nrow(r6$meta_filtered))
+        print(rownames(r6$data_filtered))
       })
       
     }
