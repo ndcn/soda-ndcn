@@ -227,11 +227,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           output$class_bar_1 = shiny::renderPlot(
             expr = preview_class_plot(r6 = r6,
                                       total_cols = total_cols,
-                                      saved_cols = saved_cols,
-                                      del_cols = del_cols,
-                                      blank_multiplier = input$blank_multiplier,
-                                      sample_threshold = input$sample_threshold,
-                                      group_threshold = input$group_threshold),
+                                      del_cols = del_cols),
             bg = "transparent"
           )
           

@@ -154,14 +154,21 @@ get_subplot_titles = function(class_list){
 
 #----------------------------------------- Lipid upload class preview plots ----
 
-preview_class_plot = function(r6, total_cols, saved_cols, del_cols, blank_multiplier, sample_threshold, group_threshold){
+preview_class_plot = function(r6, total_cols, del_cols){
 
   total_values = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
                                          uniques = F))
   filtered_values_1 = rep(0,each=length(total_values))
   names(filtered_values_1) = names(total_values)
-  filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered[,-del_cols]),
-                                              uniques = F))
+  
+  if (!is.null(del_cols)){
+    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered[,-del_cols]),
+                                                uniques = F))
+  }else{
+    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
+                                                uniques = F))
+  }
+
   for (n in names(filtered_values_2)){
     filtered_values_1[n] = filtered_values_2[n]
   }
