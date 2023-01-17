@@ -43,12 +43,12 @@ soda_upload_lips_ui = function(id, head = F) {
           
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
-          shiny::selectInput(inputId = ns("select_id"), choices = NULL, label = NULL, multiple = F),
+          shiny::selectInput(inputId = ns("select_id"), choices = NULL, label = NULL, multiple = F, width = "100%"),
           shiny::span(textOutput(outputId = ns("id_error")), style="color:red"),
           
           # Select group column
           soda_get_col_ui(label = "Group column", desc = "Metadata column with groups for each sample."),
-          shiny::selectInput(inputId = ns("select_sample_group"), choices = NULL, label = NULL, multiple = F),
+          shiny::selectInput(inputId = ns("select_sample_group"), choices = NULL, label = NULL, multiple = F, width = "100%")
         )
       )
     ),
@@ -59,6 +59,8 @@ soda_upload_lips_ui = function(id, head = F) {
         # First column displaying the effects of the parameters on the data
         shiny::column(
           width = 9,
+          
+          # Declare progress bar
           shinyWidgets::progressBar(
             id = ns("col_count_bar"),
             title = "Feature count",
@@ -66,21 +68,20 @@ soda_upload_lips_ui = function(id, head = F) {
             total = 100,
             unit_mark = "%"
           ),
+          
+          # Declare class barplot
           shiny::fluidRow(
             shiny::column(
               width = 12,
               shiny::plotOutput(
-                outputId = ns("class_bar_1"),
+                outputId = ns("class_barplot"),
                 height = "500px"
               )
             )
-          ),
-          shiny::fluidRow(
-            actionButton(ns("do"), "Debug"),
-            actionButton(ns("reset"), "Reset table"),
-            actionButton(ns("save"), "Save filtering")
           )
         ),
+        
+        # Second column displaying the parameters to be used for feature filtering
         shiny::column(
           width = 3,
           shiny::h4("Feature filtering"),
@@ -88,16 +89,18 @@ soda_upload_lips_ui = function(id, head = F) {
           
           # Blank multiplier
           soda_get_col_ui(label ="Blank multiplier", desc = 'Multiplier: feature value for a sample should be above blank_multiplier x blank_mean'),
-          shiny::textInput(inputId = ns("blank_multiplier"), label = NULL, value = 2),
+          shiny::textInput(inputId = ns("blank_multiplier"), label = NULL, value = 2, width = "100%"),
           
           # Sample threshold
           soda_get_col_ui(label ="Sample threshold", desc = 'Samples that should be above the blank multiplier for a feature to be kept'),
-          shiny::sliderInput(inputId = ns("sample_threshold"), label = NULL, value = 0.8, min = 0, max = 1, step = 0.05),
+          shiny::sliderInput(inputId = ns("sample_threshold"), label = NULL, value = 0.8, min = 0, max = 1, step = 0.05, width = "100%"),
           
           # Group threshold
           soda_get_col_ui(label ="Group threshold", desc = 'Same as above, but only considering the samples in each group'),
-          shiny::sliderInput(inputId = ns("group_threshold"), label = NULL, value = 0.8, min = 0, max = 1, step = 0.05)
+          shiny::sliderInput(inputId = ns("group_threshold"), label = NULL, value = 0.8, min = 0, max = 1, step = 0.05, width = "100%"),
           
+          # Button to save the feature filtering
+          shiny::actionButton(inputId = ns("save"), label = "Save filtering", width = "100%")
         )
       )
     )
@@ -112,17 +115,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       
       ############################ UPLOAD TAB ##################################
       
-      total_rows_raw = shiny::reactiveVal(
-        NULL
-      )
-      
-      total_rows_raw= shiny::reactive({
-        if (!is.null(r6$data_raw)) {
-          nrow(r6$data_raw)
-        }
-      })
-      
-      # The selected file, if any
+      # File upload
       table_file = reactive({
         validate(need(input$file, message = FALSE))
         input$file
@@ -177,13 +170,15 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           r6$set_col(col = input$select_sample_group, type = "group")
           r6$set_filtered_data()
 
+          # Send error message if non-unique IDs are selected
           if (r6$non_unique_ids_data){
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {
+            # if ID correct, filter out deleted rows from the lipids table
             output$id_error = shiny::renderText({NULL})
             r6$data_filtered = r6$data_filtered[rownames(r6$meta_filtered),]
             
-            ##################################### HERE
+            # Initialise preview of the feature filtering
             if (!is.null(r6$data_filtered)) {
               total_cols = ncol(r6$data_filtered)
               del_cols = blank_filter(data_table = r6$data_filtered,
@@ -202,14 +197,16 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
 
               del_cols = setdiff(del_cols,saved_cols)
               remaining_cols = total_cols - length(del_cols)
-
-              output$class_bar_1 = shiny::renderPlot(
+              
+              # Initialise bar plot
+              output$class_barplot = shiny::renderPlot(
                 expr = preview_class_plot(r6 = r6,
                                           total_cols = total_cols,
                                           del_cols = del_cols),
                 bg = "transparent"
               )
-
+              
+              # Initialise progress bar
               shinyWidgets::updateProgressBar(
                 session = session,
                 id = "col_count_bar",
@@ -223,11 +220,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           
 
           
-          # Get found groups
+          # Get found groups (upload table)
           unique_groups = unique(r6$meta_filtered[r6$get_idx_samples(), r6$col_group])
           unique_groups = paste(unique_groups, collapse  = ", ")
           
-          # Display found groups
+          # Display found groups (upload table)
           output$found_groups = shiny::renderText({paste0("Groups found: ", unique_groups)})
           
         }
@@ -245,10 +242,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       })
       
       
-      # Reactive values for column filtering
+      # Display filtering preview
       shiny::observeEvent(col_filters(),{
         if (!is.null(r6$data_filtered)){
           
+          # Calculate remaining cols
           total_cols = ncol(r6$data_filtered)
           del_cols = blank_filter(data_table = r6$data_filtered,
                                   blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
@@ -264,13 +262,15 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           del_cols = setdiff(del_cols,saved_cols)
           remaining_cols = total_cols - length(del_cols)
           
-          output$class_bar_1 = shiny::renderPlot(
+          # Update class bar plot
+          output$class_barplot = shiny::renderPlot(
             expr = preview_class_plot(r6 = r6,
                                       total_cols = total_cols,
                                       del_cols = del_cols),
             bg = "transparent"
           )
           
+          # Update progress bar
           shinyWidgets::updateProgressBar(
             session = session,
             id = "col_count_bar",
@@ -281,46 +281,48 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
 
         }
       })
-
-      # Reactive values for sample filtering
-      
-      # Samples from that value
-     
-      
-
-
-      
-
-      
-      
-
-      
-
-
-      
-      
-      # Reset button
-      # shiny::observeEvent(input$reset, {
-      #   r6$set_filtered_data()
-      #   shinyWidgets::updateProgressBar(
-      #     session = session,
-      #     id = "row_count_bar",
-      #     value = nrow(r6$meta_filtered),
-      #     total = total_rows_raw()
-      #   )
-      # })
       
       # Save button
       shiny::observeEvent(input$save, {
+        
+        # Apply filtering to the filtered table
         r6$feature_filter(blank_multiplier = as.numeric(input$blank_multiplier),
                           sample_threshold = input$sample_threshold,
                           group_threshold = input$group_threshold)
+        
+        # Update the preview
+        total_cols = ncol(r6$data_filtered)
+        del_cols = blank_filter(data_table = r6$data_filtered,
+                                blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
+                                blank_multiplier = as.numeric(input$blank_multiplier),
+                                sample_threshold = input$sample_threshold)
+        saved_cols = group_filter(data_table = r6$data_filtered,
+                                  blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
+                                  meta_table = r6$meta_filtered,
+                                  del_cols = del_cols,
+                                  col_group = r6$col_group,
+                                  blank_multiplier = as.numeric(input$blank_multiplier),
+                                  group_threshold = input$group_threshold)
+        del_cols = setdiff(del_cols,saved_cols)
+        remaining_cols = total_cols - length(del_cols)
+        
+        # Update class bar plot
+        output$class_barplot = shiny::renderPlot(
+          expr = preview_class_plot(r6 = r6,
+                                    total_cols = total_cols,
+                                    del_cols = del_cols),
+          bg = "transparent"
+        )
+        
+        # Update progress bar
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "col_count_bar",
+          value = remaining_cols,
+          total = total_cols
+        )
       })
       
-      # Debugging button
-      observeEvent(input$do, {
-        print(rownames(r6$data_filtered))
-      })
       
     }
   )

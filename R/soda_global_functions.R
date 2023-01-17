@@ -22,8 +22,8 @@ blank_filter = function(data_table, blank_table, blank_multiplier, sample_thresh
   blank_means = get_col_means(data_table = blank_table)
   del_cols = c()
   data_table[is.na(data_table)] = 0
-  total_samples = length(rownames(data_table))
-  for (col in 1:length(data_table)){
+  total_samples = nrow(data_table)
+  for (col in colnames(data_table)){
     threshold = blank_multiplier * blank_means[col]
     above_threshold = sum(data_table[, col] > threshold)
     if ((above_threshold/total_samples) < sample_threshold) {
@@ -39,7 +39,7 @@ group_filter = function(data_table, blank_table, meta_table, del_cols, col_group
   blank_means = get_col_means(data_table = blank_table)
   groups_total = table(meta_table[, col_group])
   saved_cols = c()
-  for (col in 1:length(del_cols)) {
+  for (col in del_cols) {
     threshold = blank_multiplier * blank_means[col]
     ratio = which(data_table[, col] > threshold)
     ratio = table(meta_table[, col_group][ratio])
@@ -162,7 +162,8 @@ preview_class_plot = function(r6, total_cols, del_cols){
   names(filtered_values_1) = names(total_values)
   
   if (!is.null(del_cols)){
-    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered[,-del_cols]),
+    
+    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered)[!(colnames(r6$data_filtered) %in% del_cols)],
                                                 uniques = F))
   }else{
     filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
@@ -184,7 +185,7 @@ preview_class_plot = function(r6, total_cols, del_cols){
   plot_1 = ggplot(filtered_values_2,
                   aes(x=Var1,
                       y=Freq)) +
-    ggtitle("Total compound count")+
+    ggtitle("Absolute compound count")+
     geom_bar(stat="identity",
              fill = "#337ab7",
              show.legend = FALSE) +
@@ -208,7 +209,7 @@ preview_class_plot = function(r6, total_cols, del_cols){
                     fill=d_type ,
                     y=lip_val,
                     x=lip_class )) + 
-    ggtitle("Relative compound count")+
+    ggtitle("Relative compound count (%)")+
     geom_bar(position="stack",
              stat="identity",
              show.legend = FALSE) + 

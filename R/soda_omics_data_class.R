@@ -114,32 +114,27 @@ Omics_data = R6::R6Class(
     ## Filtering functions
     feature_filter = function(blank_multiplier, sample_threshold, group_threshold) {
       
-      idx_blanks = self$get_idx_blanks()
-      col_group = self$col_group
-      
-      blank_means = get_col_means(data_table = self$data_raw[idx_blanks,])
-      
       # Find features / columns below threshold
       del_cols = blank_filter(data_table = self$data_filtered,
-                              blank_table = self$data_raw[self$get_idx_blanks(),-which(colnames(self$data_raw) == self$col_id_data)],
+                              blank_table = self$data_raw[self$get_idx_blanks(table = self$meta_raw),-which(colnames(self$data_raw) == self$col_id_data)],
                               blank_multiplier = blank_multiplier,
                               sample_threshold = sample_threshold)
       
       # Salvage some of the features with a group filtering (same as above but applied to groups)
       if (!is.null(del_cols)) {
-        salvaged_cols = group_filter(data_table = self$data_filtered,
-                                     blank_table = self$data_raw[self$get_idx_blanks(),-which(colnames(self$data_raw) == self$col_id_data)],
-                                     meta_table= self$meta_filtered,
-                                     del_cols = del_cols,
-                                     col_group = col_group,
-                                     blank_multiplier = blank_multiplier,
-                                     group_threshold = group_threshold)
-        del_cols = del_cols[-salvaged_cols]
+        saved_cols = group_filter(data_table = self$data_filtered,
+                                  blank_table = self$data_raw[self$get_idx_blanks(table = self$meta_raw),-which(colnames(self$data_raw) == self$col_id_data)],
+                                  meta_table= self$meta_filtered,
+                                  del_cols = del_cols,
+                                  col_group = self$col_group,
+                                  blank_multiplier = blank_multiplier,
+                                  group_threshold = group_threshold)
+        del_cols = setdiff(del_cols,saved_cols)
         if (length(del_cols) == 0) {del_cols = NULL}
       }
       
       if (!is.null(del_cols)) {
-        self$data_filtered = self$data_filtered[,-del_cols]
+        self$data_filtered = self$data_filtered[,!(colnames(self$data_filtered) %in% del_cols)]
       }
     },
     

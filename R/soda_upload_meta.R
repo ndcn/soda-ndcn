@@ -44,27 +44,27 @@ soda_upload_meta_ui = function(id, head = F) {
           
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
-          shiny::selectInput(inputId = ns("select_id"), choices = NULL, label = NULL, multiple = F),
+          shiny::selectInput(inputId = ns("select_id"), choices = NULL, label = NULL, multiple = F, width = "100%"),
           shiny::span(textOutput(outputId = ns("id_error")), style="color:red"),
           
           # Select sample type column
           soda_get_col_ui(label ="Type column", desc = "Column containing the sample types."),
-          shiny::selectInput(inputId = ns("select_sample_type"), choices = NULL, label = NULL, multiple = F),
+          shiny::selectInput(inputId = ns("select_sample_type"), choices = NULL, label = NULL, multiple = F, width = "100%"),
           
           # Section for regex text patterns
           shiny::h3("Text patterns"),
           
           # Select blank battern text for regex
           soda_get_col_ui(label ="Blank pattern", desc = 'Text pattern to autodect blanks samples from the above metioned "Sample type" column'),
-          shiny::textInput(inputId = ns("blank_pattern"), label = NULL, value = "blank"),
+          shiny::textInput(inputId = ns("blank_pattern"), label = NULL, value = "blank", width = "100%"),
           
           # Select QC battern text for regex      
           soda_get_col_ui(label ="QC pattern", desc = 'Text pattern to autodect QC samples from the above metioned "Sample type" column'),
-          shiny::textInput(inputId = ns("qc_pattern"), label = NULL, value = "quality"),
+          shiny::textInput(inputId = ns("qc_pattern"), label = NULL, value = "quality", width = "100%"),
           
           # Select pool battern text for regex
           soda_get_col_ui(label ="Pool pattern", desc = 'Text pattern to autodect Pooled samples from the above metioned "Sample type" column'),
-          shiny::textInput(inputId = ns("pool_pattern"), label = NULL, value = "pool")
+          shiny::textInput(inputId = ns("pool_pattern"), label = NULL, value = "pool", width = "100%")
         )
       )
       ),
@@ -130,32 +130,35 @@ soda_upload_meta_ui = function(id, head = F) {
           shiny::h6("Exclude samples based on metadata values"),
           
           # Metadata column selection
-          shiny::selectInput(inputId = ns("exclusion_meta_col"), choices = NULL, label = "Column", multiple = F),
+          shiny::selectInput(inputId = ns("exclusion_meta_col"), choices = NULL, label = "Column", multiple = F, width = "100%"),
           
           # Value in the metadata column
-          shiny::selectInput(inputId = ns("exclusion_meta_val"), choices = NULL, label = "Value", multiple = F),
+          shiny::selectInput(inputId = ns("exclusion_meta_val"), choices = NULL, label = "Value", multiple = F, width = "100%"),
           
           # Rows to exclude
-          shiny::selectizeInput(inputId = ns("exclusion_meta_row"), choices = NULL, label = "Samples", multiple = T),
+          shiny::selectizeInput(inputId = ns("exclusion_meta_row"), choices = NULL, label = "Samples", multiple = T, width = "100%"),
           
           # Manual sample exclusion (selection from rows in the filtered metadata table)
           shiny::h5("Manual sample exclusion"),
           shiny::h6("Manually select samples to exclude"),
-          shiny::selectizeInput(inputId = ns("exclusion_manual"), choices = NULL, label = NULL, multiple = T),
+          shiny::selectizeInput(inputId = ns("exclusion_manual"), choices = NULL, label = NULL, multiple = T, width = "100%"),
           
           # Action buttons to apply filters, clear filters or reset filtered metadata 
           shiny::fluidRow(
             shiny::actionButton(
               inputId = ns("apply_filters"),
-              label = "Filter"
+              label = "Filter",
+              width = "33%"
             ),
             shiny::actionButton(
               inputId = ns("clear_filters"),
-              label = "Clear filters"
+              label = "Clear filters",
+              width = "33%"
             ),
             shiny::actionButton(
               inputId = ns("reset_table"),
-              label = "Reset table"
+              label = "Reset table",
+              width = "33%"
             )
           )
 
