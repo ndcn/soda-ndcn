@@ -3,7 +3,7 @@ library(bs4Dash)
 
 #------------------------------------------------------ Meta data upload UI ----
 soda_upload_meta_ui = function(id, head = F) {
-
+  
   ns = NS(id)
   bs4Dash::tabsetPanel(
     type = "tabs",
@@ -67,7 +67,7 @@ soda_upload_meta_ui = function(id, head = F) {
           shiny::textInput(inputId = ns("pool_pattern"), label = NULL, value = "pool", width = "100%")
         )
       )
-      ),
+    ),
     shiny::tabPanel(
       ############################ FILTER TAB ##################################
       title = "Filter",
@@ -161,14 +161,10 @@ soda_upload_meta_ui = function(id, head = F) {
               width = "33%"
             )
           )
-
         )
       )
-      )
     )
-  
-  
-
+  )
 }
 
 #-------------------------------------------------- Meta data upload server ----
@@ -473,7 +469,6 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           choices = rownames(r6$meta_filtered)
         )
       })
-      
     }
   )
 }

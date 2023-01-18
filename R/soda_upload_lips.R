@@ -108,7 +108,7 @@ soda_upload_lips_ui = function(id, head = F) {
 }
 
 #-------------------------------------------- Lipidomics data upload server ----
-soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
+soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6, colour_list) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -213,12 +213,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
                 value = remaining_cols,
                 total = total_cols
               )
-
             }
-
           }
-          
-
           
           # Get found groups (upload table)
           unique_groups = unique(r6$meta_filtered[r6$get_idx_samples(), r6$col_group])
@@ -226,7 +222,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           
           # Display found groups (upload table)
           output$found_groups = shiny::renderText({paste0("Groups found: ", unique_groups)})
-          
         }
       })
       
@@ -240,7 +235,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       col_filters = shiny::reactive({
         list(input$blank_multiplier, input$sample_threshold, input$group_threshold)
       })
-      
       
       # Display filtering preview
       shiny::observeEvent(col_filters(),{
@@ -277,8 +271,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
             value = remaining_cols,
             total = total_cols
           )
-          
-
         }
       })
       
@@ -289,6 +281,22 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         r6$feature_filter(blank_multiplier = as.numeric(input$blank_multiplier),
                           sample_threshold = input$sample_threshold,
                           group_threshold = input$group_threshold)
+        
+        ## Produce ensuing tables and  plots
+        
+        # Normalisation
+        r6$normalise_class()
+        r6$normalise_total()
+        
+        # Class table
+        r6$class_grouping()
+        
+        # Generate plots
+        r6$plot_class_distribution(col_group = r6$col_group,
+                                                colour_list = colour_list)
+        r6$plot_class_comparison(col_group = r6$col_group,
+                                              colour_list = colour_list)
+        
         
         # Update the preview
         total_cols = ncol(r6$data_filtered)
@@ -322,8 +330,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           total = total_cols
         )
       })
-      
-      
     }
   )
 }
