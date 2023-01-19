@@ -113,6 +113,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6, colour_l
     id,
     function(input, output, session) {
       
+
       ############################ UPLOAD TAB ##################################
       
       # File upload
@@ -293,9 +294,9 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6, colour_l
         
         # Generate plots
         r6$plot_class_distribution(col_group = r6$col_group,
-                                                colour_list = colour_list)
+                                   colour_list = colour_list)
         r6$plot_class_comparison(col_group = r6$col_group,
-                                              colour_list = colour_list)
+                                 colour_list = colour_list)
         
         
         # Update the preview

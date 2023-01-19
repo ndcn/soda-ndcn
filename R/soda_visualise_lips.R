@@ -4,28 +4,208 @@ library(shinyWidgets)
 library(shinybrowser)
 library(plotly)
 
-spawn_plotbox = function(id_box, id_plot, width_bs, height_px){
+spawn_empty_plotbox = function(id_box, id_plot, label, width_bs, height_px, y_box, y_plot, session){
+  ns = session$ns
   bs4Dash::box(
-    id = id_box,
-    title = "Class distribution",
+    id = ns(id_box),
+    title = label,
     width = width_bs,
-    height = height_px,
+    height = height_px * y_box,
     solidHeader = TRUE,
     maximizable = TRUE,
     collapsible = FALSE,
     status = "primary",
     plotly::plotlyOutput(
-      outputId = id_plot,
+      outputId = ns(id_plot),
       width = width_bs,
-      height = height_px
+      height = height_px * y_plot
     )
   )
 }
 
-spawn_plot = function(label = "Default", width_px, height_px){
+spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session, output) {
+  if (length(plot_list) == 0) {
+    output$plotbox_field = shiny::renderUI({NULL})
+  } else if (length(plot_list) == 1) {
+    output$plotbox_field = shiny::renderUI({
+      spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                          id_plot = plot_switch(plot_list[1])[3],
+                          label = plot_switch(plot_list[1])[1],
+                          width_bs = width_bs,
+                          height_px = reactive_ypx,
+                          y_box = y_box,
+                          y_plot = y_plot,
+                          session = session)
+    })
+  } else if (length(plot_list) == 2) {
+    output$plotbox_field = shiny::renderUI({
+      shiny::fluidRow(
+        spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                            id_plot = plot_switch(plot_list[1])[3],
+                            label = plot_switch(plot_list[1])[1],
+                            width_bs = width_bs,
+                            height_px = reactive_ypx,
+                            y_box = y_box,
+                            y_plot = y_plot,
+                            session = session),
+        spawn_empty_plotbox(id_box = plot_switch(plot_list[2])[2],
+                            id_plot = plot_switch(plot_list[2])[3],
+                            label = plot_switch(plot_list[2])[1],
+                            width_bs = width_bs,
+                            height_px = reactive_ypx,
+                            y_box = y_box,
+                            y_plot = y_plot,
+                            session = session)
+      )
+    })
+  } else if (length(plot_list) == 3) {
+    output$plotbox_field = shiny::renderUI({
+      shiny::tagList(
+        shiny::fluidRow(
+          spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                              id_plot = plot_switch(plot_list[1])[3],
+                              label = plot_switch(plot_list[1])[1],
+                              width_bs = width_bs,
+                              height_px = reactive_ypx,
+                              y_box = y_box,
+                              y_plot = y_plot,
+                              session = session),
+          spawn_empty_plotbox(id_box = plot_switch(plot_list[2])[2],
+                              id_plot = plot_switch(plot_list[2])[3],
+                              label = plot_switch(plot_list[2])[1],
+                              width_bs = width_bs,
+                              height_px = reactive_ypx,
+                              y_box = y_box,
+                              y_plot = y_plot,
+                              session = session)
+        ),
+        shiny::fluidRow(
+          spawn_empty_plotbox(id_box = plot_switch(plot_list[3])[2],
+                              id_plot = plot_switch(plot_list[3])[3],
+                              label = plot_switch(plot_list[3])[1],
+                              width_bs = width_bs,
+                              height_px = reactive_ypx,
+                              y_box = y_box,
+                              y_plot = y_plot,
+                              session = session)
+        )
+      )
+    })
+  } else if (length(plot_list) == 4){
+    output$plotbox_field = shiny::renderUI({
+      shiny::tagList(
+        shiny::fluidRow(
+          spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                              id_plot = plot_switch(plot_list[1])[3],
+                              label = plot_switch(plot_list[1])[1],
+                              width_bs = width_bs,
+                              height_px = reactive_ypx,
+                              y_box = y_box,
+                              y_plot = y_plot,
+                              session = session),
+          spawn_empty_plotbox(id_box = plot_switch(plot_list[2])[2],
+                              id_plot = plot_switch(plot_list[2])[3],
+                              label = plot_switch(plot_list[2])[1],
+                              width_bs = width_bs,
+                              height_px = reactive_ypx,
+                              y_box = y_box,
+                              y_plot = y_plot,
+                              session = session)
+        ),
+        shiny::fluidRow(
+          spawn_empty_plotbox(id_box = plot_switch(plot_list[3])[2],
+                              id_plot = plot_switch(plot_list[3])[3],
+                              label = plot_switch(plot_list[3])[1],
+                              width_bs = width_bs,
+                              height_px = reactive_ypx,
+                              y_box = y_box,
+                              y_plot = y_plot,
+                              session = session),
+          spawn_empty_plotbox(id_box = plot_switch(plot_list[4])[2],
+                              id_plot = plot_switch(plot_list[4])[3],
+                              label = plot_switch(plot_list[4])[1],
+                              width_bs = width_bs,
+                              height_px = reactive_ypx,
+                              y_box = y_box,
+                              y_plot = y_plot,
+                              session = session)
+        )
+      )
+    })
+  }
+}
+
+spawn_plotbox = function(plot_list, width_bs, reactive_xpx, reactive_ypx, x_plot, y_plot, y_box, r6, session, output) {
+  
+  # Spawn an empty plotbox
+  spawn_grid(plot_list = plot_list,
+             width_bs = width_bs,
+             reactive_ypx = reactive_ypx,
+             y_box = y_box,
+             y_plot = y_plot,
+             session = session,
+             output = output)
+  
+  for (plot_data in plot_list) {
+    plot_data = plot_switch(plot_data)
+    id_box = plot_data[2]
+    id_plot = plot_data[3]
+    label = plot_data[1]
+    
+    # Insert appropriate plot
+    if (id_plot == "spawn_class_distribution"){
+      output$spawn_class_distribution = plotly::renderPlotly(
+        r6$class_distribution
+      )
+    } else if (id_plot == "spawn_class_comparison"){
+      output$spawn_class_comparison = plotly::renderPlotly(
+        r6$class_comparison
+      )
+    } else if (id_plot == "spawn_volcano_plot"){
+      output$spawn_volcano_plot = plotly::renderPlotly(
+        spawn_plot(width_px = reactive_xpx*x_plot,
+                   height_px = reactive_ypx*y_plot,
+                   plot_bgcolor = '#7B94DC')
+      )
+    } else if (id_plot == "spawn_heatmap"){
+      output$spawn_heatmap = plotly::renderPlotly(
+        spawn_plot(width_px = reactive_xpx*x_plot,
+                   height_px = reactive_ypx*y_plot,
+                   plot_bgcolor = '#E103D1')
+      )
+    }
+    
+    # Update plotly plot
+    plotdim_proxy = plotlyProxy(
+      outputId = id_plot,
+      session = session
+    )
+    
+    # Update box
+    bs4Dash::updateBox(
+      id = id_box,
+      action = "update",
+      options = list(
+        width = width_bs,
+        height = reactive_ypx * y_box
+      )
+    )
+    
+    # Update plotly
+    plotly::plotlyProxyInvoke(
+      p = plotdim_proxy,
+      method = "relayout",
+      list(width = reactive_xpx * x_plot,
+           height = reactive_ypx * y_plot)
+    )
+  }
+}
+
+
+spawn_plot = function(label = NULL, width_px, height_px, plot_bgcolor='#e5ecf6'){
   plotly::plot_ly(x = c(0,1, 2), y = c(2, 1, 3), type = 'bar', width = width_px, height = height_px) %>%
     layout(title = label,
-           plot_bgcolor='#e5ecf6',
+           plot_bgcolor=plot_bgcolor,
            xaxis = list(
              zerolinecolor = '#ffff',
              zerolinewidth = 2,
@@ -36,6 +216,16 @@ spawn_plot = function(label = "Default", width_px, height_px){
              gridcolor = 'ffff'))
 }
 
+plot_switch = function(plot_selected){
+  switch(
+    EXPR = plot_selected,
+    "select_class_distribution" = c("Class distribution", "box_class_distribution", "spawn_class_distribution"),
+    "select_class_comparison" = c("Class comparison", "box_class_comparison", "spawn_class_comparison"),
+    "select_volcano_plot" = c("Volcano plot", "box_volcano_plot", "spawn_volcano_plot"),
+    "select_heatmap" = c("Heatmap", "box_heatmap", "spawn_heatmap")
+  )
+}
+
 #----------------------------------------- Lipidomics data visualisation UI ----
 soda_visualise_lips_ui = function(id) {
   ns = NS(id)
@@ -43,25 +233,17 @@ soda_visualise_lips_ui = function(id) {
   shiny::tagList(
     shinybrowser::detect(),
     shiny::fluidRow(
-      shiny::column(
-        width = 9,
-        shinyWidgets::checkboxGroupButtons(inputId = ns("showPlots"),
-                                           label = NULL,
-                                           status = "primary",
-                                           choices = c("Class distribution" = "select_class_distribution",
-                                                       "Class comparison" = "select_class_comparison",
-                                                       "Volcano plot" = "select_volcano_plot",
-                                                       "Heatmap" = "select_heatmap"),
-                                           checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")))
-      ),
+      shinyWidgets::checkboxGroupButtons(inputId = ns("showPlots"),
+                                         label = NULL,
+                                         status = "primary",
+                                         choices = c("Class distribution" = "select_class_distribution",
+                                                     "Class comparison" = "select_class_comparison",
+                                                     "Volcano plot" = "select_volcano_plot",
+                                                     "Heatmap" = "select_heatmap"),
+                                         checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")))
+
       
-      shiny::column(
-        width = 3,
-        shiny::textOutput(ns("xbs")),
-        shiny::textOutput(ns("xpx")),
-        shiny::textOutput(ns("ypx")),
-        shiny::textOutput(ns("nplots"))
-      )
+
     ),
     shiny::uiOutput(
       outputId = ns("plotbox_field")
@@ -86,28 +268,7 @@ soda_visualise_lips_server = function(id, r6) {
       x_plot = 0.8
       y_plot = 0.65
       
-      # TMP outplut
-      output$xbs = shiny::renderText({
-        paste0("Xbs: ", reactive_xbs())
-        })
-
-      output$xpx = shiny::renderText({
-        paste0("Xpx: ", reactive_xpx(), "px")
-      })
-
-      output$ypx = shiny::renderText({
-        paste0("Ypx: ", reactive_ypx(), "px")
-      })
-
-      output$nplots = shiny::renderText({
-        paste0("nplots: ", length(input$showPlots))
-      })
-      
-      
-
-      
       # Reactive dimensions
-      
       reactive_xbs = shiny::reactive({
         if (length(input$showPlots) < 2) {
           12
@@ -132,352 +293,25 @@ soda_visualise_lips_server = function(id, r6) {
         }
       })      
       
-      
-
-      
-      # Updater
+      # Plotting nightmare
       shiny::observeEvent(input$showPlots, {
         
-        if (length(input$showPlots) == 1) {
-          
-          output$plotbox_field = shiny::renderUI({
-            spawn_plotbox(id_box = ns("dummy_box"),
-                          id_plot = ns("dummy_plotly"),
-                          width_bs = reactive_xbs(),
-                          height_px = reactive_ypx())
-          })
-          
-          # Make plotly plot
-          output$dummy_plotly = plotly::renderPlotly(
-            spawn_plot(label = "n=1",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          
-          # Update plotly plot
-          plotdim_proxy = plotlyProxy(
-            outputId = "dummy_plotly",
-            session = session
-          )
-          
-          
-          # Update box
-          bs4Dash::updateBox(
-            id = "dummy_box",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          
-          # Update plotly
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-        } else if(length(input$showPlots) == 2) {
-          
-          output$plotbox_field = shiny::renderUI({
-            shiny::fluidRow(
-              spawn_plotbox(id_box = ns("dummy_box_1"),
-                            id_plot = ns("dummy_plotly_1"),
-                            width_bs = reactive_xbs(),
-                            height_px = reactive_ypx()),
-              spawn_plotbox(id_box = ns("dummy_box_2"),
-                            id_plot = ns("dummy_plotly_2"),
-                            width_bs = reactive_xbs(),
-                            height_px = reactive_ypx())
-            )
-          })
-          
-          # Make plotly plot
-          output$dummy_plotly_1 = plotly::renderPlotly(
-            spawn_plot(label = "n=2",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          output$dummy_plotly_2 = plotly::renderPlotly(
-            spawn_plot(label = "n=2",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          
-          # Update plotly plot
-          plotdim_proxy_1 = plotlyProxy(
-            outputId = "dummy_plotly_1",
-            session = session
-          )
-          plotdim_proxy_2 = plotlyProxy(
-            outputId = "dummy_plotly_2",
-            session = session
-          )
-          
-          # Update box
-          bs4Dash::updateBox(
-            id = "dummy_box_1",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          bs4Dash::updateBox(
-            id = "dummy_box_2",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          
-          # Update plotly
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_1,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_2,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-        
-        } else if(length(input$showPlots) == 3) {
-          
-          output$plotbox_field = shiny::renderUI({
-            shiny::tagList(
-              shiny::fluidRow(
-                spawn_plotbox(id_box = ns("dummy_box_1"),
-                              id_plot = ns("dummy_plotly_1"),
-                              width_bs = reactive_xbs(),
-                              height_px = reactive_ypx()),
-                spawn_plotbox(id_box = ns("dummy_box_2"),
-                              id_plot = ns("dummy_plotly_2"),
-                              width_bs = reactive_xbs(),
-                              height_px = reactive_ypx())
-              ),
-              shiny::fluidRow(
-                spawn_plotbox(id_box = ns("dummy_box_3"),
-                              id_plot = ns("dummy_plotly_3"),
-                              width_bs = reactive_xbs(),
-                              height_px = reactive_ypx())
-              )
-            )
+        if (length(input$showPlots) > 0) {
+          spawn_plotbox(plot_list = input$showPlots,
+                        width_bs = reactive_xbs(),
+                        reactive_xpx = reactive_xpx(),
+                        reactive_ypx = reactive_ypx(),
+                        x_plot = x_plot,
+                        y_plot = y_plot,
+                        y_box = y_box,
+                        r6 = r6,
+                        session = session,
+                        output = output)
 
-          })
-          
-          # Make plotly plot
-          output$dummy_plotly_1 = plotly::renderPlotly(
-            spawn_plot(label = "n=2",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          output$dummy_plotly_2 = plotly::renderPlotly(
-            spawn_plot(label = "n=2",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          output$dummy_plotly_3 = plotly::renderPlotly(
-            spawn_plot(label = "n=3",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          
-          # Update plotly plot
-          plotdim_proxy_1 = plotlyProxy(
-            outputId = "dummy_plotly_1",
-            session = session
-          )
-          plotdim_proxy_2 = plotlyProxy(
-            outputId = "dummy_plotly_2",
-            session = session
-          )
-          plotdim_proxy_3 = plotlyProxy(
-            outputId = "dummy_plotly_3",
-            session = session
-          )
-          
-          # Update box
-          bs4Dash::updateBox(
-            id = "dummy_box_1",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          bs4Dash::updateBox(
-            id = "dummy_box_2",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          bs4Dash::updateBox(
-            id = "dummy_box_3",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          
-          # Update plotly
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_1,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_2,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_3,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-          
-        } else if(length(input$showPlots) == 4){
-          output$plotbox_field = shiny::renderUI({
-            shiny::tagList(
-              shiny::fluidRow(
-                spawn_plotbox(id_box = ns("dummy_box_1"),
-                              id_plot = ns("dummy_plotly_1"),
-                              width_bs = reactive_xbs(),
-                              height_px = reactive_ypx()),
-                spawn_plotbox(id_box = ns("dummy_box_2"),
-                              id_plot = ns("dummy_plotly_2"),
-                              width_bs = reactive_xbs(),
-                              height_px = reactive_ypx())
-              ),
-              shiny::fluidRow(
-                spawn_plotbox(id_box = ns("dummy_box_3"),
-                              id_plot = ns("dummy_plotly_3"),
-                              width_bs = reactive_xbs(),
-                              height_px = reactive_ypx()),
-                spawn_plotbox(id_box = ns("dummy_box_4"),
-                              id_plot = ns("dummy_plotly_4"),
-                              width_bs = reactive_xbs(),
-                              height_px = reactive_ypx())
-              )
-            )
-            
-          })
-          
-          # Make plotly plot
-          output$dummy_plotly_1 = plotly::renderPlotly(
-            spawn_plot(label = "n=2",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          output$dummy_plotly_2 = plotly::renderPlotly(
-            spawn_plot(label = "n=2",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          output$dummy_plotly_3 = plotly::renderPlotly(
-            spawn_plot(label = "n=3",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          output$dummy_plotly_4 = plotly::renderPlotly(
-            spawn_plot(label = "n=4",
-                       width_px = reactive_xpx()*x_plot,
-                       height_px = reactive_ypx()*y_plot)
-          )
-          
-          # Update plotly plot
-          plotdim_proxy_1 = plotlyProxy(
-            outputId = "dummy_plotly_1",
-            session = session
-          )
-          plotdim_proxy_2 = plotlyProxy(
-            outputId = "dummy_plotly_2",
-            session = session
-          )
-          plotdim_proxy_3 = plotlyProxy(
-            outputId = "dummy_plotly_3",
-            session = session
-          )
-          plotdim_proxy_4 = plotlyProxy(
-            outputId = "dummy_plotly_4",
-            session = session
-          )
-          
-          # Update box
-          bs4Dash::updateBox(
-            id = "dummy_box_1",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          bs4Dash::updateBox(
-            id = "dummy_box_2",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          bs4Dash::updateBox(
-            id = "dummy_box_3",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          bs4Dash::updateBox(
-            id = "dummy_box_4",
-            action = "update",
-            options = list(
-              width = reactive_xbs(),
-              height = reactive_ypx() * y_box
-            )
-          )
-          
-          # Update plotly
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_1,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_2,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_3,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
-          plotly::plotlyProxyInvoke(
-            p = plotdim_proxy_4,
-            method = "relayout",
-            list(width = reactive_xpx() * x_plot,
-                 height = reactive_ypx() * y_plot)
-          )
         } else {
-          output$plotbox_field = shiny::renderUI({
+          output$plotbox_field = shiny::renderUI(
             NULL
-          })
+          )
         }
       })
     }
