@@ -291,7 +291,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           total = ncol(r6$data_filtered)
         )
         
-        ## Produce ensuing tables and  plots
+        ## Produce ensuing tables
         
         # Normalisation
         r6$normalise_class()
@@ -299,12 +299,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         
         # Class table
         r6$class_grouping()
-        
-        # Generate plots
-        # r6$plot_class_distribution(col_group = r6$col_group,
-        #                            colour_list = colour_list)
-        # r6$plot_class_comparison(col_group = r6$col_group,
-        #                          colour_list = colour_list)
       })
     }
   )

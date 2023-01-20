@@ -170,10 +170,17 @@ spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactiv
         r6$class_comparison
       )
     } else if (id_plot == "spawn_volcano_plot"){
+      r6$get_volcano_table(data_table = r6$data_filtered,
+                           col_group = r6$col_group,
+                           group_1 = "G1",
+                           group_2 = "G2",
+                           impute = NA)
+      r6$plot_volcano(data_table = self$volcano_table,
+                              colour_list = colour_list,
+                              width = reactive_xpx * x_plot,
+                              height = reactive_ypx * y_plot)
       output$spawn_volcano_plot = plotly::renderPlotly(
-        spawn_plot(width_px = reactive_xpx*x_plot,
-                   height_px = reactive_ypx*y_plot,
-                   plot_bgcolor = '#7B94DC')
+        r6$volcano_plot
       )
     } else if (id_plot == "spawn_heatmap"){
       output$spawn_heatmap = plotly::renderPlotly(

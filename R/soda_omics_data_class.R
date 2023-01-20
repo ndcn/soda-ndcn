@@ -24,6 +24,9 @@ Omics_data = R6::R6Class(
     # class tables
     data_class_table = NULL,
     
+    # volcano table
+    volcano_table = NULL,
+    
     ### Columns
     col_id_meta = NULL,
     col_id_data = NULL,
@@ -38,6 +41,7 @@ Omics_data = R6::R6Class(
     ### Plots
     class_distribution = NULL,
     class_comparison = NULL,
+    volcano_plot = NULL,
     
     ### Functions
     initialize = function(name = NA, type = NA){
@@ -191,6 +195,59 @@ Omics_data = R6::R6Class(
       self$data_class_table = get_lipid_class_table(table)
     },
     
+    ## Volcano table
+    get_volcano_table = function(data_table = self$data_filtered, col_group = self$col_group, group_1, group_2, impute = NA) {
+      
+      # Impute (or not) and scale (z-score) the data
+      data_table_normalised = data_table
+      if (is.na(impute)) {
+        for (col in colnames(data_table_normalised)) {
+          data_table_normalised[,col] = (data_table_normalised[,col] - mean(data_table_normalised[,col], na.rm = T))/sd(data_table_normalised[,col], na.rm = T)
+        }
+      } else {
+        data_table_normalised[is.na(data_table_normalised)] = impute
+        for (col in colnames(data_table_normalised)) {
+          data_table_normalised[,col] = (data_table_normalised[,col] - mean(data_table_normalised[,col]))/sd(data_table_normalised[,col])
+        }
+      }
+      
+      
+      # Get the rownames for each group
+      idx_group_1 = get_idx_by_pattern(table = self$meta_filtered,
+                                       col = col_group,
+                                       pattern = group_1,
+                                       row_names = T)
+      
+      idx_group_2 = get_idx_by_pattern(table = self$meta_filtered,
+                                       col = col_group,
+                                       pattern = group_2,
+                                       row_names = T)
+      
+      # Get all row names from both groups
+      idx_all = c(idx_group_1, idx_group_2)
+      idx_all = sort(unique(idx_all))
+      
+      # Filter data to keep only the two groups
+      data_table = data_table[idx_all,]
+      data_table_normalised = data_table_normalised[idx_all,]
+      
+      # Collect fold change and p-values
+      fold_change = c()
+      p_value = c()
+      for (col in colnames(data_table)) {
+        fold_change = c(fold_change, median(data_table[idx_group_1, col], na.rm = T) / median(data_table[idx_group_2, col], na.rm = T))
+        p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+      }
+      p_value_bh_adj = p.adjust(p_value, method = "BH")
+      
+      volcano_table = data.frame(log2_fold_change = log2(fold_change),
+                                 minus_log10_p_value_bh_adj = -log10(p_value_bh_adj),
+                                 lipid_class = get_lipid_classes(feature_list = colnames(data_table),
+                                                                           uniques = FALSE),
+                                 row.names = colnames(data_table))
+      self$volcano_table = volcano_table
+    },
+    
     ### Plotting
     ## Class distribution
     plot_class_distribution = function(table = self$data_class_table[self$get_idx_samples(), ],
@@ -278,6 +335,30 @@ Omics_data = R6::R6Class(
       fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
                            annotations = annotations)
       self$class_comparison = fig
+    },
+    
+    ## Volcano plot
+    plot_volcano = function(data_table = self$volcano_table,
+                            colour_list,
+                            width,
+                            height){
+      i = 1
+      fig = plotly::plot_ly(colors = colour_list, type  = "scatter", mode  = "markers", width = width, height = height)
+      for (lip_class in unique(self$volcano_table$lipid_class)) {
+        tmp_idx = rownames(self$volcano_table)[self$volcano_table$lipid_class == lip_class]
+        fig = fig %>% add_trace(x = self$volcano_table[tmp_idx, "log2_fold_change"],
+                                y = self$volcano_table[tmp_idx, "minus_log10_p_value_bh_adj"],
+                                name = lip_class,
+                                color = colour_list[i],
+                                text = tmp_idx,
+                                hoverinfo = "text"
+        )
+        i = i + 1
+      }
+      fig = fig %>% layout(shapes = list(vline(x = -1), vline(x = 1)),
+                           xaxis = list(title = "log2(fold change)"),
+                           yaxis = list(title = "-log10(BH adjusted p value)"))
+      self$volcano_plot = fig
     }
   )
 )
