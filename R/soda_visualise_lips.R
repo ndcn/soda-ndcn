@@ -135,7 +135,7 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
   }
 }
 
-spawn_plotbox = function(plot_list, width_bs, reactive_xpx, reactive_ypx, x_plot, y_plot, y_box, r6, session, output) {
+spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactive_ypx, x_plot, y_plot, y_box, r6, session, output) {
   
   # Spawn an empty plotbox
   spawn_grid(plot_list = plot_list,
@@ -154,10 +154,18 @@ spawn_plotbox = function(plot_list, width_bs, reactive_xpx, reactive_ypx, x_plot
     
     # Insert appropriate plot
     if (id_plot == "spawn_class_distribution"){
+      r6$plot_class_distribution(col_group = r6$col_group,
+                                 colour_list = colour_list,
+                                 width = reactive_xpx * x_plot,
+                                 height = reactive_ypx * y_plot)
       output$spawn_class_distribution = plotly::renderPlotly(
         r6$class_distribution
       )
     } else if (id_plot == "spawn_class_comparison"){
+      r6$plot_class_comparison(col_group = r6$col_group,
+                               colour_list = colour_list,
+                               width = reactive_xpx * x_plot,
+                               height = reactive_ypx * y_plot)
       output$spawn_class_comparison = plotly::renderPlotly(
         r6$class_comparison
       )
@@ -174,30 +182,6 @@ spawn_plotbox = function(plot_list, width_bs, reactive_xpx, reactive_ypx, x_plot
                    plot_bgcolor = '#E103D1')
       )
     }
-    
-    # Update plotly plot
-    plotdim_proxy = plotlyProxy(
-      outputId = id_plot,
-      session = session
-    )
-    
-    # Update box
-    bs4Dash::updateBox(
-      id = id_box,
-      action = "update",
-      options = list(
-        width = width_bs,
-        height = reactive_ypx * y_box
-      )
-    )
-    
-    # Update plotly
-    plotly::plotlyProxyInvoke(
-      p = plotdim_proxy,
-      method = "relayout",
-      list(width = reactive_xpx * x_plot,
-           height = reactive_ypx * y_plot)
-    )
   }
 }
 
@@ -256,7 +240,7 @@ soda_visualise_lips_ui = function(id) {
 }
 
 #------------------------------------- Lipidomics data visualisation server ----
-soda_visualise_lips_server = function(id, r6) {
+soda_visualise_lips_server = function(id, r6, colour_list) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -298,6 +282,7 @@ soda_visualise_lips_server = function(id, r6) {
         
         if (length(input$showPlots) > 0) {
           spawn_plotbox(plot_list = input$showPlots,
+                        colour_list = colour_list,
                         width_bs = reactive_xbs(),
                         reactive_xpx = reactive_xpx(),
                         reactive_ypx = reactive_ypx(),

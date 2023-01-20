@@ -196,7 +196,9 @@ Omics_data = R6::R6Class(
     plot_class_distribution = function(table = self$data_class_table[self$get_idx_samples(), ],
                                        meta_table = self$meta_filtered[self$get_idx_samples(), ],
                                        col_group = self$col_group,
-                                       colour_list){
+                                       colour_list,
+                                       width,
+                                       height){
       
       # Produce the class x group table
       samp_list = rownames(table)
@@ -219,7 +221,7 @@ Omics_data = R6::R6Class(
       
       # Produce the plot
       i = 1
-      fig = plotly::plot_ly(colors = colour_list)
+      fig = plotly::plot_ly(colors = colour_list, width = width, height = height)
       for (col in colnames(plot_table)) {
         fig = fig %>% add_trace(x = rownames(plot_table), y = plot_table[,col],
                                 name = col, color = colour_list[i], type  = "bar")
@@ -233,7 +235,9 @@ Omics_data = R6::R6Class(
     plot_class_comparison = function(table = self$data_class_table[self$get_idx_samples(), ],
                                      meta_table = self$meta_filtered[self$get_idx_samples(), ],
                                      col_group = self$col_group,
-                                     colour_list){
+                                     colour_list,
+                                     width,
+                                     height){
       groups = unique(meta_table[,col_group])
       class_list = colnames(table)
       annotations = get_subplot_titles(class_list)
@@ -243,7 +247,7 @@ Omics_data = R6::R6Class(
       j = 1
       for (c in class_list) {
         i = 1
-        subplot = plot_ly(colors = colour_list)
+        subplot = plot_ly(colors = colour_list, width = width, height = height)
         for (g in groups){
           if (g %in% cleared_groups) {
             first_bool = FALSE

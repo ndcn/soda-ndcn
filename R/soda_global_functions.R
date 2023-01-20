@@ -69,23 +69,17 @@ normalise_lipid_class = function(lips_table) {
   # Get classes and unique classes for the lipid features
   classes = get_lipid_classes(feature_list = as.character(colnames(lips_table)), uniques = FALSE)
   classes_unique = get_lipid_classes(feature_list = as.character(colnames(lips_table)), uniques = TRUE)
+  lips_table[is.na(lips_table)] = 0
   
   # For each unique lipid class...
   for (lip_class in classes_unique){
     
     # Get columns from that class...
     cols = which(classes == lip_class)
-    
-    # and for each sample / row...
-    for (i in c(1:nrow(lips_table))){
-      
-      # Get sum of that samples lipid values
-      sum_val = sum(lips_table[i, cols], na.rm = T)
-      
-      # Normalise row to sum_val
-      if (sum_val > 0) {
-        lips_table[i, cols] = lips_table[i, cols]/sum_val}}}
-  
+    class_row_sums = rowSums(lips_table[, cols])
+    class_row_sums[class_row_sums == 0] = 1
+    lips_table[, cols] = lips_table[, cols] / class_row_sums
+  }
   return(lips_table)
 }
 

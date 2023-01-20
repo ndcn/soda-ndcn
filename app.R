@@ -147,8 +147,8 @@ server = function(input, output, session) {
   colour_list = grDevices::colorRampPalette(colour_list)(25)
 
   soda_upload_meta_server("upload_metadata", r6 = lipidomics_data)
-  soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data, colour_list = colour_list)
-  soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data)
+  soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
+  soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = colour_list)
 
   
 }

@@ -108,7 +108,7 @@ soda_upload_lips_ui = function(id, head = F) {
 }
 
 #-------------------------------------------- Lipidomics data upload server ----
-soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6, colour_list) {
+soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -283,6 +283,14 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6, colour_l
                           sample_threshold = input$sample_threshold,
                           group_threshold = input$group_threshold)
         
+        # Update progress bar
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "col_count_bar",
+          value = ncol(r6$data_filtered),
+          total = ncol(r6$data_filtered)
+        )
+        
         ## Produce ensuing tables and  plots
         
         # Normalisation
@@ -293,43 +301,10 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6, colour_l
         r6$class_grouping()
         
         # Generate plots
-        r6$plot_class_distribution(col_group = r6$col_group,
-                                   colour_list = colour_list)
-        r6$plot_class_comparison(col_group = r6$col_group,
-                                 colour_list = colour_list)
-        
-        
-        # Update the preview
-        total_cols = ncol(r6$data_filtered)
-        del_cols = blank_filter(data_table = r6$data_filtered,
-                                blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
-                                blank_multiplier = as.numeric(input$blank_multiplier),
-                                sample_threshold = input$sample_threshold)
-        saved_cols = group_filter(data_table = r6$data_filtered,
-                                  blank_table = r6$data_raw[r6$get_idx_blanks(table = r6$meta_raw),-which(colnames(r6$data_raw) == r6$col_id_data)],
-                                  meta_table = r6$meta_filtered,
-                                  del_cols = del_cols,
-                                  col_group = r6$col_group,
-                                  blank_multiplier = as.numeric(input$blank_multiplier),
-                                  group_threshold = input$group_threshold)
-        del_cols = setdiff(del_cols,saved_cols)
-        remaining_cols = total_cols - length(del_cols)
-        
-        # Update class bar plot
-        output$class_barplot = shiny::renderPlot(
-          expr = preview_class_plot(r6 = r6,
-                                    total_cols = total_cols,
-                                    del_cols = del_cols),
-          bg = "transparent"
-        )
-        
-        # Update progress bar
-        shinyWidgets::updateProgressBar(
-          session = session,
-          id = "col_count_bar",
-          value = remaining_cols,
-          total = total_cols
-        )
+        # r6$plot_class_distribution(col_group = r6$col_group,
+        #                            colour_list = colour_list)
+        # r6$plot_class_comparison(col_group = r6$col_group,
+        #                          colour_list = colour_list)
       })
     }
   )
