@@ -199,17 +199,9 @@ Omics_data = R6::R6Class(
     get_volcano_table = function(data_table = self$data_filtered, col_group = self$col_group, group_1, group_2, impute = NA) {
       
       # Impute (or not) and scale (z-score) the data
-      data_table_normalised = data_table
-      if (is.na(impute)) {
-        for (col in colnames(data_table_normalised)) {
-          data_table_normalised[,col] = (data_table_normalised[,col] - mean(data_table_normalised[,col], na.rm = T))/sd(data_table_normalised[,col], na.rm = T)
-        }
-      } else {
-        data_table_normalised[is.na(data_table_normalised)] = impute
-        for (col in colnames(data_table_normalised)) {
-          data_table_normalised[,col] = (data_table_normalised[,col] - mean(data_table_normalised[,col]))/sd(data_table_normalised[,col])
-        }
-      }
+      
+      data_table_normalised = z_score_normalisation(data_table = data_table,
+                                                    impute = impute)
       
       
       # Get the rownames for each group

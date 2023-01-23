@@ -4,7 +4,7 @@ library(shinyWidgets)
 library(shinybrowser)
 library(plotly)
 
-spawn_empty_plotbox = function(id_box, id_plot, label, width_bs, height_px, y_box, y_plot, session){
+spawn_empty_plotbox = function(id_box, id_sidebar, id_sidebar_ui, id_plot, label, width_bs, height_px, y_box, y_plot, session){
   ns = session$ns
   bs4Dash::box(
     id = ns(id_box),
@@ -15,6 +15,13 @@ spawn_empty_plotbox = function(id_box, id_plot, label, width_bs, height_px, y_bo
     maximizable = TRUE,
     collapsible = FALSE,
     status = "primary",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(id_sidebar),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(id_sidebar_ui)
+      )
+    ),
     plotly::plotlyOutput(
       outputId = ns(id_plot),
       width = width_bs,
@@ -29,6 +36,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
   } else if (length(plot_list) == 1) {
     output$plotbox_field = shiny::renderUI({
       spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                          id_sidebar = plot_switch(plot_list[1])[4],
+                          id_sidebar_ui = plot_switch(plot_list[1])[5],
                           id_plot = plot_switch(plot_list[1])[3],
                           label = plot_switch(plot_list[1])[1],
                           width_bs = width_bs,
@@ -41,6 +50,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
     output$plotbox_field = shiny::renderUI({
       shiny::fluidRow(
         spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                            id_sidebar = plot_switch(plot_list[1])[4],
+                            id_sidebar_ui = plot_switch(plot_list[1])[5],
                             id_plot = plot_switch(plot_list[1])[3],
                             label = plot_switch(plot_list[1])[1],
                             width_bs = width_bs,
@@ -49,6 +60,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
                             y_plot = y_plot,
                             session = session),
         spawn_empty_plotbox(id_box = plot_switch(plot_list[2])[2],
+                            id_sidebar = plot_switch(plot_list[2])[4],
+                            id_sidebar_ui = plot_switch(plot_list[2])[5],
                             id_plot = plot_switch(plot_list[2])[3],
                             label = plot_switch(plot_list[2])[1],
                             width_bs = width_bs,
@@ -63,6 +76,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
       shiny::tagList(
         shiny::fluidRow(
           spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                              id_sidebar = plot_switch(plot_list[1])[4],
+                              id_sidebar_ui = plot_switch(plot_list[1])[5],
                               id_plot = plot_switch(plot_list[1])[3],
                               label = plot_switch(plot_list[1])[1],
                               width_bs = width_bs,
@@ -71,6 +86,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
                               y_plot = y_plot,
                               session = session),
           spawn_empty_plotbox(id_box = plot_switch(plot_list[2])[2],
+                              id_sidebar = plot_switch(plot_list[2])[4],
+                              id_sidebar_ui = plot_switch(plot_list[2])[5],
                               id_plot = plot_switch(plot_list[2])[3],
                               label = plot_switch(plot_list[2])[1],
                               width_bs = width_bs,
@@ -81,6 +98,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
         ),
         shiny::fluidRow(
           spawn_empty_plotbox(id_box = plot_switch(plot_list[3])[2],
+                              id_sidebar = plot_switch(plot_list[3])[4],
+                              id_sidebar_ui = plot_switch(plot_list[3])[5],
                               id_plot = plot_switch(plot_list[3])[3],
                               label = plot_switch(plot_list[3])[1],
                               width_bs = width_bs,
@@ -96,6 +115,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
       shiny::tagList(
         shiny::fluidRow(
           spawn_empty_plotbox(id_box = plot_switch(plot_list[1])[2],
+                              id_sidebar = plot_switch(plot_list[1])[4],
+                              id_sidebar_ui = plot_switch(plot_list[1])[5],
                               id_plot = plot_switch(plot_list[1])[3],
                               label = plot_switch(plot_list[1])[1],
                               width_bs = width_bs,
@@ -104,6 +125,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
                               y_plot = y_plot,
                               session = session),
           spawn_empty_plotbox(id_box = plot_switch(plot_list[2])[2],
+                              id_sidebar = plot_switch(plot_list[2])[4],
+                              id_sidebar_ui = plot_switch(plot_list[2])[5],
                               id_plot = plot_switch(plot_list[2])[3],
                               label = plot_switch(plot_list[2])[1],
                               width_bs = width_bs,
@@ -114,6 +137,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
         ),
         shiny::fluidRow(
           spawn_empty_plotbox(id_box = plot_switch(plot_list[3])[2],
+                              id_sidebar = plot_switch(plot_list[3])[4],
+                              id_sidebar_ui = plot_switch(plot_list[3])[5],
                               id_plot = plot_switch(plot_list[3])[3],
                               label = plot_switch(plot_list[3])[1],
                               width_bs = width_bs,
@@ -122,6 +147,8 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
                               y_plot = y_plot,
                               session = session),
           spawn_empty_plotbox(id_box = plot_switch(plot_list[4])[2],
+                              id_sidebar = plot_switch(plot_list[4])[4],
+                              id_sidebar_ui = plot_switch(plot_list[4])[5],
                               id_plot = plot_switch(plot_list[4])[3],
                               label = plot_switch(plot_list[4])[1],
                               width_bs = width_bs,
@@ -135,7 +162,9 @@ spawn_grid = function(plot_list, width_bs, reactive_ypx, y_box, y_plot, session,
   }
 }
 
-spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactive_ypx, x_plot, y_plot, y_box, r6, session, output) {
+spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactive_ypx, x_plot, y_plot, y_box, r6, input, output, session) {
+  
+  ns = session$ns
   
   # Spawn an empty plotbox
   spawn_grid(plot_list = plot_list,
@@ -154,35 +183,129 @@ spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactiv
     
     # Insert appropriate plot
     if (id_plot == "spawn_class_distribution"){
-      r6$plot_class_distribution(col_group = r6$col_group,
+      output$sidebar_class_distribution_ui = shiny::renderUI({
+        shiny::selectInput(
+          inputId = ns("sidebar_class_distribution_meta_select"),
+          label = "Select group column",
+          choices = colnames(r6$meta_filtered),
+          selected = r6$col_group
+        )
+      })
+      shiny::observeEvent(input$sidebar_class_distribution_meta_select, {
+        r6$plot_class_distribution(col_group = input$sidebar_class_distribution_meta_select,
+                                   colour_list = colour_list,
+                                   width = reactive_xpx * x_plot,
+                                   height = reactive_ypx * y_plot)
+        
+        output$spawn_class_distribution = plotly::renderPlotly(
+          r6$class_distribution
+        )
+      })
+
+    } else if (id_plot == "spawn_class_comparison"){
+      
+      
+      output$sidebar_class_comparison_ui = shiny::renderUI({
+        shiny::selectInput(
+          inputId = ns("sidebar_class_comparison_meta_select"),
+          label = "Select group column",
+          choices = colnames(r6$meta_filtered),
+          selected = r6$col_group
+        )
+      })
+      
+      shiny::observeEvent(input$sidebar_class_comparison_meta_select, {
+        r6$plot_class_comparison(col_group = input$sidebar_class_comparison_meta_select,
                                  colour_list = colour_list,
                                  width = reactive_xpx * x_plot,
                                  height = reactive_ypx * y_plot)
-      output$spawn_class_distribution = plotly::renderPlotly(
-        r6$class_distribution
-      )
-    } else if (id_plot == "spawn_class_comparison"){
-      r6$plot_class_comparison(col_group = r6$col_group,
-                               colour_list = colour_list,
-                               width = reactive_xpx * x_plot,
-                               height = reactive_ypx * y_plot)
-      output$spawn_class_comparison = plotly::renderPlotly(
-        r6$class_comparison
-      )
+        
+        output$spawn_class_comparison = plotly::renderPlotly(
+          r6$class_comparison
+        )
+        
+      })
+
     } else if (id_plot == "spawn_volcano_plot"){
-      r6$get_volcano_table(data_table = r6$data_filtered,
-                           col_group = r6$col_group,
-                           group_1 = "G1",
-                           group_2 = "G2",
-                           impute = NA)
-      r6$plot_volcano(data_table = self$volcano_table,
-                              colour_list = colour_list,
-                              width = reactive_xpx * x_plot,
-                              height = reactive_ypx * y_plot)
-      output$spawn_volcano_plot = plotly::renderPlotly(
-        r6$volcano_plot
-      )
+      
+      output$sidebar_volcano_plot_ui = shiny::renderUI({
+        shiny::tagList(
+          shiny::selectInput(
+            inputId = ns("sidebar_volcano_plot_meta_select"),
+            label = "Select group column",
+            choices = colnames(r6$meta_filtered),
+            selected = r6$col_group
+          ),
+          shiny::selectizeInput(
+            inputId = ns("sidebar_volcano_plot_group_select"),
+            label = "Select groups to compare(2)",
+            choices = NULL,
+            multiple = TRUE
+          )
+        )
+      })
+      
+      shiny::observeEvent(input$sidebar_volcano_plot_meta_select,{
+        shiny::updateSelectizeInput(
+          inputId = "sidebar_volcano_plot_group_select",
+          session = session,
+          choices = unique(r6$meta_filtered[,input$sidebar_volcano_plot_meta_select]),
+          selected = unique(r6$meta_filtered[,input$sidebar_volcano_plot_meta_select])[c(1,2)]
+        )
+      })
+      
+      
+      shiny::observeEvent(input$sidebar_volcano_plot_group_select, {
+        if (length(input$sidebar_volcano_plot_group_select) == 2) {
+          r6$get_volcano_table(data_table = r6$data_filtered,
+                               col_group = input$sidebar_volcano_plot_meta_select,
+                               group_1 = input$sidebar_volcano_plot_group_select[1],
+                               group_2 = input$sidebar_volcano_plot_group_select[2],
+                               impute = NA)
+          r6$plot_volcano(data_table = self$volcano_table,
+                          colour_list = colour_list,
+                          width = reactive_xpx * x_plot,
+                          height = reactive_ypx * y_plot)
+          output$spawn_volcano_plot = plotly::renderPlotly(
+            r6$volcano_plot
+          )
+        }
+      })
+
     } else if (id_plot == "spawn_heatmap"){
+      
+      output$sidebar_heatmap_ui = shiny::renderUI({
+        shiny::tagList(
+          shiny::selectInput(
+            inputId = ns("sidebar_heatmap_dataset"),
+            label = "Select dataset",
+            choices = c("Lipid species", "Lipid classes"),
+            selected = character(0)
+          ),
+          shiny::checkboxGroupInput(
+            label = "Clustering",
+            inputId = ns("sidebar_heatmap_clustering"),
+            choices = c("Cluster samples" = "cluster_rows",
+                        "Cluster features" = "cluster_columns")
+          ),
+          shiny::selectizeInput(
+            inputId = ns("sidebar_heatmap_map_rows"),
+            label = "Map sample data",
+            choices = NULL
+          ),
+          shiny::selectizeInput(
+            inputId = ns("sidebar_heatmap_map_cols"),
+            label = "Map feature data",
+            choices = NULL
+          ),
+          shiny::actionButton(
+            inputId = ns("sidebar_heatmap_run"),
+            label = "Generate heatmap"
+          )
+        )
+      })
+      
+      
       output$spawn_heatmap = plotly::renderPlotly(
         spawn_plot(width_px = reactive_xpx*x_plot,
                    height_px = reactive_ypx*y_plot,
@@ -210,10 +333,10 @@ spawn_plot = function(label = NULL, width_px, height_px, plot_bgcolor='#e5ecf6')
 plot_switch = function(plot_selected){
   switch(
     EXPR = plot_selected,
-    "select_class_distribution" = c("Class distribution", "box_class_distribution", "spawn_class_distribution"),
-    "select_class_comparison" = c("Class comparison", "box_class_comparison", "spawn_class_comparison"),
-    "select_volcano_plot" = c("Volcano plot", "box_volcano_plot", "spawn_volcano_plot"),
-    "select_heatmap" = c("Heatmap", "box_heatmap", "spawn_heatmap")
+    "select_class_distribution" = c("Class distribution", "box_class_distribution", "spawn_class_distribution", "sidebar_class_distribution", "sidebar_class_distribution_ui"),
+    "select_class_comparison" = c("Class comparison", "box_class_comparison", "spawn_class_comparison", "sidebar_class_comparison", "sidebar_class_comparison_ui"),
+    "select_volcano_plot" = c("Volcano plot", "box_volcano_plot", "spawn_volcano_plot", "sidebar_volcano_plot", "sidebar_volcano_plot_ui"),
+    "select_heatmap" = c("Heatmap", "box_heatmap", "spawn_heatmap", "sidebar_heatmap", "sidebar_heatmap_ui")
   )
 }
 
@@ -251,7 +374,7 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      ns <- session$ns
+      ns = session$ns
       
       # Constant dimension ratios
       x_box = 0.9
@@ -297,8 +420,10 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
                         y_plot = y_plot,
                         y_box = y_box,
                         r6 = r6,
-                        session = session,
-                        output = output)
+                        input = input,
+                        output = output,
+                        session = session
+                        )
 
         } else {
           output$plotbox_field = shiny::renderUI(

@@ -83,6 +83,23 @@ normalise_lipid_class = function(lips_table) {
   return(lips_table)
 }
 
+z_score_normalisation = function(data_table, impute) {
+  # Impute (or not) and scale (z-score) the data
+  if (is.na(impute)) {
+    for (col in colnames(data_table)) {
+      data_table[,col] = (data_table[,col] - mean(data_table[,col], na.rm = T))/sd(data_table[,col], na.rm = T)
+    }
+  } else {
+    data_table[is.na(data_table)] = impute
+    for (col in colnames(data_table)) {
+      data_table[,col] = (data_table[,col] - mean(data_table[,col]))/sd(data_table[,col])
+    }
+  }
+  return(data_table)
+}
+
+
+
 #---------------------------------------------------- Class table functions ----
 get_lipid_class_table = function(table){
   
