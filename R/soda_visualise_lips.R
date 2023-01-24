@@ -3,6 +3,7 @@ library(bs4Dash)
 library(shinyWidgets)
 library(shinybrowser)
 library(plotly)
+library(ComplexHeatmap)
 
 spawn_empty_plotbox = function(id_box, id_sidebar, id_sidebar_ui, id_plot, label, width_bs, height_px, y_box, y_plot, session){
   ns = session$ns
@@ -27,6 +28,11 @@ spawn_empty_plotbox = function(id_box, id_sidebar, id_sidebar_ui, id_plot, label
       width = width_bs,
       height = height_px * y_plot
     )
+    # shiny::htmlOutput(
+    #   outputId = ns("truffles"),
+    #   width = width_bs,
+    #   height = height_px * y_plot
+    # )
   )
 }
 
@@ -258,11 +264,11 @@ spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactiv
       shiny::observeEvent(input$sidebar_volcano_plot_group_select, {
         if (length(input$sidebar_volcano_plot_group_select) == 2) {
           r6$get_volcano_table(data_table = r6$data_filtered,
+                               data_table_normalised = r6$data_z_scored,
                                col_group = input$sidebar_volcano_plot_meta_select,
                                group_1 = input$sidebar_volcano_plot_group_select[1],
-                               group_2 = input$sidebar_volcano_plot_group_select[2],
-                               impute = NA)
-          r6$plot_volcano(data_table = self$volcano_table,
+                               group_2 = input$sidebar_volcano_plot_group_select[2])
+          r6$plot_volcano(data_table = r6$volcano_table,
                           colour_list = colour_list,
                           width = reactive_xpx * x_plot,
                           height = reactive_ypx * y_plot)
@@ -280,7 +286,7 @@ spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactiv
             inputId = ns("sidebar_heatmap_dataset"),
             label = "Select dataset",
             choices = c("Lipid species", "Lipid classes"),
-            selected = character(0)
+            selected = "Lipid species"
           ),
           shiny::checkboxGroupInput(
             label = "Clustering",
@@ -305,12 +311,115 @@ spawn_plotbox = function(plot_list, colour_list, width_bs, reactive_xpx, reactiv
         )
       })
       
+      shiny::observeEvent(input$sidebar_heatmap_run,{
+        if (input$sidebar_heatmap_dataset == "Lipid species"){
+          data_table = r6$data_total_norm_z_scored
+        } else {
+          data_table = r6$data_class_table_z_scored
+        }
+        
+        r6$plot_heatmap(data_table = data_table,
+                        width = reactive_xpx*x_plot,
+                        height = reactive_ypx*y_plot)
+        heatmap_plot = ComplexHeatmap::draw(r6$heatmap)
+        
+        InteractiveComplexHeatmap::InteractiveComplexHeatmapWidget(input = input,
+                                                                   output = output,
+                                                                   session = session,
+                                                                   ht_list = heatmap_plot,
+                                                                   height1 = reactive_ypx*y_plot,
+                                                                   output_id =  "spawn_heatmap",
+                                                                   layout = "1-(2|3)",
+                                                                   close_button = FALSE)
+      })
       
-      output$spawn_heatmap = plotly::renderPlotly(
-        spawn_plot(width_px = reactive_xpx*x_plot,
-                   height_px = reactive_ypx*y_plot,
-                   plot_bgcolor = '#E103D1')
-      )
+      # output$spawn_heatmap = plotly::renderPlotly(
+      #   spawn_plot(width_px = reactive_xpx*x_plot,
+      #              height_px = reactive_ypx*y_plot,
+      #              plot_bgcolor = '#E103D1')
+      # )
+    } else if (id_plot == "spawn_pca") {
+      output$sidebar_pca_ui = shiny::renderUI({
+          shiny::selectInput(
+            inputId = ns("sidebar_pca_dataset"),
+            label = "Select dataset",
+            choices = c("Lipid species normalised", "Lipid class normalised"),
+            selected = "Lipid species normalised"
+          )
+      })
+      
+      
+      shiny::observeEvent(input$sidebar_pca_dataset, {
+        
+        if (input$sidebar_pca_dataset == "Lipid class normalised") {
+          data_table = r6$data_class_norm_z_scored
+        } else if (input$sidebar_pca_dataset == "Lipid species normalised") {
+          data_table = r6$data_total_norm_z_scored
+        }
+        r6$plot_pca(data_table = data_table,
+                    width = reactive_xpx * x_plot,
+                    height = reactive_ypx * y_plot,
+                    colour_list = colour_list)
+        
+        
+        output$spawn_pca = plotly::renderPlotly(
+          r6$pca_plot
+        )
+        
+      })
+      
+    } else if (id_plot == "spawn_dbplot") {
+      output$sidebar_dbplot_ui = shiny::renderUI({
+        shiny::tagList(
+          shiny::selectInput(
+            inputId = ns("sidebar_dbplot_meta_select"),
+            label = "Select group column",
+            choices = colnames(r6$meta_filtered),
+            selected = r6$col_group
+          ),
+          shiny::selectizeInput(
+            inputId = ns("sidebar_dbplot_group_select"),
+            label = "Select groups to compare(2)",
+            choices = NULL,
+            multiple = TRUE
+          ),
+          shiny::selectizeInput(
+            inputId = ns("sidebar_dbplot_class_select"),
+            label = "Select lipid class",
+            choices = unique(r6$meta_features$lipid_class),
+            selected = unique(r6$meta_features$lipid_class)[1],
+            multiple = FALSE
+          )
+        )
+      })
+      
+      shiny::observeEvent(input$sidebar_dbplot_meta_select,{
+        shiny::updateSelectizeInput(
+          inputId = "sidebar_dbplot_group_select",
+          session = session,
+          choices = unique(r6$meta_filtered[,input$sidebar_dbplot_meta_select]),
+          selected = unique(r6$meta_filtered[,input$sidebar_dbplot_meta_select])[c(1,2)]
+        )
+      })
+      
+      shiny::observeEvent(c(input$sidebar_dbplot_class_select, input$sidebar_dbplot_meta_select), {
+        if (length(input$sidebar_dbplot_group_select) == 2) {
+          r6$get_dbplot_table(data_table = r6$data_filtered,
+                              data_table_normalised = r6$data_z_scored,
+                              dbplot_table = r6$meta_features,
+                              col_group = input$sidebar_dbplot_meta_select,
+                              group_1 = input$sidebar_dbplot_group_select[1],
+                              group_2 = input$sidebar_dbplot_group_select[2])
+
+          r6$plot_doublebonds(lipid_class = input$sidebar_dbplot_class_select,
+                              width = reactive_xpx * x_plot,
+                              height = reactive_ypx * y_plot)
+          output$spawn_dbplot = plotly::renderPlotly(
+            r6$double_bond_plot
+          )
+        }
+      })
+      
     }
   }
 }
@@ -336,7 +445,9 @@ plot_switch = function(plot_selected){
     "select_class_distribution" = c("Class distribution", "box_class_distribution", "spawn_class_distribution", "sidebar_class_distribution", "sidebar_class_distribution_ui"),
     "select_class_comparison" = c("Class comparison", "box_class_comparison", "spawn_class_comparison", "sidebar_class_comparison", "sidebar_class_comparison_ui"),
     "select_volcano_plot" = c("Volcano plot", "box_volcano_plot", "spawn_volcano_plot", "sidebar_volcano_plot", "sidebar_volcano_plot_ui"),
-    "select_heatmap" = c("Heatmap", "box_heatmap", "spawn_heatmap", "sidebar_heatmap", "sidebar_heatmap_ui")
+    "select_heatmap" = c("Heatmap", "box_heatmap", "spawn_heatmap", "sidebar_heatmap", "sidebar_heatmap_ui"),
+    "select_pca" = c("PCA", "box_pca", "spawn_pca", "sidebar_pca", "sidebar_pca_ui"),
+    "select_dbplot" = c("Double bond plot", "box_dbplot", "spawn_dbplot", "sidebar_dbplot", "sidebar_dbplot_ui")
   )
 }
 
@@ -353,7 +464,10 @@ soda_visualise_lips_ui = function(id) {
                                          choices = c("Class distribution" = "select_class_distribution",
                                                      "Class comparison" = "select_class_comparison",
                                                      "Volcano plot" = "select_volcano_plot",
-                                                     "Heatmap" = "select_heatmap"),
+                                                     "Heatmap" = "select_heatmap",
+                                                     "PCA" = "select_pca",
+                                                     "Double bond plot" = "select_dbplot"
+                                                     ),
                                          checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")))
 
       

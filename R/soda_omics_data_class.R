@@ -16,16 +16,22 @@ Omics_data = R6::R6Class(
     # Filtered
     data_filtered = NULL,
     meta_filtered = NULL,
+    meta_features = NULL,
     
     # Normalised
+    data_z_scored = NULL,
     data_class_norm = NULL,
     data_total_norm = NULL,
+    data_class_norm_z_scored = NULL,
+    data_total_norm_z_scored = NULL,
     
     # class tables
     data_class_table = NULL,
+    data_class_table_z_scored = NULL,
     
-    # volcano table
+    # Plot table
     volcano_table = NULL,
+    dbplot_table = NULL,
     
     ### Columns
     col_id_meta = NULL,
@@ -42,6 +48,9 @@ Omics_data = R6::R6Class(
     class_distribution = NULL,
     class_comparison = NULL,
     volcano_plot = NULL,
+    heatmap = NULL,
+    pca_plot = NULL,
+    double_bond_plot = NULL,
     
     ### Functions
     initialize = function(name = NA, type = NA){
@@ -87,6 +96,56 @@ Omics_data = R6::R6Class(
       rownames(table) = table[,id_col]
       table = table[,-which(colnames(table) == id_col)]
       self$meta_filtered = table
+    },
+    
+    get_feature_metadata = function(data_table = self$data_filtered) {
+      # Initialise table
+      feature_metadata = data.frame(row.names = sort(colnames(data_table)))
+      
+      # Add lipid classes
+      feature_metadata$lipid_class = get_lipid_classes(feature_list = rownames(feature_metadata),
+                                                         uniques = FALSE)
+      
+      # Collect carbon and unsaturation counts
+      c_count_1 = c() # Main carbon count / total carbon count (TGs)
+      s_count_1 = c() # Main saturation count
+      c_count_2 = c() # Secondary carbon count (asyl groups or TGs)
+      s_count_2 = c() # Secondary saturation (asyl groups or TGs)
+      for (c in unique(feature_metadata$lipid_class)) {
+        idx = rownames(feature_metadata)[feature_metadata$lipid_class == c]
+        
+        if (c == "TG") {
+          # For triglycerides
+          for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
+            c_count_1 = c(c_count_1, i[2])
+            c_count_2 = c(c_count_2, i[4]) 
+            s_count_1 = c(s_count_1, i[3])
+            s_count_2 = c(s_count_2, i[5])
+          }
+        } else if (sum(stringr::str_detect(string = idx, pattern = "/|_")) >0) {
+          # For species with asyl groups ("/" or "_")
+          for (i in stringr::str_split(string = idx, pattern = " |:|_|/")) {
+            c_count_1 = c(c_count_1, gsub("[^0-9]", "", i[2]))
+            c_count_2 = c(c_count_2, i[4])
+            s_count_1 = c(s_count_1, i[3])
+            s_count_2 = c(s_count_2, i[5])
+          }
+        } else {
+          # For the rest
+          for (i in stringr::str_split(string = idx, pattern = " |:")) {
+            c_count_1 = c(c_count_1, i[2])
+            c_count_2 = c(c_count_2, i[2])
+            s_count_1 = c(s_count_1, i[3])
+            s_count_2 = c(s_count_2, i[3])
+          }
+        }
+      }
+      
+      feature_metadata$carbons_1 = c_count_1
+      feature_metadata$carbons_2 = c_count_2
+      feature_metadata$unsat_1 = s_count_1
+      feature_metadata$unsat_2 = s_count_2
+      self$meta_features = feature_metadata
     },
     
     ## Columns
@@ -183,11 +242,31 @@ Omics_data = R6::R6Class(
     },
     
     ## Normalisation functions
+    normalise_z_score = function() {
+      self$data_z_scored = z_score_normalisation(data_table = self$data_filtered,
+                                                 impute = NA)
+    },
+
     normalise_class = function(){
       self$data_class_norm = normalise_lipid_class(self$data_filtered)
     },
     normalise_total = function(){
       self$data_total_norm = self$data_filtered/rowSums(self$data_filtered, na.rm = T)
+    },
+    
+    normalise_class_z_score = function() {
+      self$data_class_norm_z_scored = z_score_normalisation(data_table = self$data_class_norm,
+                                                            impute = 0)
+    },
+    
+    normalise_total_z_score = function() {
+      self$data_total_norm_z_scored = z_score_normalisation(data_table = self$data_total_norm,
+                                                            impute = 0)
+    },
+    
+    normalise_class_table_z_score = function() {
+      self$data_class_table_z_scored = z_score_normalisation(data_table = self$data_class_table,
+                                                            impute = 0)
     },
     
     ## Class tables
@@ -196,13 +275,7 @@ Omics_data = R6::R6Class(
     },
     
     ## Volcano table
-    get_volcano_table = function(data_table = self$data_filtered, col_group = self$col_group, group_1, group_2, impute = NA) {
-      
-      # Impute (or not) and scale (z-score) the data
-      
-      data_table_normalised = z_score_normalisation(data_table = data_table,
-                                                    impute = impute)
-      
+    get_volcano_table = function(data_table = self$data_filtered, data_table_normalised = self$data_z_scored, col_group = self$col_group, group_1, group_2) {
       
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$meta_filtered,
@@ -239,6 +312,44 @@ Omics_data = R6::R6Class(
                                  row.names = colnames(data_table))
       self$volcano_table = volcano_table
     },
+    
+    ## Double bond plot table
+    get_dbplot_table = function(data_table = self$data_filtered, data_table_normalised = self$data_z_scored, dbplot_table = self$meta_features, col_group = self$col_group, group_1, group_2) {
+      
+      # Get the rownames for each group
+      idx_group_1 = get_idx_by_pattern(table = self$meta_filtered,
+                                       col = col_group,
+                                       pattern = group_1,
+                                       row_names = T)
+      
+      idx_group_2 = get_idx_by_pattern(table = self$meta_filtered,
+                                       col = col_group,
+                                       pattern = group_2,
+                                       row_names = T)
+      
+      # Get all row names from both groups
+      idx_all = c(idx_group_1, idx_group_2)
+      idx_all = sort(unique(idx_all))
+      
+      # Filter data to keep only the two groups
+      data_table = data_table[idx_all,]
+      data_table_normalised = data_table_normalised[idx_all,]
+      
+      # Collect fold change and p-values
+      fold_change = c()
+      p_value = c()
+      for (col in rownames(dbplot_table)) {
+        fold_change = c(fold_change, median(data_table[idx_group_1, col], na.rm = T) / median(data_table[idx_group_2, col], na.rm = T))
+        p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+      }
+      p_value_bh_adj = p.adjust(p_value, method = "BH")
+      
+      dbplot_table$log2_fold_change = log2(fold_change)
+      dbplot_table$log10_p_value_bh_adj = log10(p_value_bh_adj)
+      
+      self$dbplot_table = dbplot_table
+    },
+    
     
     ### Plotting
     ## Class distribution
@@ -281,14 +392,14 @@ Omics_data = R6::R6Class(
     },
     
     ## Class comparison
-    plot_class_comparison = function(table = self$data_class_table[self$get_idx_samples(), ],
+    plot_class_comparison = function(data_table = self$data_class_table[self$get_idx_samples(), ],
                                      meta_table = self$meta_filtered[self$get_idx_samples(), ],
                                      col_group = self$col_group,
                                      colour_list,
                                      width,
                                      height){
       groups = unique(meta_table[,col_group])
-      class_list = colnames(table)
+      class_list = colnames(data_table)
       annotations = get_subplot_titles(class_list)
       dims = get_subplot_dim(class_list)
       plot_list = c()
@@ -305,7 +416,7 @@ Omics_data = R6::R6Class(
             cleared_groups = c(cleared_groups, g)
           }
           s = rownames(meta_table)[meta_table[, col_group] == g]
-          d = table[s, c]
+          d = data_table[s, c]
           m = mean(d)
           subplot = subplot %>% add_trace(x = g, y = m, type  = "bar", name = g,
                                           color = colour_list[i], alpha = 1,
@@ -314,7 +425,9 @@ Omics_data = R6::R6Class(
                                           pointpos = 0, name = g, color = colour_list[i],
                                           line = list(color = 'rgb(100,100,100)'),
                                           marker = list(color = 'rgb(100,100,100)'), alpha = 1,
-                                          legendgroup=i, showlegend = FALSE)
+                                          legendgroup=i, showlegend = FALSE,
+                                          text = s,
+                                          hoverinfo = "text")
           subplot = subplot %>% layout(xaxis= list(showticklabels = FALSE),
                                        yaxis = list(tickfont = list(size = 8)))
           i = i + 1
@@ -347,10 +460,82 @@ Omics_data = R6::R6Class(
         )
         i = i + 1
       }
-      fig = fig %>% layout(shapes = list(vline(x = -1), vline(x = 1)),
+      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot")),
                            xaxis = list(title = "log2(fold change)"),
                            yaxis = list(title = "-log10(BH adjusted p value)"))
       self$volcano_plot = fig
+    },
+    
+    ## Heatmap plot
+    plot_heatmap = function(data_table,
+                            width,
+                            height) {
+      fig = ComplexHeatmap::Heatmap(t(data_table),
+                                    column_names_gp = grid::gpar(fontsize = 4),
+                                    row_names_gp = grid::gpar(fontsize = 10))
+      self$heatmap = fig
+    },
+    
+    ## PCA scores and loading plots
+    plot_pca = function(data_table, width, height, colour_list) {
+      
+      pca_data = get_pca_data(data_table = data_table)
+      
+      fig = c()
+      
+      fig[[1]] = pca_plot_scores(x = pca_data@scores[, "PC1"],
+                                 y = pca_data@scores[, "PC2"],
+                                 meta_table = self$meta_filtered,
+                                 group_col = self$col_group,
+                                 width = width,
+                                 height = height,
+                                 colour_list = colour_list)
+      
+      fig[[2]] = pca_plot_loadings(x = pca_data@loadings[, "PC1"],
+                                   y =  pca_data@loadings[, "PC2"],
+                                   feature_list = colnames(data_table),
+                                   width = width,
+                                   height = height,
+                                   colour_list = colour_list)
+      
+      fig = plotly::subplot(fig, nrows = 1, margin = 0.035, titleX = TRUE)
+      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5))
+      self$pca_plot = fig
+    },
+    
+    ## Double bond plot
+    
+    plot_doublebonds = function(data_table = self$dbplot_table, lipid_class, width, height){
+      
+      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
+      
+      fig = plotly::plot_ly(data_table[selected_rows,],
+                            x = ~carbons_1,
+                            y = ~unsat_1,
+                            color = ~log10_p_value_bh_adj,
+                            size = ~log2_fold_change,
+                            mode = "markers",
+                            sizes = ~c(5,40),
+                            marker = list(sizemode ='diameter' , opacity = 0.5,sizeref=1),
+                            showlegend=T,
+                            type = "scatter",
+                            text = selected_rows,
+                            hoverinfo = "text",
+                            width = width,
+                            height = height)
+      fig = fig %>% layout(
+        legend= list(itemsizing='constant'),
+        title = paste0("Double bonds in ", lipid_class),
+        xaxis = list(title = 'Total carbons'),
+        yaxis = list(title = 'Total double bonds')
+      )
+      fig = fig %>% config(modeBarButtonsToAdd = c('drawline',
+                                                   'drawopenpath',
+                                                   'drawclosedpath',
+                                                   'drawcircle',
+                                                   'drawrect',
+                                                   'eraseshape'))
+      self$double_bond_plot = fig
     }
   )
 )

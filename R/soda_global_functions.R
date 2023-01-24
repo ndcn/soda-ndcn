@@ -244,8 +244,75 @@ preview_class_plot = function(r6, total_cols, del_cols){
 
 
 
+#--------------------------------------------------------------- Statistics ----
+get_pca_data = function(data_table){
+  
+  if (sum(is.na(data_table)) > 0) {
+    complete_obs = F
+  }else{
+    complete_obs = T
+  }
+  
+  pca_data = pcaMethods::pca(object = data_table,
+                             nPcs = 2,
+                             scale = "none",
+                             cv = "q2",
+                             completeObs = complete_obs)
+  
+  return(pca_data)
+}
 
+pca_plot_scores = function(x, y, meta_table, group_col, width, height, colour_list){
+  groups = unique(meta_table[,group_col])
+  fig = plotly::plot_ly(colors = colour_list, width = width, height = height)
+  i = 1
+  for (grp in groups) {
+    idx = rownames(meta_table)[which(meta_table[,group_col] == grp)]
+    fig = fig %>% add_trace(x = x[idx], y = y[idx],
+                            name = grp, color = colour_list[i],
+                            type  = "scatter", mode = "markers",
+                            text = idx,
+                            hoverinfo = "text",
+                            legendgroup=grp)
+    i = i + 1
+  }
+  fig = fig %>% layout(shapes = list(hline(0),
+                                     vline(0),
+                                     circle(x, y)))
+  return(fig)
+}
 
+pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
+  fig = plotly::plot_ly(colors = colour_list, width = width, height = height)
+  fig = fig %>% add_trace(x = x, y = y,
+                          type = "scatter", mode = "text", text = feature_list,
+                          textposition = 'middle right')
+  
+  shape_list = list(
+    hline(0),
+    vline(0)
+  )
+  
+  
+  for (i in 1:length(feature_list)) {
+    feature = feature_list[i]
+    new_line = list(
+      type = "line",
+      line = list(color = "pink"),
+      xref = "x",
+      yref = "y",
+      x0 = 0,
+      y0 = 0,
+      x1 = x[i],
+      y1 = y[i]
+    )
+    shape_list[[length(shape_list) + 1]] = new_line
+  }
+  
+  fig = fig %>% layout(shapes = shape_list)
+  
+  return(fig)
+}
 #------------------------------------------------------- Plotting functions ----
 
 hline = function(y = 0, color = "black") {
@@ -260,7 +327,7 @@ hline = function(y = 0, color = "black") {
   )
 }
 
-vline <- function(x = 0, color = "black") {
+vline <- function(x = 0, color = "black", dash = NULL) {
   list(
     type = "line",
     y0 = 0,
@@ -268,6 +335,43 @@ vline <- function(x = 0, color = "black") {
     yref = "paper",
     x0 = x,
     x1 = x,
-    line = list(color = color, dash="dot")
+    line = list(color = color, dash=dash)
+  )
+}
+
+#' @title Calculate Hoteling T2
+#'
+#' @description Calculate Hoteling T2 for the scores plot
+#'
+#' @param x numeric vector with x values
+#' @param y numeric vector with y values
+#' @param alpha numeric(1), confidence interval
+#' @param len numeric(1), number of points to create the ellipse
+#'
+#' @return A list is returned to be used in a plotly graph.
+#'
+#' @details This is a helper function which is used to create a confidence (Hotelling T2) interval for a
+#'     PCA score plot.
+#'
+#' @importFrom stats var qf
+#'
+#' @noRd
+#'
+#' @author Damien Olivier
+circle = function(x, y, alpha = 0.95, len = 200){
+  N = length(x)
+  mypi = seq(0, 2 * pi, length = len)
+  r1 = sqrt(stats::var(x) * stats::qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  r2 = sqrt(stats::var(y) * stats::qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  list(
+    type = "circle",
+    xref = "x",
+    x0= -r1,
+    x1 = r1,
+    yref = "y",
+    y0 = -r2,
+    y1 = r2,
+    line = "black",
+    opacity = 0.2
   )
 }
