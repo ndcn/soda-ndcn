@@ -477,7 +477,7 @@ Omics_data = R6::R6Class(
     },
     
     ## PCA scores and loading plots
-    plot_pca = function(data_table, width, height, colour_list) {
+    plot_pca = function(data_table, col_group, width, height, colour_list) {
       
       pca_data = get_pca_data(data_table = data_table)
       
@@ -486,7 +486,7 @@ Omics_data = R6::R6Class(
       fig[[1]] = pca_plot_scores(x = pca_data@scores[, "PC1"],
                                  y = pca_data@scores[, "PC2"],
                                  meta_table = self$meta_filtered,
-                                 group_col = self$col_group,
+                                 group_col = col_group,
                                  width = width,
                                  height = height,
                                  colour_list = colour_list)

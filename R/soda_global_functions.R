@@ -278,7 +278,8 @@ pca_plot_scores = function(x, y, meta_table, group_col, width, height, colour_li
   }
   fig = fig %>% layout(shapes = list(hline(0),
                                      vline(0),
-                                     circle(x, y)))
+                                     circle(x, y)),
+                       legend = list(title=list(text = paste0('<b>', group_col, ': </b>'))))
   return(fig)
 }
 
@@ -286,7 +287,7 @@ pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
   fig = plotly::plot_ly(colors = colour_list, width = width, height = height)
   fig = fig %>% add_trace(x = x, y = y,
                           type = "scatter", mode = "text", text = feature_list,
-                          textposition = 'middle right')
+                          textposition = 'middle right', showlegend = F)
   
   shape_list = list(
     hline(0),
