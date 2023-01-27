@@ -4,71 +4,88 @@ library(shinyWidgets)
 library(shinybrowser)
 library(plotly)
 
-plot_one = function(dimensions_obj, output, session) {
+
+
+
+
+plot_one = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
   ns = session$ns
-  print(1)
+  ui_functions = plotbox_switch_ui(selection_list = selection_list)
   
   output$plotbox_field = shiny::renderUI({
-    shiny::tagList(
-      shiny::fluidRow(
-        double_bonds_ui(dimensions_obj, output, session) 
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, output, session) 
       )
     )
   })
-}
-plot_two = function(dimensions_obj, output, session) {
-  ns = session$ns
-  print(2)
-  output$plotbox_field = shiny::renderUI({
-    shiny::tagList(
-      shiny::fluidRow(
-        class_comparison_ui(dimensions_obj, output, session),
-        class_distribution_ui(dimensions_obj, output, session)
-      )
-    )
-  })
-
-}
-plot_three = function(dimensions_obj, output, session) {
-  ns = session$ns
-  print(3)
-  output$plotbox_field = shiny::renderUI({
-    shiny::tagList(
-      shiny::fluidRow(
-        class_comparison_ui(dimensions_obj, output, session),
-        class_distribution_ui(dimensions_obj, output, session),
-        volcano_plot_ui(dimensions_obj, output, session)
-      )
-    )
-  })
-}
-plot_four = function(dimensions_obj, output, session) {
-  ns = session$ns
-  print(4)
-  output$plotbox_field = shiny::renderUI({
-    shiny::tagList(
-      shiny::fluidRow(
-        class_comparison_ui(dimensions_obj, output, session),
-        class_distribution_ui(dimensions_obj, output, session),
-        volcano_plot_ui(dimensions_obj, output, session),
-        heatmap_ui(dimensions_obj, output, session) 
-      )
-    )
-  })
+  
+  plot_servers = plotbox_switch_server(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, colour_list, dimensions_obj, input, output, session)
+  }
 }
 
 
-plot_switch = function(plot_selected){
-  switch(
-    EXPR = plot_selected,
-    "select_class_distribution" = c("Class distribution", "box_class_distribution", "spawn_class_distribution", "sidebar_class_distribution", "sidebar_class_distribution_ui"),
-    "select_class_comparison" = c("Class comparison", "box_class_comparison", "spawn_class_comparison", "sidebar_class_comparison", "sidebar_class_comparison_ui"),
-    "select_volcano_plot" = c("Volcano plot", "box_volcano_plot", "spawn_volcano_plot", "sidebar_volcano_plot", "sidebar_volcano_plot_ui"),
-    "select_heatmap" = c("Heatmap", "box_heatmap", "spawn_heatmap", "sidebar_heatmap", "sidebar_heatmap_ui"),
-    "select_pca" = c("PCA", "box_pca", "spawn_pca", "sidebar_pca", "sidebar_pca_ui"),
-    "select_dbplot" = c("Double bond plot", "box_dbplot", "spawn_dbplot", "sidebar_dbplot", "sidebar_dbplot_ui")
-  )
+plot_two = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+  ns = session$ns
+  ui_functions = plotbox_switch_ui(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, output, session),
+        ui_functions[[2]](dimensions_obj, output, session) 
+      )
+    )
+  })
+  
+  plot_servers = plotbox_switch_server(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, colour_list, dimensions_obj, input, output, session)
+  }
 }
+
+plot_three = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+  ns = session$ns
+  ui_functions = plotbox_switch_ui(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, output, session),
+        ui_functions[[2]](dimensions_obj, output, session),
+        ui_functions[[3]](dimensions_obj, output, session)
+      )
+    )
+  })
+  
+  plot_servers = plotbox_switch_server(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, colour_list, dimensions_obj, input, output, session)
+  }
+}
+
+plot_four = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+  ns = session$ns
+  ui_functions = plotbox_switch_ui(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, output, session),
+        ui_functions[[2]](dimensions_obj, output, session),
+        ui_functions[[3]](dimensions_obj, output, session),
+        ui_functions[[4]](dimensions_obj, output, session)
+      )
+    )
+  })
+  
+  plot_servers = plotbox_switch_server(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, colour_list, dimensions_obj, input, output, session)
+  }
+}
+
+
+
 
 get_plot_list = function() {
   plot_list = c("Class distribution" = "select_class_distribution",
@@ -76,7 +93,7 @@ get_plot_list = function() {
               "Volcano plot" = "select_volcano_plot",
               "Heatmap" = "select_heatmap",
               "PCA" = "select_pca",
-              "Double bond plot" = "select_dbplot"
+              "Double bond plot" = "select_double_bond_plot"
   )
   return(plot_list)
 }
@@ -154,13 +171,11 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
         } else {
           dimensions_obj$ypx = shinybrowser::get_height()/2.1
         }
-        
-        
       })
       
 
       
-      # Plotting nightmare
+      # Plot selection
       shiny::observeEvent(input$showPlots, {
         
         if (length(input$showPlots) == 0) {
@@ -168,23 +183,40 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
             NULL
           )
         } else if (length(input$showPlots) == 1) {
-          plot_one(dimensions_obj, output, session)
-          double_bonds_server(r6, colour_list, dimensions_obj, input, output, session)
+          plot_one(r6 = r6,
+                   dimensions_obj = dimensions_obj,
+                   selection_list = input$showPlots,
+                   colour_list = colour_list,
+                   input = input,
+                   output = output,
+                   session = session)
+          
         } else if (length(input$showPlots) == 2) {
-          plot_two(dimensions_obj, output, session)
-          class_comparison_server(r6, colour_list, dimensions_obj, input, output, session)
-          class_distribution_server(r6, colour_list, dimensions_obj, input, output, session)
+          plot_two(r6 = r6,
+                   dimensions_obj = dimensions_obj,
+                   selection_list = input$showPlots,
+                   colour_list = colour_list,
+                   input = input,
+                   output = output,
+                   session = session)
+          
         } else if (length(input$showPlots) == 3) {
-          plot_three(dimensions_obj, output, session)
-          class_comparison_server(r6, colour_list, dimensions_obj, input, output, session)
-          class_distribution_server(r6, colour_list, dimensions_obj, input, output, session)
-          volcano_plot_server(r6, colour_list, dimensions_obj, input, output, session)
+          plot_three(r6 = r6,
+                   dimensions_obj = dimensions_obj,
+                   selection_list = input$showPlots,
+                   colour_list = colour_list,
+                   input = input,
+                   output = output,
+                   session = session)
+          
         } else if (length(input$showPlots) >= 4) {
-          plot_four(dimensions_obj, output, session)
-          class_comparison_server(r6, colour_list, dimensions_obj, input, output, session)
-          class_distribution_server(r6, colour_list, dimensions_obj, input, output, session)
-          volcano_plot_server(r6, colour_list, dimensions_obj, input, output, session)
-          heatmap_server(r6, colour_list, dimensions_obj, input, output, session)
+          plot_four(r6 = r6,
+                   dimensions_obj = dimensions_obj,
+                   selection_list = input$showPlots,
+                   colour_list = colour_list,
+                   input = input,
+                   output = output,
+                   session = session)
           
           shinyWidgets::updateCheckboxGroupButtons(
             session = session,
@@ -199,14 +231,6 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
             inputId = "showPlots",
             disabledChoices = NULL
           )
-        }
-      })
-      
-      
-      # Expanded boxes tests
-      shiny::observeEvent(input$truffle_box,{
-        if (input$truffle_box$maximized) {
-          print("Truffles")
         }
       })
     }

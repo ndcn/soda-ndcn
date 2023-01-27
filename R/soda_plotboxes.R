@@ -1,3 +1,40 @@
+#----------------------------------------------- Plotting function controls ----
+
+plotbox_switch_ui = function(selection_list){
+  ui_functions = c()
+  for (plot in selection_list) {
+    ui_functions = c(ui_functions, switch(EXPR = plot,
+                                          "select_class_distribution" = class_distribution_ui,
+                                          "select_class_comparison" = class_comparison_ui,
+                                          "select_volcano_plot" = volcano_plot_ui,
+                                          "select_heatmap" = heatmap_ui,
+                                          "select_pca" = pca_ui,
+                                          "select_double_bond_plot" = double_bonds_ui
+    )
+    )
+  }
+  return(ui_functions)
+}
+
+plotbox_switch_server = function(selection_list){
+  server_functions = c()
+  for (plot in selection_list) {
+    server_functions = c(server_functions, switch(EXPR = plot,
+                                                  "select_class_distribution" = class_distribution_server,
+                                                  "select_class_comparison" = class_comparison_server,
+                                                  "select_volcano_plot" = volcano_plot_server,
+                                                  "select_heatmap" = heatmap_server,
+                                                  "select_pca" = pca_server,
+                                                  "select_double_bond_plot" = double_bonds_server
+                                                  )
+                         )
+  }
+  return(server_functions)
+}
+
+
+
+
 #------------------------------------------------------- Class distribution ----
 
 class_distribution_ui = function(dimensions_obj, output, session) {
@@ -12,7 +49,7 @@ class_distribution_ui = function(dimensions_obj, output, session) {
     solidHeader = TRUE,
     maximizable = TRUE,
     collapsible = FALSE,
-    status = "primary",
+    status = "gray",
     sidebar = bs4Dash::boxSidebar(
       id = ns("class_distribution_sidebar"),
       width = 40,
@@ -104,7 +141,7 @@ class_comparison_ui = function(dimensions_obj, output, session) {
     solidHeader = TRUE,
     maximizable = TRUE,
     collapsible = FALSE,
-    status = "primary",
+    status = "gray",
     sidebar = bs4Dash::boxSidebar(
       id = ns("class_comparison_sidebar"),
       width = 40,
@@ -196,7 +233,7 @@ volcano_plot_ui = function(dimensions_obj, output, session) {
     solidHeader = TRUE,
     maximizable = TRUE,
     collapsible = FALSE,
-    status = "primary",
+    status = "gray",
     sidebar = bs4Dash::boxSidebar(
       id = ns("volcano_plot_sidebar"),
       width = 40,
@@ -247,7 +284,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
   shiny::observeEvent(input$volcano_plot_metagroup, {
     if (length(input$volcano_plot_metagroup) == 2) {
       
-      if (input$class_comparison_plotbox$maximized) {
+      if (input$volcano_plot_plotbox$maximized) {
         width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
         height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
       } else {
@@ -306,7 +343,7 @@ heatmap_ui = function(dimensions_obj, output, session) {
     solidHeader = TRUE,
     maximizable = TRUE,
     collapsible = FALSE,
-    status = "primary",
+    status = "gray",
     sidebar = bs4Dash::boxSidebar(
       id = ns("heatmap_sidebar"),
       width = 40,
@@ -427,7 +464,7 @@ pca_ui = function(dimensions_obj, output, session) {
     solidHeader = TRUE,
     maximizable = TRUE,
     collapsible = FALSE,
-    status = "primary",
+    status = "gray",
     sidebar = bs4Dash::boxSidebar(
       id = ns("pca_sidebar"),
       width = 40,
@@ -533,7 +570,7 @@ double_bonds_ui = function(dimensions_obj, output, session) {
     solidHeader = TRUE,
     maximizable = TRUE,
     collapsible = FALSE,
-    status = "primary",
+    status = "gray",
     sidebar = bs4Dash::boxSidebar(
       id = ns("double_bonds_sidebar"),
       width = 40,

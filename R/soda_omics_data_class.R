@@ -276,7 +276,6 @@ Omics_data = R6::R6Class(
     
     ## Volcano table
     get_volcano_table = function(data_table = self$data_filtered, data_table_normalised = self$data_z_scored, col_group = self$col_group, group_1, group_2) {
-      
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$meta_filtered,
                                        col = col_group,
