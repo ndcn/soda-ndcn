@@ -470,9 +470,25 @@ Omics_data = R6::R6Class(
     plot_heatmap = function(data_table,
                             width,
                             height) {
-      fig = ComplexHeatmap::Heatmap(t(data_table),
-                                    column_names_gp = grid::gpar(fontsize = 4),
-                                    row_names_gp = grid::gpar(fontsize = 10))
+      fig = plotly::plot_ly(
+        x = rownames(data_table),
+        y = colnames(data_table),
+        z = t(data_table),
+        colors = colorRamp(c("blue","white", "red")),
+        type = "heatmap",
+        width = width,
+        height = height
+      )
+      fig = fig %>% layout(
+        list(
+          coloraxis=list(
+            cauto = FALSE,
+            cmin = min(data_table),
+            cmid = 0,
+            cmax = -min(data_table)
+          )
+        )
+      )
       self$heatmap = fig
     },
     

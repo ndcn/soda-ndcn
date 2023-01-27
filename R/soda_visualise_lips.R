@@ -3,7 +3,6 @@ library(bs4Dash)
 library(shinyWidgets)
 library(shinybrowser)
 library(plotly)
-library(ComplexHeatmap)
 
 plot_one = function(dimensions_obj, output, session) {
   ns = session$ns
@@ -11,25 +10,10 @@ plot_one = function(dimensions_obj, output, session) {
   
   output$plotbox_field = shiny::renderUI({
     shiny::tagList(
-      bs4Dash::box(
-        id = ns("truffle_box"),
-        title = "Truffle",
-        width = dimensions_obj$xbs,
-        height = dimensions_obj$ypx * dimensions_obj$y_box,
-        solidHeader = TRUE,
-        maximizable = TRUE,
-        collapsible = FALSE,
-        status = "orange",
-        sidebar = bs4Dash::boxSidebar(
-          id = ns("truffle_sb"),
-          width = 40,
-          shiny::uiOutput(
-            outputId = ns("id_sidebar_ui")
-          )
-        )
+      shiny::fluidRow(
+        double_bonds_ui(dimensions_obj, output, session) 
       )
     )
-
   })
 }
 plot_two = function(dimensions_obj, output, session) {
@@ -61,6 +45,16 @@ plot_three = function(dimensions_obj, output, session) {
 plot_four = function(dimensions_obj, output, session) {
   ns = session$ns
   print(4)
+  output$plotbox_field = shiny::renderUI({
+    shiny::tagList(
+      shiny::fluidRow(
+        class_comparison_ui(dimensions_obj, output, session),
+        class_distribution_ui(dimensions_obj, output, session),
+        volcano_plot_ui(dimensions_obj, output, session),
+        heatmap_ui(dimensions_obj, output, session) 
+      )
+    )
+  })
 }
 
 
@@ -158,7 +152,7 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
         if (length(input$showPlots) < 3) {
           dimensions_obj$ypx = shinybrowser::get_height()
         } else {
-          dimensions_obj$ypx = shinybrowser::get_height()/2
+          dimensions_obj$ypx = shinybrowser::get_height()/2.1
         }
         
         
@@ -175,6 +169,7 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
           )
         } else if (length(input$showPlots) == 1) {
           plot_one(dimensions_obj, output, session)
+          double_bonds_server(r6, colour_list, dimensions_obj, input, output, session)
         } else if (length(input$showPlots) == 2) {
           plot_two(dimensions_obj, output, session)
           class_comparison_server(r6, colour_list, dimensions_obj, input, output, session)
@@ -186,6 +181,10 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
           volcano_plot_server(r6, colour_list, dimensions_obj, input, output, session)
         } else if (length(input$showPlots) >= 4) {
           plot_four(dimensions_obj, output, session)
+          class_comparison_server(r6, colour_list, dimensions_obj, input, output, session)
+          class_distribution_server(r6, colour_list, dimensions_obj, input, output, session)
+          volcano_plot_server(r6, colour_list, dimensions_obj, input, output, session)
+          heatmap_server(r6, colour_list, dimensions_obj, input, output, session)
           
           shinyWidgets::updateCheckboxGroupButtons(
             session = session,
