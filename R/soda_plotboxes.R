@@ -267,6 +267,13 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
         label = "Select groups to compare(2)",
         choices = NULL,
         multiple = TRUE
+      ),
+      shiny::br(),
+      
+      shiny::downloadButton(
+        outputId = ns("volcano_download"),
+        label = "Download volcano table",
+        style = "width:100%;"
       )
     )
   })
@@ -306,6 +313,17 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
       )
     }
   })
+  
+  
+  
+  # Export volcano table
+  dl_table = shiny::reactive(r6$volcano_table)
+  output$volcano_download = shiny::downloadHandler(
+    filename = function(){"volcano_table.csv"},
+    content = function(file_name){
+      write.csv(dl_table(), file_name)
+    }
+  )
   
   # Expanded boxes
   volcano_plot_proxy = plotly::plotlyProxy(outputId = "volcano_plot_plot",
