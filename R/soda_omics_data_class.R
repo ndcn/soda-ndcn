@@ -73,24 +73,40 @@ Omics_data = R6::R6Class(
     ## Initialise or reset the filtered data
     # Data
     set_filtered_data = function(id_col = self$col_id_data) {
+      
+      # Check if non-unique IDs
       if (length(self$data_raw[, id_col]) != length(unique(self$data_raw[, id_col]))){
         self$data_filtered = NULL
         self$non_unique_ids_data = TRUE
         return()
       }
+      
+      # If ID column is correct
       self$non_unique_ids_data = FALSE
       table = self$data_raw
       rownames(table) = table[,id_col]
       table = table[,-which(colnames(table) == id_col)]
+      
+      # if there is a meta_filtered table, keep only rows from there
+      if (!is.null(self$meta_filtered)) {
+        table = table[rownames(self$meta_filtered),]
+        table = remove_empty_cols(table)
+      }
+      
       self$data_filtered = table
     },
     # Metadata
     set_filtered_meta = function(id_col = self$col_id_meta) {
+      # Creates the most basic filtered metadata: raw metadata with an ID column
+      
+      # First, checks if the ID column contains only unique values (if not, error)
       if (length(self$meta_raw[, id_col]) != length(unique(self$meta_raw[, id_col]))){
         self$meta_filtered = NULL
         self$non_unique_ids_meta = TRUE
         return()
       }
+      
+      # If unique IDs, proceed
       self$non_unique_ids_meta = FALSE
       table = self$meta_raw
       rownames(table) = table[,id_col]
@@ -338,7 +354,7 @@ Omics_data = R6::R6Class(
       fold_change = c()
       p_value = c()
       for (col in rownames(dbplot_table)) {
-        fold_change = c(fold_change, median(data_table[idx_group_1, col], na.rm = T) / median(data_table[idx_group_2, col], na.rm = T))
+        fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
         p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
       }
       p_value_bh_adj = p.adjust(p_value, method = "BH")

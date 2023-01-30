@@ -317,11 +317,10 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
   
   
   # Export volcano table
-  dl_table = shiny::reactive(r6$volcano_table)
   output$volcano_download = shiny::downloadHandler(
     filename = function(){"volcano_table.csv"},
     content = function(file_name){
-      write.csv(dl_table(), file_name)
+      write.csv(r6$volcano_table, file_name)
     }
   )
   

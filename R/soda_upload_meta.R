@@ -160,6 +160,11 @@ soda_upload_meta_ui = function(id, head = F) {
               label = "Reset table",
               width = "33%"
             )
+          ),
+          shiny::downloadButton(
+            outputId = ns("meta_filtered_download"),
+            label = "Download filtered metadata",
+            style = "width:100%;"
           )
         )
       )
@@ -469,6 +474,17 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           choices = rownames(r6$meta_filtered)
         )
       })
+      
+      
+      # Download filtered metadata
+      # dl_table = shiny::reactive(r6$meta_filtered)
+      
+      output$meta_filtered_download = shiny::downloadHandler(
+        filename = function(){"metadata_filtered.csv"},
+        content = function(file_name){
+          write.csv(r6$meta_filtered, file_name)
+        }
+      )
     }
   )
 }
