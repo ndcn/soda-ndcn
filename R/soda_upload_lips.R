@@ -202,7 +202,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               # Initialise bar plot
               output$class_barplot = shiny::renderPlot(
                 expr = preview_class_plot(r6 = r6,
-                                          total_cols = total_cols,
                                           del_cols = del_cols),
                 bg = "transparent"
               )
@@ -260,7 +259,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           # Update class bar plot
           output$class_barplot = shiny::renderPlot(
             expr = preview_class_plot(r6 = r6,
-                                      total_cols = total_cols,
                                       del_cols = del_cols),
             bg = "transparent"
           )

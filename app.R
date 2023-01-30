@@ -88,10 +88,15 @@ sidebar_ui = function() {
         bs4Dash::menuSubItem(
           text = "Table formats",
           tabName = "help_format"),
-      
+        
         bs4Dash::menuSubItem(
           text = "Data upload",
-          tabName = "help_upload"))
+          tabName = "help_upload"),
+        
+        bs4Dash::menuSubItem(
+          text = "Processing fuctions",
+          tabName = "help_functions")
+      )
     )
   )
 }
@@ -112,6 +117,10 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "help_upload",
         soda_help("data_upload")
+      ),
+      bs4Dash::tabItem(
+        tabName = "help_functions",
+        soda_help("processing_functions")
       ),
       bs4Dash::tabItem(
         tabName = "meta_upload",
