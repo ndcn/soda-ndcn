@@ -9,6 +9,17 @@ get_idx_by_pattern = function(table, col, pattern, row_names = T) {
   return(out_idx)
 }
 
+remove_empty_cols = function(table) {
+  # filter out columns which are only NA
+  for (col in colnames(table)) {
+    if (sum(is.na(table[,col])) == length(rownames(table))){
+      table[,col] = NULL
+    }
+  }
+  return(table)
+}
+
+
 #------------------------------------------------------ Filtering functions ----
 get_col_means = function(data_table) {
   means = colMeans(data_table, na.rm = TRUE)
@@ -76,9 +87,14 @@ normalise_lipid_class = function(lips_table) {
     
     # Get columns from that class...
     cols = which(classes == lip_class)
-    class_row_sums = rowSums(lips_table[, cols])
+    if (length(cols) > 1) {
+      class_row_sums = rowSums(lips_table[, cols])
+    } else {
+      class_row_sums = lips_table[, cols]
+    }
     class_row_sums[class_row_sums == 0] = 1
     lips_table[, cols] = lips_table[, cols] / class_row_sums
+
   }
   return(lips_table)
 }
