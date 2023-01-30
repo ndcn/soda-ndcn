@@ -155,7 +155,7 @@ get_subplot_titles = function(class_list){
     if (x >= 1) {
       x = step/2
       y = y - step}}
-  annotations[[i]] = list(x = -0.08, y = 0.5, text = "Percentage of total lipid",
+  annotations[[i]] = list(x = -0.08, y = 0.5, text = "Concentration, total normalized",
                           font = list(size = 10),
                           textangle = 270, showarrow = FALSE, xref='paper',
                           yref='paper')

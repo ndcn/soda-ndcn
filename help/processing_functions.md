@@ -18,3 +18,20 @@ This is a two-step filtering, first blank filtering based on all samples, then g
 **Group filtering.** Operates on the features marked for deletion after blank filtering to save some of them. Processing is the same as above, but this time on groups (group column selected in data upload). If for any of the groups, 80% (group threshold = 0.8) of the samples are above 2 x blank mean, the feature is saved from deletion.  
 
 Features marked for deletion are then removed from the feature table.  
+
+## Lipidomics table filtered
+Raw values with rows filtered (without blanks, QCs, pool samples or any sample filtered out by the user) and features filtered (blank and group filtering). 
+
+## Lipidomics table total normalised
+Values for each lipid in are normalised by dividing them by the total lipid concentration in each sample. NAs are imputed by 0.  
+
+## Lipidomics table z-score normalised
+Z-score normalisation of the *Lipidomics table filtered*. NA values are left as is (NA) and the mean values are calculated by omiting NA values.  
+
+## Lipidomics class table
+A class table is produced by getting all the lipid classes from the lipidomics total normalised table to total lipids to obtain a sample x lipid class table. For each sample, the class value is calculated by summing the values of the lipid species of that class in that sample. NA values are imputed by 0.  
+
+## Lipidomics volcano table
+Table used to produce the volcano plot. Takes as input the *lipidomics table filtered* and the *lipidomics table z-score normalised*. Both these tables contain NA values, and the z-scoring on the latter is done by omiting NAs.  
+Two groups are selected by the user to compare their features by calculating their fold changes on the *lipidomics table filtered* (median(group_2) / median(group_1)) and their p-values on *lipidomics table z-score normalised* using a Wilcoxon test.  
+The p-values are then adjusted using the Benjamini-Hochberg procedure (BH). A table is then created with the lipid species as rows, with for columns log2(fold change), -log10(BH adjusted p-value) and the lipid class associated to each row.  

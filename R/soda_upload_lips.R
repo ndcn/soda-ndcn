@@ -100,7 +100,14 @@ soda_upload_lips_ui = function(id, head = F) {
           shiny::sliderInput(inputId = ns("group_threshold"), label = NULL, value = 0.8, min = 0, max = 1, step = 0.05, width = "100%"),
           
           # Button to save the feature filtering
-          shiny::actionButton(inputId = ns("save"), label = "Save filtering", width = "100%")
+          shiny::actionButton(inputId = ns("save"), label = "Save filtering", width = "100%"),
+          
+          # Button to download filtered data
+          shiny::downloadButton(
+            outputId = ns("data_filtered_download"),
+            label = "Download filtered data",
+            style = "width:100%;"
+          )
         )
       )
     )
@@ -303,6 +310,18 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         r6$class_grouping()
         r6$normalise_class_table_z_score()
       })
+      
+      
+      # Download filtered data
+      dl_table = shiny::reactive(r6$data_filtered)
+      
+      output$data_filtered_download = shiny::downloadHandler(
+        filename = function(){"lipidomics_filtered.csv"},
+        content = function(file_name){
+          write.csv(dl_table(), file_name)
+        }
+      )
+      
     }
   )
 }

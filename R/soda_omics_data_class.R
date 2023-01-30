@@ -299,7 +299,7 @@ Omics_data = R6::R6Class(
       fold_change = c()
       p_value = c()
       for (col in colnames(data_table)) {
-        fold_change = c(fold_change, median(data_table[idx_group_1, col], na.rm = T) / median(data_table[idx_group_2, col], na.rm = T))
+        fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
         p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
       }
       p_value_bh_adj = p.adjust(p_value, method = "BH")
@@ -352,8 +352,8 @@ Omics_data = R6::R6Class(
     
     ### Plotting
     ## Class distribution
-    plot_class_distribution = function(table = self$data_class_table[self$get_idx_samples(), ],
-                                       meta_table = self$meta_filtered[self$get_idx_samples(), ],
+    plot_class_distribution = function(table = self$data_class_table,
+                                       meta_table = self$meta_filtered,
                                        col_group = self$col_group,
                                        colour_list,
                                        width,
@@ -384,24 +384,35 @@ Omics_data = R6::R6Class(
       for (col in colnames(plot_table)) {
         fig = fig %>% add_trace(x = rownames(plot_table), y = plot_table[,col],
                                 name = col, color = colour_list[i], type  = "bar")
-        fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5))
+        fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
+                             yaxis = list(title = "Concentration, total normalized"))
         i = i + 1
       }
       self$class_distribution = fig
     },
     
     ## Class comparison
-    plot_class_comparison = function(data_table = self$data_class_table[self$get_idx_samples(), ],
-                                     meta_table = self$meta_filtered[self$get_idx_samples(), ],
+    plot_class_comparison = function(data_table = self$data_class_table,
+                                     meta_table = self$meta_filtered,
                                      col_group = self$col_group,
                                      colour_list,
                                      width,
                                      height){
+      
+      # Get sample groups and the list of classes
       groups = unique(meta_table[,col_group])
       class_list = colnames(data_table)
+      
+      # Annotations are for now a way to display each subplot title
       annotations = get_subplot_titles(class_list)
+      
+      # dims makes the grid of subplots to be generated
       dims = get_subplot_dim(class_list)
+      
+      # Plot list will be the list of subplots
       plot_list = c()
+      
+      # Cleared groups is created for the legends
       cleared_groups = c()
       j = 1
       for (c in class_list) {
@@ -414,12 +425,18 @@ Omics_data = R6::R6Class(
             first_bool = TRUE
             cleared_groups = c(cleared_groups, g)
           }
-          s = rownames(meta_table)[meta_table[, col_group] == g]
-          d = data_table[s, c]
-          m = mean(d)
+          
+          # For each class, each group
+          s = rownames(meta_table)[meta_table[, col_group] == g] # Get the samples for the current group
+          d = data_table[s, c] # Get the concentrations for all s samples in the current class c
+          m = mean(d) # Get the mean concentration for samples s for class c
+          
+          # Subplot for the bar chart displaying the mean concentration
           subplot = subplot %>% add_trace(x = g, y = m, type  = "bar", name = g,
                                           color = colour_list[i], alpha = 1,
                                           legendgroup=i, showlegend = first_bool)
+          
+          # Subplot for boxplots displaying the median and all datapoints
           subplot = subplot %>% add_trace(x = g, y = d, type  = "box", boxpoints = "all",
                                           pointpos = 0, name = g, color = colour_list[i],
                                           line = list(color = 'rgb(100,100,100)'),
