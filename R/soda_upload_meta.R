@@ -133,8 +133,8 @@ soda_upload_meta_ui = function(id, head = F) {
           shiny::selectInput(inputId = ns("exclusion_meta_col"), choices = NULL, label = "Column", multiple = F, width = "100%"),
           
           # Value in the metadata column
-          shiny::selectInput(inputId = ns("exclusion_meta_val"), choices = NULL, label = "Value", multiple = F, width = "100%"),
-          
+          shiny::selectizeInput(inputId = ns("exclusion_meta_val"), choices = NULL, label = "Value", multiple = T, width = "100%"),
+
           # Rows to exclude
           shiny::selectizeInput(inputId = ns("exclusion_meta_row"), choices = NULL, label = "Samples", multiple = T, width = "100%"),
           
@@ -312,9 +312,10 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       ############################ FILTER TAB ##################################
       
       # Update the metadata value once a metadata column is selected
-      shiny::observe({
+      shiny::observeEvent(c(input$exclusion_meta_col, input$apply_filters),{
+      # shiny::observe({
         if (!is.null(input$exclusion_meta_col)) {
-          shiny::updateSelectInput(
+          shiny::updateSelectizeInput(
             session = session,
             inputId = "exclusion_meta_val",
             choices = unique(r6$meta_filtered[,input$exclusion_meta_col]),
@@ -323,14 +324,21 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         }
       })
       
+      
       # Update the rows to filter once a metadata value is selected
       shiny::observe({
         if (!is.null(input$exclusion_meta_val)) {
+          bool_vector = c()
+          for (value in input$exclusion_meta_val) {
+            bool_vector[[length(bool_vector) + 1]] = r6$meta_filtered[,input$exclusion_meta_col] == value
+          }
+          bool_vector = Reduce("|", bool_vector)
+          
           shiny::updateSelectizeInput(
             session = session,
             inputId = "exclusion_meta_row",
-            choices = rownames(r6$meta_filtered)[r6$meta_filtered[,input$exclusion_meta_col] == input$exclusion_meta_val],
-            selected = rownames(r6$meta_filtered)[r6$meta_filtered[,input$exclusion_meta_col] == input$exclusion_meta_val]
+            choices = rownames(r6$meta_filtered)[bool_vector],
+            selected = rownames(r6$meta_filtered)[bool_vector]
           )
         }
       })
