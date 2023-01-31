@@ -498,10 +498,26 @@ Omics_data = R6::R6Class(
       self$volcano_plot = fig
     },
     
+    
     ## Heatmap plot
     plot_heatmap = function(data_table,
+                            percentile,
                             width,
-                            height) {
+                            height
+                            ) {
+      
+      percentile = percentile/100
+      alpha = (1 - percentile)
+      
+      val_list = c()
+      for (col in colnames(data_table)) {
+        val_list = c(val_list, data_table[,col])
+      }
+      
+      val_list = sort(val_list)
+      zmin = quantile(val_list, alpha/2)
+      zmax = quantile(val_list, 1 - alpha/2)
+      
       fig = plotly::plot_ly(
         x = rownames(data_table),
         y = colnames(data_table),
@@ -509,17 +525,10 @@ Omics_data = R6::R6Class(
         colors = colorRamp(c("blue","white", "red")),
         type = "heatmap",
         width = width,
-        height = height
-      )
-      fig = fig %>% layout(
-        list(
-          coloraxis=list(
-            cauto = FALSE,
-            cmin = min(data_table),
-            cmid = 0,
-            cmax = -min(data_table)
-          )
-        )
+        height = height,
+        zauto=F,
+        zmin = zmin,
+        zmax = zmax
       )
       self$heatmap = fig
     },

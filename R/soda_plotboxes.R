@@ -408,8 +408,14 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
       shiny::actionButton(
         inputId = ns("heatmap_run"),
         label = "Generate heatmap"
+      ),
+      shiny::sliderInput(inputId = ns("heatmap_percentile"),
+                         label = "Percentile",
+                         min = 90,
+                         max = 100,
+                         value = 99,
+                         step = 1
       )
-      
     )
   })
   
@@ -429,9 +435,9 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
       width = dimensions_obj$xpx * dimensions_obj$x_plot
       height = dimensions_obj$ypx * dimensions_obj$y_plot
     }
-
     
     r6$plot_heatmap(data_table = data_table,
+                    percentile = input$heatmap_percentile,
                     width = dimensions_obj$xpx * dimensions_obj$x_plot,
                     height = dimensions_obj$ypx * dimensions_obj$y_plot)
     
