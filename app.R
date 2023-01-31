@@ -161,6 +161,8 @@ ui = bs4Dash::dashboardPage(header, sidebar, body)
 
 server = function(input, output, session) {
   
+  options(shiny.maxRequestSize=30*1024^2)
+  
   lipidomics_data = Omics_data$new(
     name = "lips_1",
     type = "lipidomics"

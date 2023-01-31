@@ -282,14 +282,12 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       # Save button
       shiny::observeEvent(input$save, {
-        print('truffles_1')
+        
         # Apply filtering to the filtered table
         r6$feature_filter(blank_multiplier = as.numeric(input$blank_multiplier),
                           sample_threshold = input$sample_threshold,
                           group_threshold = input$group_threshold)
-        
-        print('truffles_2')
-        
+
         # Update progress bar
         shinyWidgets::updateProgressBar(
           session = session,
@@ -301,25 +299,16 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         ## Produce ensuing tables
         
         # Normalisation
-        print(1)
         r6$normalise_z_score()
-        print(2)
         r6$normalise_class()
-        print(3)
         r6$normalise_total()
-        print(4)
         r6$normalise_class_z_score()
-        print(5)
         r6$normalise_total_z_score()
-        print(6)
         r6$get_feature_metadata()
-        print(7)
         
         # Class table
         r6$class_grouping()
-        print(8)
         r6$normalise_class_table_z_score()
-        print(9)
       })
       
       
