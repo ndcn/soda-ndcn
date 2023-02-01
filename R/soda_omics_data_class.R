@@ -315,9 +315,18 @@ Omics_data = R6::R6Class(
       fold_change = c()
       p_value = c()
       for (col in colnames(data_table)) {
-        fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
-        p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+        
+        # If at least one of the groups is full NA, default values
+        if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 | length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
+          fold_change = c(fold_change, 0)
+          p_value = c(p_value, 1)
+        } else {
+          # If not, calculate actual fold change and p-value
+          fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
+          p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+        }
       }
+      
       p_value_bh_adj = p.adjust(p_value, method = "BH")
       
       volcano_table = data.frame(log2_fold_change = log2(fold_change),
@@ -353,9 +362,17 @@ Omics_data = R6::R6Class(
       # Collect fold change and p-values
       fold_change = c()
       p_value = c()
-      for (col in rownames(dbplot_table)) {
-        fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
-        p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+      for (col in colnames(data_table)) {
+        
+        # If at least one of the groups is full NA, default values
+        if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 | length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
+          fold_change = c(fold_change, 0)
+          p_value = c(p_value, 1)
+        } else {
+          # If not, calculate actual fold change and p-value
+          fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
+          p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+        }
       }
       p_value_bh_adj = p.adjust(p_value, method = "BH")
       
