@@ -11,3 +11,4 @@ Compares the concentrations of lipid classes between *sample groups* using the *
 
 #### Volcano plot
 Compares the feature differences between two *sample groups*.  
+Are your y-axis values all 0s? That is the result of Benjamini-Hochberg p-value adjustment and means there were almost no good p-values in the comparison.  
