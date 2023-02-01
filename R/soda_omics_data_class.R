@@ -314,19 +314,42 @@ Omics_data = R6::R6Class(
       # Collect fold change and p-values
       fold_change = c()
       p_value = c()
+      
       for (col in colnames(data_table)) {
         
-        # If at least one of the groups is full NA, default values
-        if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 | length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
-          fold_change = c(fold_change, 0)
-          p_value = c(p_value, 1)
-        } else {
-          # If not, calculate actual fold change and p-value
+        # If both groups contain data
+        if (length(na.exclude(data_table_normalised[idx_group_1, col])) > 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) > 0) {
           fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
           p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+          
+          # If both groups contain only NA
+        } else if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
+          fold_change = c(fold_change, 1)
+          p_value = c(p_value, 1)
+          
+        } else {
+          # If at least one of the groups is full NA, default values
+          p_value = c(p_value, NA)
+          # For fold changes, if it is the denominator
+          if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0) {
+            fold_change = c(fold_change, 777)
+          } else {
+            # If it is the numerator
+            fold_change = c(fold_change, 666)
+          }
         }
       }
       
+      # Imputation of NAs for denominator FC with a value slightly above max FC
+      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
+      
+      # Imputation of NAs for norminator FC with a value slightly below min FC
+      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
+      
+      # Imputation of NAs for p-values to be the min p-val
+      p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
+      
+      # Adjust p-value
       p_value_bh_adj = p.adjust(p_value, method = "BH")
       
       volcano_table = data.frame(log2_fold_change = log2(fold_change),
@@ -362,18 +385,42 @@ Omics_data = R6::R6Class(
       # Collect fold change and p-values
       fold_change = c()
       p_value = c()
+      
       for (col in colnames(data_table)) {
         
-        # If at least one of the groups is full NA, default values
-        if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 | length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
-          fold_change = c(fold_change, 0)
-          p_value = c(p_value, 1)
-        } else {
-          # If not, calculate actual fold change and p-value
+        # If both groups contain data
+        if (length(na.exclude(data_table_normalised[idx_group_1, col])) > 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) > 0) {
           fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
           p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
+          
+          # If both groups contain only NA
+        } else if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
+          fold_change = c(fold_change, 1)
+          p_value = c(p_value, 1)
+          
+        } else {
+          # If at least one of the groups is full NA, default values
+          p_value = c(p_value, NA)
+          # For fold changes, if it is the denominator
+          if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0) {
+            fold_change = c(fold_change, 777)
+          } else {
+            # If it is the numerator
+            fold_change = c(fold_change, 666)
+          }
         }
       }
+      
+      # Imputation of NAs for denominator FC with a value slightly above max FC
+      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
+      
+      # Imputation of NAs for norminator FC with a value slightly below min FC
+      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
+      
+      # Imputation of NAs for p-values to be the min p-val
+      p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
+      
+      # Adjust p value
       p_value_bh_adj = p.adjust(p_value, method = "BH")
       
       dbplot_table$log2_fold_change = log2(fold_change)
