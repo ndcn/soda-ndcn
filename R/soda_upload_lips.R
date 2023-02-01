@@ -220,6 +220,21 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                 value = remaining_cols,
                 total = total_cols
               )
+              
+              ## Produce ensuing tables
+              
+              # Normalisation
+              r6$normalise_z_score()
+              r6$normalise_class()
+              r6$normalise_total()
+              r6$normalise_class_z_score()
+              r6$normalise_total_z_score()
+              r6$get_feature_metadata()
+              
+              # Class table
+              r6$class_grouping()
+              r6$normalise_class_table_z_score()
+              
             }
           }
           
