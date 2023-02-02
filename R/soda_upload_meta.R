@@ -103,62 +103,85 @@ soda_upload_meta_ui = function(id, head = F) {
           shiny::h4("Sample filtering"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           
-          # Non-sample exclusions
-          shiny::h5("Non-sample exclusion"),
           
-          # Exclude blanks
-          shiny::checkboxInput(
-            inputId = ns("exclude_blanks"),
-            label = "Exclude blanks",
-            value = T
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              
+              # Non-sample exclusions
+              shiny::h5("Non-sample selection"),
+              
+              # Exclude blanks
+              shiny::checkboxInput(
+                inputId = ns("select_blanks"),
+                label = "Blanks",
+                value = T
+              ),
+              # Exclude QCs
+              shiny::checkboxInput(
+                inputId = ns("select_qcs"),
+                label = "QCs",
+                value = T
+              ),
+              # Exclude Pools
+              shiny::checkboxInput(
+                inputId = ns("select_pools"),
+                label = "Pools",
+                value = T
+              )
+            ),
+            shiny::column(
+              width = 6,
+              # Manual sample exclusion (selection from rows in the filtered metadata table)
+              shiny::h5("Manual sample selection"),
+              shiny::selectizeInput(inputId = ns("selection_manual"), choices = NULL, label = NULL, multiple = T, width = "100%"),
+              
+            )
           ),
-          # Exclude QCs
-          shiny::checkboxInput(
-            inputId = ns("exclude_qcs"),
-            label = "Exclude QCs",
-            value = T
-          ),
-          # Exclude Pools
-          shiny::checkboxInput(
-            inputId = ns("exclude_pools"),
-            label = "Exclude pools",
-            value = T
-          ),
+          
           
           # Exclusion based on a metadata column value
-          shiny::h5("Metadata exclusion"),
-          shiny::h6("Exclude samples based on metadata values"),
+          shiny::h5("Metadata selection"),
+          shiny::h6("Select samples based on metadata values"),
           
-          # Metadata column selection
-          shiny::selectInput(inputId = ns("exclusion_meta_col"), choices = NULL, label = "Column", multiple = F, width = "100%"),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              # Metadata column selection
+              shiny::selectInput(inputId = ns("exclusion_meta_col"), choices = NULL, label = "Column", multiple = F, width = "100%")
+            ),
+            shiny::column(
+              width = 6,
+              # Value in the metadata column
+              shiny::selectizeInput(inputId = ns("exclusion_meta_val"), choices = NULL, label = "Value", multiple = T, width = "100%")
+              
+            )
+          ),
           
-          # Value in the metadata column
-          shiny::selectizeInput(inputId = ns("exclusion_meta_val"), choices = NULL, label = "Value", multiple = T, width = "100%"),
-
           # Rows to exclude
           shiny::selectizeInput(inputId = ns("exclusion_meta_row"), choices = NULL, label = "Samples", multiple = T, width = "100%"),
-          
-          # Manual sample exclusion (selection from rows in the filtered metadata table)
-          shiny::h5("Manual sample exclusion"),
-          shiny::h6("Manually select samples to exclude"),
-          shiny::selectizeInput(inputId = ns("exclusion_manual"), choices = NULL, label = NULL, multiple = T, width = "100%"),
           
           # Action buttons to apply filters, clear filters or reset filtered metadata 
           shiny::fluidRow(
             shiny::actionButton(
-              inputId = ns("apply_filters"),
-              label = "Filter",
-              width = "33%"
+              inputId = ns("selection_drop"),
+              label = "Drop",
+              width = "25%"
+            ),
+            shiny::actionButton(
+              inputId = ns("selection_keep"),
+              label = "Keep",
+              width = "25%"
             ),
             shiny::actionButton(
               inputId = ns("clear_filters"),
               label = "Clear filters",
-              width = "33%"
+              width = "25%"
             ),
             shiny::actionButton(
               inputId = ns("reset_table"),
               label = "Reset table",
-              width = "33%"
+              width = "25%"
             )
           ),
           shiny::downloadButton(
@@ -265,7 +288,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
             # Update input for the manual exclusion (filtering tab)
             shiny::updateSelectizeInput(
               session = session,
-              inputId = "exclusion_manual",
+              inputId = "selection_manual",
               choices = rownames(r6$meta_filtered)
             )
           }
@@ -312,7 +335,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       ############################ FILTER TAB ##################################
       
       # Update the metadata value once a metadata column is selected
-      shiny::observeEvent(c(input$exclusion_meta_col, input$apply_filters),{
+      shiny::observeEvent(c(input$exclusion_meta_col, input$selection_drop),{
       # shiny::observe({
         if (!is.null(input$exclusion_meta_col)) {
           shiny::updateSelectizeInput(
@@ -344,33 +367,33 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       })
       
       # Filter button
-      shiny::observeEvent(input$apply_filters, {
+      shiny::observeEvent(input$selection_drop, {
         
         # Initialise rows to delete
-        del_rows = c()
+        selected_rows = c()
         
         # Get blank rows
-        if (input$exclude_blanks){
-          del_rows = c(del_rows, r6$get_idx_blanks())
+        if (input$select_blanks){
+          selected_rows = c(selected_rows, r6$get_idx_blanks())
         }
         
         # Get QC rows
-        if (input$exclude_qcs){
-          del_rows = c(del_rows, r6$get_idx_qcs())
+        if (input$select_qcs){
+          selected_rows = c(selected_rows, r6$get_idx_qcs())
         }
         
         # Get Pool rows
-        if (input$exclude_pools){
-          del_rows = c(del_rows, r6$get_idx_pools())
+        if (input$select_pools){
+          selected_rows = c(selected_rows, r6$get_idx_pools())
         }
         
         # Add metadata and manual exclusions
-        del_rows = c(del_rows,input$exclusion_meta_row,input$exclusion_manual)
-        del_rows = sort(unique(del_rows))
+        selected_rows = c(selected_rows,input$exclusion_meta_row,input$selection_manual)
+        selected_rows = sort(unique(selected_rows))
         
         # Filter out the data
-        if (!is.null(del_rows)){
-          r6$meta_filtered = r6$meta_filtered[!(row.names(r6$meta_filtered) %in% del_rows),]
+        if (!is.null(selected_rows)){
+          r6$meta_filtered = r6$meta_filtered[!(row.names(r6$meta_filtered) %in% selected_rows),]
         }
 
         # Update feedback on the row count progress bar
@@ -403,41 +426,126 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         # Same for the manual exclusion and set the values to the remaining rows
         shiny::updateSelectizeInput(
           session = session,
-          inputId = "exclusion_manual",
+          inputId = "selection_manual",
           choices = rownames(r6$meta_filtered),
           selected = character(0)
         )
         
         # Reset all checkboxes to False
         shiny::updateCheckboxInput(
-          inputId = "exclude_blanks",
+          inputId = "select_blanks",
           value = F
         )
         shiny::updateCheckboxInput(
-          inputId = "exclude_qcs",
+          inputId = "select_qcs",
           value = F
         )
         shiny::updateCheckboxInput(
-          inputId = "exclude_pools",
+          inputId = "select_pools",
           value = F
         )
         
 
       })
+      
+      
+      # Keep button
+      shiny::observeEvent(input$selection_keep, {
+        
+        # Initialise rows to delete
+        selected_rows = c()
+        
+        # Get blank rows
+        if (input$select_blanks){
+          selected_rows = c(selected_rows, r6$get_idx_blanks())
+        }
+        
+        # Get QC rows
+        if (input$select_qcs){
+          selected_rows = c(selected_rows, r6$get_idx_qcs())
+        }
+        
+        # Get Pool rows
+        if (input$select_pools){
+          selected_rows = c(selected_rows, r6$get_idx_pools())
+        }
+        
+        # Add metadata and manual exclusions
+        selected_rows = c(selected_rows,input$exclusion_meta_row,input$selection_manual)
+        selected_rows = sort(unique(selected_rows))
+        
+        # Filter out the data
+        if (!is.null(selected_rows)){
+          r6$meta_filtered = r6$meta_filtered[(row.names(r6$meta_filtered) %in% selected_rows),]
+        }
+        
+        # Update feedback on the row count progress bar
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "row_count_bar",
+          value = nrow(r6$meta_filtered),
+          total = nrow(r6$meta_raw)
+        )
+        
+        # Update feedback on the filtered metadata preview
+        output$filtered_table = renderDataTable({
+          DT::datatable(r6$meta_filtered, options = list(paging = FALSE))
+        })
+        
+        # Reset the metacolumn value to None after filtering
+        shiny::updateSelectInput(
+          session = session,
+          inputId = "exclusion_meta_val",
+          selected = character(0)
+        )
+        
+        # Reset the metadata rows to None after filtering
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "exclusion_meta_row",
+          selected = character(0)
+        )
+        
+        # Same for the manual exclusion and set the values to the remaining rows
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "selection_manual",
+          choices = rownames(r6$meta_filtered),
+          selected = character(0)
+        )
+        
+        # Reset all checkboxes to False
+        shiny::updateCheckboxInput(
+          inputId = "select_blanks",
+          value = F
+        )
+        shiny::updateCheckboxInput(
+          inputId = "select_qcs",
+          value = F
+        )
+        shiny::updateCheckboxInput(
+          inputId = "select_pools",
+          value = F
+        )
+        
+        
+      })
+      
+      
       # Clear button
       shiny::observeEvent(input$clear_filters, {
         
         # Set all checkboxes to False
         shiny::updateCheckboxInput(
-          inputId = "exclude_blanks",
+          inputId = "select_blanks",
           value = F
         )
         shiny::updateCheckboxInput(
-          inputId = "exclude_qcs",
+          inputId = "select_qcs",
           value = F
         )
         shiny::updateCheckboxInput(
-          inputId = "exclude_pools",
+          inputId = "select_pools",
           value = F
         )
         
@@ -451,7 +559,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         # Set manual row exclusion to None
         shiny::updateSelectizeInput(
           session = session,
-          inputId = "exclusion_manual",
+          inputId = "selection_manual",
           selected = character(0)
         )
       })
@@ -478,7 +586,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         # Update input for the manual exclusion
         shiny::updateSelectizeInput(
           session = session,
-          inputId = "exclusion_manual",
+          inputId = "selection_manual",
           choices = rownames(r6$meta_filtered)
         )
       })
