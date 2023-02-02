@@ -16,6 +16,7 @@ library(markdown)
 library(ggplot2)
 library(plotly)
 library(gridExtra)
+library(heatmaply)
 
 # colouring
 library(grDevices)

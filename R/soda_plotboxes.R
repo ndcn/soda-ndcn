@@ -398,12 +398,16 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
       shiny::selectizeInput(
         inputId = ns("heatmap_map_rows"),
         label = "Map sample data",
-        choices = NULL
+        multiple = TRUE,
+        choices = colnames(r6$meta_filtered),
+        selected = character(0)
       ),
       shiny::selectizeInput(
         inputId = ns("heatmap_map_cols"),
         label = "Map feature data",
-        choices = NULL
+        multiple = TRUE,
+        choices = c("Class", "Carbon count", "Unsaturation count"),
+        selected = character(0)
       ),
       shiny::actionButton(
         inputId = ns("heatmap_run"),
@@ -419,13 +423,27 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
     )
   })
   
+  
   shiny::observeEvent(input$heatmap_run,{
     if (input$heatmap_dataset == "Lipid species"){
       data_table = r6$data_total_norm_z_scored
+      col_annotations = input$heatmap_map_cols
     } else {
       data_table = r6$data_class_table_z_scored
+      col_annotations = NULL
     }
     
+    if ("cluster_rows" %in% input$heatmap_clustering){
+      cluster_rows = TRUE
+    } else {
+      cluster_rows = FALSE
+    }
+
+    if ("cluster_columns" %in% input$heatmap_clustering){
+      cluster_cols = TRUE
+    } else {
+      cluster_cols = FALSE
+    }
     
     
     if (input$heatmap_plotbox$maximized) {
@@ -436,11 +454,18 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
       height = dimensions_obj$ypx * dimensions_obj$y_plot
     }
     
+
+    
     r6$plot_heatmap(data_table = data_table,
+                    meta_table = r6$meta_filtered,
+                    meta_table_features = r6$meta_features,
                     percentile = input$heatmap_percentile,
+                    cluster_rows = cluster_rows,
+                    cluster_cols = cluster_cols,
+                    row_annotations = input$heatmap_map_rows,
+                    col_annotations = col_annotations,
                     width = dimensions_obj$xpx * dimensions_obj$x_plot,
                     height = dimensions_obj$ypx * dimensions_obj$y_plot)
-    
     
     output$heatmap_plot = plotly::renderPlotly(
       r6$heatmap
