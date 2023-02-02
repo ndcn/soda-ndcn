@@ -8,15 +8,16 @@ Files to upload include:
 All these tables should contain a shared ID column with which samples can be connected between tables. The data type of ID can be integer or string, as long as the IDs are unique an can be used to communicate between tables (i.e. having the IDs being the same from one table to the other).
 
 ## Sample metadata
-Here the shared ID column is named "ID". Each ID has associated metadata, that can even be left empty in some cases.
+Here the shared ID column is named "ID". Each ID has associated metadata, that can even be left empty in some cases.  
+Leave no empty values in the table.  
 
 | ID    | Group  | Cell_type |
 |-------|--------|-----------|
 | S0001 | Sample | A         |
 | S0002 | Sample | B         |
 | S0003 | Sample | C         |
-| S0004 | Blank  |           |
-| S0005 | QC     |           |
+| S0004 | Blank  | None      |
+| S0005 | QC     | None      |
 
 ## Lipidomics data
 In relation to the above table, this one also has an ID column. Other columns will include the observed feature for each row.

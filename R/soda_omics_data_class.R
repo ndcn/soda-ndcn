@@ -564,12 +564,34 @@ Omics_data = R6::R6Class(
     
     
     ## Heatmap plot
-    plot_heatmap = function(data_table,
+    plot_heatmap = function(data_table = self$data_total_norm_z_scored,
+                            meta_table = self$meta_filtered,
+                            meta_table_features = self$meta_features,
                             percentile,
+                            cluster_rows = TRUE,
+                            cluster_cols = TRUE,
+                            row_annotations = c("Genotype", "GroupName"),
+                            col_annotations = c("Class"),
                             width,
                             height
                             ) {
       
+      
+      # Set the clustering
+      if (cluster_rows & cluster_cols) {
+        dendrogram_list = "both"
+      } else if (cluster_rows) {
+        dendrogram_list = "column" # Because of the transpose, rows => cols
+      } else if (cluster_cols) {
+        dendrogram_list = "row" # Because of the transpose, cols => rows
+      } else {
+        dendrogram_list = "none"
+      }
+      
+      # Convert annotations to their column names in the feature metadata table
+      col_annotations = feature_switch(col_annotations)
+      
+      # Set percentiles 
       percentile = percentile/100
       alpha = (1 - percentile)
       
@@ -582,19 +604,41 @@ Omics_data = R6::R6Class(
       zmin = quantile(val_list, alpha/2)
       zmax = quantile(val_list, 1 - alpha/2)
       
-      fig = plotly::plot_ly(
-        x = rownames(data_table),
-        y = colnames(data_table),
-        z = t(data_table),
-        colors = colorRamp(c("blue","white", "red")),
-        type = "heatmap",
-        width = width,
-        height = height,
-        zauto=F,
-        zmin = zmin,
-        zmax = zmax
-      )
-      self$heatmap = fig
+      # Filter out the data using the percentiles
+      data_table[data_table > zmax] = zmax
+      data_table[data_table < zmin] = zmin
+      
+      # Get midpoint as median of the remaining data
+      midpoint = median(as.matrix(data_table))
+      
+      # Annotations
+      if (!is.null(row_annotations)) {
+        row_annotations = meta_table[, row_annotations]
+      } else {
+        row_annotations = NULL
+      }
+      
+      if (!is.null(col_annotations)) {
+        col_annotations = meta_table_features[, col_annotations]
+      } else {
+        col_annotations = NULL
+      }
+      
+      # Plot the data
+      self$heatmap = heatmaply::heatmaply(x = t(data_table),
+                                          scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                                            low = "blue", 
+                                            high = "red", 
+                                            midpoint = midpoint, 
+                                            limits = c(zmin, zmax)
+                                          ),
+                                          width = width,
+                                          height = height,
+                                          limits = c(zmin, zmax),
+                                          col_side_colors = row_annotations,
+                                          row_side_colors = col_annotations,
+                                          dendrogram = dendrogram_list)
+      
     },
     
     ## PCA scores and loading plots

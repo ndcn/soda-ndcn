@@ -399,3 +399,19 @@ circle = function(x, y, alpha = 0.95, len = 200){
     opacity = 0.2
   )
 }
+
+
+#-------------------------------------------------- Feature table functions ----
+
+feature_switch = function(feature_col){
+  out_list = c()
+  for (col in feature_col) {
+    out_list = c(out_list, switch(EXPR = col,
+                                  "Class" = "lipid_class",
+                                  "Carbon count" = "carbons_1",
+                                  "Unsaturation count" = "unsat_1"
+    )
+    )
+  }
+  return(out_list)
+}
