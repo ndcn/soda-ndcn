@@ -170,7 +170,8 @@ server = function(input, output, session) {
   )
   
   colour_list= RColorBrewer::brewer.pal(n = 11, name = 'Spectral')
-  colour_list = grDevices::colorRampPalette(colour_list)(25)
+  colour_list = colour_list[-6]
+  colour_list = grDevices::colorRampPalette(colour_list)(20)
 
   soda_upload_meta_server("upload_metadata", r6 = lipidomics_data)
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
