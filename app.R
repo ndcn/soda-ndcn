@@ -100,7 +100,11 @@ sidebar_ui = function() {
         
         bs4Dash::menuSubItem(
           text = "Processing fuctions",
-          tabName = "help_functions")
+          tabName = "help_functions"),
+        
+        bs4Dash::menuSubItem(
+          text = "Data objects",
+          tabName = "help_data_objects")
       )
     )
   )
@@ -130,6 +134,10 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "help_functions",
         soda_help("processing_functions")
+      ),
+      bs4Dash::tabItem(
+        tabName = "help_data_objects",
+        soda_help("data_objects")
       ),
       bs4Dash::tabItem(
         tabName = "meta_upload",

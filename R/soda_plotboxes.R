@@ -76,7 +76,7 @@ class_distribution_server = function(r6, colour_list, dimensions_obj, input, out
     shiny::selectInput(
       inputId = ns("class_distribution_metacol"),
       label = "Select group column",
-      choices = colnames(r6$meta_filtered),
+      choices = colnames(r6$tables$meta_filtered),
       selected = r6$col_group
     )
   })
@@ -168,7 +168,7 @@ class_comparison_server = function(r6, colour_list, dimensions_obj, input, outpu
     shiny::selectInput(
       inputId = ns("class_comparison_metacol"),
       label = "Select group column",
-      choices = colnames(r6$meta_filtered),
+      choices = colnames(r6$tables$meta_filtered),
       selected = r6$col_group
     )
   })
@@ -259,7 +259,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
       shiny::selectInput(
         inputId = ns("volcano_plot_metacol"),
         label = "Select group column",
-        choices = colnames(r6$meta_filtered),
+        choices = colnames(r6$tables$meta_filtered),
         selected = r6$col_group
       ),
       shiny::selectizeInput(
@@ -282,8 +282,8 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
     shiny::updateSelectizeInput(
       inputId = "volcano_plot_metagroup",
       session = session,
-      choices = unique(r6$meta_filtered[,input$volcano_plot_metacol]),
-      selected = unique(r6$meta_filtered[,input$volcano_plot_metacol])[c(1,2)]
+      choices = unique(r6$tables$meta_filtered[,input$volcano_plot_metacol]),
+      selected = unique(r6$tables$meta_filtered[,input$volcano_plot_metacol])[c(1,2)]
     )
   })
   
@@ -299,12 +299,12 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
         height = dimensions_obj$ypx * dimensions_obj$y_plot
       }
       
-      r6$get_volcano_table(data_table = r6$data_filtered,
-                           data_table_normalised = r6$data_z_scored,
+      r6$get_volcano_table(data_table = r6$tables$data_filtered,
+                           data_table_normalised = r6$tables$data_z_scored,
                            col_group = input$volcano_plot_metacol,
                            group_1 = input$volcano_plot_metagroup[1],
                            group_2 = input$volcano_plot_metagroup[2])
-      r6$plot_volcano(data_table = r6$volcano_table,
+      r6$plot_volcano(data_table = r6$tables$volcano_table,
                       colour_list = colour_list,
                       width = width,
                       height = height)
@@ -320,7 +320,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
   output$volcano_download = shiny::downloadHandler(
     filename = function(){"volcano_table.csv"},
     content = function(file_name){
-      write.csv(r6$volcano_table, file_name)
+      write.csv(r6$tables$volcano_table, file_name)
     }
   )
   
@@ -399,7 +399,7 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
         inputId = ns("heatmap_map_rows"),
         label = "Map sample data",
         multiple = TRUE,
-        choices = colnames(r6$meta_filtered),
+        choices = colnames(r6$tables$meta_filtered),
         selected = character(0)
       ),
       shiny::selectizeInput(
@@ -426,10 +426,10 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
   
   shiny::observeEvent(input$heatmap_run,{
     if (input$heatmap_dataset == "Lipid species"){
-      data_table = r6$data_total_norm_z_scored
+      data_table = r6$tables$data_total_norm_z_scored
       col_annotations = input$heatmap_map_cols
     } else {
-      data_table = r6$data_class_table_z_scored
+      data_table = r6$tables$data_class_table_z_scored
       col_annotations = NULL
     }
     
@@ -457,8 +457,8 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
 
     
     r6$plot_heatmap(data_table = data_table,
-                    meta_table = r6$meta_filtered,
-                    meta_table_features = r6$meta_features,
+                    meta_table = r6$tables$meta_filtered,
+                    meta_table_features = r6$tables$feat_filtered,
                     percentile = input$heatmap_percentile,
                     cluster_rows = cluster_rows,
                     cluster_cols = cluster_cols,
@@ -544,7 +544,7 @@ pca_server = function(r6, colour_list, dimensions_obj, input, output, session) {
       shiny::selectInput(
         inputId = ns("pca_metacol"),
         label = "Select metadata column",
-        choices = colnames(r6$meta_filtered),
+        choices = colnames(r6$tables$meta_filtered),
         selected = r6$col_group
       )
     )
@@ -553,9 +553,9 @@ pca_server = function(r6, colour_list, dimensions_obj, input, output, session) {
   shiny::observeEvent(c(input$pca_dataset, input$pca_metacol),{
     
     if (input$pca_dataset == "Lipid species normalised"){
-      data_table = r6$data_total_norm_z_scored
+      data_table = r6$tables$data_total_norm_z_scored
     } else {
-      data_table = r6$data_class_table_z_scored
+      data_table = r6$tables$data_class_table_z_scored
     }
     
     if (input$pca_plotbox$maximized) {
@@ -644,7 +644,7 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
       shiny::selectInput(
         inputId = ns("double_bonds_metacol"),
         label = "Select group column",
-        choices = colnames(r6$meta_filtered),
+        choices = colnames(r6$tables$meta_filtered),
         selected = r6$col_group
       ),
       shiny::selectizeInput(
@@ -656,8 +656,8 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
       shiny::selectizeInput(
         inputId = ns("double_bonds_class"),
         label = "Select lipid class",
-        choices = unique(r6$meta_features$lipid_class),
-        selected = unique(r6$meta_features$lipid_class)[1],
+        choices = unique(r6$tables$feat_filtered$lipid_class),
+        selected = unique(r6$tables$feat_filtered$lipid_class)[1],
         multiple = FALSE
       )
     )
@@ -667,8 +667,8 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
     shiny::updateSelectizeInput(
       inputId = "double_bonds_metagroup",
       session = session,
-      choices = unique(r6$meta_filtered[,input$double_bonds_metacol]),
-      selected = unique(r6$meta_filtered[,input$double_bonds_metacol])[c(1,2)]
+      choices = unique(r6$tables$meta_filtered[,input$double_bonds_metacol]),
+      selected = unique(r6$tables$meta_filtered[,input$double_bonds_metacol])[c(1,2)]
     )
   })
   
@@ -684,9 +684,9 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
         height = dimensions_obj$ypx * dimensions_obj$y_plot
       }
       
-      r6$get_dbplot_table(data_table = r6$data_filtered,
-                          data_table_normalised = r6$data_z_scored,
-                          dbplot_table = r6$meta_features,
+      r6$get_dbplot_table(data_table = r6$tables$data_filtered,
+                          data_table_normalised = r6$tables$data_z_scored,
+                          dbplot_table = r6$tables$feat_filtered,
                           col_group = input$double_bonds_metacol,
                           group_1 = input$double_bonds_metagroup[1],
                           group_2 = input$double_bonds_metagroup[2])

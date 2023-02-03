@@ -184,6 +184,7 @@ soda_upload_meta_ui = function(id, head = F) {
               width = "25%"
             )
           ),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           shiny::downloadButton(
             outputId = ns("meta_filtered_download"),
             label = "Download filtered metadata",
@@ -223,7 +224,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
             shiny::updateSelectInput(
               session = session,
               inputId = "select_id",
-              choices = colnames(r6$meta_raw)
+              choices = colnames(r6$tables$meta_raw)
             )
           })
           
@@ -231,8 +232,8 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           shiny::updateSelectInput(
             session = session,
             inputId = "select_sample_type",
-            choices = colnames(r6$meta_raw),
-            selected = colnames(r6$meta_raw)[2]
+            choices = colnames(r6$tables$meta_raw),
+            selected = colnames(r6$tables$meta_raw)[2]
           )
         }
       })
@@ -242,11 +243,11 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         if (!is.null(table_file()$datapath)) {
           if (input$preview){
             output$raw_table = renderDataTable({
-              DT::datatable(r6$meta_raw[1:min(max_rows, nrow(r6$meta_raw)),1:min(max_cols, ncol(r6$meta_raw))], options = list(paging = FALSE))
+              DT::datatable(r6$tables$meta_raw[1:min(max_rows, nrow(r6$tables$meta_raw)),1:min(max_cols, ncol(r6$tables$meta_raw))], options = list(paging = FALSE))
             })
           }else{
             output$raw_table = renderDataTable({
-              DT::datatable(r6$meta_raw, options = list(paging = FALSE))
+              DT::datatable(r6$tables$meta_raw, options = list(paging = FALSE))
             })
           }
         }
@@ -255,11 +256,11 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       # Set values to the R6 object
       shiny::observe({
         if (!is.null(input$select_id)){
-          
+
           # Initialise filtered metadata with the ID column
           r6$set_col(col = input$select_id, type = "id_meta")
-          r6$set_filtered_meta()
-          
+          r6$set_meta_filtered()
+
           # Check if valid IDs or not
           if (r6$non_unique_ids_meta){
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
@@ -268,63 +269,63 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           } else {
             output$id_error = shiny::renderText({NULL})
             output$filtered_table = renderDataTable({
-              DT::datatable(r6$meta_filtered, options = list(paging = FALSE))
+              DT::datatable(r6$tables$meta_filtered, options = list(paging = FALSE))
             })
-            
+
             # Update progress bar with row count (filtering tab)
             shinyWidgets::updateProgressBar(
               session = session,
               id = "row_count_bar",
-              value = nrow(r6$meta_filtered),
-              total = nrow(r6$meta_raw)
+              value = nrow(r6$tables$meta_filtered),
+              total = nrow(r6$tables$meta_raw)
             )
             # Update metadata column input (filtering tab)
             shiny::updateSelectInput(
               session = session,
               inputId = "exclusion_meta_col",
-              choices = colnames(r6$meta_filtered)
+              choices = colnames(r6$tables$meta_filtered)
             )
-            
+
             # Update input for the manual exclusion (filtering tab)
             shiny::updateSelectizeInput(
               session = session,
               inputId = "selection_manual",
-              choices = rownames(r6$meta_filtered)
+              choices = rownames(r6$tables$meta_filtered)
             )
           }
-          
+
           # Set columns
           r6$set_col(col = input$select_sample_type, type = "type")
-          
+
           # Text patterns
           r6$set_text_pattern(pattern = input$qc_pattern, type = "qc")
           r6$set_text_pattern(pattern = input$blank_pattern, type = "blank")
           r6$set_text_pattern(pattern = input$pool_pattern, type = "pool")
-          
+
           # Get text pattern counts
           if (r6$pattern_blank != "") {
             count_blanks = length(grep(pattern = r6$pattern_blank,
-                                       x = r6$meta_raw[,r6$col_type],
+                                       x = r6$tables$meta_raw[,r6$col_type],
                                        ignore.case = TRUE))
           }else{
             count_blanks = 0
           }
-          
+
           if (r6$pattern_qc != "") {
             count_qcs = length(grep(pattern = r6$pattern_qc,
-                                    x = r6$meta_raw[,r6$col_type],
+                                    x = r6$tables$meta_raw[,r6$col_type],
                                     ignore.case = TRUE))
           }else{
             count_qcs = 0
           }
           if (r6$pattern_pool != "") {
             count_pools = length(grep(pattern = r6$pattern_pool,
-                                      x = r6$meta_raw[,r6$col_type],
+                                      x = r6$tables$meta_raw[,r6$col_type],
                                       ignore.case = TRUE))
           }else{
             count_pools = 0
           }
-          
+
           # Update text pattern feedback
           output$found_blanks = shiny::renderText({paste0("Blanks found: ", as.character(count_blanks))})
           output$found_qcs = shiny::renderText({paste0("QCs found: ", as.character(count_qcs))})
@@ -341,7 +342,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           shiny::updateSelectizeInput(
             session = session,
             inputId = "exclusion_meta_val",
-            choices = unique(r6$meta_filtered[,input$exclusion_meta_col]),
+            choices = unique(r6$tables$meta_filtered[,input$exclusion_meta_col]),
             selected = character(0)
           )
         }
@@ -353,15 +354,15 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         if (!is.null(input$exclusion_meta_val)) {
           bool_vector = c()
           for (value in input$exclusion_meta_val) {
-            bool_vector[[length(bool_vector) + 1]] = r6$meta_filtered[,input$exclusion_meta_col] == value
+            bool_vector[[length(bool_vector) + 1]] = r6$tables$meta_filtered[,input$exclusion_meta_col] == value
           }
           bool_vector = Reduce("|", bool_vector)
           
           shiny::updateSelectizeInput(
             session = session,
             inputId = "exclusion_meta_row",
-            choices = rownames(r6$meta_filtered)[bool_vector],
-            selected = rownames(r6$meta_filtered)[bool_vector]
+            choices = rownames(r6$tables$meta_filtered)[bool_vector],
+            selected = rownames(r6$tables$meta_filtered)[bool_vector]
           )
         }
       })
@@ -391,22 +392,22 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         selected_rows = c(selected_rows,input$exclusion_meta_row,input$selection_manual)
         selected_rows = sort(unique(selected_rows))
         
-        # Filter out the data
+        # Drop the data
         if (!is.null(selected_rows)){
-          r6$meta_filtered = r6$meta_filtered[!(row.names(r6$meta_filtered) %in% selected_rows),]
+          r6$tables$meta_filtered = r6$tables$meta_filtered[!(row.names(r6$tables$meta_filtered) %in% selected_rows),]
         }
 
         # Update feedback on the row count progress bar
         shinyWidgets::updateProgressBar(
           session = session,
           id = "row_count_bar",
-          value = nrow(r6$meta_filtered),
-          total = nrow(r6$meta_raw)
+          value = nrow(r6$tables$meta_filtered),
+          total = nrow(r6$tables$meta_raw)
         )
         
         # Update feedback on the filtered metadata preview
         output$filtered_table = renderDataTable({
-          DT::datatable(r6$meta_filtered, options = list(paging = FALSE))
+          DT::datatable(r6$tables$meta_filtered, options = list(paging = FALSE))
         })
         
         # Reset the metacolumn value to None after filtering
@@ -427,7 +428,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         shiny::updateSelectizeInput(
           session = session,
           inputId = "selection_manual",
-          choices = rownames(r6$meta_filtered),
+          choices = rownames(r6$tables$meta_filtered),
           selected = character(0)
         )
         
@@ -474,22 +475,22 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         selected_rows = c(selected_rows,input$exclusion_meta_row,input$selection_manual)
         selected_rows = sort(unique(selected_rows))
         
-        # Filter out the data
+        # Keep the data
         if (!is.null(selected_rows)){
-          r6$meta_filtered = r6$meta_filtered[(row.names(r6$meta_filtered) %in% selected_rows),]
+          r6$tables$meta_filtered = r6$tables$meta_filtered[(row.names(r6$tables$meta_filtered) %in% selected_rows),]
         }
         
         # Update feedback on the row count progress bar
         shinyWidgets::updateProgressBar(
           session = session,
           id = "row_count_bar",
-          value = nrow(r6$meta_filtered),
-          total = nrow(r6$meta_raw)
+          value = nrow(r6$tables$meta_filtered),
+          total = nrow(r6$tables$meta_raw)
         )
         
         # Update feedback on the filtered metadata preview
         output$filtered_table = renderDataTable({
-          DT::datatable(r6$meta_filtered, options = list(paging = FALSE))
+          DT::datatable(r6$tables$meta_filtered, options = list(paging = FALSE))
         })
         
         # Reset the metacolumn value to None after filtering
@@ -510,7 +511,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         shiny::updateSelectizeInput(
           session = session,
           inputId = "selection_manual",
-          choices = rownames(r6$meta_filtered),
+          choices = rownames(r6$tables$meta_filtered),
           selected = character(0)
         )
         
@@ -568,37 +569,35 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       shiny::observeEvent(input$reset_table, {
         
         # Reset the filtered metadata to the raw metadata
-        r6$set_filtered_meta()
+        r6$set_meta_filtered()
         
         # Update the progress bar
         shinyWidgets::updateProgressBar(
           session = session,
           id = "row_count_bar",
-          value = nrow(r6$meta_filtered),
-          total = nrow(r6$meta_raw)
+          value = nrow(r6$tables$meta_filtered),
+          total = nrow(r6$tables$meta_raw)
         )
         
         # Update the filtered table preview
         output$filtered_table = renderDataTable({
-          DT::datatable(r6$meta_filtered, options = list(paging = FALSE))
+          DT::datatable(r6$tables$meta_filtered, options = list(paging = FALSE))
         })
         
         # Update input for the manual exclusion
         shiny::updateSelectizeInput(
           session = session,
           inputId = "selection_manual",
-          choices = rownames(r6$meta_filtered)
+          choices = rownames(r6$tables$meta_filtered)
         )
       })
       
       
       # Download filtered metadata
-      # dl_table = shiny::reactive(r6$meta_filtered)
-      
       output$meta_filtered_download = shiny::downloadHandler(
         filename = function(){"metadata_filtered.csv"},
         content = function(file_name){
-          write.csv(r6$meta_filtered, file_name)
+          write.csv(r6$tables$meta_filtered, file_name)
         }
       )
     }
