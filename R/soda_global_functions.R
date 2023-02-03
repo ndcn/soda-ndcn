@@ -183,17 +183,17 @@ get_subplot_titles = function(class_list){
 
 preview_class_plot = function(r6, del_cols){
 
-  total_values = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
+  total_values = table(get_lipid_classes(feature_list = colnames(r6$tables$data_filtered),
                                          uniques = F))
   filtered_values_1 = rep(0,each=length(total_values))
   names(filtered_values_1) = names(total_values)
   
   if (!is.null(del_cols)){
     
-    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered)[!(colnames(r6$data_filtered) %in% del_cols)],
+    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$tables$data_filtered)[!(colnames(r6$tables$data_filtered) %in% del_cols)],
                                                 uniques = F))
   }else{
-    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$data_filtered),
+    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$tables$data_filtered),
                                                 uniques = F))
   }
 
@@ -414,4 +414,55 @@ feature_switch = function(feature_col){
     )
   }
   return(out_list)
+}
+
+
+get_feature_metadata = function(data_table) {
+  # Initialise table
+  feature_table = data.frame(row.names = sort(colnames(data_table)))
+  
+  # Add lipid classes
+  feature_table$lipid_class = get_lipid_classes(feature_list = rownames(feature_table),
+                                                   uniques = FALSE)
+  
+  # Collect carbon and unsaturation counts
+  c_count_1 = c() # Main carbon count / total carbon count (TGs)
+  s_count_1 = c() # Main saturation count
+  c_count_2 = c() # Secondary carbon count (asyl groups or TGs)
+  s_count_2 = c() # Secondary saturation (asyl groups or TGs)
+  for (c in unique(feature_table$lipid_class)) {
+    idx = rownames(feature_table)[feature_table$lipid_class == c]
+    
+    if (c == "TG") {
+      # For triglycerides
+      for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
+        c_count_1 = c(c_count_1, i[2])
+        c_count_2 = c(c_count_2, i[4]) 
+        s_count_1 = c(s_count_1, i[3])
+        s_count_2 = c(s_count_2, i[5])
+      }
+    } else if (sum(stringr::str_detect(string = idx, pattern = "/|_")) >0) {
+      # For species with asyl groups ("/" or "_")
+      for (i in stringr::str_split(string = idx, pattern = " |:|_|/")) {
+        c_count_1 = c(c_count_1, gsub("[^0-9]", "", i[2]))
+        c_count_2 = c(c_count_2, i[4])
+        s_count_1 = c(s_count_1, i[3])
+        s_count_2 = c(s_count_2, i[5])
+      }
+    } else {
+      # For the rest
+      for (i in stringr::str_split(string = idx, pattern = " |:")) {
+        c_count_1 = c(c_count_1, i[2])
+        c_count_2 = c(c_count_2, i[2])
+        s_count_1 = c(s_count_1, i[3])
+        s_count_2 = c(s_count_2, i[3])
+      }
+    }
+  }
+  
+  feature_table$carbons_1 = c_count_1
+  feature_table$carbons_2 = c_count_2
+  feature_table$unsat_1 = s_count_1
+  feature_table$unsat_2 = s_count_2
+  return(feature_table)
 }

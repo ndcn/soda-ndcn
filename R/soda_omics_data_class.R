@@ -9,29 +9,33 @@ Omics_data = R6::R6Class(
     non_unique_ids_data = FALSE,
     
     ### Tables
-    # Raw
-    meta_raw = NULL,
-    data_raw = NULL,
     
-    # Filtered
-    data_filtered = NULL,
-    meta_filtered = NULL,
-    meta_features = NULL,
-    
-    # Normalised
-    data_z_scored = NULL,
-    data_class_norm = NULL,
-    data_total_norm = NULL,
-    data_class_norm_z_scored = NULL,
-    data_total_norm_z_scored = NULL,
-    
-    # class tables
-    data_class_table = NULL,
-    data_class_table_z_scored = NULL,
-    
-    # Plot table
-    volcano_table = NULL,
-    dbplot_table = NULL,
+    tables = list(
+      
+      # Raw
+      meta_raw = NULL,
+      data_raw = NULL,
+      
+      # Filtered
+      meta_filtered = NULL,
+      data_filtered = NULL,
+      feat_filtered = NULL,
+      
+      # Normalised
+      data_z_scored = NULL,
+      data_class_norm = NULL,
+      data_total_norm = NULL,
+      data_class_norm_z_scored = NULL,
+      data_total_norm_z_scored = NULL,
+      
+      # class tables
+      data_class_table = NULL,
+      data_class_table_z_scored = NULL,
+      
+      # Plot tables
+      volcano_table = NULL,
+      dbplot_table = NULL
+    ),
     
     ### Columns
     col_id_meta = NULL,
@@ -52,7 +56,7 @@ Omics_data = R6::R6Class(
     pca_plot = NULL,
     double_bond_plot = NULL,
     
-    ### Functions
+    ### Methods
     initialize = function(name = NA, type = NA){
       self$name = name
       self$type = type
@@ -65,104 +69,59 @@ Omics_data = R6::R6Class(
     },
     ## Set raw data and metadata
     set_raw_meta = function(val) {
-      self$meta_raw = val
+      self$tables$meta_raw = val
     },
     set_raw_data = function(val) {
-      self$data_raw = val
+      self$tables$data_raw = val
     },
     ## Initialise or reset the filtered data
     # Data
-    set_filtered_data = function(id_col = self$col_id_data) {
+    set_data_filtered = function(id_col = self$col_id_data) {
       
       # Check if non-unique IDs
-      if (length(self$data_raw[, id_col]) != length(unique(self$data_raw[, id_col]))){
-        self$data_filtered = NULL
+      if (length(self$tables$data_raw[, id_col]) != length(unique(self$tables$data_raw[, id_col]))){
+        self$tables$data_filtered = NULL
         self$non_unique_ids_data = TRUE
         return()
       }
       
       # If ID column is correct
       self$non_unique_ids_data = FALSE
-      table = self$data_raw
+      table = self$tables$data_raw
       rownames(table) = table[,id_col]
       table = table[,-which(colnames(table) == id_col)]
       
       # if there is a meta_filtered table, keep only rows from there
-      if (!is.null(self$meta_filtered)) {
-        table = table[rownames(self$meta_filtered),]
+      if (!is.null(self$tables$meta_filtered)) {
+        table = table[rownames(self$tables$meta_filtered),]
         table = remove_empty_cols(table)
       }
       
-      self$data_filtered = table
+      self$tables$data_filtered = table
     },
     # Metadata
-    set_filtered_meta = function(id_col = self$col_id_meta) {
+    set_meta_filtered = function(id_col = self$col_id_meta) {
       # Creates the most basic filtered metadata: raw metadata with an ID column
       
       # First, checks if the ID column contains only unique values (if not, error)
-      if (length(self$meta_raw[, id_col]) != length(unique(self$meta_raw[, id_col]))){
-        self$meta_filtered = NULL
+      if (length(self$tables$meta_raw[, id_col]) != length(unique(self$tables$meta_raw[, id_col]))){
+        self$tables$meta_filtered = NULL
         self$non_unique_ids_meta = TRUE
         return()
       }
       
       # If unique IDs, proceed
       self$non_unique_ids_meta = FALSE
-      table = self$meta_raw
+      table = self$tables$meta_raw
       rownames(table) = table[,id_col]
       table = table[,-which(colnames(table) == id_col)]
-      self$meta_filtered = table
+      self$tables$meta_filtered = table
     },
     
-    get_feature_metadata = function(data_table = self$data_filtered) {
-      # Initialise table
-      feature_metadata = data.frame(row.names = sort(colnames(data_table)))
-      
-      # Add lipid classes
-      feature_metadata$lipid_class = get_lipid_classes(feature_list = rownames(feature_metadata),
-                                                         uniques = FALSE)
-      
-      # Collect carbon and unsaturation counts
-      c_count_1 = c() # Main carbon count / total carbon count (TGs)
-      s_count_1 = c() # Main saturation count
-      c_count_2 = c() # Secondary carbon count (asyl groups or TGs)
-      s_count_2 = c() # Secondary saturation (asyl groups or TGs)
-      for (c in unique(feature_metadata$lipid_class)) {
-        idx = rownames(feature_metadata)[feature_metadata$lipid_class == c]
-        
-        if (c == "TG") {
-          # For triglycerides
-          for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
-            c_count_1 = c(c_count_1, i[2])
-            c_count_2 = c(c_count_2, i[4]) 
-            s_count_1 = c(s_count_1, i[3])
-            s_count_2 = c(s_count_2, i[5])
-          }
-        } else if (sum(stringr::str_detect(string = idx, pattern = "/|_")) >0) {
-          # For species with asyl groups ("/" or "_")
-          for (i in stringr::str_split(string = idx, pattern = " |:|_|/")) {
-            c_count_1 = c(c_count_1, gsub("[^0-9]", "", i[2]))
-            c_count_2 = c(c_count_2, i[4])
-            s_count_1 = c(s_count_1, i[3])
-            s_count_2 = c(s_count_2, i[5])
-          }
-        } else {
-          # For the rest
-          for (i in stringr::str_split(string = idx, pattern = " |:")) {
-            c_count_1 = c(c_count_1, i[2])
-            c_count_2 = c(c_count_2, i[2])
-            s_count_1 = c(s_count_1, i[3])
-            s_count_2 = c(s_count_2, i[3])
-          }
-        }
-      }
-      
-      feature_metadata$carbons_1 = c_count_1
-      feature_metadata$carbons_2 = c_count_2
-      feature_metadata$unsat_1 = s_count_1
-      feature_metadata$unsat_2 = s_count_2
-      self$meta_features = feature_metadata
+    set_feat_filtered = function() {
+      self$tables$feat_filtered = get_feature_metadata(data_table = self$tables$data_filtered)
     },
+    
     
     ## Columns
     set_col = function(col, type) {
@@ -194,16 +153,16 @@ Omics_data = R6::R6Class(
     feature_filter = function(blank_multiplier, sample_threshold, group_threshold) {
       
       # Find features / columns below threshold
-      del_cols = blank_filter(data_table = self$data_filtered,
-                              blank_table = self$data_raw[self$get_idx_blanks(table = self$meta_raw),-which(colnames(self$data_raw) == self$col_id_data)],
+      del_cols = blank_filter(data_table = self$tables$data_filtered,
+                              blank_table = self$tables$data_raw[self$get_idx_blanks(table = self$tables$meta_raw),-which(colnames(self$tables$data_raw) == self$col_id_data)],
                               blank_multiplier = blank_multiplier,
                               sample_threshold = sample_threshold)
       
       # Salvage some of the features with a group filtering (same as above but applied to groups)
       if (!is.null(del_cols)) {
-        saved_cols = group_filter(data_table = self$data_filtered,
-                                  blank_table = self$data_raw[self$get_idx_blanks(table = self$meta_raw),-which(colnames(self$data_raw) == self$col_id_data)],
-                                  meta_table= self$meta_filtered,
+        saved_cols = group_filter(data_table = self$tables$data_filtered,
+                                  blank_table = self$tables$data_raw[self$get_idx_blanks(table = self$tables$meta_raw),-which(colnames(self$tables$data_raw) == self$col_id_data)],
+                                  meta_table= self$tables$meta_filtered,
                                   del_cols = del_cols,
                                   col_group = self$col_group,
                                   blank_multiplier = blank_multiplier,
@@ -213,12 +172,12 @@ Omics_data = R6::R6Class(
       }
       
       if (!is.null(del_cols)) {
-        self$data_filtered = self$data_filtered[,!(colnames(self$data_filtered) %in% del_cols)]
+        self$tables$data_filtered = self$tables$data_filtered[,!(colnames(self$tables$data_filtered) %in% del_cols)]
       }
     },
     
     ## Index functions
-    get_idx_blanks = function(table = self$meta_filtered, row_names = T) {
+    get_idx_blanks = function(table = self$tables$meta_filtered, row_names = T) {
       idx_blanks = get_idx_by_pattern(table = table,
                                       col = self$col_type,
                                       pattern = self$pattern_blank,
@@ -226,7 +185,7 @@ Omics_data = R6::R6Class(
       if (length(idx_blanks) == 0) {idx_blanks = NULL}
       return(idx_blanks)
     },
-    get_idx_qcs = function(table = self$meta_filtered, row_names = T) {
+    get_idx_qcs = function(table = self$tables$meta_filtered, row_names = T) {
       idx_qcs = get_idx_by_pattern(table = table,
                                    col = self$col_type,
                                    pattern = self$pattern_qc,
@@ -234,7 +193,7 @@ Omics_data = R6::R6Class(
       if (length(idx_qcs) == 0) {idx_qcs = NULL}
       return(idx_qcs)
     },
-    get_idx_pools = function(table = self$meta_filtered, row_names = T) {
+    get_idx_pools = function(table = self$tables$meta_filtered, row_names = T) {
       idx_pools = get_idx_by_pattern(table = table,
                                      col = self$col_type,
                                      pattern = self$pattern_pool,
@@ -242,8 +201,8 @@ Omics_data = R6::R6Class(
       if (length(idx_pools) == 0) {idx_pools = NULL}
       return(idx_pools)
     },
-    get_idx_samples = function(table = self$meta_filtered){
-      idx_samples = rownames(self$meta_filtered)
+    get_idx_samples = function(table = self$tables$meta_filtered){
+      idx_samples = rownames(self$tables$meta_filtered)
       idx_non_samples = c(self$get_idx_blanks(table),
                           self$get_idx_qcs(table),
                           self$get_idx_pools(table))
@@ -259,46 +218,46 @@ Omics_data = R6::R6Class(
     
     ## Normalisation functions
     normalise_z_score = function() {
-      self$data_z_scored = z_score_normalisation(data_table = self$data_filtered,
+      self$tables$data_z_scored = z_score_normalisation(data_table = self$tables$data_filtered,
                                                  impute = NA)
     },
 
     normalise_class = function(){
-      self$data_class_norm = normalise_lipid_class(self$data_filtered)
+      self$tables$data_class_norm = normalise_lipid_class(self$tables$data_filtered)
     },
     normalise_total = function(){
-      self$data_total_norm = self$data_filtered/rowSums(self$data_filtered, na.rm = T)
+      self$tables$data_total_norm = self$tables$data_filtered/rowSums(self$tables$data_filtered, na.rm = T)
     },
     
     normalise_class_z_score = function() {
-      self$data_class_norm_z_scored = z_score_normalisation(data_table = self$data_class_norm,
+      self$tables$data_class_norm_z_scored = z_score_normalisation(data_table = self$tables$data_class_norm,
                                                             impute = 0)
     },
     
     normalise_total_z_score = function() {
-      self$data_total_norm_z_scored = z_score_normalisation(data_table = self$data_total_norm,
+      self$tables$data_total_norm_z_scored = z_score_normalisation(data_table = self$tables$data_total_norm,
                                                             impute = 0)
     },
     
     normalise_class_table_z_score = function() {
-      self$data_class_table_z_scored = z_score_normalisation(data_table = self$data_class_table,
+      self$tables$data_class_table_z_scored = z_score_normalisation(data_table = self$tables$data_class_table,
                                                             impute = 0)
     },
     
     ## Class tables
-    class_grouping = function(table = self$data_total_norm){
-      self$data_class_table = get_lipid_class_table(table)
+    class_grouping = function(table = self$tables$data_total_norm){
+      self$tables$data_class_table = get_lipid_class_table(table)
     },
     
     ## Volcano table
-    get_volcano_table = function(data_table = self$data_filtered, data_table_normalised = self$data_z_scored, col_group = self$col_group, group_1, group_2) {
+    get_volcano_table = function(data_table = self$tables$data_filtered, data_table_normalised = self$tables$data_z_scored, col_group = self$col_group, group_1, group_2) {
       # Get the rownames for each group
-      idx_group_1 = get_idx_by_pattern(table = self$meta_filtered,
+      idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
                                        pattern = group_1,
                                        row_names = T)
       
-      idx_group_2 = get_idx_by_pattern(table = self$meta_filtered,
+      idx_group_2 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
                                        pattern = group_2,
                                        row_names = T)
@@ -357,19 +316,19 @@ Omics_data = R6::R6Class(
                                  lipid_class = get_lipid_classes(feature_list = colnames(data_table),
                                                                            uniques = FALSE),
                                  row.names = colnames(data_table))
-      self$volcano_table = volcano_table
+      self$tables$volcano_table = volcano_table
     },
     
     ## Double bond plot table
-    get_dbplot_table = function(data_table = self$data_filtered, data_table_normalised = self$data_z_scored, dbplot_table = self$meta_features, col_group = self$col_group, group_1, group_2) {
+    get_dbplot_table = function(data_table = self$tables$data_filtered, data_table_normalised = self$tables$data_z_scored, dbplot_table = self$tables$feat_filtered, col_group = self$col_group, group_1, group_2) {
       
       # Get the rownames for each group
-      idx_group_1 = get_idx_by_pattern(table = self$meta_filtered,
+      idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
                                        pattern = group_1,
                                        row_names = T)
       
-      idx_group_2 = get_idx_by_pattern(table = self$meta_filtered,
+      idx_group_2 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
                                        pattern = group_2,
                                        row_names = T)
@@ -426,14 +385,14 @@ Omics_data = R6::R6Class(
       dbplot_table$log2_fold_change = log2(fold_change)
       dbplot_table$log10_p_value_bh_adj = log10(p_value_bh_adj)
       
-      self$dbplot_table = dbplot_table
+      self$tables$dbplot_table = dbplot_table
     },
     
     
     ### Plotting
     ## Class distribution
-    plot_class_distribution = function(table = self$data_class_table,
-                                       meta_table = self$meta_filtered,
+    plot_class_distribution = function(table = self$tables$data_class_table,
+                                       meta_table = self$tables$meta_filtered,
                                        col_group = self$col_group,
                                        colour_list,
                                        width,
@@ -472,8 +431,8 @@ Omics_data = R6::R6Class(
     },
     
     ## Class comparison
-    plot_class_comparison = function(data_table = self$data_class_table,
-                                     meta_table = self$meta_filtered,
+    plot_class_comparison = function(data_table = self$tables$data_class_table,
+                                     meta_table = self$tables$meta_filtered,
                                      col_group = self$col_group,
                                      colour_list,
                                      width,
@@ -539,16 +498,16 @@ Omics_data = R6::R6Class(
     },
     
     ## Volcano plot
-    plot_volcano = function(data_table = self$volcano_table,
+    plot_volcano = function(data_table = self$tables$volcano_table,
                             colour_list,
                             width,
                             height){
       i = 1
       fig = plotly::plot_ly(colors = colour_list, type  = "scatter", mode  = "markers", width = width, height = height)
-      for (lip_class in unique(self$volcano_table$lipid_class)) {
-        tmp_idx = rownames(self$volcano_table)[self$volcano_table$lipid_class == lip_class]
-        fig = fig %>% add_trace(x = self$volcano_table[tmp_idx, "log2_fold_change"],
-                                y = self$volcano_table[tmp_idx, "minus_log10_p_value_bh_adj"],
+      for (lip_class in unique(self$tables$volcano_table$lipid_class)) {
+        tmp_idx = rownames(self$tables$volcano_table)[self$tables$volcano_table$lipid_class == lip_class]
+        fig = fig %>% add_trace(x = self$tables$volcano_table[tmp_idx, "log2_fold_change"],
+                                y = self$tables$volcano_table[tmp_idx, "minus_log10_p_value_bh_adj"],
                                 name = lip_class,
                                 color = colour_list[i],
                                 text = tmp_idx,
@@ -564,9 +523,9 @@ Omics_data = R6::R6Class(
     
     
     ## Heatmap plot
-    plot_heatmap = function(data_table = self$data_total_norm_z_scored,
-                            meta_table = self$meta_filtered,
-                            meta_table_features = self$meta_features,
+    plot_heatmap = function(data_table = self$tables$data_total_norm_z_scored,
+                            meta_table = self$tables$meta_filtered,
+                            meta_table_features = self$tables$feat_filtered,
                             percentile,
                             cluster_rows = TRUE,
                             cluster_cols = TRUE,
@@ -650,7 +609,7 @@ Omics_data = R6::R6Class(
       
       fig[[1]] = pca_plot_scores(x = pca_data@scores[, "PC1"],
                                  y = pca_data@scores[, "PC2"],
-                                 meta_table = self$meta_filtered,
+                                 meta_table = self$tables$meta_filtered,
                                  group_col = col_group,
                                  width = width,
                                  height = height,
@@ -670,7 +629,7 @@ Omics_data = R6::R6Class(
     
     ## Double bond plot
     
-    plot_doublebonds = function(data_table = self$dbplot_table, lipid_class, width, height){
+    plot_doublebonds = function(data_table = self$tables$dbplot_table, lipid_class, width, height){
       
       selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
       
