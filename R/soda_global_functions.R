@@ -81,10 +81,10 @@ normalise_lipid_class = function(lips_table) {
   classes = get_lipid_classes(feature_list = as.character(colnames(lips_table)), uniques = FALSE)
   classes_unique = get_lipid_classes(feature_list = as.character(colnames(lips_table)), uniques = TRUE)
   lips_table[is.na(lips_table)] = 0
-  
+
   # For each unique lipid class...
   for (lip_class in classes_unique){
-    
+
     # Get columns from that class...
     cols = which(classes == lip_class)
     if (length(cols) > 1) {
@@ -118,19 +118,19 @@ z_score_normalisation = function(data_table, impute) {
 
 #---------------------------------------------------- Class table functions ----
 get_lipid_class_table = function(table){
-  
+
   # Get unique lipid classes
   classes = get_lipid_classes(feature_list = colnames(table), uniques = TRUE)
-  
+
   # Get a column vector to find easily which columns belong to each lipid group
   col_vector = get_lipid_classes(feature_list = colnames(table), uniques = FALSE)
-  
+
   # Initialise the output table
   out_table = data.frame(matrix(nrow = nrow(table), ncol = 0), row.names = rownames(table))
-  
+
   # Replace NA by 0s
   table[is.na(table)] = 0
-  
+
   # Fill the table
   for (lipid in classes) {
     new_col = c()
@@ -140,7 +140,7 @@ get_lipid_class_table = function(table){
     }
     out_table[,lipid] = new_col
   }
-  
+
   return(out_table)
 }
 
@@ -181,36 +181,36 @@ get_subplot_titles = function(class_list){
 
 #----------------------------------------- Lipid upload class preview plots ----
 
-preview_class_plot = function(r6, del_cols){
+preview_class_plot = function(data_table, del_cols){
 
-  total_values = table(get_lipid_classes(feature_list = colnames(r6$tables$data_filtered),
+  total_values = table(get_lipid_classes(feature_list = colnames(data_table),
                                          uniques = F))
   filtered_values_1 = rep(0,each=length(total_values))
   names(filtered_values_1) = names(total_values)
-  
+
   if (!is.null(del_cols)){
-    
-    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$tables$data_filtered)[!(colnames(r6$tables$data_filtered) %in% del_cols)],
+
+    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(data_table)[!(colnames(data_table) %in% del_cols)],
                                                 uniques = F))
   }else{
-    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(r6$tables$data_filtered),
+    filtered_values_2 = table(get_lipid_classes(feature_list = colnames(data_table),
                                                 uniques = F))
   }
 
   for (n in names(filtered_values_2)){
     filtered_values_1[n] = filtered_values_2[n]
   }
-  
+
   lip_class = c(names(total_values), names(total_values))
   d_type = c(rep("kept", length(total_values)), rep("lost", length(total_values)))
 
   lip_val = c(rep(100, length(total_values)) - round(100*(filtered_values_1/total_values),1), round(100*(filtered_values_1/total_values),1))
   class_df = data.frame(lip_class, d_type, lip_val)
-  
+
   lip_val_abs = c(total_values - filtered_values_1, filtered_values_1)
   class_df_abs = data.frame(lip_class, d_type, lip_val_abs)
-  
-  
+
+
   plot_1 = ggplot(class_df_abs ,
                   aes(
                     fill=d_type ,
@@ -221,7 +221,7 @@ preview_class_plot = function(r6, del_cols){
     geom_bar(position="stack",
              stat="identity",
              show.legend = FALSE) +
-    geom_text(size = 3, position = position_stack(vjust = 0.5)) + 
+    geom_text(size = 3, position = position_stack(vjust = 0.5)) +
     theme(
       axis.title.y=element_blank(),
       axis.title.x=element_blank(),
@@ -231,22 +231,22 @@ preview_class_plot = function(r6, del_cols){
       panel.background = element_rect(fill='transparent'),
       plot.background = element_rect(fill='transparent', color=NA),
       legend.background = element_rect(fill='transparent')
-    ) + 
+    ) +
     scale_fill_manual(values = c("#999999", "#337ab7"))+
-    coord_flip() + 
+    coord_flip() +
     scale_y_reverse(limits = c(max(total_values), 0))
-  
+
   plot_2 = ggplot(class_df,
                   aes(
                     fill=d_type ,
                     y=lip_val,
                     x=lip_class,
-                    label = lip_val)) + 
+                    label = lip_val)) +
     ggtitle("Relative compound count (%)")+
     geom_bar(position="stack",
              stat="identity",
-             show.legend = FALSE) + 
-    geom_text(size = 3, position = position_stack(vjust = 0.5)) + 
+             show.legend = FALSE) +
+    geom_text(size = 3, position = position_stack(vjust = 0.5)) +
     theme(
       axis.title.y=element_blank(),
       axis.title.x=element_blank(),
@@ -257,31 +257,31 @@ preview_class_plot = function(r6, del_cols){
       panel.background = element_rect(fill='transparent'),
       plot.background = element_rect(fill='transparent', color=NA),
       legend.background = element_rect(fill='transparent')
-    ) + 
+    ) +
     scale_fill_manual(values = c("#999999", "#337ab7"))+
     coord_flip()
-  
+
   return(grid.arrange(plot_1, plot_2, ncol=2))
 }
-  
+
 
 
 
 #--------------------------------------------------------------- Statistics ----
 get_pca_data = function(data_table){
-  
+
   if (sum(is.na(data_table)) > 0) {
     complete_obs = F
   }else{
     complete_obs = T
   }
-  
+
   pca_data = pcaMethods::pca(object = data_table,
                              nPcs = 2,
                              scale = "none",
                              cv = "q2",
                              completeObs = complete_obs)
-  
+
   return(pca_data)
 }
 
@@ -311,13 +311,13 @@ pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
   fig = fig %>% add_trace(x = x, y = y,
                           type = "scatter", mode = "text", text = feature_list,
                           textposition = 'middle right', showlegend = F)
-  
+
   shape_list = list(
     hline(0),
     vline(0)
   )
-  
-  
+
+
   for (i in 1:length(feature_list)) {
     feature = feature_list[i]
     new_line = list(
@@ -332,9 +332,9 @@ pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
     )
     shape_list[[length(shape_list) + 1]] = new_line
   }
-  
+
   fig = fig %>% layout(shapes = shape_list)
-  
+
   return(fig)
 }
 #------------------------------------------------------- Plotting functions ----
@@ -420,11 +420,11 @@ feature_switch = function(feature_col){
 get_feature_metadata = function(data_table) {
   # Initialise table
   feature_table = data.frame(row.names = sort(colnames(data_table)))
-  
+
   # Add lipid classes
   feature_table$lipid_class = get_lipid_classes(feature_list = rownames(feature_table),
                                                    uniques = FALSE)
-  
+
   # Collect carbon and unsaturation counts
   c_count_1 = c() # Main carbon count / total carbon count (TGs)
   s_count_1 = c() # Main saturation count
@@ -432,12 +432,12 @@ get_feature_metadata = function(data_table) {
   s_count_2 = c() # Secondary saturation (asyl groups or TGs)
   for (c in unique(feature_table$lipid_class)) {
     idx = rownames(feature_table)[feature_table$lipid_class == c]
-    
+
     if (c == "TG") {
       # For triglycerides
       for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
         c_count_1 = c(c_count_1, i[2])
-        c_count_2 = c(c_count_2, i[4]) 
+        c_count_2 = c(c_count_2, i[4])
         s_count_1 = c(s_count_1, i[3])
         s_count_2 = c(s_count_2, i[5])
       }
@@ -459,7 +459,7 @@ get_feature_metadata = function(data_table) {
       }
     }
   }
-  
+
   feature_table$carbons_1 = c_count_1
   feature_table$carbons_2 = c_count_2
   feature_table$unsat_1 = s_count_1
