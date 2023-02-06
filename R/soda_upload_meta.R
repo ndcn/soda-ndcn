@@ -103,41 +103,45 @@ soda_upload_meta_ui = function(id, head = F) {
           shiny::h4("Sample filtering"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
 
+          shiny::h5("Non-sample selection"),
 
-          shiny::fluidRow(
-            shiny::column(
-              width = 6,
-
-              # Non-sample exclusions
-              shiny::h5("Non-sample selection"),
-
-              # Exclude blanks
-              shiny::checkboxInput(
-                inputId = ns("select_blanks"),
-                label = "Blanks",
-                value = T
-              ),
-              # Exclude QCs
-              shiny::checkboxInput(
-                inputId = ns("select_qcs"),
-                label = "QCs",
-                value = T
-              ),
-              # Exclude Pools
-              shiny::checkboxInput(
-                inputId = ns("select_pools"),
-                label = "Pools",
-                value = T
-              )
-            ),
-            shiny::column(
-              width = 6,
-              # Manual sample exclusion (selection from rows in the filtered metadata table)
-              shiny::h5("Manual sample selection"),
-              shiny::selectizeInput(inputId = ns("selection_manual"), choices = NULL, label = NULL, multiple = T, width = "100%"),
-
-            )
+          shinyWidgets::checkboxGroupButtons(
+            inputId = ns('non_samples_selection'),
+            label = NULL,
+            choices = c("Blanks", "QCs", "Pools"),
+            selected = c("Blanks", "QCs", "Pools"),
+            direction = "horizontal",
+            status = "default",
+            justified = TRUE,
+            width = '100%',
+            checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon"))
           ),
+
+          # Manual sample exclusion (selection from rows in the filtered metadata table)
+          shiny::h5("Manual sample selection"),
+          shiny::selectizeInput(
+            inputId = ns("selection_manual"), choices = NULL, label = NULL, multiple = T, width = "100%"
+          ),
+
+          # # Exclude blanks
+          # shiny::checkboxInput(
+          #   inputId = ns("select_blanks"),
+          #   label = "Blanks",
+          #   value = T
+          # ),
+          # # Exclude QCs
+          # shiny::checkboxInput(
+          #   inputId = ns("select_qcs"),
+          #   label = "QCs",
+          #   value = T
+          # ),
+          # # Exclude Pools
+          # shiny::checkboxInput(
+          #   inputId = ns("select_pools"),
+          #   label = "Pools",
+          #   value = T
+          # ),
+
 
 
           # Exclusion based on a metadata column value
@@ -374,17 +378,17 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         selected_rows = c()
 
         # Get blank rows
-        if (input$select_blanks){
+        if ("Blanks" %in% input$non_samples_selection){
           selected_rows = c(selected_rows, r6$get_idx_blanks())
         }
 
         # Get QC rows
-        if (input$select_qcs){
+        if ("QCs" %in% input$non_samples_selection){
           selected_rows = c(selected_rows, r6$get_idx_qcs())
         }
 
         # Get Pool rows
-        if (input$select_pools){
+        if ("Pools" %in% input$non_samples_selection){
           selected_rows = c(selected_rows, r6$get_idx_pools())
         }
 
@@ -433,20 +437,11 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         )
 
         # Reset all checkboxes to False
-        shiny::updateCheckboxInput(
-          inputId = "select_blanks",
-          value = F
+        shinyWidgets::updateCheckboxGroupButtons(
+          session = session,
+          inputId = "non_samples_selection",
+          selected = character(0)
         )
-        shiny::updateCheckboxInput(
-          inputId = "select_qcs",
-          value = F
-        )
-        shiny::updateCheckboxInput(
-          inputId = "select_pools",
-          value = F
-        )
-
-
       })
 
 
@@ -457,17 +452,17 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         selected_rows = c()
 
         # Get blank rows
-        if (input$select_blanks){
+        if ("Blanks" %in% input$non_samples_selection){
           selected_rows = c(selected_rows, r6$get_idx_blanks())
         }
 
         # Get QC rows
-        if (input$select_qcs){
+        if ("QCs" %in% input$non_samples_selection){
           selected_rows = c(selected_rows, r6$get_idx_qcs())
         }
 
         # Get Pool rows
-        if (input$select_pools){
+        if ("Pools" %in% input$non_samples_selection){
           selected_rows = c(selected_rows, r6$get_idx_pools())
         }
 
@@ -516,17 +511,10 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
         )
 
         # Reset all checkboxes to False
-        shiny::updateCheckboxInput(
-          inputId = "select_blanks",
-          value = F
-        )
-        shiny::updateCheckboxInput(
-          inputId = "select_qcs",
-          value = F
-        )
-        shiny::updateCheckboxInput(
-          inputId = "select_pools",
-          value = F
+        shinyWidgets::updateCheckboxGroupButtons(
+          session = session,
+          inputId = "non_samples_selection",
+          selected = character(0)
         )
 
 
@@ -537,17 +525,10 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
       shiny::observeEvent(input$clear_filters, {
 
         # Set all checkboxes to False
-        shiny::updateCheckboxInput(
-          inputId = "select_blanks",
-          value = F
-        )
-        shiny::updateCheckboxInput(
-          inputId = "select_qcs",
-          value = F
-        )
-        shiny::updateCheckboxInput(
-          inputId = "select_pools",
-          value = F
+        shinyWidgets::updateCheckboxGroupButtons(
+          session = session,
+          inputId = "non_samples_selection",
+          selected = character(0)
         )
 
         # Set metadata row exclusion to None
