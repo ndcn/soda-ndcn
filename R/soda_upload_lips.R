@@ -172,6 +172,10 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             choices = colnames(r6$tables$meta_filtered),
             selected = colnames(r6$tables$meta_filtered)[2]
           )
+
+
+
+
         }
       })
 
@@ -191,8 +195,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       })
 
       # Set values to the R6 object
-      shiny::observe({
-        if (!is.null(input$select_id)){
+      shiny::observeEvent(input$select_id, {
+        if (input$select_id != ""){
 
           # Initialise filtered data with the ID column
           r6$set_col(col = input$select_id, type = "id_data")
@@ -229,7 +233,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
 
               # Initialise bar plot
               output$class_barplot = shiny::renderPlot(
-                expr = preview_class_plot(r6 = r6,
+                expr = preview_class_plot(data_table = r6$tables$data_filtered,
                                           del_cols = del_cols),
                 bg = "transparent"
               )
@@ -288,44 +292,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       ############################ FILTER TAB ##################################
 
 
-      # Display filtering preview
-      shiny::observeEvent(c(input$blank_multiplier, input$sample_threshold, input$group_threshold),{
-        if (!is.null(r6$tables$data_filtered)){
-
-          # Calculate remaining cols
-          print(colnames((r6$tables$data_filtered)))
-          total_cols = ncol(r6$tables$data_filtered)
-          del_cols = blank_filter(data_table = r6$tables$data_filtered,
-                                  blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
-                                  blank_multiplier = as.numeric(input$blank_multiplier),
-                                  sample_threshold = input$sample_threshold)
-          saved_cols = group_filter(data_table = r6$tables$data_filtered,
-                                    blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
-                                    meta_table = r6$tables$meta_filtered,
-                                    del_cols = del_cols,
-                                    col_group = r6$texts$col_group,
-                                    blank_multiplier = as.numeric(input$blank_multiplier),
-                                    group_threshold = input$group_threshold)
-          del_cols = setdiff(del_cols,saved_cols)
-          remaining_cols = total_cols - length(del_cols)
-
-          # Update class bar plot
-          output$class_barplot = shiny::renderPlot(
-            expr = preview_class_plot(r6 = r6,
-                                      del_cols = del_cols),
-            bg = "transparent"
-          )
-
-          # Update progress bar
-          shinyWidgets::updateProgressBar(
-            session = session,
-            id = "col_count_bar",
-            value = remaining_cols,
-            total = total_cols
-          )
-        }
-      })
-
 
       # Drop columns
       shiny::observeEvent(input$drop_cols,{
@@ -335,7 +301,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         }
 
         r6$tables$data_filtered = r6$tables$data_filtered[,!(colnames(r6$tables$data_filtered) %in% selected_feats)]
-        print(colnames(r6$tables$data_filtered))
 
         r6$set_feat_filtered()
 
@@ -364,7 +329,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         }
 
         r6$tables$data_filtered = r6$tables$data_filtered[,(colnames(r6$tables$data_filtered) %in% selected_feats)]
-        print(colnames(r6$tables$data_filtered))
 
         r6$set_feat_filtered()
 
@@ -383,6 +347,48 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         )
 
       })
+
+
+      # Display filtering preview
+      shiny::observeEvent(c(input$blank_multiplier, input$sample_threshold, input$group_threshold),{
+        if (!is.null(r6$tables$data_filtered)){
+
+          # Calculate remaining cols
+
+          total_cols = ncol(r6$tables$data_raw) - 1
+          del_cols = blank_filter(data_table = r6$tables$data_filtered,
+                                  blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
+                                  blank_multiplier = as.numeric(input$blank_multiplier),
+                                  sample_threshold = input$sample_threshold)
+          saved_cols = group_filter(data_table = r6$tables$data_filtered,
+                                    blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
+                                    meta_table = r6$tables$meta_filtered,
+                                    del_cols = del_cols,
+                                    col_group = r6$texts$col_group,
+                                    blank_multiplier = as.numeric(input$blank_multiplier),
+                                    group_threshold = input$group_threshold)
+          del_cols = setdiff(del_cols,saved_cols)
+
+          remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
+
+          # Update class bar plot
+          output$class_barplot = shiny::renderPlot(
+            expr = preview_class_plot(data_table = r6$tables$data_filtered,
+                                      del_cols = del_cols),
+            bg = "transparent"
+          )
+
+          # Update progress bar
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "col_count_bar",
+            value = remaining_cols,
+            total = total_cols
+          )
+        }
+      })
+
+
 
 
       # Save button
