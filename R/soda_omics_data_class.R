@@ -23,12 +23,27 @@ Omics_data = R6::R6Class(
       pattern_pool = NULL
     ),
 
+    #-------------------------------------------------------------- Indices ----
+    indices = list(
+      idx_blanks = NULL,
+      idx_qcs = NULL,
+      idx_pools = NULL,
+      idx_samples = NULL,
+      rownames_blanks = NULL,
+      rownames_qcs = NULL,
+      rownames_pools = NULL,
+      rownames_samples = NULL
+    ),
+    
     #--------------------------------------------------------------- Tables ----
     tables = list(
 
       # Raw
       meta_raw = NULL,
       data_raw = NULL,
+      
+      # Blank table
+      blank_table = NULL,
 
       # Filtered
       meta_filtered = NULL,
@@ -67,6 +82,7 @@ Omics_data = R6::R6Class(
       self$type = type
     },
 
+    
     #--------------------------------------------------------- Text methods ----
 
     # Class data
@@ -104,6 +120,94 @@ Omics_data = R6::R6Class(
     },
 
 
+    #-------------------------------------------------------- Index methods ----
+    # Index functions - Blanks
+    get_idx_blanks = function() {
+      idx_blanks = get_idx_by_pattern(table = self$tables$meta_raw,
+                                      col = self$texts$col_type,
+                                      pattern = self$texts$pattern_blank,
+                                      row_names = F)
+      if (length(idx_blanks) == 0) {idx_blanks = NULL}
+      self$indices$idx_blanks = idx_blanks
+    },
+    get_rownames_blanks = function() {
+      row_names = get_rownames_from_idx(idx = self$indices$idx_blanks,
+                                        id_col = self$texts$col_id_meta,
+                                        data_table = self$tables$meta_raw)
+      if (length(row_names) == 0) {row_names = NULL}
+      self$indices$rownames_blanks = row_names
+    },
+    
+    # Index functions - QCs
+    get_idx_qcs = function() {
+      idx_qcs = get_idx_by_pattern(table = self$tables$meta_raw,
+                                   col = self$texts$col_type,
+                                   pattern = self$texts$pattern_qc,
+                                   row_names = F)
+      if (length(idx_qcs) == 0) {idx_qcs = NULL}
+      self$indices$idx_qcs = idx_qcs
+    },
+    get_rownames_qcs = function() {
+      row_names = get_rownames_from_idx(idx = self$indices$idx_qcs,
+                                        id_col = self$texts$col_id_meta,
+                                        data_table = self$tables$meta_raw)
+      if (length(row_names) == 0) {row_names = NULL}
+      self$indices$rownames_qcs = row_names
+    },
+    
+    # Index functions - Pools
+    get_idx_pools = function() {
+      idx_pools = get_idx_by_pattern(table = self$tables$meta_raw,
+                                     col = self$texts$col_type,
+                                     pattern = self$texts$pattern_pool,
+                                     row_names = F)
+      if (length(idx_pools) == 0) {idx_pools = NULL}
+      self$indices$idx_pools = idx_pools
+    },
+    get_rownames_pools = function() {
+      row_names = get_rownames_from_idx(idx = self$indices$idx_pools,
+                                        id_col = self$texts$col_id_meta,
+                                        data_table = self$tables$meta_raw)
+      if (length(row_names) == 0) {row_names = NULL}
+      self$indices$rownames_pools = row_names
+    },
+    
+    # Index functions - Samples
+    get_idx_samples = function(){
+      idx_samples = as.numeric(rownames(self$tables$meta_raw))
+      idx_non_samples = c(self$indices$idx_blanks,
+                          self$indices$idx_qcs,
+                          self$indices$idx_pools)
+      
+      if (length(idx_non_samples) > 0) {
+        idx_non_samples = sort(unique(idx_non_samples))
+        idx_samples = idx_samples[!(idx_samples %in% idx_non_samples)]
+      }
+      self$indices$idx_samples = idx_samples
+    },
+    
+    get_rownames_samples = function() {
+      row_names = get_rownames_from_idx(idx = self$indices$idx_samples,
+                                        id_col = self$texts$col_id_meta,
+                                        data_table = self$tables$meta_raw)
+      if (length(row_names) == 0) {row_names = NULL}
+      self$indices$rownames_samples = row_names
+    },
+    
+    set_all_indices = function() {
+      # Get rows by default index
+      self$get_idx_blanks()
+      self$get_idx_qcs()
+      self$get_idx_pools()
+      self$get_idx_samples()
+      
+      # Get rows by rowname
+      self$get_rownames_blanks()
+      self$get_rownames_qcs()
+      self$get_rownames_pools()
+      self$get_rownames_samples()
+    },
+    
     #-------------------------------------------------------- Table methods ----
     # Set raw metadata
     set_raw_meta = function(val) {
@@ -157,10 +261,27 @@ Omics_data = R6::R6Class(
       rownames(table) = table[,id_col]
       table = table[,-which(colnames(table) == id_col)]
       self$tables$meta_filtered = table
+      
     },
 
+    # Set feature table
     set_feat_filtered = function() {
       self$tables$feat_filtered = get_feature_metadata(data_table = self$tables$data_filtered)
+    },
+    
+    # Set blank table
+    set_blank_table = function() {
+      
+      # Get table with definitive index
+      blank_table = set_index_col(data_table = self$tables$data_raw,
+                                  idx = self$texts$col_id_data)
+      
+      # Get blank rownames
+      rownames_blanks = self$indices$rownames_blanks
+      
+      # Get blank table
+      blank_table = blank_table[rownames_blanks, ]
+      self$tables$blank_table = blank_table
     },
 
     # Filter filtered table
@@ -168,14 +289,14 @@ Omics_data = R6::R6Class(
 
       # Find features / columns below threshold
       del_cols = blank_filter(data_table = self$tables$data_filtered,
-                              blank_table = self$tables$data_raw[self$get_idx_blanks(table = self$tables$meta_raw),-which(colnames(self$tables$data_raw) == self$texts$col_id_data)],
+                              blank_table = self$tables$blank_table,
                               blank_multiplier = blank_multiplier,
                               sample_threshold = sample_threshold)
 
       # Salvage some of the features with a group filtering (same as above but applied to groups)
       if (!is.null(del_cols)) {
         saved_cols = group_filter(data_table = self$tables$data_filtered,
-                                  blank_table = self$tables$data_raw[self$get_idx_blanks(table = self$tables$meta_raw),-which(colnames(self$tables$data_raw) == self$texts$col_id_data)],
+                                  blank_table = self$tables$blank_table,
                                   meta_table= self$tables$meta_filtered,
                                   del_cols = del_cols,
                                   col_group = self$texts$col_group,
@@ -334,52 +455,24 @@ Omics_data = R6::R6Class(
       self$tables$dbplot_table = dbplot_table
     },
 
-
-    #-------------------------------------------------- Table index methods ----
-    # Index functions - Blanks
-    get_idx_blanks = function(table = self$tables$meta_filtered, row_names = T) {
-      idx_blanks = get_idx_by_pattern(table = table,
-                                      col = self$texts$col_type,
-                                      pattern = self$texts$pattern_blank,
-                                      row_names = row_names)
-      if (length(idx_blanks) == 0) {idx_blanks = NULL}
-      return(idx_blanks)
+    # Set all tables
+    set_all_tables = function(){
+      
+      # Normalisation
+      self$normalise_z_score()
+      self$normalise_class()
+      self$normalise_total()
+      self$normalise_class_z_score()
+      self$normalise_total_z_score()
+      
+      # Create feature table
+      self$set_feat_filtered()
+      
+      # Class table
+      self$class_grouping()
+      self$normalise_class_table_z_score()
     },
-
-    # Index functions - QCs
-    get_idx_qcs = function(table = self$tables$meta_filtered, row_names = T) {
-      idx_qcs = get_idx_by_pattern(table = table,
-                                   col = self$texts$col_type,
-                                   pattern = self$texts$pattern_qc,
-                                   row_names = row_names)
-      if (length(idx_qcs) == 0) {idx_qcs = NULL}
-      return(idx_qcs)
-    },
-
-    # Index functions - Pools
-    get_idx_pools = function(table = self$tables$meta_filtered, row_names = T) {
-      idx_pools = get_idx_by_pattern(table = table,
-                                     col = self$texts$col_type,
-                                     pattern = self$texts$pattern_pool,
-                                     row_names = row_names)
-      if (length(idx_pools) == 0) {idx_pools = NULL}
-      return(idx_pools)
-    },
-
-    # Index functions - Samples
-    get_idx_samples = function(table = self$tables$meta_filtered){
-      idx_samples = rownames(self$tables$meta_filtered)
-      idx_non_samples = c(self$get_idx_blanks(table),
-                          self$get_idx_qcs(table),
-                          self$get_idx_pools(table))
-
-      if (length(idx_non_samples) > 0) {
-        idx_non_samples = sort(unique(idx_non_samples))
-        idx_samples = idx_samples[!(idx_samples %in% idx_non_samples)]
-      }
-      return(idx_samples)
-    },
-
+    
     #------------------------------------------------ Normalisation methods ----
 
     # Z-score normalisation

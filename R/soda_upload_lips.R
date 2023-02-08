@@ -2,6 +2,45 @@ library(shiny)
 library(bs4Dash)
 library(shinyWidgets)
 
+lips_update_fields = function(session, r6) {
+  # Update class selection
+  shiny::updateSelectizeInput(
+    session = session,
+    inputId = "class_selection",
+    choices = unique(r6$tables$feat_filtered$lipid_class),
+    selected = character(0)
+  )
+  
+  # Update manual selection
+  shiny::updateSelectizeInput(
+    session = session,
+    inputId = "manual_selection",
+    choices = colnames(r6$tables$data_filtered),
+    selected = character(0)
+  )
+}
+
+
+lips_get_del_cols = function(input, r6) {
+  del_cols = blank_filter(data_table = r6$tables$data_filtered,
+                          blank_table = r6$tables$blank_table,
+                          blank_multiplier = as.numeric(input$blank_multiplier),
+                          sample_threshold = input$sample_threshold)
+  
+  saved_cols = group_filter(data_table = r6$tables$data_filtered,
+                            blank_table = r6$tables$blank_table,
+                            meta_table = r6$tables$meta_filtered,
+                            del_cols = del_cols,
+                            col_group = r6$texts$col_group,
+                            blank_multiplier = as.numeric(input$blank_multiplier),
+                            group_threshold = input$group_threshold)
+  
+  
+  del_cols = setdiff(del_cols,saved_cols)
+  return(del_cols)
+}
+
+
 #------------------------------------------------ Lipidomics data upload UI ----
 soda_upload_lips_ui = function(id, head = F) {
 
@@ -100,9 +139,8 @@ soda_upload_lips_ui = function(id, head = F) {
           ),
 
           shiny::fluidRow(
-            shiny::actionButton(inputId = ns("drop_cols"), label =  "Drop", width = "33.33%"),
-            shiny::actionButton(inputId = ns("keep_cols"), label =  "Keep", width = "33.33%"),
-            shiny::actionButton(inputId = ns("reset_cols"), label =  "Reset", width = "33.33%")
+            shiny::actionButton(inputId = ns("drop_cols"), label =  "Drop", width = "50%"),
+            shiny::actionButton(inputId = ns("keep_cols"), label =  "Keep", width = "50%")
           ),
 
           # Manual filter
@@ -119,8 +157,12 @@ soda_upload_lips_ui = function(id, head = F) {
           # Group threshold
           shiny::sliderInput(inputId = ns("group_threshold"), label = "Group threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%"),
 
-          # Button to save the feature filtering
-          shiny::actionButton(inputId = ns("save"), label = "Save filtering", width = "100%"),
+          # Buttons to save or reset the feature filtering
+          shiny::fluidRow(
+            shiny::actionButton(inputId = ns("save"), label = "Save filtering", width = "50%"),
+            shiny::actionButton(inputId = ns("reset"), label =  "Reset", width = "50%")
+          ),
+
 
           # Button to download filtered data
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
@@ -165,6 +207,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               choices = colnames(r6$tables$data_raw)
             )
           })
+          
           # Select sample group column from the raw meta data
           shiny::updateSelectInput(
             session = session,
@@ -172,10 +215,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             choices = colnames(r6$tables$meta_filtered),
             selected = colnames(r6$tables$meta_filtered)[2]
           )
-
-
-
-
         }
       })
 
@@ -207,28 +246,15 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           if (r6$non_unique_ids_data){
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {
+            
             # if ID correct, filter out deleted rows from the lipids table
             output$id_error = shiny::renderText({NULL})
-            r6$tables$data_filtered = r6$tables$data_filtered[rownames(r6$tables$meta_filtered),]
+            r6$set_blank_table()
 
             # Initialise preview of the feature filtering
             if (!is.null(r6$tables$data_filtered)) {
               total_cols = ncol(r6$tables$data_filtered)
-              del_cols = blank_filter(data_table = r6$tables$data_filtered,
-                                      blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
-                                      blank_multiplier = as.numeric(input$blank_multiplier),
-                                      sample_threshold = input$sample_threshold)
-
-              saved_cols = group_filter(data_table = r6$tables$data_filtered,
-                                        blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
-                                        meta_table = r6$tables$meta_filtered,
-                                        del_cols = del_cols,
-                                        col_group = r6$texts$col_group,
-                                        blank_multiplier = as.numeric(input$blank_multiplier),
-                                        group_threshold = input$group_threshold)
-
-
-              del_cols = setdiff(del_cols,saved_cols)
+              del_cols = lips_get_del_cols(input = input, r6 = r6)
               remaining_cols = total_cols - length(del_cols)
 
               # Initialise bar plot
@@ -246,21 +272,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                 total = total_cols
               )
 
-              ## Produce ensuing tables
-
-              # Normalisation
-              r6$normalise_z_score()
-              r6$normalise_class()
-              r6$normalise_total()
-              r6$normalise_class_z_score()
-              r6$normalise_total_z_score()
-
-              # Create feature table
-              r6$set_feat_filtered()
-
-              # Class table
-              r6$class_grouping()
-              r6$normalise_class_table_z_score()
+              # Produce ensuing tables
+              r6$set_all_tables()
 
               # Update the class filter
               shiny::updateSelectizeInput(
@@ -281,7 +294,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           }
 
           # Get found groups (upload table)
-          unique_groups = unique(r6$tables$meta_filtered[r6$get_idx_samples(), r6$texts$col_group])
+          unique_groups = unique(r6$tables$meta_filtered[r6$indices$rownames_samples, r6$texts$col_group])
           unique_groups = paste(unique_groups, collapse  = ", ")
 
           # Display found groups (upload table)
@@ -290,8 +303,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       })
 
       ############################ FILTER TAB ##################################
-
-
 
       # Drop columns
       shiny::observeEvent(input$drop_cols,{
@@ -304,20 +315,27 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
 
         r6$set_feat_filtered()
 
-        shiny::updateSelectizeInput(
-          session = session,
-          inputId = "class_selection",
-          choices = unique(r6$tables$feat_filtered$lipid_class),
-          selected = character(0)
+        total_cols = ncol(r6$tables$data_raw) - 1
+        
+        del_cols = lips_get_del_cols(input = input, r6 = r6)
+        
+        # Update class bar plot
+        output$class_barplot = shiny::renderPlot(
+          expr = preview_class_plot(data_table = r6$tables$data_filtered,
+                                    del_cols = del_cols),
+          bg = "transparent"
         )
-
-        shiny::updateSelectizeInput(
+        
+        # Update progress bar
+        shinyWidgets::updateProgressBar(
           session = session,
-          inputId = "manual_selection",
-          choices = colnames(r6$tables$data_filtered),
-          selected = character(0)
+          id = "col_count_bar",
+          value = ncol(r6$tables$data_filtered) - length(del_cols),
+          total = total_cols
         )
-
+        
+        # Update selection fields
+        lips_update_fields(session = session, r6 = r6)
 
       })
 
@@ -332,19 +350,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
 
         r6$set_feat_filtered()
 
-        shiny::updateSelectizeInput(
-          session = session,
-          inputId = "class_selection",
-          choices = unique(r6$tables$feat_filtered$lipid_class),
-          selected = character(0)
-        )
-
-        shiny::updateSelectizeInput(
-          session = session,
-          inputId = "manual_selection",
-          choices = colnames(r6$tables$data_filtered),
-          selected = character(0)
-        )
+        # Update selection fields
+        lips_update_fields(session = session, r6 = r6)
 
       })
 
@@ -356,18 +363,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           # Calculate remaining cols
 
           total_cols = ncol(r6$tables$data_raw) - 1
-          del_cols = blank_filter(data_table = r6$tables$data_filtered,
-                                  blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
-                                  blank_multiplier = as.numeric(input$blank_multiplier),
-                                  sample_threshold = input$sample_threshold)
-          saved_cols = group_filter(data_table = r6$tables$data_filtered,
-                                    blank_table = r6$tables$data_raw[r6$get_idx_blanks(table = r6$tables$meta_raw),-which(colnames(r6$tables$data_raw) == r6$texts$col_id_data)],
-                                    meta_table = r6$tables$meta_filtered,
-                                    del_cols = del_cols,
-                                    col_group = r6$texts$col_group,
-                                    blank_multiplier = as.numeric(input$blank_multiplier),
-                                    group_threshold = input$group_threshold)
-          del_cols = setdiff(del_cols,saved_cols)
+          del_cols = lips_get_del_cols(input = input, r6 = r6)
 
           remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
 
@@ -407,20 +403,40 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           total = ncol(r6$tables$data_filtered)
         )
 
-        ## Produce ensuing tables
-
-        # Normalisation
-        r6$normalise_z_score()
-        r6$normalise_class()
-        r6$normalise_total()
-        r6$normalise_class_z_score()
-        r6$normalise_total_z_score()
-        r6$set_feat_filtered()
-
-        # Class table
-        r6$class_grouping()
-        r6$normalise_class_table_z_score()
+        # Produce ensuing tables
+        r6$set_all_tables()
       })
+      
+      shiny::observeEvent(input$reset, {
+        
+        # Reset table
+        r6$set_data_filtered()
+        r6$set_all_tables()
+        
+        total_cols = ncol(r6$tables$data_filtered)
+        del_cols = lips_get_del_cols(input = input, r6 = r6)
+        remaining_cols = total_cols - length(del_cols)
+        
+        # Update class bar plot
+        output$class_barplot = shiny::renderPlot(
+          expr = preview_class_plot(data_table = r6$tables$data_filtered,
+                                    del_cols = del_cols),
+          bg = "transparent"
+        )
+        
+        # Update progress bar
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "col_count_bar",
+          value = remaining_cols,
+          total = total_cols
+        )
+        
+        # Update selection fields
+        lips_update_fields(session = session, r6 = r6)
+        
+      })
+      
 
 
       # Download filtered data

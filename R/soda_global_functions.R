@@ -9,6 +9,16 @@ get_idx_by_pattern = function(table, col, pattern, row_names = T) {
   return(out_idx)
 }
 
+set_index_col = function(data_table, idx) {
+  rownames(data_table) = data_table[,idx]
+  data_table[, idx] = NULL
+  return(data_table)
+}
+
+get_rownames_from_idx = function(idx, id_col, data_table) {
+  return(data_table[idx, id_col])
+}
+
 remove_empty_cols = function(table) {
   # filter out columns which are only NA
   for (col in colnames(table)) {
@@ -17,6 +27,14 @@ remove_empty_cols = function(table) {
     }
   }
   return(table)
+}
+
+keep_rows = function(data_table, rows) {
+  return(data_table[(row.names(data_table) %in% rows),])
+}
+
+drop_rows = function(data_table, rows) {
+  return(data_table[!(row.names(data_table) %in% rows),])
 }
 
 
