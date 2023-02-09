@@ -90,12 +90,8 @@ sidebar_ui = function() {
         icon = shiny::icon("circle-info"),
         
         bs4Dash::menuSubItem(
-          text = "Table formats",
-          tabName = "help_format"),
-        
-        bs4Dash::menuSubItem(
           text = "Data upload",
-          tabName = "help_upload"),
+          tabName = "data_upload"),
         
         bs4Dash::menuSubItem(
           text = "Data visualisation",
@@ -123,12 +119,8 @@ body_ui = function() {
         soda_welcome()
       ),
       bs4Dash::tabItem(
-        tabName = "help_format",
-        soda_help("data_format")
-      ),
-      bs4Dash::tabItem(
-        tabName = "help_upload",
-        soda_help("data_upload")
+        tabName = "data_upload",
+        soda_help_data_upload()
       ),
       bs4Dash::tabItem(
         tabName = "help_visualisation",
