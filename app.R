@@ -5,6 +5,9 @@ library(shinyWidgets)
 library(shinybrowser)
 library(bs4Dash)
 
+# Authentification
+library(shinymanager)
+
 # OOP
 library(R6)
 
@@ -103,8 +106,8 @@ sidebar_ui = function() {
           tabName = "help_functions"),
         
         bs4Dash::menuSubItem(
-          text = "Data objects",
-          tabName = "help_data_objects")
+          text = "Tables",
+          tabName = "help_data_tables")
       )
     )
   )
@@ -136,8 +139,8 @@ body_ui = function() {
         soda_help("processing_functions")
       ),
       bs4Dash::tabItem(
-        tabName = "help_data_objects",
-        soda_help("data_objects")
+        tabName = "help_data_tables",
+        soda_help("data_tables")
       ),
       bs4Dash::tabItem(
         tabName = "meta_upload",
@@ -163,12 +166,21 @@ body_ui = function() {
 header = header_ui()
 sidebar = sidebar_ui()
 body = body_ui()
-ui = bs4Dash::dashboardPage(header, sidebar, body)
-
-
+ui = shinymanager::secure_app(bs4Dash::dashboardPage(header, sidebar, body))
 #------------------------------------------------------------------- Server ----
 
 server = function(input, output, session) {
+  
+  res_auth <- shinymanager::secure_server(
+    check_credentials = shinymanager::check_credentials(db = data.frame(
+      user = c("user1", "user2"), # mandatory
+      password = c("1234", "monkey"), # mandatory
+      admin = c(FALSE, FALSE),
+      comment = "Secure authentification mechanism for SODA",
+      stringsAsFactors = FALSE
+    ))
+  )
+
   
   options(shiny.maxRequestSize=30*1024^2)
   

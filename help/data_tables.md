@@ -2,6 +2,8 @@ Data objects
 =======================
 ---
 
+Tables produced during the data processing and stored in the Omics_data class.  
+
 ### Raw metadata table
 Imported sample metadata table. It should not contain any NA values. Typically recommended columns include:  
 - *ID*, column containing the unique identifier for each row, tying the sample metadata to the rows in the other data tables.  
@@ -29,15 +31,6 @@ The Raw data table can be accessed in the Omics_data object thus:
 Omics_data$tables$data_raw
 ```
 It is first initiated when the user uploads their lipidomics data table in the *Lipidomics* upload tab. It is mostly used to generate the filtered version and store the original data so that the user can start again the processing using the availbable reset buttons.  
-
-### Raw feature table
-Table automatically generated from the *Raw data table*. by using the [tool tip missing] method from the *Omics_data* class.  
-This table contains all the metadata that can be extracted from the features, including lipid class, carbon and unsaturation count.  
-The Raw feature table can be accessed in the Omics_data object thus:  
-```
-Omics_data$tables$feat_raw
-```
-It is automatically generated when the user uploads their lipidomics data table in the *Lipidomics* upload tab. Its only use is in the feature filter tab to drop or keep features based on their metadata.  
 
 ### Filtered metadata table
 Updated version of the *Raw metadata table* after setting an ID column and filtering using the *Metadata filter* tab. Typically this table has no longer blank, QC and pool samples, which remain in the *Raw metadata table* for when the need arises. Additionnally, the user should filter out outliers which can be observed in the visualisation tab, or reduce the dataset if only a subset is to be examined.  
