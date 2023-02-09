@@ -4,26 +4,26 @@ library(bs4Dash)
 meta_row_selection = function(input, r6) {
   # Initialise selection
   selected_rows = c()
-  
+
   # Get blank rows
   if ("Blanks" %in% input$non_samples_selection){
     selected_rows = c(selected_rows, r6$indices$rownames_blanks)
   }
-  
+
   # Get QC rows
   if ("QCs" %in% input$non_samples_selection){
     selected_rows = c(selected_rows, r6$indices$rownames_qcs)
   }
-  
+
   # Get Pool rows
   if ("Pools" %in% input$non_samples_selection){
     selected_rows = c(selected_rows, r6$indices$rownames_pools)
   }
-  
+
   # Add metadata and manual exclusions
   selected_rows = c(selected_rows,input$exclusion_meta_row,input$selection_manual)
   selected_rows = sort(unique(selected_rows))
-  
+
   return(selected_rows)
 }
 meta_reset_fields = function(input, session, r6) {
@@ -33,7 +33,7 @@ meta_reset_fields = function(input, session, r6) {
     inputId = "non_samples_selection",
     selected = character(0)
   )
-  
+
   # Set manual row selection to None and update
   shiny::updateSelectizeInput(
     session = session,
@@ -41,8 +41,8 @@ meta_reset_fields = function(input, session, r6) {
     choices = rownames(r6$tables$meta_filtered),
     selected = character(0)
   )
-  
-  
+
+
   # Set the metacolumn value to None and update
   shiny::updateSelectInput(
     session = session,
@@ -50,7 +50,7 @@ meta_reset_fields = function(input, session, r6) {
     choices = unique(r6$tables$meta_filtered[,input$exclusion_meta_col]),
     selected = character(0)
   )
-  
+
   # Set metadata row exclusion to None
   shiny::updateSelectizeInput(
     session = session,
@@ -295,88 +295,90 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
           }
         }
       })
-
+      
       # Set values to the R6 object
       shiny::observe({
-        if (input$select_id != ""){
-
-          # Initialise filtered metadata with the ID column
-          r6$set_col(col = input$select_id, type = "id_meta")
-          r6$set_meta_filtered()
-
-          # Check if valid IDs or not
-          if (r6$non_unique_ids_meta){
-            output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
-            output$filtered_table = renderDataTable({NULL})
-
-          } else {
-            output$id_error = shiny::renderText({NULL})
-            output$filtered_table = renderDataTable({
-              DT::datatable(r6$tables$meta_filtered, options = list(paging = FALSE))
-            })
-
-            # Update progress bar with row count (filtering tab)
-            shinyWidgets::updateProgressBar(
-              session = session,
-              id = "row_count_bar",
-              value = nrow(r6$tables$meta_filtered),
-              total = nrow(r6$tables$meta_raw)
-            )
-            # Update metadata column input (filtering tab)
-            shiny::updateSelectInput(
-              session = session,
-              inputId = "exclusion_meta_col",
-              choices = colnames(r6$tables$meta_filtered)
-            )
-
-            # Update input for the manual exclusion (filtering tab)
-            shiny::updateSelectizeInput(
-              session = session,
-              inputId = "selection_manual",
-              choices = rownames(r6$tables$meta_filtered)
-            )
-          }
-
-          # Set columns
-          r6$set_col(col = input$select_sample_type, type = "type")
-
-          # Text patterns
-          r6$set_text_pattern(pattern = input$qc_pattern, type = "qc")
-          r6$set_text_pattern(pattern = input$blank_pattern, type = "blank")
-          r6$set_text_pattern(pattern = input$pool_pattern, type = "pool")
-
-          # Get text pattern counts
-          if (r6$texts$pattern_blank != "") {
-            count_blanks = length(grep(pattern = r6$texts$pattern_blank,
-                                       x = r6$tables$meta_raw[,r6$texts$col_type],
-                                       ignore.case = TRUE))
-          }else{
-            count_blanks = 0
-          }
-
-          if (r6$texts$pattern_qc != "") {
-            count_qcs = length(grep(pattern = r6$texts$pattern_qc,
-                                    x = r6$tables$meta_raw[,r6$texts$col_type],
-                                    ignore.case = TRUE))
-          }else{
-            count_qcs = 0
-          }
-          if (r6$texts$pattern_pool != "") {
-            count_pools = length(grep(pattern = r6$texts$pattern_pool,
+        if (!is.null(input$select_id)){
+          if (input$select_id != ""){
+  
+            # Initialise filtered metadata with the ID column
+            r6$set_col(col = input$select_id, type = "id_meta")
+            r6$set_meta_filtered()
+  
+            # Check if valid IDs or not
+            if (r6$non_unique_ids_meta){
+              output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
+              output$filtered_table = renderDataTable({NULL})
+  
+            } else {
+              output$id_error = shiny::renderText({NULL})
+              output$filtered_table = renderDataTable({
+                DT::datatable(r6$tables$meta_filtered, options = list(paging = FALSE))
+              })
+  
+              # Update progress bar with row count (filtering tab)
+              shinyWidgets::updateProgressBar(
+                session = session,
+                id = "row_count_bar",
+                value = nrow(r6$tables$meta_filtered),
+                total = nrow(r6$tables$meta_raw)
+              )
+              # Update metadata column input (filtering tab)
+              shiny::updateSelectInput(
+                session = session,
+                inputId = "exclusion_meta_col",
+                choices = colnames(r6$tables$meta_filtered)
+              )
+  
+              # Update input for the manual exclusion (filtering tab)
+              shiny::updateSelectizeInput(
+                session = session,
+                inputId = "selection_manual",
+                choices = rownames(r6$tables$meta_filtered)
+              )
+            }
+  
+            # Set columns
+            r6$set_col(col = input$select_sample_type, type = "type")
+  
+            # Text patterns
+            r6$set_text_pattern(pattern = input$qc_pattern, type = "qc")
+            r6$set_text_pattern(pattern = input$blank_pattern, type = "blank")
+            r6$set_text_pattern(pattern = input$pool_pattern, type = "pool")
+  
+            # Get text pattern counts
+            if (r6$texts$pattern_blank != "") {
+              count_blanks = length(grep(pattern = r6$texts$pattern_blank,
+                                         x = r6$tables$meta_raw[,r6$texts$col_type],
+                                         ignore.case = TRUE))
+            }else{
+              count_blanks = 0
+            }
+  
+            if (r6$texts$pattern_qc != "") {
+              count_qcs = length(grep(pattern = r6$texts$pattern_qc,
                                       x = r6$tables$meta_raw[,r6$texts$col_type],
                                       ignore.case = TRUE))
-          }else{
-            count_pools = 0
+            }else{
+              count_qcs = 0
+            }
+            if (r6$texts$pattern_pool != "") {
+              count_pools = length(grep(pattern = r6$texts$pattern_pool,
+                                        x = r6$tables$meta_raw[,r6$texts$col_type],
+                                        ignore.case = TRUE))
+            }else{
+              count_pools = 0
+            }
+  
+  
+            # Get indices
+            r6$set_all_indices()
+  
+            # Update text pattern feedback
+            output$found_blanks = shiny::renderText({paste0("Blanks found: ", as.character(count_blanks))})
+            output$found_qcs = shiny::renderText({paste0("QCs found: ", as.character(count_qcs))})
+            output$found_pools = shiny::renderText({paste0("Pools found: ", as.character(count_pools))})
           }
-          
-          
-          # Get indices 
-          r6$set_all_indices()
-
-          # Update text pattern feedback
-          output$found_blanks = shiny::renderText({paste0("Blanks found: ", as.character(count_blanks))})
-          output$found_qcs = shiny::renderText({paste0("QCs found: ", as.character(count_qcs))})
-          output$found_pools = shiny::renderText({paste0("Pools found: ", as.character(count_pools))})
         }
       })
 

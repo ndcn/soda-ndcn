@@ -16,10 +16,11 @@ Tab to upload the sample metadata and identify some key columns and rows.
 #### Filter tab
 Tab to set various filters which can be applied using the "Filter" button or reset using the "Reset table" button. The filtered table can be viewed directly in this table for direct feedback, and the sample count (number of rows) after filtering is displayed directly under that table.
 
-**Non-sample exclusion:** exclude blanks, QCs and/or pool samples based on the previously used text patterns. This is recommended: the exclusion is only for the result analyses, they are still used for blank filtering in the feature filtering tabs.  
-**Metadata exclusion:** exclude samples based on some metadata values. For instance, if samples from Batches 1 should be excluded, select the batch column from the metadata table in the "Column" field, select "1" in the "Values field", and the samples from batch 1 will be displayed in the Samples field. Filter them out by clicking the "Filter" button.  
-**Manual sample exclusion:** exclude samples based on their name. This is designed to exclude specific samples that are known to be problematic, like outliers after identifying them in the PCA.  
+**Non-sample selection:** select blanks, QCs and/or pool samples based on the previously used text patterns. Excluding these is recommended: the exclusion is only for the result analyses, they are still used for blank filtering in the feature filtering tabs.  
+**Manual sample exclusion:** selection samples based on their name. This is designed to exclude specific samples that are known to be problematic, like outliers after identifying them in the PCA.  
+**Metadata exclusion:** selection samples based on some metadata values. For instance, if samples from Batches 1 should be excluded, select the batch column from the metadata table in the "Column" field, select "1" in the "Values field", and the samples from batch 1 will be displayed in the Samples field. Filter them out by clicking the "Filter" button.  
 
+<img src="./img/upload_meta_filter.png" width="100%">
 ---
 
 ## Lipidomics data
