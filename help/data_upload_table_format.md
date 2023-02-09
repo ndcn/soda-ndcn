@@ -1,5 +1,6 @@
 Formatting your data prior to upload
 =======================
+---
 SODA accepts for now CSV formatted files. Please make sure your files do no contain comma (,) or any other special characters.<br><br>
 Files to upload include:
 * Sample metadata
@@ -22,23 +23,11 @@ Among these, only the ID, sample type and group type columns is mandatory. There
 
 Below is an example, and a more complete table is provided in the package directory: ./test_data/meta_table.csv.  
 
-| ID    | Sample_type | Group_type |
-|-------|-------------|------------|
-| S0001 | Sample      | A          |
-| S0002 | Sample      | B          |
-| S0003 | Sample      | C          |
-| S0004 | Blank       | None       |
-| S0005 | QC          | None       |
-  
+<img src="./img/upload_meta_meta_table.png" width="30%">
   
 ## Lipidomics data
 Imported lipidomics table. This contains the concentration of each lipid compound / species detected in each sample (not normalised). The molecule names are formatted in a specific way so as to extract their lipid class, carbon and unsaturation counts easily. This table can contain NA values. The only mandatory column is a form of *ID* column containing sample IDs.  
 Below is an example, and a more complete table is provided in the package directory: ./test_data/lips_table.csv.  
 
-| ID    | feature_1 | feature_2 |
-|-------|-----------|-----------|
-| S0001 |           | 2.659393  |
-| S0002 | 0.072669  | 3.242203  |
-| S0003 | 0.072236  | 2.940228  |
-| S0004 |           | 0.93373   |
-| S0005 |           | 1.040963  |
+<img src="./img/upload_lips_lips_table.png" width="100%">
+

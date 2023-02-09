@@ -147,7 +147,6 @@ soda_upload_meta_ui = function(id, head = F) {
           ),
 
           # Progress bar for the row count
-          shiny::h2("Filtered data"),
           shinyWidgets::progressBar(
             id = ns("row_count_bar"),
             title = "Sample count",
