@@ -85,11 +85,19 @@ class_distribution_server = function(r6, colour_list, dimensions_obj, input, out
 
 
   output$class_distribution_sidebar_ui = shiny::renderUI({
-    shiny::selectInput(
-      inputId = ns("class_distribution_metacol"),
-      label = "Select group column",
-      choices = colnames(r6$tables$meta_filtered),
-      selected = r6$texts$col_group
+    shiny::tagList(
+      shiny::selectInput(
+        inputId = ns("class_distribution_metacol"),
+        label = "Select group column",
+        choices = colnames(r6$tables$meta_filtered),
+        selected = r6$texts$col_group
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::downloadButton(
+        outputId = ns("download_class_distribution_table"),
+        label = "Download associated table",
+        style = "width:100%;"
+      )
     )
   })
   shiny::observeEvent(input$class_distribution_metacol, {
@@ -112,7 +120,13 @@ class_distribution_server = function(r6, colour_list, dimensions_obj, input, out
     )
   })
 
-
+  # Download associated table
+  output$download_class_distribution_table = shiny::downloadHandler(
+    filename = function(){"class_distribution_table.csv"},
+    content = function(file_name){
+      write.csv(r6$tables$class_distribution_table, file_name)
+    }
+  )
 
 
   # Expanded boxes
@@ -158,11 +172,19 @@ class_comparison_server = function(r6, colour_list, dimensions_obj, input, outpu
 
 
   output$class_comparison_sidebar_ui = shiny::renderUI({
-    shiny::selectInput(
-      inputId = ns("class_comparison_metacol"),
-      label = "Select group column",
-      choices = colnames(r6$tables$meta_filtered),
-      selected = r6$texts$col_group
+    shiny::tagList(
+      shiny::selectInput(
+        inputId = ns("class_comparison_metacol"),
+        label = "Select group column",
+        choices = colnames(r6$tables$meta_filtered),
+        selected = r6$texts$col_group
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::downloadButton(
+        outputId = ns("download_class_comparison_table"),
+        label = "Download unavailable for now",
+        style = "width:100%;"
+      )
     )
   })
   shiny::observeEvent(input$class_comparison_metacol, {
@@ -185,7 +207,13 @@ class_comparison_server = function(r6, colour_list, dimensions_obj, input, outpu
     )
   })
 
-
+  # # Download associated table
+  # output$download_class_comparison_table = shiny::downloadHandler(
+  #   filename = function(){"class_comparison_table.csv"},
+  #   content = function(file_name){
+  #     write.csv(r6$tables$class_distribution_table, file_name)
+  #   }
+  # )
 
 
   # Expanded boxes
@@ -242,11 +270,10 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
         choices = NULL,
         multiple = TRUE
       ),
-      shiny::br(),
-
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
-        outputId = ns("volcano_download"),
-        label = "Download volcano table",
+        outputId = ns("download_volcano_table"),
+        label = "Download associated table",
         style = "width:100%;"
       )
     )
@@ -291,7 +318,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
 
 
   # Export volcano table
-  output$volcano_download = shiny::downloadHandler(
+  output$download_volcano_table = shiny::downloadHandler(
     filename = function(){"volcano_table.csv"},
     content = function(file_name){
       write.csv(r6$tables$volcano_table, file_name)
@@ -374,6 +401,12 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
       shiny::actionButton(
         inputId = ns("heatmap_run"),
         label = "Generate heatmap"
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::downloadButton(
+        outputId = ns("download_heatmap_table"),
+        label = "Download associated table",
+        style = "width:100%;"
       )
     )
   })
@@ -429,6 +462,14 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
   })
 
 
+  # Download associated table
+  output$download_heatmap_table = shiny::downloadHandler(
+    filename = function(){"heatmap_table.csv"},
+    content = function(file_name){
+      write.csv(r6$tables$heatmap_table, file_name)
+    }
+  )
+  
   # Expanded boxes
   heatmap_proxy = plotly::plotlyProxy(outputId = "heatmap_plot",
                                            session = session)
@@ -481,7 +522,21 @@ pca_server = function(r6, colour_list, dimensions_obj, input, output, session) {
         label = "Select metadata column",
         choices = colnames(r6$tables$meta_filtered),
         selected = r6$texts$col_group
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::fluidRow(
+        shiny::downloadButton(
+          outputId = ns("download_pca_scores_table"),
+          label = "Download scores table",
+          style = "width:50%;"
+        ),
+        shiny::downloadButton(
+          outputId = ns("download_pca_loadings_table"),
+          label = "Download loadings table",
+          style = "width:50%;"
+        )
       )
+
     )
   })
 
@@ -516,6 +571,20 @@ pca_server = function(r6, colour_list, dimensions_obj, input, output, session) {
   })
 
 
+  # Download associated tables
+  output$download_pca_scores_table = shiny::downloadHandler(
+    filename = function(){"pca_scores_table.csv"},
+    content = function(file_name){
+      write.csv(r6$tables$pca_scores_table, file_name)
+    }
+  )
+  output$download_pca_loadings_table = shiny::downloadHandler(
+    filename = function(){"pca_loadings_table.csv"},
+    content = function(file_name){
+      write.csv(r6$tables$pca_loadings_table, file_name)
+    }
+  )
+  
   # Expanded boxes
   pca_proxy = plotly::plotlyProxy(outputId = "pca_plot",
                                       session = session)
@@ -575,6 +644,12 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
         choices = unique(r6$tables$feat_filtered$lipid_class),
         selected = unique(r6$tables$feat_filtered$lipid_class)[1],
         multiple = FALSE
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::downloadButton(
+        outputId = ns("download_double_bond_table"),
+        label = "Download associated table",
+        style = "width:100%;"
       )
     )
   })
@@ -617,7 +692,14 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
     }
   })
 
-
+  # Download associated tables
+  output$download_double_bond_table = shiny::downloadHandler(
+    filename = function(){"double_bond_table.csv"},
+    content = function(file_name){
+      write.csv(r6$tables$dbplot_table, file_name)
+    }
+  )
+  
   # Expanded boxes
   double_bonds_proxy = plotly::plotlyProxy(outputId = "double_bonds_plot",
                                   session = session)

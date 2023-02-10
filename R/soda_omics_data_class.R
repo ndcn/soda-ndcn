@@ -62,7 +62,11 @@ Omics_data = R6::R6Class(
       data_class_table_z_scored = NULL,
 
       # Plot tables
+      class_distribution_table = NULL,
       volcano_table = NULL,
+      heatmap_table = NULL,
+      pca_scores_table = NULL,
+      pca_loadings_table = NULL,
       dbplot_table = NULL
     ),
 
@@ -539,6 +543,10 @@ Omics_data = R6::R6Class(
           plot_table[c,g] = m
         }
       }
+      
+      # Store the plot_table
+      self$tables$class_distribution_table = plot_table
+      
 
       # Produce the plot
       i = 1
@@ -659,6 +667,9 @@ Omics_data = R6::R6Class(
                             ) {
 
 
+      # Save table as heatmap table
+      self$tables$heatmap_table = data_table
+      
       # Set the clustering
       if (cluster_rows & cluster_cols) {
         dendrogram_list = "both"
@@ -729,6 +740,10 @@ Omics_data = R6::R6Class(
       pca_data = get_pca_data(data_table = data_table)
 
       fig = c()
+      
+      # Store tables
+      self$tables$pca_scores_table = pca_data@scores
+      self$tables$pca_loadings_table = pca_data@loadings
 
       fig[[1]] = pca_plot_scores(x = pca_data@scores[, "PC1"],
                                  y = pca_data@scores[, "PC2"],
