@@ -81,7 +81,14 @@ sidebar_ui = function() {
         
         bs4Dash::menuSubItem(
           text = "Lipidomics",
-          tabName = "lips_visual")),      
+          tabName = "lips_visual")), 
+      
+      # Download menu
+      bs4Dash::menuItem(
+        text = "Download",
+        tabName = "table_downloads",
+        icon = shiny::icon("download")
+      ),
       
       # Help menu and submenus
       bs4Dash::menuItem(
@@ -91,7 +98,7 @@ sidebar_ui = function() {
         
         bs4Dash::menuSubItem(
           text = "Data upload",
-          tabName = "data_upload"),
+          tabName = "help_data_upload"),
         
         bs4Dash::menuSubItem(
           text = "Data visualisation",
@@ -114,26 +121,14 @@ sidebar_ui = function() {
 body_ui = function() {
   bs4Dash::dashboardBody(
     bs4Dash::tabItems(
+      
+      # Welcome page
       bs4Dash::tabItem(
         tabName = "welcome",
         soda_welcome()
       ),
-      bs4Dash::tabItem(
-        tabName = "data_upload",
-        soda_help_data_upload()
-      ),
-      bs4Dash::tabItem(
-        tabName = "help_visualisation",
-        soda_help("data_visualisation")
-      ),
-      bs4Dash::tabItem(
-        tabName = "help_functions",
-        soda_help("processing_functions")
-      ),
-      bs4Dash::tabItem(
-        tabName = "help_data_tables",
-        soda_help("data_tables")
-      ),
+      
+      # Data upload pages
       bs4Dash::tabItem(
         tabName = "meta_upload",
         soda_upload_meta_ui(id = "upload_metadata", head = F)
@@ -142,10 +137,37 @@ body_ui = function() {
         tabName = "lips_upload",
         soda_upload_lips_ui(id = "upload_lipidomics", head = T)
       ),
+      
+      # Data visualisation pages
       bs4Dash::tabItem(
         tabName = "lips_visual",
         soda_visualise_lips_ui(id = "visualise_lipidomics")
+      ),
+      
+      # Download page
+      bs4Dash::tabItem(
+        tabName = "table_downloads",
+        soda_download_tables_ui(id = "download_tables")
+      ),      
+      
+      # Help pages
+      bs4Dash::tabItem(
+        tabName = "help_data_upload",
+        soda_help_data_upload()
+      ),
+      bs4Dash::tabItem(
+        tabName = "help_visualisation",
+        soda_help_data_visualisation()
+      ),
+      bs4Dash::tabItem(
+        tabName = "help_functions",
+        soda_help("processing_functions")
+      ),
+      bs4Dash::tabItem(
+        tabName = "help_data_tables",
+        soda_help("data_tables")
       )
+
     )
   )
 }
@@ -158,11 +180,13 @@ body_ui = function() {
 header = header_ui()
 sidebar = sidebar_ui()
 body = body_ui()
+# ui = bs4Dash::dashboardPage(header, sidebar, body)
 ui = shinymanager::secure_app(bs4Dash::dashboardPage(header, sidebar, body))
 #------------------------------------------------------------------- Server ----
 
 server = function(input, output, session) {
   
+  # Basic authentification
   res_auth <- shinymanager::secure_server(
     check_credentials = shinymanager::check_credentials(db = data.frame(
       user = c("user1", "user2"), # mandatory
@@ -173,7 +197,7 @@ server = function(input, output, session) {
     ))
   )
 
-  
+  # Initiate some variables
   options(shiny.maxRequestSize=30*1024^2)
   
   lipidomics_data = Omics_data$new(
@@ -185,10 +209,11 @@ server = function(input, output, session) {
   colour_list = colour_list[-6]
   colour_list = grDevices::colorRampPalette(colour_list)(20)
 
+  # Load modules
   soda_upload_meta_server("upload_metadata", r6 = lipidomics_data)
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
   soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = colour_list)
-
+  soda_download_tables_server("download_tables", r6 = lipidomics_data)
   
 }
 

@@ -57,6 +57,9 @@ soda_upload_lips_ui = function(id, head = F) {
           width = 9,
           shiny::h2("Upload lipidomics data"),
 
+          # Data upload
+          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv"), width = "100%"),
+          
           # Table preview box
           bs4Dash::box(
             title = "Lipidomics table (raw)",
@@ -64,9 +67,6 @@ soda_upload_lips_ui = function(id, head = F) {
             DT::dataTableOutput(ns("table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
             collapsible = FALSE
           ),
-
-          # Data upload
-          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv"), width = "100%"),
 
           # Text feedback for groups to be analysed
           shiny::span(textOutput(outputId = ns("found_groups")))

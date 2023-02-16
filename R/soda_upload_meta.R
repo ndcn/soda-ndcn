@@ -64,7 +64,7 @@ meta_reset_fields = function(input, session, r6) {
 #------------------------------------------------------ Meta data upload UI ----
 soda_upload_meta_ui = function(id, head = F) {
 
-  ns = NS(id)
+  ns = shiny::NS(id)
   bs4Dash::tabsetPanel(
     type = "tabs",
     shiny::tabPanel(
@@ -77,6 +77,9 @@ soda_upload_meta_ui = function(id, head = F) {
           width = 9,
           shiny::h2("Upload metadata"),
 
+          # Data upload
+          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv"), width = "100%"),
+          
           # Table preview box
           bs4Dash::box(
             title = "Sample metadata table (raw)",
@@ -84,9 +87,6 @@ soda_upload_meta_ui = function(id, head = F) {
             DT::dataTableOutput(ns("raw_table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
             collapsible = FALSE
           ),
-
-          # Data upload
-          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv"), width = "100%"),
 
           # Text feedback for blanks, QCs and pools found (text patterns)
           shiny::span(textOutput(outputId = ns("found_blanks"))),
@@ -240,7 +240,7 @@ soda_upload_meta_ui = function(id, head = F) {
 
 #-------------------------------------------------- Meta data upload server ----
 
-soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6 = NULL) {
+soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6) {
   shiny::moduleServer(
     id,
     function(input, output, session) {

@@ -95,8 +95,11 @@ Omics_data$tables$data_total_norm_z_scored
 ```
 It is automatically generated with the *Filtered data table* and updated each time the features are filtered.  
 
+### Total normalised class table
 
-
+```
+Omics_data$tables$data_class_table
+```
 
 
 
