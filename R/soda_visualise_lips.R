@@ -176,13 +176,16 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
 
 
       # Plot selection
-      shiny::observeEvent(input$showPlots, {
-
-        if (length(input$showPlots) == 0) {
+      shiny::observe({
+        if (is.null(input$showPlots)) {
           output$plotbox_field = shiny::renderUI(
             NULL
           )
-        } else if (length(input$showPlots) == 1) {
+        }
+      })
+
+      shiny::observeEvent(input$showPlots, {
+        if (length(input$showPlots) == 1) {
           plot_one(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
