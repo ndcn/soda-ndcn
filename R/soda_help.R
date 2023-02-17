@@ -61,3 +61,29 @@ soda_help_data_visualisation = function(){
     )
   )
 }
+
+soda_help_tables = function(){
+  bs4Dash::tabsetPanel(
+    type = "tabs",
+    shiny::tabPanel(
+      title = "Metadata tables",
+      soda_help("tables_metadata")
+    ),
+    shiny::tabPanel(
+      title = "Lipidomics tables",
+      soda_help("tables_lipidomics")
+    ),
+    shiny::tabPanel(
+      title = "Feature tables",
+      soda_help("tables_feature_metadata")
+    ),
+    shiny::tabPanel(
+      title = "Class tables",
+      soda_help("tables_classes")
+    ),
+    shiny::tabPanel(
+      title = "Plot tables",
+      soda_help("tables_plots")
+    )
+  )
+}

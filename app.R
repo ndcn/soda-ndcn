@@ -105,10 +105,6 @@ sidebar_ui = function() {
           tabName = "help_visualisation"),
         
         bs4Dash::menuSubItem(
-          text = "Processing fuctions",
-          tabName = "help_functions"),
-        
-        bs4Dash::menuSubItem(
           text = "Tables",
           tabName = "help_data_tables")
       )
@@ -160,12 +156,8 @@ body_ui = function() {
         soda_help_data_visualisation()
       ),
       bs4Dash::tabItem(
-        tabName = "help_functions",
-        soda_help("processing_functions")
-      ),
-      bs4Dash::tabItem(
         tabName = "help_data_tables",
-        soda_help("data_tables")
+        soda_help_tables()
       )
 
     )
