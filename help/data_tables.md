@@ -87,7 +87,7 @@ Omics_data$tables$data_class_norm_z_scored
 ```
 It is automatically generated with the *Filtered data table* and updated each time the features are filtered.  
 
-### Total normalised and z-score data table
+### Total normalised and z-scored data table
 Z-scoring applied to the *Total normalised data table* to normalise further the data.  
 This table can be accessed in the Omics_data object thus:  
 ```
@@ -101,6 +101,10 @@ It is automatically generated with the *Filtered data table* and updated each ti
 Omics_data$tables$data_class_table
 ```
 
+### Total normalised and z-scored class table
 
+```
+Omics_data$tables$data_class_table_z_scored
+```
 
 

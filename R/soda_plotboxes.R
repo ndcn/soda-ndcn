@@ -266,7 +266,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_metagroup"),
-        label = "Select groups to compare(2)",
+        label = "Select two groups to compare",
         choices = NULL,
         multiple = TRUE
       ),
@@ -634,7 +634,7 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
       ),
       shiny::selectizeInput(
         inputId = ns("double_bonds_metagroup"),
-        label = "Select groups to compare(2)",
+        label = "Select two groups to compare",
         choices = NULL,
         multiple = TRUE
       ),

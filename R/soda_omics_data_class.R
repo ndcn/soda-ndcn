@@ -454,7 +454,7 @@ Omics_data = R6::R6Class(
       p_value_bh_adj = p.adjust(p_value, method = "BH")
 
       dbplot_table$log2_fold_change = log2(fold_change)
-      dbplot_table$log10_p_value_bh_adj = log10(p_value_bh_adj)
+      dbplot_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
 
       self$tables$dbplot_table = dbplot_table
     },
@@ -774,7 +774,7 @@ Omics_data = R6::R6Class(
       fig = plotly::plot_ly(data_table[selected_rows,],
                             x = ~carbons_1,
                             y = ~unsat_1,
-                            color = ~log10_p_value_bh_adj,
+                            color = ~minus_log10_p_value_bh_adj,
                             size = ~log2_fold_change,
                             mode = "markers",
                             sizes = ~c(5,40),
