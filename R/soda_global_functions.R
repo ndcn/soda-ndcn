@@ -21,11 +21,14 @@ get_rownames_from_idx = function(idx, id_col, data_table) {
 
 remove_empty_cols = function(table) {
   # filter out columns which are only NA
+  del_cols = c()
   for (col in colnames(table)) {
     if (sum(is.na(table[,col])) == length(rownames(table))){
-      table[,col] = NULL
+      # table[,col] = NULL
+      del_cols = c(del_cols, col)
     }
   }
+  table = table[,-which(colnames(table) %in% del_cols)]
   return(table)
 }
 
@@ -112,7 +115,6 @@ normalise_lipid_class = function(lips_table) {
     }
     class_row_sums[class_row_sums == 0] = 1
     lips_table[, cols] = lips_table[, cols] / class_row_sums
-
   }
   return(lips_table)
 }
@@ -120,14 +122,10 @@ normalise_lipid_class = function(lips_table) {
 z_score_normalisation = function(data_table, impute) {
   # Impute (or not) and scale (z-score) the data
   if (is.na(impute)) {
-    for (col in colnames(data_table)) {
-      data_table[,col] = (data_table[,col] - mean(data_table[,col], na.rm = T))/sd(data_table[,col], na.rm = T)
-    }
+    data_table = scale(data_table)
   } else {
     data_table[is.na(data_table)] = impute
-    for (col in colnames(data_table)) {
-      data_table[,col] = (data_table[,col] - mean(data_table[,col]))/sd(data_table[,col])
-    }
+    data_table = scale(data_table)
   }
   return(data_table)
 }
@@ -137,27 +135,22 @@ z_score_normalisation = function(data_table, impute) {
 #---------------------------------------------------- Class table functions ----
 get_lipid_class_table = function(table){
 
-  # Get unique lipid classes
-  classes = get_lipid_classes(feature_list = colnames(table), uniques = TRUE)
-
-  # Get a column vector to find easily which columns belong to each lipid group
-  col_vector = get_lipid_classes(feature_list = colnames(table), uniques = FALSE)
-
-  # Initialise the output table
-  out_table = data.frame(matrix(nrow = nrow(table), ncol = 0), row.names = rownames(table))
-
   # Replace NA by 0s
   table[is.na(table)] = 0
-
+  
+  # Get unique lipid classes
+  classes = get_lipid_classes(feature_list = colnames(table), uniques = TRUE)
+  
+  # Get a column vector to find easily which columns belong to each lipid group
+  col_vector = get_lipid_classes(feature_list = colnames(table), uniques = FALSE)
+  
   # Fill the table
-  for (lipid in classes) {
-    new_col = c()
-    col_list = which(col_vector == lipid)
-    for (i in rownames(table)) {
-      new_col = c(new_col, sum(table[i, col_list], na.rm = TRUE))
-    }
-    out_table[,lipid] = new_col
-  }
+  out_table = sapply(X = classes,
+                     FUN = function(x) {
+                       col_list = which(col_vector == x)
+                       rowSums(table[,col_list])
+                     }
+  )
 
   return(out_table)
 }

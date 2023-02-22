@@ -245,7 +245,7 @@ Omics_data = R6::R6Class(
         table = remove_empty_cols(table)
       }
 
-      self$tables$data_filtered = table
+      self$tables$data_filtered = as.matrix(table)
     },
 
     # Set or reset the filtered Metadata
