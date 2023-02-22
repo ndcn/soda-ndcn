@@ -234,25 +234,27 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       })
 
       # Set values to the R6 object
-      shiny::observeEvent(input$select_id, {
+      shiny::observeEvent(c(input$select_id, input$select_sample_group), {
         if (input$select_id != ""){
 
           # Initialise filtered data with the ID column
           r6$set_col(col = input$select_id, type = "id_data")
           r6$set_col(col = input$select_sample_group, type = "group")
           r6$set_data_filtered()
+          
 
           # Send error message if non-unique IDs are selected
           if (r6$non_unique_ids_data){
             output$id_error = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {
-            
+
             # if ID correct, filter out deleted rows from the lipids table
             output$id_error = shiny::renderText({NULL})
-            r6$set_blank_table()
 
             # Initialise preview of the feature filtering
             if (!is.null(r6$tables$data_filtered)) {
+              
+              r6$set_blank_table()
               total_cols = ncol(r6$tables$data_filtered)
               del_cols = lips_get_del_cols(input = input, r6 = r6)
               remaining_cols = total_cols - length(del_cols)
