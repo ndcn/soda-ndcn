@@ -2,7 +2,11 @@ library(shiny)
 library(bs4Dash)
 library(shinyWidgets)
 
-lips_update_fields = function(session, r6) {
+lips_update_fields = function(input, session, r6) {
+  
+  del_cols = lips_get_del_cols(input = input, r6 = r6)
+  remaining_cols = setdiff(colnames(r6$tables$data_filtered), del_cols)
+  
   # Update class selection
   shiny::updateSelectizeInput(
     session = session,
@@ -15,7 +19,7 @@ lips_update_fields = function(session, r6) {
   shiny::updateSelectizeInput(
     session = session,
     inputId = "manual_selection",
-    choices = colnames(r6$tables$data_filtered),
+    choices = remaining_cols,
     selected = character(0)
   )
 }
@@ -241,7 +245,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           r6$set_col(col = input$select_id, type = "id_data")
           r6$set_col(col = input$select_sample_group, type = "group")
           r6$set_data_filtered()
-          
 
           # Send error message if non-unique IDs are selected
           if (r6$non_unique_ids_data){
@@ -255,14 +258,16 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             if (!is.null(r6$tables$data_filtered)) {
               
               r6$set_blank_table()
-              total_cols = ncol(r6$tables$data_filtered)
+              r6$set_feat_raw()
+              
               del_cols = lips_get_del_cols(input = input, r6 = r6)
-              remaining_cols = total_cols - length(del_cols)
+              remaining_cols = setdiff(colnames(r6$tables$data_filtered), del_cols)
 
               # Initialise bar plot
               output$class_barplot = shiny::renderPlot(
                 expr = preview_class_plot(data_table = r6$tables$data_filtered,
-                                          del_cols = del_cols),
+                                          del_cols = del_cols,
+                                          feat_raw = r6$tables$feat_raw),
                 bg = "transparent"
               )
 
@@ -270,8 +275,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               shinyWidgets::updateProgressBar(
                 session = session,
                 id = "col_count_bar",
-                value = remaining_cols,
-                total = total_cols
+                value = length(remaining_cols),
+                total = ncol(r6$tables$data_raw) - 1
               )
 
               # Produce ensuing tables
@@ -288,7 +293,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               shiny::updateSelectizeInput(
                 session = session,
                 inputId = "manual_selection",
-                choices = colnames(r6$tables$data_filtered),
+                choices = remaining_cols,
                 selected = character(0)
               )
 
@@ -316,15 +321,14 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         r6$tables$data_filtered = r6$tables$data_filtered[,!(colnames(r6$tables$data_filtered) %in% selected_feats)]
 
         r6$set_feat_filtered()
-
-        total_cols = ncol(r6$tables$data_raw) - 1
         
         del_cols = lips_get_del_cols(input = input, r6 = r6)
         
         # Update class bar plot
         output$class_barplot = shiny::renderPlot(
           expr = preview_class_plot(data_table = r6$tables$data_filtered,
-                                    del_cols = del_cols),
+                                    del_cols = del_cols,
+                                    feat_raw = r6$tables$feat_raw),
           bg = "transparent"
         )
         
@@ -333,11 +337,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           session = session,
           id = "col_count_bar",
           value = ncol(r6$tables$data_filtered) - length(del_cols),
-          total = total_cols
+          total = ncol(r6$tables$data_raw) - 1
         )
         
         # Update selection fields
-        lips_update_fields(session = session, r6 = r6)
+        lips_update_fields(input = input, session = session, r6 = r6)
 
       })
 
@@ -347,13 +351,41 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         for (c in input$class_selection) {
           selected_feats = c(selected_feats, rownames(r6$tables$feat_filtered)[r6$tables$feat_filtered[,"lipid_class"] == c])
         }
-
+        
+        if (is.null(selected_feats)) {
+          return()
+        }
+        
+        # Del cols from the selection + apply changes
+        del_cols = setdiff(colnames(r6$tables$data_filtered),selected_feats)
         r6$tables$data_filtered = r6$tables$data_filtered[,(colnames(r6$tables$data_filtered) %in% selected_feats)]
-
         r6$set_feat_filtered()
+        
+        # Get del cols from the blank and group filtering
+        del_cols = lips_get_del_cols(input = input, r6 = r6)
 
+        # Update class bar plot
+        output$class_barplot = shiny::renderPlot(
+          expr = preview_class_plot(data_table = r6$tables$data_filtered,
+                                    del_cols = del_cols,
+                                    feat_raw = r6$tables$feat_raw),
+          bg = "transparent"
+        )
+        
+        # Update progress bar
+        shinyWidgets::updateProgressBar(
+          session = session,
+          id = "col_count_bar",
+          value = ncol(r6$tables$data_filtered) - length(del_cols),
+          total = ncol(r6$tables$data_raw) - 1
+        )
+        
+        
+        
+        
+        
         # Update selection fields
-        lips_update_fields(session = session, r6 = r6)
+        lips_update_fields(input = input, session = session, r6 = r6)
 
       })
 
@@ -363,8 +395,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         if (!is.null(r6$tables$data_filtered)){
 
           # Calculate remaining cols
-
-          total_cols = ncol(r6$tables$data_raw) - 1
           del_cols = lips_get_del_cols(input = input, r6 = r6)
 
           remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
@@ -372,7 +402,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           # Update class bar plot
           output$class_barplot = shiny::renderPlot(
             expr = preview_class_plot(data_table = r6$tables$data_filtered,
-                                      del_cols = del_cols),
+                                      del_cols = del_cols,
+                                      feat_raw = r6$tables$feat_raw),
             bg = "transparent"
           )
 
@@ -381,8 +412,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             session = session,
             id = "col_count_bar",
             value = remaining_cols,
-            total = total_cols
+            total = ncol(r6$tables$data_raw) - 1
           )
+          
+          # Update selection fields
+          lips_update_fields(input = input, session = session, r6 = r6)
         }
       })
 
@@ -402,7 +436,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           session = session,
           id = "col_count_bar",
           value = ncol(r6$tables$data_filtered),
-          total = ncol(r6$tables$data_filtered)
+          total = ncol(r6$tables$data_raw) - 1
         )
 
         # Produce ensuing tables
@@ -415,14 +449,14 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         r6$set_data_filtered()
         r6$set_all_tables()
         
-        total_cols = ncol(r6$tables$data_filtered)
         del_cols = lips_get_del_cols(input = input, r6 = r6)
-        remaining_cols = total_cols - length(del_cols)
+        remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
         
         # Update class bar plot
         output$class_barplot = shiny::renderPlot(
           expr = preview_class_plot(data_table = r6$tables$data_filtered,
-                                    del_cols = del_cols),
+                                    del_cols = del_cols,
+                                    feat_raw = r6$tables$feat_raw),
           bg = "transparent"
         )
         
@@ -431,11 +465,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           session = session,
           id = "col_count_bar",
           value = remaining_cols,
-          total = total_cols
+          total = ncol(r6$tables$data_raw) - 1
         )
         
         # Update selection fields
-        lips_update_fields(session = session, r6 = r6)
+        lips_update_fields(input = input, session = session, r6 = r6)
         
       })
       
