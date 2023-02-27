@@ -24,11 +24,12 @@ remove_empty_cols = function(table) {
   del_cols = c()
   for (col in colnames(table)) {
     if (sum(is.na(table[,col])) == length(rownames(table))){
-      # table[,col] = NULL
       del_cols = c(del_cols, col)
     }
   }
-  table = table[,-which(colnames(table) %in% del_cols)]
+  if (!is.null(del_cols)) {
+    table = table[,-which(colnames(table) %in% del_cols)]
+  }
   return(table)
 }
 
@@ -192,10 +193,9 @@ get_subplot_titles = function(class_list){
 
 #----------------------------------------- Lipid upload class preview plots ----
 
-preview_class_plot = function(data_table, del_cols){
+preview_class_plot = function(data_table, del_cols, feat_raw){
 
-  total_values = table(get_lipid_classes(feature_list = colnames(data_table),
-                                         uniques = F))
+  total_values = table(feat_raw$lipid_class)
   filtered_values_1 = rep(0,each=length(total_values))
   names(filtered_values_1) = names(total_values)
 
@@ -217,6 +217,7 @@ preview_class_plot = function(data_table, del_cols){
 
   lip_val = c(rep(100, length(total_values)) - round(100*(filtered_values_1/total_values),1), round(100*(filtered_values_1/total_values),1))
   class_df = data.frame(lip_class, d_type, lip_val)
+  class_df[, "lip_val"] = round(class_df[, "lip_val"],1)
 
   lip_val_abs = c(total_values - filtered_values_1, filtered_values_1)
   class_df_abs = data.frame(lip_class, d_type, lip_val_abs)

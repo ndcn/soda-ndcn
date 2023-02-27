@@ -48,6 +48,7 @@ Omics_data = R6::R6Class(
       # Filtered
       meta_filtered = NULL,
       data_filtered = NULL,
+      feat_raw = NULL,
       feat_filtered = NULL,
 
       # Normalised
@@ -245,7 +246,10 @@ Omics_data = R6::R6Class(
         table = remove_empty_cols(table)
       }
 
-      self$tables$data_filtered = as.matrix(table)
+      # Coerce to numeric matrix and save
+      table = as.matrix(table)
+      class(table) = "numeric"
+      self$tables$data_filtered = table
     },
 
     # Set or reset the filtered Metadata
@@ -268,7 +272,14 @@ Omics_data = R6::R6Class(
       
     },
 
-    # Set feature table
+    # Set feature tables
+    set_feat_raw = function() {
+      id_col = self$texts$col_id_data
+      data_table = self$tables$data_raw
+      rownames(data_table) = data_table[,id_col]
+      data_table = data_table[,-which(colnames(data_table) == id_col)]
+      self$tables$feat_raw = get_feature_metadata(data_table = data_table)
+    },
     set_feat_filtered = function() {
       self$tables$feat_filtered = get_feature_metadata(data_table = self$tables$data_filtered)
     },
@@ -307,10 +318,9 @@ Omics_data = R6::R6Class(
                                   blank_multiplier = blank_multiplier,
                                   group_threshold = group_threshold)
         del_cols = setdiff(del_cols,saved_cols)
-        if (length(del_cols) == 0) {del_cols = NULL}
       }
 
-      if (!is.null(del_cols)) {
+      if (length(del_cols) > 0) {
         self$tables$data_filtered = self$tables$data_filtered[,!(colnames(self$tables$data_filtered) %in% del_cols)]
       }
     },
