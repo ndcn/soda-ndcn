@@ -465,6 +465,11 @@ Omics_data = R6::R6Class(
 
       dbplot_table$log2_fold_change = log2(fold_change)
       dbplot_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
+      
+      lips = rownames(dbplot_table)
+      fc = as.character(round(dbplot_table[,"log2_fold_change"],2))
+      pval = as.character(round(dbplot_table[,"minus_log10_p_value_bh_adj"],2))
+      dbplot_table$text = paste0(lips, " | fc: ", fc, " | pval: ", pval)
 
       self$tables$dbplot_table = dbplot_table
     },
@@ -643,6 +648,7 @@ Omics_data = R6::R6Class(
                             colour_list,
                             width,
                             height){
+      max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
       i = 1
       fig = plotly::plot_ly(colors = colour_list, type  = "scatter", mode  = "markers", width = width, height = height)
       for (lip_class in unique(self$tables$volcano_table$lipid_class)) {
@@ -657,8 +663,10 @@ Omics_data = R6::R6Class(
         i = i + 1
       }
       fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot")),
-                           xaxis = list(title = "log2(fold change)"),
-                           yaxis = list(title = "-log10(BH adjusted p value)"))
+                           xaxis = list(title = "Log2(fold change)",
+                                        range = c(-max_fc,max_fc)
+                                        ),
+                           yaxis = list(title = "-Log10(BH(p-value))"))
       self$plots$volcano_plot = fig
     },
 
@@ -706,13 +714,11 @@ Omics_data = R6::R6Class(
       val_list = sort(val_list)
       zmin = quantile(val_list, alpha/2)
       zmax = quantile(val_list, 1 - alpha/2)
+      col_lim = round(max(abs(c(zmin, zmax))), 2)
 
       # Filter out the data using the percentiles
       data_table[data_table > zmax] = zmax
       data_table[data_table < zmin] = zmin
-
-      # Get midpoint as median of the remaining data
-      midpoint = median(as.matrix(data_table))
 
       # Annotations
       if (!is.null(row_annotations)) {
@@ -732,8 +738,8 @@ Omics_data = R6::R6Class(
                                           scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
                                             low = "blue",
                                             high = "red",
-                                            midpoint = midpoint,
-                                            limits = c(zmin, zmax)
+                                            midpoint = 0,
+                                            limits = c(-col_lim, col_lim)
                                           ),
                                           width = width,
                                           height = height,
@@ -777,21 +783,33 @@ Omics_data = R6::R6Class(
 
     ## Double bond plot
 
-    plot_doublebonds = function(data_table = self$tables$dbplot_table, lipid_class, width, height){
+    plot_doublebonds = function(data_table = self$tables$dbplot_table, lipid_class, fc_limits, pval_limits, width, height){
 
       selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
+      data_table = data_table[selected_rows,]
+      data_table = data_table[!dplyr::between(data_table[,"log2_fold_change"], fc_limits[1], fc_limits[2]),]
+      data_table = data_table[dplyr::between(data_table[,"minus_log10_p_value_bh_adj"], pval_limits[1], pval_limits[2]),]
 
-      fig = plotly::plot_ly(data_table[selected_rows,],
+      fig = plotly::plot_ly(data_table,
                             x = ~carbons_1,
                             y = ~unsat_1,
-                            color = ~minus_log10_p_value_bh_adj,
-                            size = ~log2_fold_change,
-                            mode = "markers",
-                            sizes = ~c(5,40),
-                            marker = list(sizemode ='diameter' , opacity = 0.5,sizeref=1),
-                            showlegend=T,
                             type = "scatter",
-                            text = selected_rows,
+                            mode = "markers",
+                            size = ~minus_log10_p_value_bh_adj,
+                            sizes = ~c(5,40),
+                            marker = list(color = ~log2_fold_change,
+                                          sizemode ='diameter',
+                                          opacity = 0.5,
+                                          sizeref=1,
+                                          colorscale = 'RdBu',
+                                          cmax = max(abs(data_table[, "log2_fold_change"])),
+                                          cmin = -max(abs(data_table[, "log2_fold_change"])),
+                                          colorbar=list(
+                                            title='Log2(fold change)'
+                                          ),
+                                          line = list(width = 0)
+                                          ),
+                            text = data_table$text,
                             hoverinfo = "text",
                             width = width,
                             height = height)

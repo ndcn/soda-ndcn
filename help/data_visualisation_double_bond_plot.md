@@ -3,7 +3,10 @@ Double bond plot
 ---
 ### Plot and interface
 Plot comparing two sample groups based on a lipid class, the double bond and carbon counts. The groups can be selected through the sidebar with "Select group column" (a column from the metadata table containing the groups to be compared). The comparison is done on a group-on-group basis: two groups must be selected in the "Select two groups to compare" slot.  
-The markers, representing individual lipid species, are coloured according to -log10(BH(p-value)), meaning that the higher their value is, the more significant that lipid is (low p-value). The marker size is relative to log2(fold change). Values are best examined by downloading the associated table using the download button.  
+The markers, representing individual lipid species, are coloured according to Log2(Fold change) in blue and red. This means markers coloured in red (>0) are detected in higher quantities in the second group, and markers coloured in blue (<0) are detected in higher quantities in the first group. Their size is relative to -Log10(BH(p-value)) meaning that the bigger the marker, the more significant that lipid is (low p-value).  
+Sliders allow a better exploration of the data:  
+- Coloring : Log2(Fold change) slider. Allows an exclusion of lipids with fold change derived values between a set range.  
+- Size : -Log10(BH(p-value)) slider. Allows the inclusion of lipids with p-value derived values between a set range.  
 
 <img src="./img/visualise_lips_dbplot_1.png" width="49%">
 <img src="./img/visualise_lips_dbplot_2.png" width="49%">

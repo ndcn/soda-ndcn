@@ -420,9 +420,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         }
       })
 
-
-
-
       # Save button
       shiny::observeEvent(input$save, {
 
@@ -436,7 +433,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           session = session,
           id = "col_count_bar",
           value = ncol(r6$tables$data_filtered),
-          total = ncol(r6$tables$data_raw) - 1
+          total = ncol(r6$tables$data_filtered)
         )
 
         # Produce ensuing tables
