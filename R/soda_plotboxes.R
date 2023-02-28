@@ -1,3 +1,11 @@
+#----------------------------------------------------------- Table switches ----
+table_switch = function(selection, r6){
+  switch(EXPR = selection,
+         "Filtered data table" = r6$tables$data_filtered,
+         "Class normalised data table" = r6$tables$data_class_norm,
+         "Total normalised data table" = r6$tables$data_total_norm
+  )
+}
 #----------------------------------------------- Plotting function controls ----
 
 plotbox_switch_ui = function(selection_list){
@@ -259,6 +267,12 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
   output$volcano_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
+        inputId = ns("volcano_plot_tables"),
+        label = "Select data table",
+        choices = c("Filtered data table", "Class normalised data table", "Total normalised data table"),
+        selected = "Filtered data table"
+      ),
+      shiny::selectInput(
         inputId = ns("volcano_plot_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
@@ -289,7 +303,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
   })
 
 
-  shiny::observeEvent(input$volcano_plot_metagroup, {
+  shiny::observeEvent(c(input$volcano_plot_metagroup, input$volcano_plot_tables), {
     if (length(input$volcano_plot_metagroup) == 2) {
 
       if (input$volcano_plot_plotbox$maximized) {
@@ -300,7 +314,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
         height = dimensions_obj$ypx * dimensions_obj$y_plot
       }
 
-      r6$get_volcano_table(data_table = r6$tables$data_filtered,
+      r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
                            data_table_normalised = r6$tables$data_z_scored,
                            col_group = input$volcano_plot_metacol,
                            group_1 = input$volcano_plot_metagroup[1],
@@ -628,6 +642,12 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
   output$double_bonds_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
+        inputId = ns("double_bonds_tables"),
+        label = "Select data table",
+        choices = c("Filtered data table", "Class normalised data table", "Total normalised data table"),
+        selected = "Filtered data table"
+      ),
+      shiny::selectInput(
         inputId = ns("double_bonds_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
@@ -682,7 +702,7 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
     )
   })
 
-  shiny::observeEvent(c(input$double_bonds_metacol, input$double_bonds_metagroup, input$double_bonds_class, input$log2_fc_slider, input$min_log10_bh_pval_slider),{
+  shiny::observeEvent(c(input$double_bonds_metacol, input$double_bonds_metagroup, input$double_bonds_class, input$log2_fc_slider, input$min_log10_bh_pval_slider, input$double_bonds_tables),{
 
     if (length(input$double_bonds_metagroup) == 2) {
 
@@ -693,8 +713,8 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
         width = dimensions_obj$xpx * dimensions_obj$x_plot
         height = dimensions_obj$ypx * dimensions_obj$y_plot
       }
-
-      r6$get_dbplot_table(data_table = r6$tables$data_filtered,
+      
+      r6$get_dbplot_table(data_table = table_switch(selection = input$double_bonds_tables, r6 = r6),
                           data_table_normalised = r6$tables$data_z_scored,
                           dbplot_table = r6$tables$feat_filtered,
                           col_group = input$double_bonds_metacol,
@@ -723,7 +743,6 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
                           pval_limits = input$min_log10_bh_pval_slider,
                           width = width,
                           height = height)
-
       output$double_bonds_plot = plotly::renderPlotly(
         r6$plots$double_bond_plot
       )

@@ -472,9 +472,9 @@ get_feature_metadata = function(data_table) {
     }
   }
 
-  feature_table$carbons_1 = c_count_1
-  feature_table$carbons_2 = c_count_2
-  feature_table$unsat_1 = s_count_1
-  feature_table$unsat_2 = s_count_2
+  feature_table$carbons_1 = as.numeric(c_count_1)
+  feature_table$carbons_2 = as.numeric(c_count_2)
+  feature_table$unsat_1 = as.numeric(s_count_1)
+  feature_table$unsat_2 = as.numeric(s_count_2)
   return(feature_table)
 }
