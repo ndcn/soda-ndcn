@@ -380,12 +380,21 @@ Omics_data = R6::R6Class(
         }
       }
 
+      # Imputation of Inf for when denominator median is 0 
+      fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      
+      # Imputation of 0 for when numerator median is 0 
+      fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+      
       # Imputation of NAs for denominator FC with a value slightly above max FC
-      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
-
-      # Imputation of NAs for norminator FC with a value slightly below min FC
-      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
-
+      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      
+      # Imputation of NAs for nominator FC with a value slightly below min FC
+      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+      
+      # Imputation of NAs for when both numerators and denominator medians are 0
+      fold_change[is.na(fold_change)] = fold_change[is.na(fold_change)] = 1
+      
       # Imputation of NAs for p-values to be the min p-val
       p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
 
@@ -451,11 +460,20 @@ Omics_data = R6::R6Class(
         }
       }
 
+      # Imputation of Inf for when denominator median is 0 
+      fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      
+      # Imputation of 0 for when numerator median is 0 
+      fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+      
       # Imputation of NAs for denominator FC with a value slightly above max FC
-      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
-
-      # Imputation of NAs for norminator FC with a value slightly below min FC
-      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 777) & !(fold_change == 666)], na.rm = T)
+      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      
+      # Imputation of NAs for nominator FC with a value slightly below min FC
+      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+      
+      # Imputation of NAs for when both numerators and denominator medians are 0
+      fold_change[is.na(fold_change)] = 1
 
       # Imputation of NAs for p-values to be the min p-val
       p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
@@ -787,9 +805,10 @@ Omics_data = R6::R6Class(
 
       selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
       data_table = data_table[selected_rows,]
+      x_lims = c(min(data_table$carbons_1) -1, max(data_table$carbons_1) +1)
+      y_lims = c(min(data_table$unsat_1) -0.5, max(data_table$unsat_1) +1)
       data_table = data_table[!dplyr::between(data_table[,"log2_fold_change"], fc_limits[1], fc_limits[2]),]
       data_table = data_table[dplyr::between(data_table[,"minus_log10_p_value_bh_adj"], pval_limits[1], pval_limits[2]),]
-
       fig = plotly::plot_ly(data_table,
                             x = ~carbons_1,
                             y = ~unsat_1,
@@ -816,8 +835,12 @@ Omics_data = R6::R6Class(
       fig = fig %>% layout(
         legend= list(itemsizing='constant'),
         title = paste0("Double bonds in ", lipid_class),
-        xaxis = list(title = 'Total carbons'),
-        yaxis = list(title = 'Total double bonds')
+        xaxis = list(title = 'Total carbons',
+                     range = x_lims
+                     ),
+        yaxis = list(title = 'Total double bonds',
+                     range = y_lims
+                     )
       )
       fig = fig %>% config(modeBarButtonsToAdd = c('drawline',
                                                    'drawopenpath',
