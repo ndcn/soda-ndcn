@@ -305,6 +305,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
                            col_group = input$volcano_plot_metacol,
                            group_1 = input$volcano_plot_metagroup[1],
                            group_2 = input$volcano_plot_metagroup[2])
+      
       r6$plot_volcano(data_table = r6$tables$volcano_table,
                       colour_list = colour_list,
                       width = width,
@@ -645,6 +646,24 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
         selected = unique(r6$tables$feat_filtered$lipid_class)[1],
         multiple = FALSE
       ),
+      shiny::sliderInput(
+        inputId = ns("log2_fc_slider"),
+        label = "Coloring : Log2(Fold change) slider",
+        min = -5,
+        max = 5,
+        value = c(-1, 1),
+        step = 0.1
+      ),
+      
+      shiny::sliderInput(
+        inputId = ns("min_log10_bh_pval_slider"),
+        label = "Size : -Log10(BH(p-value)) slider",
+        min = 0,
+        max = 5,
+        value = c(0,5),
+        step = 0.1
+      ),
+      
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
         outputId = ns("download_double_bond_table"),
@@ -663,7 +682,7 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
     )
   })
 
-  shiny::observeEvent(c(input$double_bonds_metacol, input$double_bonds_metagroup, input$double_bonds_class),{
+  shiny::observeEvent(c(input$double_bonds_metacol, input$double_bonds_metagroup, input$double_bonds_class, input$log2_fc_slider, input$min_log10_bh_pval_slider),{
 
     if (length(input$double_bonds_metagroup) == 2) {
 
@@ -681,8 +700,27 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
                           col_group = input$double_bonds_metacol,
                           group_1 = input$double_bonds_metagroup[1],
                           group_2 = input$double_bonds_metagroup[2])
-
+      
+      selected_rows = rownames(r6$tables$dbplot_table)[r6$tables$dbplot_table["lipid_class"] == input$double_bonds_class]
+      fc_limits = round(max(abs(r6$tables$dbplot_table[selected_rows, "log2_fold_change"])), 1) + 1
+      pval_limit = round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1
+      
+      shiny::updateSliderInput(
+        session = session,
+        inputId = "log2_fc_slider",
+        min = -fc_limits,
+        max = fc_limits
+      )
+      
+      shiny::updateSliderInput(
+        session = session,
+        inputId = "min_log10_bh_pval_slider",
+        max = pval_limit
+      )
+      
       r6$plot_doublebonds(lipid_class = input$double_bonds_class,
+                          fc_limits = input$log2_fc_slider,
+                          pval_limits = input$min_log10_bh_pval_slider,
                           width = width,
                           height = height)
 
