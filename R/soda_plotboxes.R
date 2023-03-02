@@ -6,6 +6,15 @@ table_switch = function(selection, r6){
          "Total normalised data table" = r6$tables$data_total_norm
   )
 }
+
+z_score_table_switch = function(selection, r6){
+  switch(EXPR = selection,
+         "Filtered data table" = r6$tables$data_z_scored,
+         "Class normalised data table" = r6$tables$data_class_norm_z_scored,
+         "Total normalised data table" = r6$tables$data_total_norm_z_scored
+  )
+}
+
 #----------------------------------------------- Plotting function controls ----
 
 plotbox_switch_ui = function(selection_list){
@@ -315,13 +324,15 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
       }
 
       r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
-                           data_table_normalised = r6$tables$data_z_scored,
+                           data_table_normalised = z_score_table_switch(selection = input$volcano_plot_tables, r6 = r6),
                            col_group = input$volcano_plot_metacol,
                            group_1 = input$volcano_plot_metagroup[1],
                            group_2 = input$volcano_plot_metagroup[2])
       
       r6$plot_volcano(data_table = r6$tables$volcano_table,
                       colour_list = colour_list,
+                      group_1 = input$volcano_plot_metagroup[1],
+                      group_2 = input$volcano_plot_metagroup[2],
                       width = width,
                       height = height)
       output$volcano_plot_plot = plotly::renderPlotly(
@@ -715,7 +726,7 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
       }
       
       r6$get_dbplot_table(data_table = table_switch(selection = input$double_bonds_tables, r6 = r6),
-                          data_table_normalised = r6$tables$data_z_scored,
+                          data_table_normalised = z_score_table_switch(selection = input$double_bonds_tables, r6 = r6),
                           dbplot_table = r6$tables$feat_filtered,
                           col_group = input$double_bonds_metacol,
                           group_1 = input$double_bonds_metagroup[1],
@@ -741,6 +752,8 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
       r6$plot_doublebonds(lipid_class = input$double_bonds_class,
                           fc_limits = input$log2_fc_slider,
                           pval_limits = input$min_log10_bh_pval_slider,
+                          group_1 = input$double_bonds_metagroup[1],
+                          group_2 = input$double_bonds_metagroup[2],
                           width = width,
                           height = height)
       output$double_bonds_plot = plotly::renderPlotly(

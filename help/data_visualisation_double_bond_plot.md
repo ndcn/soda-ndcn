@@ -1,7 +1,9 @@
 Double bond plot
 =======================
 ---
-### Plot and interface
+<details>
+<summary><b> Plot and interface </b></summary>
+
 Plot comparing two samples based on their lipid species.  
 1. **Select data table.**  
 Select the data to be used for comparison among the following: *Filtered data table*, *Class normalised data table*, *Total normalised data table*
@@ -24,8 +26,12 @@ Sliders allow a better exploration of the data, especially when markers are stac
 <img src="./img/visualise_lips_dbplot_1.png" width="49%">
 <img src="./img/visualise_lips_dbplot_2.png" width="49%">
 
-### Data processing
-**Tables used:** {*Filtered data table*, *Class normalised data table*, *Total normalised data table*}, *Z-scored data table*, *Filtered feature table*.  
+</details>
+
+<details>
+<summary><b> Data processing </b></summary>
+
+**Tables used:** {*Filtered data table*, *Class normalised data table*, *Total normalised data table*}, {*Z-scored data table*, *Z-scored class normalised data table*, *Z-scored total normalised data table*}, *Filtered feature table*.  
 Samples of the two groups are selected and for each feature in the *Filtered feature table*, p-values and fold changes are calculated.  
   
 The fold change is calculated from the selected data table (one of *Filtered data table*, *Class normalised data table*, *Total normalised data table*) using the median value of the second group divided by the median value of the first group, ignoring missing values. In case of groups containing only missing values: 
@@ -38,10 +44,12 @@ In the case of medians being 0:
 - Nominator median is 0, fold change becomes 0. 0s are replaced to a value slighlty below the minimum fold change, i.e. 0.99 x min fold change (low value divided by high value).  
 - Both nominator and denominator are 0, fold change becomes NA. These are set to 1.  
 
-The p-value is calculated using a Wilcoxon test on the z-score normalised values (*Z-scored data table*) between group 1 and group 2 for a given feature. In case of groups containing only NAs:  
+The p-value is calculated using a Wilcoxon test on the z-scored table (one of *Z-scored data table*, *Z-scored class normalised data table*, *Z-scored total normalised data table*) between group 1 and group 2 for a given feature. In case of groups containing only NAs:  
 - Both groups contain only NAs, the p-value is by default set to 1 (low values in both groups).  
 - One group contains only NAs, the p-value is set to slightly below the minimum p-value, i.e. 0.99 x min p-value (low values compared to high values).  
 
 The p-value is then adjusted using the Benjamini-Hochberg procedure.  
 
 The *Double bonds table* is then produced from the *Filtered feature table* (containing feature metadata) and adding log2(fold change) and -log10(BH(p-value)).    
+</details>
+

@@ -3,18 +3,23 @@ Plot tables
 ---
 
 Tables related to the plot data, stored in the Omics_data class.  
-
-### Class distribution table
+<details>
+<summary> <b>Class distribution table</b> </summary>
 
 ```
 Omics_data$tables$class_distribution_table
 ```
+</details>
 
-### Class comparison tables
+<details>
+<summary> <b>Class comparison tables</b> </summary>
 
+Truffles
+</details>
 
+<details>
+<summary> <b>Volcano table</b> </summary>
 
-### Volcano table
 Table used to produce the volcano plot. Takes as input the *lipidomics table filtered* and the *lipidomics table z-score normalised*. Both these tables contain NA values, and the z-scoring on the latter is done by omiting NAs.  
 Two groups are selected by the user to compare their features by calculating their fold changes on the *lipidomics table filtered* (median(group_2) / median(group_1)) and their p-values on *lipidomics table z-score normalised* using a Wilcoxon test.  
 The p-values are then adjusted using the Benjamini-Hochberg procedure (BH). A table is then created with the lipid species as rows, with for columns log2(fold change), -log10(BH adjusted p-value) and the lipid class associated to each row.  
@@ -27,14 +32,19 @@ The p-values are then adjusted using the Benjamini-Hochberg procedure (BH). A ta
 ```
 Omics_data$tables$volcano_table
 ```
+</details>
 
-### Heatmap table
+<details>
+<summary> <b>Heatmap table</b> </summary>
 
 ```
 Omics_data$tables$heatmap_table
 ```
+</details>
 
-### PCA tables
+<details>
+<summary> <b>PCA tables</b> </summary>
+
 
 ```
 Omics_data$tables$pca_scores_table
@@ -42,9 +52,12 @@ Omics_data$tables$pca_scores_table
 ```
 Omics_data$tables$pca_loadings_table
 ```
+</details>
 
-### Double bonds table
+<details>
+<summary> <b>Double bonds table</b> </summary>
 
 ```
 Omics_data$tables$dbplot_table
 ```
+</details>
