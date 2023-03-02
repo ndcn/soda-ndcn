@@ -795,6 +795,8 @@ Omics_data = R6::R6Class(
                                  width = width,
                                  height = height,
                                  colour_list = colour_list)
+      fig[[1]] = fig[[1]] %>% layout(
+        xaxis = list(title = paste0("PC1 (", round(pca_data@R2[1] * 100), "% of the variance)")))
 
       fig[[2]] = pca_plot_loadings(x = pca_data@loadings[, "PC1"],
                                    y =  pca_data@loadings[, "PC2"],
@@ -802,9 +804,13 @@ Omics_data = R6::R6Class(
                                    width = width,
                                    height = height,
                                    colour_list = colour_list)
+      fig[[2]] = fig[[2]] %>% layout(
+        xaxis = list(title = paste0("PC1 (", round(pca_data@R2[1] * 100), "% of the variance)")))
 
       fig = plotly::subplot(fig, nrows = 1, margin = 0.035, titleX = TRUE)
-      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5))
+      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
+                           yaxis = list(title = paste0("PC2 (", round(pca_data@R2[2] * 100), "% of the variance)"))
+                           )
       self$plots$pca_plot = fig
     },
 

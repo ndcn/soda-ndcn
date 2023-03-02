@@ -21,7 +21,7 @@ Slider displaying a range of -Log10(BH(p-value)) values. Valudes inside the rang
 Downloads to CSV the *Double bonds table*.  
 
 The markers, representing individual lipid species, are coloured according to Log2(Fold change) in blue and red. This means markers coloured in red (>0) are detected in higher quantities in the second group, and markers coloured in blue (<0) are detected in higher quantities in the first group. Their size is relative to -Log10(BH(p-value)) meaning that the bigger the marker, the more significant that lipid is (low p-value).  
-Sliders allow a better exploration of the data, especially when markers are stacked. Hovering on the marker displays the associated values.  
+Sliders allow a better exploration of the data, especially when markers are stacked. Hovering on the marker displays the associated values: Log2(Fold change) and -Log10(BH(p-value)).  
 
 <img src="./img/visualise_lips_dbplot_1.png" width="49%">
 <img src="./img/visualise_lips_dbplot_2.png" width="49%">
