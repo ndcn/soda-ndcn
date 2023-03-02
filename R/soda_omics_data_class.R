@@ -52,9 +52,11 @@ Omics_data = R6::R6Class(
       feat_filtered = NULL,
 
       # Normalised
-      data_z_scored = NULL,
       data_class_norm = NULL,
       data_total_norm = NULL,
+      
+      # Z-scored
+      data_z_scored = NULL,
       data_class_norm_z_scored = NULL,
       data_total_norm_z_scored = NULL,
 
@@ -331,7 +333,7 @@ Omics_data = R6::R6Class(
     },
 
     # Volcano table
-    get_volcano_table = function(data_table = self$tables$data_filtered, data_table_normalised = self$tables$data_z_scored, col_group = self$texts$col_group, group_1, group_2) {
+    get_volcano_table = function(data_table = self$tables$data_filtered, data_table_normalised = self$tables$data_z_scored, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, group_1, group_2) {
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
@@ -401,11 +403,13 @@ Omics_data = R6::R6Class(
       # Adjust p-value
       p_value_bh_adj = p.adjust(p_value, method = "BH")
 
-      volcano_table = data.frame(log2_fold_change = log2(fold_change),
-                                 minus_log10_p_value_bh_adj = -log10(p_value_bh_adj),
-                                 lipid_class = get_lipid_classes(feature_list = colnames(data_table),
-                                                                 uniques = FALSE),
-                                 row.names = colnames(data_table))
+      
+      
+      volcano_table$fold_change = fold_change
+      volcano_table$p_value = p_value
+      volcano_table$log2_fold_change = log2(fold_change)
+      volcano_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
+      
       self$tables$volcano_table = volcano_table
     },
 
@@ -481,6 +485,8 @@ Omics_data = R6::R6Class(
       # Adjust p value
       p_value_bh_adj = p.adjust(p_value, method = "BH")
 
+      dbplot_table$fold_change = fold_change
+      dbplot_table$p_value = p_value
       dbplot_table$log2_fold_change = log2(fold_change)
       dbplot_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
       
@@ -664,6 +670,8 @@ Omics_data = R6::R6Class(
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
                             colour_list,
+                            group_1,
+                            group_2,
                             width,
                             height){
       max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
@@ -681,6 +689,7 @@ Omics_data = R6::R6Class(
         i = i + 1
       }
       fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot")),
+                           title = paste0(group_1, " (left), ", group_2, " (right)"),
                            xaxis = list(title = "Log2(fold change)",
                                         range = c(-max_fc,max_fc)
                                         ),
@@ -801,7 +810,7 @@ Omics_data = R6::R6Class(
 
     ## Double bond plot
 
-    plot_doublebonds = function(data_table = self$tables$dbplot_table, lipid_class, fc_limits, pval_limits, width, height){
+    plot_doublebonds = function(data_table = self$tables$dbplot_table, lipid_class, fc_limits, pval_limits, group_1, group_2, width, height){
 
       selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
       data_table = data_table[selected_rows,]
@@ -834,7 +843,7 @@ Omics_data = R6::R6Class(
                             height = height)
       fig = fig %>% layout(
         legend= list(itemsizing='constant'),
-        title = paste0("Double bonds in ", lipid_class),
+        title = paste0("Comparison in ", lipid_class, " - ", group_1, " (blue), ", group_2, " (red)"),
         xaxis = list(title = 'Total carbons',
                      range = x_lims
                      ),

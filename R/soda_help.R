@@ -5,6 +5,7 @@ soda_help = function(help_file){
 	shiny::includeMarkdown(paste0("./help/", help_file, ".md"))
 }
 
+#--------------------------------------------------------- Data upload help ----
 soda_help_data_upload = function(){
   bs4Dash::tabsetPanel(
     type = "tabs",
@@ -31,7 +32,7 @@ soda_help_data_upload = function(){
   )
 }
 
-
+#-------------------------------------------------- Data visualisation help ----
 soda_help_data_visualisation = function(){
   bs4Dash::tabsetPanel(
     type = "tabs",
@@ -62,6 +63,7 @@ soda_help_data_visualisation = function(){
   )
 }
 
+#--------------------------------------------------------- Data tables help ----
 soda_help_tables = function(){
   bs4Dash::tabsetPanel(
     type = "tabs",
@@ -72,6 +74,10 @@ soda_help_tables = function(){
     shiny::tabPanel(
       title = "Lipidomics tables",
       soda_help("tables_lipidomics")
+    ),
+    shiny::tabPanel(
+      title = "Non-samples tables",
+      soda_help("tables_non_samples")
     ),
     shiny::tabPanel(
       title = "Feature tables",
