@@ -333,7 +333,15 @@ Omics_data = R6::R6Class(
     },
 
     # Volcano table
-    get_volcano_table = function(data_table = self$tables$data_filtered, data_table_normalised = self$tables$data_z_scored, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, group_1, group_2) {
+    get_volcano_table = function(data_table = self$tables$data_filtered, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
+
+      # Set the averaging function
+      if (used_function == "median") {
+        av_function = function(x) {return(median(x, na.rm = T))}
+      } else {
+        av_function = function(x) {return(mean(x, na.rm = T))}
+      }
+      
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
@@ -351,7 +359,9 @@ Omics_data = R6::R6Class(
 
       # Filter data to keep only the two groups
       data_table = data_table[idx_all,]
-      data_table_normalised = data_table_normalised[idx_all,]
+      
+      # Remove empty columns
+      data_table = remove_empty_cols(table = data_table)
 
       # Collect fold change and p-values
       fold_change = c()
@@ -360,20 +370,14 @@ Omics_data = R6::R6Class(
       for (col in colnames(data_table)) {
 
         # If both groups contain data
-        if (length(na.exclude(data_table_normalised[idx_group_1, col])) > 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) > 0) {
-          fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
-          p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
-
-          # If both groups contain only NA
-        } else if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
-          fold_change = c(fold_change, 1)
-          p_value = c(p_value, 1)
-
+        if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
+          fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
+          p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
         } else {
           # If at least one of the groups is full NA, default values
           p_value = c(p_value, NA)
           # For fold changes, if it is the denominator
-          if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0) {
+          if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
             fold_change = c(fold_change, 777)
           } else {
             # If it is the numerator
@@ -382,10 +386,10 @@ Omics_data = R6::R6Class(
         }
       }
 
-      # Imputation of Inf for when denominator median is 0 
+      # Imputation of Inf for when denominator average is 0 
       fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
       
-      # Imputation of 0 for when numerator median is 0 
+      # Imputation of 0 for when numerator average is 0 
       fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
       
       # Imputation of NAs for denominator FC with a value slightly above max FC
@@ -414,8 +418,51 @@ Omics_data = R6::R6Class(
     },
 
     # Double bond plot table
-    get_dbplot_table = function(data_table = self$tables$data_filtered, data_table_normalised = self$tables$data_z_scored, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, group_1, group_2) {
+    
+    get_dbplot_table_single = function(data_table = self$tables$data_filtered, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1){
+      
+      # Set the averaging function
+      if (used_function == "median") {
+        av_function = function(x) {return(median(x, na.rm = T))}
+      } else {
+        av_function = function(x) {return(mean(x, na.rm = T))}
+      }
+      
+      # Get the rownames for each group
+      idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
+                                       col = col_group,
+                                       pattern = group_1,
+                                       row_names = T)
+      
+      # Filter data to keep only the two groups
+      data_table = data_table[idx_group_1,]
+      data_table = remove_empty_cols(table = data_table)
+      
+      averages = apply(data_table,2,av_function)
+      
+      # Dead rows/cols (removed because only NAs)
+      del_rows = setdiff(rownames(dbplot_table), colnames(data_table))
+      dbplot_table = dbplot_table[!(row.names(dbplot_table) %in% del_rows),]
+      
+      dbplot_table[, "averages"] = averages
+      
+      lips = rownames(dbplot_table)
+      txt_medians = as.character(round(dbplot_table[,"averages"],5))
+      dbplot_table$text = paste0(lips, " | ", used_function, ": ", txt_medians)
+      
+      self$tables$dbplot_table = dbplot_table
+    },
+    
+    get_dbplot_table_double = function(data_table = self$tables$data_filtered, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
 
+      # Set the averaging function
+      if (used_function == "median") {
+        av_function = function(x) {return(median(x, na.rm = T))}
+      } else {
+        av_function = function(x) {return(mean(x, na.rm = T))}
+      }
+      
+      
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
@@ -433,7 +480,9 @@ Omics_data = R6::R6Class(
 
       # Filter data to keep only the two groups
       data_table = data_table[idx_all,]
-      data_table_normalised = data_table_normalised[idx_all,]
+      
+      # Remove empty columns
+      data_table = remove_empty_cols(table = data_table)
 
       # Collect fold change and p-values
       fold_change = c()
@@ -442,20 +491,14 @@ Omics_data = R6::R6Class(
       for (col in colnames(data_table)) {
 
         # If both groups contain data
-        if (length(na.exclude(data_table_normalised[idx_group_1, col])) > 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) > 0) {
-          fold_change = c(fold_change, median(data_table[idx_group_2, col], na.rm = T) / median(data_table[idx_group_1, col], na.rm = T))
-          p_value = c(p_value, wilcox.test(data_table_normalised[idx_group_1, col], data_table_normalised[idx_group_2, col])$p.value)
-
-          # If both groups contain only NA
-        } else if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0 & length(na.exclude(data_table_normalised[idx_group_2, col])) == 0) {
-          fold_change = c(fold_change, 1)
-          p_value = c(p_value, 1)
-
+        if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
+          fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
+          p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
         } else {
           # If at least one of the groups is full NA, default values
           p_value = c(p_value, NA)
           # For fold changes, if it is the denominator
-          if (length(na.exclude(data_table_normalised[idx_group_1, col])) == 0) {
+          if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
             fold_change = c(fold_change, 777)
           } else {
             # If it is the numerator
@@ -464,10 +507,10 @@ Omics_data = R6::R6Class(
         }
       }
 
-      # Imputation of Inf for when denominator median is 0 
+      # Imputation of Inf for when denominator av_value is 0 
       fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
       
-      # Imputation of 0 for when numerator median is 0 
+      # Imputation of 0 for when numerator av_value is 0 
       fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
       
       # Imputation of NAs for denominator FC with a value slightly above max FC
@@ -484,6 +527,10 @@ Omics_data = R6::R6Class(
 
       # Adjust p value
       p_value_bh_adj = p.adjust(p_value, method = "BH")
+      
+      # Dead rows/cols (removed because only NAs)
+      del_rows = setdiff(rownames(dbplot_table), colnames(data_table))
+      dbplot_table = dbplot_table[!(row.names(dbplot_table) %in% del_rows),]
 
       dbplot_table$fold_change = fold_change
       dbplot_table$p_value = p_value
@@ -493,7 +540,7 @@ Omics_data = R6::R6Class(
       lips = rownames(dbplot_table)
       fc = as.character(round(dbplot_table[,"log2_fold_change"],2))
       pval = as.character(round(dbplot_table[,"minus_log10_p_value_bh_adj"],2))
-      dbplot_table$text = paste0(lips, " | fc: ", fc, " | pval: ", pval)
+      dbplot_table$text = paste0(lips, " | log2(fc): ", fc, " | -log10(bh(pval)): ", pval)
 
       self$tables$dbplot_table = dbplot_table
     },
@@ -815,8 +862,50 @@ Omics_data = R6::R6Class(
     },
 
     ## Double bond plot
-
-    plot_doublebonds = function(data_table = self$tables$dbplot_table, lipid_class, fc_limits, pval_limits, group_1, group_2, width, height){
+    plot_doublebonds_single = function(data_table = self$tables$dbplot_table, lipid_class, group_1, width, height){
+      
+      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
+      data_table = data_table[selected_rows,]
+      x_lims = c(min(data_table$carbons_1) -1, max(data_table$carbons_1) +1)
+      y_lims = c(min(data_table$unsat_1) -0.5, max(data_table$unsat_1) +1)
+      
+      fig = plotly::plot_ly(data_table,
+                            x = ~carbons_1,
+                            y = ~unsat_1,
+                            type = "scatter",
+                            mode = "markers",
+                            size = ~averages,
+                            sizes = ~c(5,40),
+                            marker = list(sizemode ='diameter',
+                                          opacity = 0.5,
+                                          sizeref=1
+                            ),
+                            text = data_table$text,
+                            hoverinfo = "text",
+                            width = width,
+                            height = height)
+      
+      
+      fig = fig %>% layout(
+        title = paste0("Lipids in class ", lipid_class, " - ", group_1),
+        xaxis = list(title = 'Total carbons',
+                     range = x_lims
+        ),
+        yaxis = list(title = 'Total double bonds',
+                     range = y_lims
+        )
+      )
+      fig = fig %>% config(modeBarButtonsToAdd = c('drawline',
+                                                   'drawopenpath',
+                                                   'drawclosedpath',
+                                                   'drawcircle',
+                                                   'drawrect',
+                                                   'eraseshape'))
+      self$plots$double_bond_plot = fig
+    },
+    
+    
+    plot_doublebonds_double = function(data_table = self$tables$dbplot_table, lipid_class, fc_limits, pval_limits, group_1, group_2, width, height){
 
       selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
       data_table = data_table[selected_rows,]
@@ -824,29 +913,40 @@ Omics_data = R6::R6Class(
       y_lims = c(min(data_table$unsat_1) -0.5, max(data_table$unsat_1) +1)
       data_table = data_table[!dplyr::between(data_table[,"log2_fold_change"], fc_limits[1], fc_limits[2]),]
       data_table = data_table[dplyr::between(data_table[,"minus_log10_p_value_bh_adj"], pval_limits[1], pval_limits[2]),]
-      fig = plotly::plot_ly(data_table,
-                            x = ~carbons_1,
-                            y = ~unsat_1,
-                            type = "scatter",
-                            mode = "markers",
-                            size = ~minus_log10_p_value_bh_adj,
-                            sizes = ~c(5,40),
-                            marker = list(color = ~log2_fold_change,
-                                          sizemode ='diameter',
-                                          opacity = 0.5,
-                                          sizeref=1,
-                                          colorscale = 'RdBu',
-                                          cmax = max(abs(data_table[, "log2_fold_change"])),
-                                          cmin = -max(abs(data_table[, "log2_fold_change"])),
-                                          colorbar=list(
-                                            title='Log2(fold change)'
-                                          ),
-                                          line = list(width = 0)
-                                          ),
-                            text = data_table$text,
-                            hoverinfo = "text",
-                            width = width,
-                            height = height)
+      if (nrow(data_table) > 0) {
+        fig = plotly::plot_ly(data_table,
+                              x = ~carbons_1,
+                              y = ~unsat_1,
+                              type = "scatter",
+                              mode = "markers",
+                              size = ~minus_log10_p_value_bh_adj,
+                              sizes = ~c(5,40),
+                              marker = list(color = ~log2_fold_change,
+                                            sizemode ='diameter',
+                                            opacity = 0.5,
+                                            sizeref=1,
+                                            colorscale = 'RdBu',
+                                            cmax = max(abs(data_table[, "log2_fold_change"])),
+                                            cmin = -max(abs(data_table[, "log2_fold_change"])),
+                                            colorbar=list(
+                                              title='Log2(fold change)'
+                                            ),
+                                            line = list(width = 0)
+                              ),
+                              text = data_table$text,
+                              hoverinfo = "text",
+                              width = width,
+                              height = height)
+      } else {
+        fig = plotly::plot_ly(data_table,
+                              x = ~carbons_1,
+                              y = ~unsat_1,
+                              type = "scatter",
+                              mode = "markers",
+                              width = width,
+                              height = height)
+      }
+
       fig = fig %>% layout(
         legend= list(itemsizing='constant'),
         title = paste0("Comparison in ", lipid_class, " - ", group_1, " (blue), ", group_2, " (red)"),
