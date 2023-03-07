@@ -293,6 +293,13 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
         choices = NULL,
         multiple = TRUE
       ),
+      shiny::selectizeInput(
+        inputId = ns("volcano_plot_function"),
+        label = "Select function",
+        choices = c("median", "mean"),
+        selected = "median",
+        multiple = FALSE
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
         outputId = ns("download_volcano_table"),
@@ -312,33 +319,32 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
   })
 
 
-  shiny::observeEvent(c(input$volcano_plot_metagroup, input$volcano_plot_tables), {
-    if (length(input$volcano_plot_metagroup) == 2) {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function), {
 
-      if (input$volcano_plot_plotbox$maximized) {
-        width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-        height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-      } else {
-        width = dimensions_obj$xpx * dimensions_obj$x_plot
-        height = dimensions_obj$ypx * dimensions_obj$y_plot
-      }
-
-      r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
-                           data_table_normalised = z_score_table_switch(selection = input$volcano_plot_tables, r6 = r6),
-                           col_group = input$volcano_plot_metacol,
-                           group_1 = input$volcano_plot_metagroup[1],
-                           group_2 = input$volcano_plot_metagroup[2])
-      
-      r6$plot_volcano(data_table = r6$tables$volcano_table,
-                      colour_list = colour_list,
-                      group_1 = input$volcano_plot_metagroup[1],
-                      group_2 = input$volcano_plot_metagroup[2],
-                      width = width,
-                      height = height)
-      output$volcano_plot_plot = plotly::renderPlotly(
-        r6$plots$volcano_plot
-      )
+    if (input$volcano_plot_plotbox$maximized) {
+      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+    } else {
+      width = dimensions_obj$xpx * dimensions_obj$x_plot
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
     }
+
+    r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
+                         col_group = input$volcano_plot_metacol,
+                         used_function =  input$volcano_plot_function,
+                         group_1 = input$volcano_plot_metagroup[1],
+                         group_2 = input$volcano_plot_metagroup[2])
+    
+    r6$plot_volcano(data_table = r6$tables$volcano_table,
+                    colour_list = colour_list,
+                    group_1 = input$volcano_plot_metagroup[1],
+                    group_2 = input$volcano_plot_metagroup[2],
+                    width = width,
+                    height = height)
+    output$volcano_plot_plot = plotly::renderPlotly(
+      r6$plots$volcano_plot
+    )
+
   })
 
 
@@ -666,7 +672,7 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
       ),
       shiny::selectizeInput(
         inputId = ns("double_bonds_metagroup"),
-        label = "Select two groups to compare",
+        label = "Select group(s)",
         choices = NULL,
         multiple = TRUE
       ),
@@ -675,6 +681,13 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
         label = "Select lipid class",
         choices = unique(r6$tables$feat_filtered$lipid_class),
         selected = unique(r6$tables$feat_filtered$lipid_class)[1],
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
+        inputId = ns("double_bonds_function"),
+        label = "Select function",
+        choices = c("median", "mean"),
+        selected = "median",
         multiple = FALSE
       ),
       shiny::sliderInput(
@@ -713,53 +726,80 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
     )
   })
 
-  shiny::observeEvent(c(input$double_bonds_metacol, input$double_bonds_metagroup, input$double_bonds_class, input$log2_fc_slider, input$min_log10_bh_pval_slider, input$double_bonds_tables),{
+  
 
-    if (length(input$double_bonds_metagroup) == 2) {
+  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_tables, input$double_bonds_function), {
 
-      if (input$double_bonds_plotbox$maximized) {
-        width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-        height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-      } else {
-        width = dimensions_obj$xpx * dimensions_obj$x_plot
-        height = dimensions_obj$ypx * dimensions_obj$y_plot
-      }
-      
-      r6$get_dbplot_table(data_table = table_switch(selection = input$double_bonds_tables, r6 = r6),
-                          data_table_normalised = z_score_table_switch(selection = input$double_bonds_tables, r6 = r6),
-                          dbplot_table = r6$tables$feat_filtered,
-                          col_group = input$double_bonds_metacol,
-                          group_1 = input$double_bonds_metagroup[1],
-                          group_2 = input$double_bonds_metagroup[2])
-      
-      selected_rows = rownames(r6$tables$dbplot_table)[r6$tables$dbplot_table["lipid_class"] == input$double_bonds_class]
-      fc_limits = round(max(abs(r6$tables$dbplot_table[selected_rows, "log2_fold_change"])), 1) + 1
-      pval_limit = round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1
-      
-      shiny::updateSliderInput(
-        session = session,
-        inputId = "log2_fc_slider",
-        min = -fc_limits,
-        max = fc_limits
-      )
-      
-      shiny::updateSliderInput(
-        session = session,
-        inputId = "min_log10_bh_pval_slider",
-        max = pval_limit
-      )
-      
-      r6$plot_doublebonds(lipid_class = input$double_bonds_class,
-                          fc_limits = input$log2_fc_slider,
-                          pval_limits = input$min_log10_bh_pval_slider,
-                          group_1 = input$double_bonds_metagroup[1],
-                          group_2 = input$double_bonds_metagroup[2],
-                          width = width,
-                          height = height)
-      output$double_bonds_plot = plotly::renderPlotly(
-        r6$plots$double_bond_plot
-      )
+    if (input$double_bonds_plotbox$maximized) {
+      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+    } else {
+      width = dimensions_obj$xpx * dimensions_obj$x_plot
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
     }
+
+    r6$get_dbplot_table_single(data_table = table_switch(selection = input$double_bonds_tables, r6 = r6),
+                               dbplot_table = r6$tables$feat_filtered,
+                               col_group = input$double_bonds_metacol,
+                               used_function =  input$double_bonds_function,
+                               group_1 = input$double_bonds_metagroup[1])
+
+    r6$plot_doublebonds_single(lipid_class = input$double_bonds_class,
+                               group_1 = input$double_bonds_metagroup[1],
+                               width = width,
+                               height = height)
+    output$double_bonds_plot = plotly::renderPlotly(
+      r6$plots$double_bond_plot
+    )
+    
+  })
+  
+  
+  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 2), input$double_bonds_class, input$log2_fc_slider, input$min_log10_bh_pval_slider, input$double_bonds_tables, input$double_bonds_function),{
+    
+    if (input$double_bonds_plotbox$maximized) {
+      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+    } else {
+      width = dimensions_obj$xpx * dimensions_obj$x_plot
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
+    }
+    
+    r6$get_dbplot_table_double(data_table = table_switch(selection = input$double_bonds_tables, r6 = r6),
+                               dbplot_table = r6$tables$feat_filtered,
+                               col_group = input$double_bonds_metacol,
+                               used_function =  input$double_bonds_function,
+                               group_1 = input$double_bonds_metagroup[1],
+                               group_2 = input$double_bonds_metagroup[2])
+    
+    selected_rows = rownames(r6$tables$dbplot_table)[r6$tables$dbplot_table["lipid_class"] == input$double_bonds_class]
+    fc_limits = round(max(abs(r6$tables$dbplot_table[selected_rows, "log2_fold_change"])), 1) + 1
+    pval_limit = round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "log2_fc_slider",
+      min = -fc_limits,
+      max = fc_limits
+    )
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "min_log10_bh_pval_slider",
+      max = pval_limit
+    )
+    r6$plot_doublebonds_double(lipid_class = input$double_bonds_class,
+                               fc_limits = input$log2_fc_slider,
+                               pval_limits = input$min_log10_bh_pval_slider,
+                               group_1 = input$double_bonds_metagroup[1],
+                               group_2 = input$double_bonds_metagroup[2],
+                               width = width,
+                               height = height)
+    output$double_bonds_plot = plotly::renderPlotly(
+      r6$plots$double_bond_plot
+    )
+
+    
   })
 
   # Download associated tables
