@@ -294,6 +294,13 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
         multiple = TRUE
       ),
       shiny::selectizeInput(
+        inputId = ns("volcano_plot_lipclass"),
+        label = "Classes to display",
+        choices = unique(r6$tables$feat_filtered[,"lipid_class"]),
+        selected = unique(r6$tables$feat_filtered[,"lipid_class"]),
+        multiple = TRUE
+      ),
+      shiny::selectizeInput(
         inputId = ns("volcano_plot_function"),
         label = "Select function",
         choices = c("median", "mean"),
@@ -325,8 +332,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
     )
   })
 
-
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass), {
 
     if (input$volcano_plot_plotbox$maximized) {
       width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
@@ -346,6 +352,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
                     colour_list = colour_list,
                     group_1 = input$volcano_plot_metagroup[1],
                     group_2 = input$volcano_plot_metagroup[2],
+                    displayed_classes = input$volcano_plot_lipclass,
                     colouring = input$volcano_plot_colouring,
                     width = width,
                     height = height)
