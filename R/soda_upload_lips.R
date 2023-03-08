@@ -170,10 +170,17 @@ soda_upload_lips_ui = function(id, head = F) {
 
           # Button to download filtered data
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-          shiny::downloadButton(
-            outputId = ns("data_filtered_download"),
-            label = "Download filtered data",
-            style = "width:100%;"
+          shiny::fluidRow(
+            shiny::downloadButton(
+              outputId = ns("data_filtered_download"),
+              label = "Filtered data",
+              style = "width:50%;"
+            ),
+            shiny::downloadButton(
+              outputId = ns("other_tables_download"),
+              label = "Other tables",
+              style = "width:50%;"
+            )
           )
         )
       )
@@ -474,13 +481,43 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
 
 
       # Download filtered data
-      dl_table = shiny::reactive(r6$tables$data_filtered)
+      dl_data_filtered = shiny::reactive(r6$tables$data_filtered)
+      
+      dl_feat_filtered = shiny::reactive(r6$tables$feat_filtered)
+      dl_data_class_norm = shiny::reactive(r6$tables$data_class_norm)
+      # dl_data_total_norm = shiny::reactive(r6$tables$data_total_norm)
+      # dl_data_z_scored = shiny::reactive(r6$tables$data_z_scored)
+      # dl_data_class_norm_z_scored = shiny::reactive(r6$tables$data_class_norm_z_scored)
+      # dl_data_total_norm_z_scored = shiny::reactive(r6$tables$data_total_norm_z_scored)
+      # dl_data_class_table = shiny::reactive(r6$tables$data_class_table)
+      # dl_data_class_table_z_scored = shiny::reactive(r6$tables$data_class_table_z_scored)
 
       output$data_filtered_download = shiny::downloadHandler(
-        filename = function(){"lipidomics_filtered.csv"},
+        filename = "lipidomics_filtered.csv",
         content = function(file_name){
-          write.csv(dl_table(), file_name)
+          write.csv(dl_data_filtered(), file_name)
         }
+      )
+      
+      output$other_tables_download = shiny::downloadHandler(
+        filename = 'other_tables.zip',
+        content = function(file_name) {
+          
+          write.csv(dl_feat_filtered(), file = "feature_table_filtered.csv")
+          write.csv(dl_data_class_norm(), file = "class_normalised_table.csv")
+          
+          
+          # write.csv(dl_data_total_norm(), file = "data_total_norm.csv", sep =",")
+          # write.csv(dl_data_z_scored(), file = "data_z_scored.csv", sep =",")
+          # write.csv(dl_data_class_norm_z_scored(), file = "data_class_norm_z_scored.csv", sep =",")
+          # write.csv(dl_data_total_norm_z_scored(), file = "data_total_norm_z_scored.csv", sep =",")
+          # write.csv(dl_data_class_table(), file = "data_class_table.csv", sep =",")
+          # write.csv(dl_data_class_table_z_scored(), file = "data_class_table_z_scored.csv", sep =",")
+          
+          zip(zipfile=file_name, files=c("feature_table_filtered.csv", "class_normalised_table.csv"))
+          # zip(zipfile=file_name, files=c("feature_table_filtered.csv", "class_normalised_table.csv", "data_total_norm.csv", "data_z_scored.csv", "data_class_norm_z_scored.csv", "data_total_norm_z_scored.csv", "data_class_table.csv","data_class_table_z_scored.csv"))
+        }
+        # contentType = "application/zip"
       )
 
     }

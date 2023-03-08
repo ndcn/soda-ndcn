@@ -614,7 +614,7 @@ Omics_data = R6::R6Class(
       # Produce the class x group table
       samp_list = rownames(table)
       class_list = colnames(table)
-      group_list = unique(meta_table[,col_group])
+      group_list = sort(unique(meta_table[,col_group]))
 
       plot_table = data.frame(matrix(data = 0.0,
                                      nrow = length(class_list),
@@ -656,7 +656,7 @@ Omics_data = R6::R6Class(
                                      height){
 
       # Get sample groups and the list of classes
-      groups = unique(meta_table[,col_group])
+      groups = sort(unique(meta_table[,col_group]))
       class_list = colnames(data_table)
 
       # Annotations are for now a way to display each subplot title

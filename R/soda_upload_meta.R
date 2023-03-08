@@ -261,6 +261,8 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                    header = T,
                                    sep = sep,
                                    check.names = FALSE))
+          r6$tables$meta_raw[is.na(r6$tables$meta_raw)] = "missing"
+          r6$tables$meta_raw[r6$tables$meta_raw == ""] = "missing"
 
           # Select ID column from the raw meta data
           observe({
