@@ -300,6 +300,13 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
         selected = "median",
         multiple = FALSE
       ),
+      shiny::selectizeInput(
+        inputId = ns("volcano_plot_colouring"),
+        label = "Select colouring",
+        choices = c("Lipid class", "Double bonds", "Total carbons"),
+        selected = "Lipid class",
+        multiple = FALSE
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
         outputId = ns("download_volcano_table"),
@@ -319,7 +326,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
   })
 
 
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring), {
 
     if (input$volcano_plot_plotbox$maximized) {
       width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
@@ -339,6 +346,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
                     colour_list = colour_list,
                     group_1 = input$volcano_plot_metagroup[1],
                     group_2 = input$volcano_plot_metagroup[2],
+                    colouring = input$volcano_plot_colouring,
                     width = width,
                     height = height)
     output$volcano_plot_plot = plotly::renderPlotly(

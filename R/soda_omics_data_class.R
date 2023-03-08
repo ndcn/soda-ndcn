@@ -719,16 +719,31 @@ Omics_data = R6::R6Class(
                             colour_list,
                             group_1,
                             group_2,
+                            colouring = "Lipid class",
                             width,
                             height){
+      
+      # Select the colouring column
+      if (colouring == "Lipid class") {
+        feat_col = "lipid_class"
+      } else if (colouring == "Double bonds") {
+        feat_col = "unsat_1"
+      } else if (colouring == "Total carbons") {
+        feat_col = "carbons_1"
+      }
+      
+      feature_vector = sort(unique(self$tables$volcano_table[, feat_col]))
+      
       max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
       i = 1
       fig = plotly::plot_ly(colors = colour_list, type  = "scatter", mode  = "markers", width = width, height = height)
-      for (lip_class in unique(self$tables$volcano_table$lipid_class)) {
-        tmp_idx = rownames(self$tables$volcano_table)[self$tables$volcano_table$lipid_class == lip_class]
+      
+      
+      for (feature in feature_vector) {
+        tmp_idx = rownames(self$tables$volcano_table)[self$tables$volcano_table[, feat_col] == feature]
         fig = fig %>% add_trace(x = self$tables$volcano_table[tmp_idx, "log2_fold_change"],
                                 y = self$tables$volcano_table[tmp_idx, "minus_log10_p_value_bh_adj"],
-                                name = lip_class,
+                                name = feature,
                                 color = colour_list[i],
                                 text = tmp_idx,
                                 hoverinfo = "text"
