@@ -62,7 +62,7 @@ soda_upload_lips_ui = function(id, head = F) {
           shiny::h2("Upload lipidomics data"),
 
           # Data upload
-          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv"), width = "100%"),
+          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt"), width = "100%"),
           
           # Table preview box
           bs4Dash::box(
@@ -199,9 +199,10 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       # The user's data, parsed into a data frame
       shiny::observe({
         if (!is.null(table_file()$datapath)){
+          sep = find_delim(path = table_file()$datapath)
           r6$set_raw_data(read.csv(table_file()$datapath,
                                header = T,
-                               sep = ",",
+                               sep = sep,
                                check.names = FALSE))
           # Select ID column from the raw data
           observe({

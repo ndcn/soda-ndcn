@@ -1,7 +1,7 @@
 Formatting your data prior to upload
 =======================
 ---
-SODA accepts for now CSV formatted files. Please make sure your files do no contain comma (,) or any other special characters.<br><br>
+SODA currently accepts the following data formats: CSV, CSV2 and TSV (or TXT: tab separated).<br><br>
 Files to upload include:
 * Sample metadata
 * Lipidomics data
