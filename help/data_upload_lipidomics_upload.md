@@ -5,7 +5,7 @@ Lipidomics upload tab
 Tab to upload the lipidomics data and identify some key columns.
 
 1. **Upload module**  
-Search the file to be uploaded, which must be CSV and formatted as displayed in the *Table format* help tab.  
+Search the file to be uploaded, which must be formatted as displayed in the *Table format* help tab.  
 2. **Uploaded table**  
 Preview or the full table uploaded. 
 3. **Preview table**  

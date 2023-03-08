@@ -1,5 +1,13 @@
 #--------------------------------------------------- Global table functions ----
 
+find_delim = function(path) {
+  probe = paste(readLines(con = path, n = 10), collapse = "")
+  sep = c("\t" = lengths(regmatches(probe, gregexpr("\t", probe))),
+          "," = lengths(regmatches(probe, gregexpr(",", probe))),
+          ";" = lengths(regmatches(probe, gregexpr(";", probe))))
+  return(names(which.max(sep)))
+}
+
 get_idx_by_pattern = function(table, col, pattern, row_names = T) {
   if (row_names) {
     out_idx = rownames(table)[grep(pattern = pattern, x = table[,col], ignore.case = TRUE)]
