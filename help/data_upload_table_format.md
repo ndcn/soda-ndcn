@@ -9,7 +9,7 @@ Files to upload include:
 All these tables should contain a shared ID column with which samples can be connected between tables. The data type of ID can be integer or string, as long as the IDs are unique an can be used to communicate between tables (i.e. having the IDs being the same from one table to the other).
 
 ## Sample metadata
-It should not contain any NA values. Typically recommended columns include:  
+It should not contain any NA values, especially in the ID, Sample_type and Group_type columns. Missing values will be replaced by a "missing" string which will coerce numeric data to string, therefore avoiding missing data here is best. Typically recommended columns include:  
 - *ID*, column containing the unique identifier for each row, tying the sample metadata to the rows in the other data tables.  
 - *Sample_type*, i.e. whether row is an actual sample, a QC, a blank or a pool sample. The type of each sample should also be specified here, like the cell type for example.  
 - *Group_type*, i.e. the main groups in the data the user wants to compare. Typically this is genotype.  
