@@ -719,6 +719,7 @@ Omics_data = R6::R6Class(
                             colour_list,
                             group_1,
                             group_2,
+                            displayed_classes = NULL,
                             colouring = "Lipid class",
                             width,
                             height){
@@ -732,7 +733,24 @@ Omics_data = R6::R6Class(
         feat_col = "carbons_1"
       }
       
-      feature_vector = sort(unique(self$tables$volcano_table[, feat_col]))
+      # If null, display all classes
+      if (is.null(displayed_classes)) {
+        displayed_classes = unique(data_table[, "lipid_class"])
+      }
+      
+      # Filter out classes to skip
+      removed_classes = setdiff(unique(data_table[, "lipid_class"]), displayed_classes)
+      if (length(removed_classes) > 0) {
+        del_rows = c()
+        for (lipclass in removed_classes) {
+          del_rows = c(del_rows, which(data_table[, "lipid_class"] == lipclass))
+        }
+        data_table = data_table[-del_rows,]
+      }
+
+      
+      
+      feature_vector = sort(unique(data_table[, feat_col]))
       
       max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
       i = 1
@@ -740,9 +758,9 @@ Omics_data = R6::R6Class(
       
       
       for (feature in feature_vector) {
-        tmp_idx = rownames(self$tables$volcano_table)[self$tables$volcano_table[, feat_col] == feature]
-        fig = fig %>% add_trace(x = self$tables$volcano_table[tmp_idx, "log2_fold_change"],
-                                y = self$tables$volcano_table[tmp_idx, "minus_log10_p_value_bh_adj"],
+        tmp_idx = rownames(data_table)[data_table[, feat_col] == feature]
+        fig = fig %>% add_trace(x = data_table[tmp_idx, "log2_fold_change"],
+                                y = data_table[tmp_idx, "minus_log10_p_value_bh_adj"],
                                 name = feature,
                                 color = colour_list[i],
                                 text = tmp_idx,
