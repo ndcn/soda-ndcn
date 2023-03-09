@@ -1,5 +1,7 @@
 #--------------------------------------------------- Global table functions ----
 
+
+
 find_delim = function(path) {
   probe = paste(readLines(con = path, n = 10), collapse = "")
   sep = c("\t" = lengths(regmatches(probe, gregexpr("\t", probe))),
