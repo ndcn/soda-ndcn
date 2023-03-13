@@ -55,20 +55,6 @@ soda_merge_tables_ui = function(id, head = T) {
         width = 2,
         shiny::tags$h3("Select columns"),
         
-        # Display preview or full table
-        # shiny::checkboxInput(inputId = ns("preview"), label = "Display preview only", value = head),
-        shinyWidgets::checkboxGroupButtons(
-          inputId = ns('preview'),
-          label = NULL,
-          choices = c("Metadata", "Lipidomics"),
-          selected = c("Lipidomics"),
-          direction = "horizontal",
-          status = "default",
-          justified = TRUE,
-          width = '100%',
-          checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon"))
-        ),
-        
         # Select ID column
         soda_get_col_ui(label = "Metadata IDs", desc = NULL),
         shiny::selectInput(inputId = ns("select_meta_id"), choices = NULL, label = NULL, multiple = F, width = "100%"),
@@ -77,21 +63,33 @@ soda_merge_tables_ui = function(id, head = T) {
         soda_get_col_ui(label = "Lipidomics IDs", desc = NULL),
         shiny::selectInput(inputId = ns("select_data_id"), choices = NULL, label = NULL, multiple = F, width = "100%"),
         
+        # Merge tables
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::fluidRow(
+          shiny::actionButton(inputId = ns("add_table"),
+                              label = "Add table",
+                              width = "50%"
+          ),
+          shiny::actionButton(inputId = ns("reset_table"),
+                              label = "Reset table",
+                              width = "50%"
+          )
+        ),
         
-        # Section for regex text patterns
-        shiny::h3("Text patterns"),
-        
-        # Select blank battern text for regex
-        soda_get_col_ui(label ="Blank pattern", desc = 'Text pattern to autodect blanks samples from the above metioned "Sample type" column'),
-        shiny::textInput(inputId = ns("blank_pattern"), label = NULL, value = "blank", width = "100%"),
-        
-        # Select QC battern text for regex
-        soda_get_col_ui(label ="QC pattern", desc = 'Text pattern to autodect QC samples from the above metioned "Sample type" column'),
-        shiny::textInput(inputId = ns("qc_pattern"), label = NULL, value = "quality", width = "100%"),
-        
-        # Select pool battern text for regex
-        soda_get_col_ui(label ="Pool pattern", desc = 'Text pattern to autodect Pooled samples from the above metioned "Sample type" column'),
-        shiny::textInput(inputId = ns("pool_pattern"), label = NULL, value = "pool", width = "100%")
+        # Download tables
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::fluidRow(
+          shiny::downloadButton(
+            outputId = ns("download_meta"),
+            label = "Metadata",
+            style = "width:50%;"
+          ),
+          shiny::downloadButton(
+            outputId = ns("download_data"),
+            label = "Data table",
+            style = "width:50%;"
+          )
+        )
       )
     )
   )
@@ -107,89 +105,125 @@ soda_merge_tables_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       ############################ UPLOAD TAB ##################################
       
+      # Initialise merged table
+      main_meta = shiny::reactiveVal()
+      main_lips = shiny::reactiveVal()
+      
       # File name to upload
-      metafile = reactive({
+      meta_table_input = reactive({
         validate(need(input$file_meta, message = FALSE))
-        input$file_meta
+        sep = find_delim(path = input$file_meta$datapath)
+        read.csv(input$file_meta$datapath,
+                 header = T,
+                 sep = sep,
+                 check.names = FALSE)
       })
       
-      datafile = reactive({
+      data_table_input = reactive({
         validate(need(input$file_data, message = FALSE))
-        input$file_data
+        sep = find_delim(path = input$file_data$datapath)
+        read.csv(input$file_data$datapath,
+                 header = T,
+                 sep = sep,
+                 check.names = FALSE)
       })
       
       
       shiny::observe({
-        shiny::req(input$file_meta)
+        shiny::req(meta_table_input())
+        shiny::updateSelectInput(
+          session = session,
+          inputId = "select_meta_id",
+          choices = colnames(meta_table_input()),
+          selected = colnames(meta_table_input())[1]
+        )
+        output$meta_table = renderDataTable({
+          DT::datatable(meta_table_input()[1:max_rows, 1:max_cols], options = list(paging = FALSE))
+        })
+      })
+      
+      shiny::observe({
+        shiny::req(data_table_input())
+        shiny::updateSelectInput(
+          session = session,
+          inputId = "select_data_id",
+          choices = colnames(data_table_input()),
+          selected = colnames(data_table_input())[1]
+        )
+        output$data_table = renderDataTable({
+          DT::datatable(data_table_input()[1:max_rows, 1:max_cols], options = list(paging = FALSE))
+        })
+      })
+      
+      
+      # Add table
+      shiny::observeEvent(input$add_table,{
         
-        sep = find_delim(path = metafile()$datapath)
+        # Set indexes for lipids table
+        in_lips = set_index_col(data_table = data_table_input(), idx = input$select_data_id)
         
-        meta_table_input = read.csv(metafile()$datapath,
-                                    header = T,
-                                    sep = sep,
-                                    check.names = FALSE)
-        print("done")
+        # Coerce meta to str to avoid errors when joining and set index
+        in_meta = data.frame(lapply(meta_table_input(), as.character), stringsAsFactors=FALSE, check.names = F)
+        in_meta = set_index_col(data_table = in_meta, idx = input$select_meta_id)
+        
+        # Bind all, Bind rows
+        if (is.null(main_meta())) {
+          main_meta(in_meta)
+          main_lips(in_lips)
+          
+        } else {
+          main_meta(dplyr::bind_rows(main_meta(), in_meta))
+          main_lips(dplyr::bind_rows(main_lips(), in_lips))
+        }
         
         output$meta_table = renderDataTable({
-          print('seen')
-          DT::datatable(meta_table_input[1:max_rows, 1:max_cols], options = list(paging = FALSE))
+          NULL
         })
-      })
-      
-      
-      shiny::observe({
-        shiny::req(input$file_data)
-        
-        sep = find_delim(path = datafile()$datapath)
-        
-        data_table_input = read.csv(datafile()$datapath,
-                                    header = T,
-                                    sep = sep,
-                                    check.names = FALSE)
-        print("done")
-        
         output$data_table = renderDataTable({
-          print('seen')
-          DT::datatable(data_table_input[1:max_rows, 1:max_cols], options = list(paging = FALSE))
+          NULL
         })
+        
+        shiny::updateSelectInput(
+          session = session,
+          inputId = "select_meta_id",
+          choices = NULL,
+          selected = character(0)
+        )
+        
+        shiny::updateSelectInput(
+          session = session,
+          inputId = "select_data_id",
+          choices = NULL,
+          selected = character(0)
+        )
+        
+        
+      })
+      
+      # Reset table
+      shiny::observeEvent(input$reset_table, {
+        main_meta(NULL)
+        main_lips(NULL)
       })
       
       
+      # Download combined meta
+      output$download_meta = shiny::downloadHandler(
+        filename = function(){"combined_meta.csv"},
+        content = function(file_name){
+          main_meta = cbind(ID = rownames(main_meta()), main_meta())
+          write.table(main_meta, file_name, sep = ",", row.names = F, na='')
+        }
+      )
       
-      # Load data as raw metadata
-      # shiny::observe({
-      #   if (!is.null(metafile()$datapath)){
-      #     sep = find_delim(path = metafile()$datapath)
-      #     r6$set_raw_meta(read.csv(metafile()$datapath,
-      #                              header = T,
-      #                              sep = sep,
-      #                              check.names = FALSE))
-      #     r6$tables$meta_raw[is.na(r6$tables$meta_raw)] = "missing"
-      #     r6$tables$meta_raw[r6$tables$meta_raw == ""] = "missing"
-      #     
-      #     # Select ID column from the raw meta data
-      #     observe({
-      #       shiny::updateSelectInput(
-      #         session = session,
-      #         inputId = "select_id",
-      #         choices = colnames(r6$tables$meta_raw)
-      #       )
-      #     })
-      #     
-      #   }
-      # })
-      
-      
-      
-      
-      # Output a preview or the whole table depending on the user input
-      # shiny::observe({
-        # shiny::req(meta_table_input())
-        # print(meta_table_input())
-        # output$meta_table = renderDataTable({
-        #   DT::datatable(r6$tables$meta_raw[1:min(max_rows, nrow(r6$tables$meta_raw)),1:min(max_cols, ncol(r6$tables$meta_raw))], options = list(paging = FALSE))
-        # })
-      # })
+      # Download combined data
+      output$download_data = shiny::downloadHandler(
+        filename = function(){"combined_data.csv"},
+        content = function(file_name){
+          main_lips = cbind(ID = rownames(main_lips()), main_lips())
+          write.table(main_lips, file_name, sep = ",", row.names = F, na='')
+        }
+      )
     
     }
   )
