@@ -22,7 +22,7 @@ plot_one = function(r6, dimensions_obj, selection_list, colour_list, input, outp
 
   plot_servers = plotbox_switch_server(selection_list = input$showPlots)
   for (server_function in plot_servers) {
-    server_function(r6, colour_list, dimensions_obj, input, output, session)
+    server_function(r6, output, session)
   }
 }
 
@@ -41,7 +41,7 @@ plot_two = function(r6, dimensions_obj, selection_list, colour_list, input, outp
 
   plot_servers = plotbox_switch_server(selection_list = input$showPlots)
   for (server_function in plot_servers) {
-    server_function(r6, colour_list, dimensions_obj, input, output, session)
+    server_function(r6, output, session)
   }
 }
 
@@ -109,18 +109,16 @@ soda_visualise_lips_ui = function(id) {
                                          label = NULL,
                                          status = "default",
                                          choices = get_plot_list(),
-                                         checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")))
-
-
-
+                                         checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon"))),
+      shiny::actionButton(inputId = ns("print_params"),
+                          label = "Print params"),
+      shiny::actionButton(inputId = ns("clear_plots"),
+                          label = "Clear plots")
     ),
     shiny::uiOutput(
       outputId = ns("plotbox_field")
     )
   )
-
-
-
 
 }
 
@@ -147,7 +145,7 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
         dimensions_obj$xpx_total = shinybrowser::get_width()
         dimensions_obj$ypx_total = shinybrowser::get_height()
       })
-
+      
       # Reactive values
       shiny::observeEvent(input$showPlots,{
 
@@ -173,18 +171,14 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
         }
       })
 
-
-
+      class_distribution_events(r6, dimensions_obj, colour_list, input, output, session)
+      class_comparison_events(r6, dimensions_obj, colour_list, input, output, session)
+      
       # Plot selection
-      shiny::observe({
-        if (is.null(input$showPlots)) {
-          output$plotbox_field = shiny::renderUI(
-            NULL
-          )
-        }
-      })
-
       shiny::observeEvent(input$showPlots, {
+        
+        # Plots selected: 1 to 4
+        print_time(paste0("Plot selection: ", paste(input$showPlots, collapse = ", ")))
         if (length(input$showPlots) == 1) {
           plot_one(r6 = r6,
                    dimensions_obj = dimensions_obj,
@@ -228,14 +222,36 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
           )
 
         }
-        if (length(input$showPlots) < 4) {
+        if (between(length(input$showPlots), 2, 3)) {
           shinyWidgets::updateCheckboxGroupButtons(
             session = session,
             inputId = "showPlots",
             disabledChoices = NULL
           )
+        } else if (length(input$showPlots) == 1) {
+          shinyWidgets::updateCheckboxGroupButtons(
+            session = session,
+            inputId = "showPlots",
+            disabledChoices = input$showPlots
+          )
         }
       })
+      
+      shiny::observeEvent(input$print_params,{
+        print(paste0("R6 params: ", r6$params$class_distribution$group_col()))
+        print(paste0("UI params: ", input$class_distribution_metacol))
+      })
+      
+      shiny::observeEvent(input$clear_plots, {
+        print_time("Clearing plots")
+        shinyWidgets::updateCheckboxGroupButtons(inputId = "showPlots",
+                                                 disabled = FALSE,
+                                                 selected = character(0))
+        output$plotbox_field = shiny::renderUI(
+          NULL
+        )
+      })
+      
     }
   )
 }

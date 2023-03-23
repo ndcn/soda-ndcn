@@ -253,6 +253,10 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           r6$set_col(col = input$select_id, type = "id_data")
           r6$set_col(col = input$select_sample_group, type = "group")
           r6$set_data_filtered()
+          
+          # Set parameters
+          r6$set_params_class_distribution(input$select_sample_group)
+          r6$set_params_class_comparison(input$select_sample_group)
 
           # Send error message if non-unique IDs are selected
           if (r6$non_unique_ids_data){

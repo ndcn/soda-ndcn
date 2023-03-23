@@ -85,6 +85,32 @@ get_plotly_box = function(id, label, dimensions_obj, session) {
 
 #------------------------------------------------------- Class distribution ----
 
+class_distribution_generate = function(r6, colour_list, dimensions_obj, input, plot_name) {
+  print_time(paste0(plot_name, ": generating plot."))
+
+  if (input$class_distribution_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$plot_class_distribution(col_group = input$class_distribution_metacol,
+                             colour_list = colour_list,
+                             width = width,
+                             height = height)
+}
+
+
+class_distribution_spawn = function(r6, output, plot_name) {
+  print_time(paste0(plot_name, ": spawning plot."))
+  output$class_distribution_plot = plotly::renderPlotly(
+    r6$plots$class_distribution
+  )
+}
+
+
 class_distribution_ui = function(dimensions_obj, session) {
 
   get_plotly_box(id = "class_distribution",
@@ -95,19 +121,19 @@ class_distribution_ui = function(dimensions_obj, session) {
 }
 
 
-class_distribution_server = function(r6, colour_list, dimensions_obj, input, output, session) {
+class_distribution_server = function(r6, output, session) {
 
   ns = session$ns
-
-
-
+  
+  print_time("Class distribution : START.")
+  # Generate UI
   output$class_distribution_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
         inputId = ns("class_distribution_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
-        selected = r6$texts$col_group
+        selected = r6$params$class_distribution$group_col()
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
@@ -117,24 +143,16 @@ class_distribution_server = function(r6, colour_list, dimensions_obj, input, out
       )
     )
   })
+}
+  
+class_distribution_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+  
+  # Generate the plot
   shiny::observeEvent(input$class_distribution_metacol, {
-
-    if (input$class_distribution_plotbox$maximized) {
-      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-    } else {
-      width = dimensions_obj$xpx * dimensions_obj$x_plot
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    }
-
-    r6$plot_class_distribution(col_group = input$class_distribution_metacol,
-                               colour_list = colour_list,
-                               width = width,
-                               height = height)
-
-    output$class_distribution_plot = plotly::renderPlotly(
-      r6$plots$class_distribution
-    )
+    print_time(paste0("Class distribution: Updating params to ", input$class_distribution_metacol))
+    r6$set_params_class_distribution(val = input$class_distribution_metacol)
+    class_distribution_generate(r6, colour_list, dimensions_obj, input, "Class distribution")
+    class_distribution_spawn(r6, output, "Class distribution")
   })
 
   # Download associated table
@@ -145,9 +163,7 @@ class_distribution_server = function(r6, colour_list, dimensions_obj, input, out
     }
   )
 
-
   # Expanded boxes
-
   class_distribution_proxy = plotly::plotlyProxy(outputId = "class_distribution_plot",
                                                  session = session)
 
@@ -172,6 +188,35 @@ class_distribution_server = function(r6, colour_list, dimensions_obj, input, out
 
 #--------------------------------------------------------- Class comparison ----
 
+class_comparison_generate = function(r6, colour_list, dimensions_obj, input, plot_name) {
+  print_time(paste0(plot_name, ": generating plot."))
+
+  if (input$class_comparison_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+
+
+  r6$plot_class_comparison(col_group = input$class_comparison_metacol,
+                             colour_list = colour_list,
+                             width = width,
+                             height = height)
+}
+
+class_comparison_spawn = function(r6, output, plot_name) {
+  print_time(paste0(plot_name, ": spawning plot."))
+  output$class_comparison_plot = plotly::renderPlotly(
+    r6$plots$class_comparison
+  )
+}
+
+
+
+
 class_comparison_ui = function(dimensions_obj, session) {
 
   get_plotly_box(id = "class_comparison",
@@ -182,11 +227,10 @@ class_comparison_ui = function(dimensions_obj, session) {
 }
 
 
-class_comparison_server = function(r6, colour_list, dimensions_obj, input, output, session) {
+class_comparison_server = function(r6, output, session) {
 
   ns = session$ns
-
-
+  print_time("Class comparison: START.")
 
   output$class_comparison_sidebar_ui = shiny::renderUI({
     shiny::tagList(
@@ -194,7 +238,7 @@ class_comparison_server = function(r6, colour_list, dimensions_obj, input, outpu
         inputId = ns("class_comparison_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
-        selected = r6$texts$col_group
+        selected = r6$params$class_comparison$group_col()
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
@@ -204,26 +248,18 @@ class_comparison_server = function(r6, colour_list, dimensions_obj, input, outpu
       )
     )
   })
+}
+class_comparison_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+  
+  # Generate the plot
   shiny::observeEvent(input$class_comparison_metacol, {
-
-    if (input$class_comparison_plotbox$maximized) {
-      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-    } else {
-      width = dimensions_obj$xpx * dimensions_obj$x_plot
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    }
-
-    r6$plot_class_comparison(col_group = input$class_comparison_metacol,
-                               colour_list = colour_list,
-                               width = width,
-                               height = height)
-
-    output$class_comparison_plot = plotly::renderPlotly(
-      r6$plots$class_comparison
-    )
+    print_time(paste0("Class comparison: Updating params to ", input$class_comparison_metacol))
+    r6$set_params_class_comparison(val = input$class_comparison_metacol)
+    class_comparison_generate(r6, colour_list, dimensions_obj, input, "Class comparison")
+    class_comparison_spawn(r6, output, "Class comparison")
   })
 
+  
   # # Download associated table
   # output$download_class_comparison_table = shiny::downloadHandler(
   #   filename = function(){"class_comparison_table.csv"},
@@ -234,7 +270,6 @@ class_comparison_server = function(r6, colour_list, dimensions_obj, input, outpu
 
 
   # Expanded boxes
-
   class_comparison_proxy = plotly::plotlyProxy(outputId = "class_comparison_plot",
                                                session = session)
 
@@ -259,6 +294,42 @@ class_comparison_server = function(r6, colour_list, dimensions_obj, input, outpu
 
 #------------------------------------------------------------- Volcano plot ----
 
+volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Volcano plot: generating plot.")
+
+  if (input$volcano_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
+                       col_group = input$volcano_plot_metacol,
+                       used_function =  input$volcano_plot_function,
+                       group_1 = input$volcano_plot_metagroup[1],
+                       group_2 = input$volcano_plot_metagroup[2])
+
+  r6$plot_volcano(data_table = r6$tables$volcano_table,
+                  colour_list = colour_list,
+                  group_1 = input$volcano_plot_metagroup[1],
+                  group_2 = input$volcano_plot_metagroup[2],
+                  displayed_classes = input$volcano_plot_lipclass,
+                  colouring = input$volcano_plot_colouring,
+                  width = width,
+                  height = height)
+
+}
+
+
+volcano_plot_spawn = function(r6, output) {
+  print(paste0(get_time(), " - spawning plot."))
+  output$volcano_plot_plot = plotly::renderPlotly(
+    r6$plots$volcano_plot
+  )
+}
+
 volcano_plot_ui = function(dimensions_obj, session) {
 
   get_plotly_box(id = "volcano_plot",
@@ -273,45 +344,47 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
 
   ns = session$ns
 
+  # Set UI
   output$volcano_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
         inputId = ns("volcano_plot_tables"),
         label = "Select data table",
         choices = c("Filtered data table", "Class normalised data table", "Total normalised data table"),
-        selected = "Filtered data table"
+        selected = r6$params$volcano_plot$data_table
       ),
       shiny::selectInput(
         inputId = ns("volcano_plot_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
-        selected = r6$texts$col_group
+        selected = r6$params$volcano_plot$group_column
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_metagroup"),
         label = "Select two groups to compare",
         choices = NULL,
+        selected = r6$params$volcano_plot$groups,
         multiple = TRUE
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_lipclass"),
         label = "Classes to display",
         choices = unique(r6$tables$feat_filtered[,"lipid_class"]),
-        selected = unique(r6$tables$feat_filtered[,"lipid_class"]),
+        selected = r6$params$volcano_plot$classes,
         multiple = TRUE
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_function"),
         label = "Select function",
         choices = c("median", "mean"),
-        selected = "median",
+        selected = r6$params$volcano_plot$selected_function,
         multiple = FALSE
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_colouring"),
         label = "Select colouring",
         choices = c("Lipid class", "Double bonds", "Total carbons"),
-        selected = "Lipid class",
+        selected = r6$params$volcano_plot$colouring,
         multiple = FALSE
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
@@ -323,44 +396,54 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
     )
   })
 
+  # auto-update selected groups
   shiny::observeEvent(input$volcano_plot_metacol,{
+    r6$params$volcano_plot$groups = unique(r6$tables$meta_filtered[,input$volcano_plot_metacol])[c(1,2)]
     shiny::updateSelectizeInput(
       inputId = "volcano_plot_metagroup",
       session = session,
       choices = unique(r6$tables$meta_filtered[,input$volcano_plot_metacol]),
-      selected = unique(r6$tables$meta_filtered[,input$volcano_plot_metacol])[c(1,2)]
+      selected = r6$params$volcano_plot$groups
     )
   })
+
+
+
+  # Generate the plot
+  first_run = shiny::reactiveVal(value = TRUE)
 
   shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass), {
 
-    if (input$volcano_plot_plotbox$maximized) {
-      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+    if (first_run()) {
+      # If this is the first run : do nothing and switch first run off
+      first_run(FALSE)
+
+      if (is.null(r6$plots$volcano_plot)) {
+        # If this is the first run but no plot is stored, create the plot
+        volcano_plot_generate(r6, colour_list, dimensions_obj, input)
+        volcano_plot_spawn(r6, output)
+      } else {
+        # If this is the first run but no plot is stored, spawn the stored plot
+        volcano_plot_spawn(r6, output)
+      }
     } else {
-      width = dimensions_obj$xpx * dimensions_obj$x_plot
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
+      # If this is not first run and parameters are changed, refresh plot and update parameters
+      print(paste0(get_time(), " - Updating params."))
+
+      r6$params$volcano_plot$data_table = input$volcano_plot_tables
+      r6$params$volcano_plot$group_column = input$volcano_plot_metacol
+      r6$params$volcano_plot$groups = input$volcano_plot_metagroup
+      r6$params$volcano_plot$classes = input$volcano_plot_lipclass
+      r6$params$volcano_plot$selected_function = input$volcano_plot_function
+      r6$params$volcano_plot$colouring = input$volcano_plot_colouring
+
+      volcano_plot_generate(r6, colour_list, dimensions_obj, input)
+      volcano_plot_spawn(r6, output)
+
     }
 
-    r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
-                         col_group = input$volcano_plot_metacol,
-                         used_function =  input$volcano_plot_function,
-                         group_1 = input$volcano_plot_metagroup[1],
-                         group_2 = input$volcano_plot_metagroup[2])
-    
-    r6$plot_volcano(data_table = r6$tables$volcano_table,
-                    colour_list = colour_list,
-                    group_1 = input$volcano_plot_metagroup[1],
-                    group_2 = input$volcano_plot_metagroup[2],
-                    displayed_classes = input$volcano_plot_lipclass,
-                    colouring = input$volcano_plot_colouring,
-                    width = width,
-                    height = height)
-    output$volcano_plot_plot = plotly::renderPlotly(
-      r6$plots$volcano_plot
-    )
-
   })
+
 
 
 
@@ -374,7 +457,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
 
   # Expanded boxes
   volcano_plot_proxy = plotly::plotlyProxy(outputId = "volcano_plot_plot",
-                                               session = session)
+                                           session = session)
 
   shiny::observeEvent(input$volcano_plot_plotbox,{
     if (input$volcano_plot_plotbox$maximized) {
@@ -422,7 +505,8 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
         label = "Clustering",
         inputId = ns("heatmap_clustering"),
         choices = c("Cluster samples" = "cluster_rows",
-                    "Cluster features" = "cluster_columns")
+                    "Cluster features" = "cluster_columns"),
+        selected = NULL
       ),
       shiny::selectizeInput(
         inputId = ns("heatmap_map_rows"),

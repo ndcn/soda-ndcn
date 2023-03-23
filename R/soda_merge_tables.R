@@ -204,6 +204,16 @@ soda_merge_tables_server = function(id, max_rows = 10, max_cols = 8, r6) {
       shiny::observeEvent(input$reset_table, {
         main_meta(NULL)
         main_lips(NULL)
+        
+        main_meta(NULL)
+        main_lips(NULL)
+        
+        output$meta_table = renderDataTable({
+          NULL
+        })
+        output$data_table = renderDataTable({
+          NULL
+        })
       })
       
       
