@@ -89,6 +89,57 @@ Omics_data = R6::R6Class(
       self$type = type
     },
 
+    #----------------------------------------------------------- Parameters ----
+    params = list(
+      # Class distribution parameters
+      class_distribution = list(
+        group_col = shiny::reactiveVal(NULL)
+      ),
+      
+      # Class comparison parameters
+      class_comparison = list(
+        group_col = shiny::reactiveVal(NULL)
+      ),
+      
+      # Volcano plot parameters
+      volcano_plot = list(
+        data_table = "Filtered data table",
+        group_column = NULL,
+        groups = NULL,
+        classes = NULL,
+        selected_function = "median",
+        colouring = "Lipid class"
+      ),
+      
+      # Heatmap parameters
+      heatmap = list(
+        dataset = "Lipid species",
+        clustering = NULL,
+        map_sample_data = NULL,
+        map_feature_data = NULL,
+        Percentile = 99
+      ),
+      
+      # PCA parameters
+      pca = list(
+        dataset = "Lipid species normalised",
+        group_column = NULL
+      ),
+      
+      # Double bonds parameters
+      db_plot = list(
+        dataset = "Filtered data table",
+        group_column = NULL,
+        selected_groups = NULL,
+        selected_lipid_class = NULL,
+        selected_function = "median",
+        fc_slider = c(-1, 1),
+        pval_slider = NULL
+      )
+      
+      
+    ),
+    
     
     #--------------------------------------------------------- Text methods ----
 
@@ -213,6 +264,16 @@ Omics_data = R6::R6Class(
       self$get_rownames_qcs()
       self$get_rownames_pools()
       self$get_rownames_samples()
+    },
+    
+    
+    #---------------------------------------------------- Parameter methods ----
+    set_params_class_distribution = function(val){
+      self$params$class_distribution$group_col(val)
+    },
+    
+    set_params_class_comparison = function(val){
+      self$params$class_comparison$group_col(val)
     },
     
     #-------------------------------------------------------- Table methods ----
@@ -998,5 +1059,8 @@ Omics_data = R6::R6Class(
                                                    'eraseshape'))
       self$plots$double_bond_plot = fig
     }
+    #------------------------------------------------------------------ END ----
+    
+    
   )
 )
