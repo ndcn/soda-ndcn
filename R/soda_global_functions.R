@@ -190,7 +190,7 @@ get_subplot_titles = function(class_list){
     if (x >= 1) {
       x = step/2
       y = y - step}}
-  annotations[[i]] = list(x = -0.08, y = 0.5, text = "Concentration, total normalized",
+  annotations[[i]] = list(x = -0.08, y = 0.5, text = "Concentration",
                           font = list(size = 10),
                           textangle = 270, showarrow = FALSE, xref='paper',
                           yref='paper')
@@ -251,7 +251,7 @@ preview_class_plot = function(data_table, del_cols, feat_raw){
       plot.background = element_rect(fill='transparent', color=NA),
       legend.background = element_rect(fill='transparent')
     ) +
-    scale_fill_manual(values = c("#999999", "#337ab7"))+
+    scale_fill_manual(values = c("#D2E8F5", "#007bff"))+
     coord_flip() +
     scale_y_reverse(limits = c(max(total_values), 0))
 
@@ -277,7 +277,7 @@ preview_class_plot = function(data_table, del_cols, feat_raw){
       plot.background = element_rect(fill='transparent', color=NA),
       legend.background = element_rect(fill='transparent')
     ) +
-    scale_fill_manual(values = c("#999999", "#337ab7"))+
+    scale_fill_manual(values = c("#D2E8F5", "#007bff"))+
     coord_flip()
 
   return(grid.arrange(plot_1, plot_2, ncol=2))

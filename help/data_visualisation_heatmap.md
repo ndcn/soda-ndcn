@@ -1,6 +1,8 @@
 Heatmap
 =======================
 ---
+<h3 style="color:gray">Z-scored class plot, Z-scored species plot</h3>.  
+
 <details>
 <summary><b> Plot and interface </b></summary>
 Plot to visualise correlations between samples and features. Two datasets can be selected from the sidebar, either lipid species (individual compounds) or lipid classes. Samples and features can be left in their original order, or clustered by ticking either one or both "Cluster samples" and "Cluster features" boxes.  
@@ -16,7 +18,7 @@ The individual values can be examined by hovering the mouse over each cell, howe
 
 <details>
 <summary><b> Data processing </b></summary>
-Two tables can be selected, *Total normalised and z-score data table* or *Total normalised and z-scored class table*, respectively the normalised lipid species or lipid classes.  
+Two tables can be selected, *Z-scored total normalised data table* or *Z-scored total normalised class table*, respectively the normalised lipid species or lipid classes.  
 Using the percentile slider, the maximum and minimum values of the colour coding are set from the selected table. The midpoint is set to the median of all the values. The values are then displayed directly on the heatmap.  
 </details>
 

@@ -62,7 +62,7 @@ soda_upload_lips_ui = function(id, head = F) {
           shiny::h2("Upload lipidomics data"),
 
           # Data upload
-          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt"), width = "100%"),
+          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt", ".xlsx"), width = "100%"),
           
           # Table preview box
           bs4Dash::box(
@@ -156,9 +156,11 @@ soda_upload_lips_ui = function(id, head = F) {
           shiny::textInput(inputId = ns("blank_multiplier"), label = "Blank multiplier", value = 2, width = "100%"),
 
           # Sample threshold
+          tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: #007bff}")),
           shiny::sliderInput(inputId = ns("sample_threshold"), label = "Sample threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%"),
 
           # Group threshold
+          tags$style(HTML(".js-irs-1 .irs-single, .js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #007bff}")),
           shiny::sliderInput(inputId = ns("group_threshold"), label = "Group threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%"),
 
           # Buttons to save or reset the feature filtering
@@ -174,12 +176,29 @@ soda_upload_lips_ui = function(id, head = F) {
             shiny::downloadButton(
               outputId = ns("data_filtered_download"),
               label = "Filtered data",
-              style = "width:50%;"
+              style = "width:100%;"
+            )
+          ),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+          shiny::fluidRow(
+            shiny::selectizeInput(
+              inputId = ns("other_tables_select"),
+              label = "Other tables",
+              choices = c("Class normalised data table", "Total normalised data table",
+                          "Raw class table", "Total normalised class table",
+                          "Z-scored data table", "Z-scored class normalised data table",
+                          "Z-scored total normalised data table",
+                          "Z-scored total normalised class table",
+                          "Raw feature table",
+                          "Filtered feature table"),
+              selected = "Class normalised data table",
+              multiple = FALSE,
+              width = "100%"
             ),
             shiny::downloadButton(
               outputId = ns("other_tables_download"),
-              label = "Other tables",
-              style = "width:50%;"
+              label = "Download selected",
+              style = "width:100%;"
             )
           )
         )
@@ -206,11 +225,17 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       # The user's data, parsed into a data frame
       shiny::observe({
         if (!is.null(table_file()$datapath)){
-          sep = find_delim(path = table_file()$datapath)
-          r6$set_raw_data(read.csv(table_file()$datapath,
-                               header = T,
-                               sep = sep,
-                               check.names = FALSE))
+          
+          if (stringr::str_sub(table_file()$datapath, -5, -1) == ".xlsx") {
+            r6$set_raw_data(as.data.frame(readxl::read_xlsx(table_file()$datapath)))
+          } else {
+            sep = find_delim(path = table_file()$datapath)
+            r6$set_raw_data(read.csv(table_file()$datapath,
+                                     header = T,
+                                     sep = sep,
+                                     check.names = FALSE))
+          }
+
           # Select ID column from the raw data
           observe({
             shiny::updateSelectInput(
@@ -257,6 +282,10 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           # Set parameters
           r6$set_params_class_distribution(input$select_sample_group)
           r6$set_params_class_comparison(input$select_sample_group)
+          
+          r6$params$volcano_plot$group_column = input$select_sample_group
+          r6$params$pca$group_column = input$select_sample_group
+          r6$params$db_plot$group_column = input$select_sample_group
 
           # Send error message if non-unique IDs are selected
           if (r6$non_unique_ids_data){
@@ -333,6 +362,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         r6$tables$data_filtered = r6$tables$data_filtered[,!(colnames(r6$tables$data_filtered) %in% selected_feats)]
 
         r6$set_feat_filtered()
+        r6$params$db_plot$selected_lipid_class = unique(r6$tables$feat_filtered$lipid_class)[1]
         
         del_cols = lips_get_del_cols(input = input, r6 = r6)
         
@@ -372,6 +402,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         del_cols = setdiff(colnames(r6$tables$data_filtered),selected_feats)
         r6$tables$data_filtered = r6$tables$data_filtered[,(colnames(r6$tables$data_filtered) %in% selected_feats)]
         r6$set_feat_filtered()
+        r6$params$db_plot$selected_lipid_class = unique(r6$tables$feat_filtered$lipid_class)[1]
         
         # Get del cols from the blank and group filtering
         del_cols = lips_get_del_cols(input = input, r6 = r6)
@@ -486,44 +517,31 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
 
       # Download filtered data
       dl_data_filtered = shiny::reactive(r6$tables$data_filtered)
-      
-      dl_feat_filtered = shiny::reactive(r6$tables$feat_filtered)
-      dl_data_class_norm = shiny::reactive(r6$tables$data_class_norm)
-      # dl_data_total_norm = shiny::reactive(r6$tables$data_total_norm)
-      # dl_data_z_scored = shiny::reactive(r6$tables$data_z_scored)
-      # dl_data_class_norm_z_scored = shiny::reactive(r6$tables$data_class_norm_z_scored)
-      # dl_data_total_norm_z_scored = shiny::reactive(r6$tables$data_total_norm_z_scored)
-      # dl_data_class_table = shiny::reactive(r6$tables$data_class_table)
-      # dl_data_class_table_z_scored = shiny::reactive(r6$tables$data_class_table_z_scored)
+      dl_other_table = shiny::reactiveValues(
+        name = NULL,
+        table = NULL
+      )
+      shiny::observeEvent(input$other_tables_select , {
+        dl_other_table$name = timestamped_name(paste0(stringr::str_replace_all(input$other_tables_select, " ", "_"), ".csv"))
+        dl_other_table$table = table_switch(selection = input$other_tables_select, r6 = r6)
+      })
 
       output$data_filtered_download = shiny::downloadHandler(
-        filename = "lipidomics_filtered.csv",
+        filename = timestamped_name("lipidomics_filtered.csv"),
         content = function(file_name){
           write.csv(dl_data_filtered(), file_name)
         }
       )
       
+      # Download other tables
       output$other_tables_download = shiny::downloadHandler(
-        filename = 'other_tables.zip',
+        filename = shiny::reactive(dl_other_table$name),
         content = function(file_name) {
-          
-          write.csv(dl_feat_filtered(), file = "feature_table_filtered.csv")
-          write.csv(dl_data_class_norm(), file = "class_normalised_table.csv")
-          
-          
-          # write.csv(dl_data_total_norm(), file = "data_total_norm.csv", sep =",")
-          # write.csv(dl_data_z_scored(), file = "data_z_scored.csv", sep =",")
-          # write.csv(dl_data_class_norm_z_scored(), file = "data_class_norm_z_scored.csv", sep =",")
-          # write.csv(dl_data_total_norm_z_scored(), file = "data_total_norm_z_scored.csv", sep =",")
-          # write.csv(dl_data_class_table(), file = "data_class_table.csv", sep =",")
-          # write.csv(dl_data_class_table_z_scored(), file = "data_class_table_z_scored.csv", sep =",")
-          
-          zip(zipfile=file_name, files=c("feature_table_filtered.csv", "class_normalised_table.csv"))
-          # zip(zipfile=file_name, files=c("feature_table_filtered.csv", "class_normalised_table.csv", "data_total_norm.csv", "data_z_scored.csv", "data_class_norm_z_scored.csv", "data_total_norm_z_scored.csv", "data_class_table.csv","data_class_table_z_scored.csv"))
+          write.csv(dl_other_table$table, file_name)
         }
-        # contentType = "application/zip"
       )
-
+      
+      
     }
   )
 }

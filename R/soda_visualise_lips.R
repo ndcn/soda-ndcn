@@ -60,7 +60,7 @@ plot_three = function(r6, dimensions_obj, selection_list, colour_list, input, ou
 
   plot_servers = plotbox_switch_server(selection_list = input$showPlots)
   for (server_function in plot_servers) {
-    server_function(r6, colour_list, dimensions_obj, input, output, session)
+    server_function(r6, output, session)
   }
 }
 
@@ -80,7 +80,7 @@ plot_four = function(r6, dimensions_obj, selection_list, colour_list, input, out
 
   plot_servers = plotbox_switch_server(selection_list = input$showPlots)
   for (server_function in plot_servers) {
-    server_function(r6, colour_list, dimensions_obj, input, output, session)
+    server_function(r6, output, session)
   }
 }
 
@@ -105,15 +105,24 @@ soda_visualise_lips_ui = function(id) {
   shiny::tagList(
     shinybrowser::detect(),
     shiny::fluidRow(
-      shinyWidgets::checkboxGroupButtons(inputId = ns("showPlots"),
-                                         label = NULL,
-                                         status = "default",
-                                         choices = get_plot_list(),
-                                         checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon"))),
-      shiny::actionButton(inputId = ns("print_params"),
-                          label = "Print params"),
-      shiny::actionButton(inputId = ns("clear_plots"),
-                          label = "Clear plots")
+      shiny::column(
+        width = 11,
+        shinyWidgets::checkboxGroupButtons(inputId = ns("showPlots"),
+                                           label = NULL,
+                                           status = "default",
+                                           choices = get_plot_list(),
+                                           checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
+                                           size = "normal",
+                                           justified = TRUE
+                                           )
+      ),
+      shiny::column(
+        width = 1,
+        shinyWidgets::actionBttn(inputId = ns("clear_plots"),
+                                 label = "Clear plots",
+                                 style = "stretch",
+                                 color = "danger")
+      )
     ),
     shiny::uiOutput(
       outputId = ns("plotbox_field")
@@ -171,8 +180,13 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
         }
       })
 
+      # Plotting events
       class_distribution_events(r6, dimensions_obj, colour_list, input, output, session)
       class_comparison_events(r6, dimensions_obj, colour_list, input, output, session)
+      volcano_plot_events(r6, dimensions_obj, colour_list, input, output, session)
+      heatmap_events(r6, dimensions_obj, colour_list, input, output, session)
+      pca_events(r6, dimensions_obj, colour_list, input, output, session)
+      db_plot_events(r6, dimensions_obj, colour_list, input, output, session)
       
       # Plot selection
       shiny::observeEvent(input$showPlots, {
@@ -235,11 +249,6 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
             disabledChoices = input$showPlots
           )
         }
-      })
-      
-      shiny::observeEvent(input$print_params,{
-        print(paste0("R6 params: ", r6$params$class_distribution$group_col()))
-        print(paste0("UI params: ", input$class_distribution_metacol))
       })
       
       shiny::observeEvent(input$clear_plots, {
