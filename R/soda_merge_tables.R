@@ -219,7 +219,7 @@ soda_merge_tables_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       # Download combined meta
       output$download_meta = shiny::downloadHandler(
-        filename = function(){"combined_meta.csv"},
+        filename = function(){timestamped_name("combined_meta.csv")},
         content = function(file_name){
           main_meta = cbind(ID = rownames(main_meta()), main_meta())
           write.table(main_meta, file_name, sep = ",", row.names = F, na='')
@@ -228,7 +228,7 @@ soda_merge_tables_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       # Download combined data
       output$download_data = shiny::downloadHandler(
-        filename = function(){"combined_data.csv"},
+        filename = function(){timestamped_name("combined_data.csv")},
         content = function(file_name){
           main_lips = cbind(ID = rownames(main_lips()), main_lips())
           write.table(main_lips, file_name, sep = ",", row.names = F, na='')

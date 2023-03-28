@@ -3,15 +3,15 @@ table_switch = function(selection, r6){
   switch(EXPR = selection,
          "Filtered data table" = r6$tables$data_filtered,
          "Class normalised data table" = r6$tables$data_class_norm,
-         "Total normalised data table" = r6$tables$data_total_norm
-  )
-}
-
-z_score_table_switch = function(selection, r6){
-  switch(EXPR = selection,
-         "Filtered data table" = r6$tables$data_z_scored,
-         "Class normalised data table" = r6$tables$data_class_norm_z_scored,
-         "Total normalised data table" = r6$tables$data_total_norm_z_scored
+         "Total normalised data table" = r6$tables$data_total_norm,
+         "Raw class table" = r6$tables$data_class_table_raw,
+         "Total normalised class table" = r6$tables$data_class_table_total_norm,
+         "Z-scored data table" = r6$tables$data_z_scored,
+         "Z-scored class normalised data table" = r6$tables$data_class_norm_z_scored,
+         "Z-scored total normalised data table" = r6$tables$data_total_norm_z_scored,
+         "Z-scored total normalised class table" = r6$tables$data_class_table_z_scored,
+         "Raw feature table" = r6$tables$feat_raw,
+         "Filtered feature table" = r6$tables$feat_filtered
   )
 }
 
@@ -95,8 +95,9 @@ class_distribution_generate = function(r6, colour_list, dimensions_obj, input, p
     width = dimensions_obj$xpx * dimensions_obj$x_plot
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
-
-  r6$plot_class_distribution(col_group = input$class_distribution_metacol,
+  
+  r6$plot_class_distribution(table = table_switch(input$class_distribution_dataset, r6),
+                             col_group = input$class_distribution_metacol,
                              colour_list = colour_list,
                              width = width,
                              height = height)
@@ -130,10 +131,16 @@ class_distribution_server = function(r6, output, session) {
   output$class_distribution_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
+        inputId = ns("class_distribution_dataset"),
+        label = "Select table",
+        choices = c("Raw class table", "Total normalised class table"),
+        selected = r6$params$class_distribution$dataset
+      ),
+      shiny::selectInput(
         inputId = ns("class_distribution_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
-        selected = r6$params$class_distribution$group_col()
+        selected = r6$params$class_distribution$group_col
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
@@ -148,8 +155,9 @@ class_distribution_server = function(r6, output, session) {
 class_distribution_events = function(r6, dimensions_obj, colour_list, input, output, session) {
   
   # Generate the plot
-  shiny::observeEvent(input$class_distribution_metacol, {
-    print_time(paste0("Class distribution: Updating params to ", input$class_distribution_metacol))
+  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol), {
+    print_time("Class distribution: Updating params...")
+    r6$params$class_distribution$dataset = input$class_distribution_dataset
     r6$set_params_class_distribution(val = input$class_distribution_metacol)
     class_distribution_generate(r6, colour_list, dimensions_obj, input, "Class distribution")
     class_distribution_spawn(r6, output, "Class distribution")
@@ -157,7 +165,7 @@ class_distribution_events = function(r6, dimensions_obj, colour_list, input, out
 
   # Download associated table
   output$download_class_distribution_table = shiny::downloadHandler(
-    filename = function(){"class_distribution_table.csv"},
+    filename = function(){timestamped_name("class_distribution_table.csv")},
     content = function(file_name){
       write.csv(r6$tables$class_distribution_table, file_name)
     }
@@ -188,8 +196,8 @@ class_distribution_events = function(r6, dimensions_obj, colour_list, input, out
 
 #--------------------------------------------------------- Class comparison ----
 
-class_comparison_generate = function(r6, colour_list, dimensions_obj, input, plot_name) {
-  print_time(paste0(plot_name, ": generating plot."))
+class_comparison_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Class comparison: generating plot.")
 
   if (input$class_comparison_plotbox$maximized){
     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
@@ -201,14 +209,15 @@ class_comparison_generate = function(r6, colour_list, dimensions_obj, input, plo
 
 
 
-  r6$plot_class_comparison(col_group = input$class_comparison_metacol,
-                             colour_list = colour_list,
-                             width = width,
-                             height = height)
+  r6$plot_class_comparison(data_table = table_switch(input$class_comparison_dataset, r6),
+                           col_group = input$class_comparison_metacol,
+                           colour_list = colour_list,
+                           width = width,
+                           height = height)
 }
 
-class_comparison_spawn = function(r6, output, plot_name) {
-  print_time(paste0(plot_name, ": spawning plot."))
+class_comparison_spawn = function(r6, output) {
+  print_time("Class comparison: spawning plot.")
   output$class_comparison_plot = plotly::renderPlotly(
     r6$plots$class_comparison
   )
@@ -234,11 +243,18 @@ class_comparison_server = function(r6, output, session) {
 
   output$class_comparison_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      
+      shiny::selectInput(
+        inputId = ns("class_comparison_dataset"),
+        label = "Select table",
+        choices = c("Raw class table", "Total normalised class table"),
+        selected = r6$params$class_comparison$dataset
+      ),
       shiny::selectInput(
         inputId = ns("class_comparison_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
-        selected = r6$params$class_comparison$group_col()
+        selected = r6$params$class_comparison$group_col
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
@@ -252,11 +268,12 @@ class_comparison_server = function(r6, output, session) {
 class_comparison_events = function(r6, dimensions_obj, colour_list, input, output, session) {
   
   # Generate the plot
-  shiny::observeEvent(input$class_comparison_metacol, {
-    print_time(paste0("Class comparison: Updating params to ", input$class_comparison_metacol))
+  shiny::observeEvent(c(input$class_comparison_dataset, input$class_comparison_metacol), {
+    print_time("Class comparison: Updating params...")
+    r6$params$class_comparison$dataset = input$class_comparison_dataset
     r6$set_params_class_comparison(val = input$class_comparison_metacol)
-    class_comparison_generate(r6, colour_list, dimensions_obj, input, "Class comparison")
-    class_comparison_spawn(r6, output, "Class comparison")
+    class_comparison_generate(r6, colour_list, dimensions_obj, input)
+    class_comparison_spawn(r6, output)
   })
 
   
@@ -324,7 +341,7 @@ volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 
 
 volcano_plot_spawn = function(r6, output) {
-  print(paste0(get_time(), " - spawning plot."))
+  print_time("Volcano plot: spawning plot.")
   output$volcano_plot_plot = plotly::renderPlotly(
     r6$plots$volcano_plot
   )
@@ -340,9 +357,10 @@ volcano_plot_ui = function(dimensions_obj, session) {
 }
 
 
-volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, session) {
+volcano_plot_server = function(r6, output, session) {
 
   ns = session$ns
+  print_time("Volcano plot: START.")
 
   # Set UI
   output$volcano_plot_sidebar_ui = shiny::renderUI({
@@ -362,7 +380,7 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
       shiny::selectizeInput(
         inputId = ns("volcano_plot_metagroup"),
         label = "Select two groups to compare",
-        choices = NULL,
+        choices = unique(r6$tables$meta_filtered[,r6$params$volcano_plot$group_column]),
         selected = r6$params$volcano_plot$groups,
         multiple = TRUE
       ),
@@ -395,6 +413,9 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
       )
     )
   })
+}
+
+volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, session) {
 
   # auto-update selected groups
   shiny::observeEvent(input$volcano_plot_metacol,{
@@ -406,50 +427,25 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
       selected = r6$params$volcano_plot$groups
     )
   })
-
-
-
-  # Generate the plot
-  first_run = shiny::reactiveVal(value = TRUE)
-
+  
   shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass), {
-
-    if (first_run()) {
-      # If this is the first run : do nothing and switch first run off
-      first_run(FALSE)
-
-      if (is.null(r6$plots$volcano_plot)) {
-        # If this is the first run but no plot is stored, create the plot
-        volcano_plot_generate(r6, colour_list, dimensions_obj, input)
-        volcano_plot_spawn(r6, output)
-      } else {
-        # If this is the first run but no plot is stored, spawn the stored plot
-        volcano_plot_spawn(r6, output)
-      }
-    } else {
-      # If this is not first run and parameters are changed, refresh plot and update parameters
-      print(paste0(get_time(), " - Updating params."))
-
-      r6$params$volcano_plot$data_table = input$volcano_plot_tables
-      r6$params$volcano_plot$group_column = input$volcano_plot_metacol
-      r6$params$volcano_plot$groups = input$volcano_plot_metagroup
-      r6$params$volcano_plot$classes = input$volcano_plot_lipclass
-      r6$params$volcano_plot$selected_function = input$volcano_plot_function
-      r6$params$volcano_plot$colouring = input$volcano_plot_colouring
-
-      volcano_plot_generate(r6, colour_list, dimensions_obj, input)
-      volcano_plot_spawn(r6, output)
-
-    }
-
+    print_time("Volcano plot: Updating params...")
+    
+    r6$params$volcano_plot$data_table = input$volcano_plot_tables
+    r6$params$volcano_plot$group_column = input$volcano_plot_metacol
+    r6$params$volcano_plot$groups = input$volcano_plot_metagroup
+    r6$params$volcano_plot$classes = input$volcano_plot_lipclass
+    r6$params$volcano_plot$selected_function = input$volcano_plot_function
+    r6$params$volcano_plot$colouring = input$volcano_plot_colouring
+    
+    
+    volcano_plot_generate(r6, colour_list, dimensions_obj, input)
+    volcano_plot_spawn(r6, output)
   })
-
-
-
 
   # Export volcano table
   output$download_volcano_table = shiny::downloadHandler(
-    filename = function(){"volcano_table.csv"},
+    filename = function(){timestamped_name("volcano_table.csv")},
     content = function(file_name){
       write.csv(r6$tables$volcano_table, file_name)
     }
@@ -479,6 +475,50 @@ volcano_plot_server = function(r6, colour_list, dimensions_obj, input, output, s
 
 #----------------------------------------------------------------- Heat map ----
 
+heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Heatmap: generating plot.")
+  
+  if (input$heatmap_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
+  if ("cluster_rows" %in% input$heatmap_clustering){
+    cluster_rows = TRUE
+  } else {
+    cluster_rows = FALSE
+  }
+
+  if ("cluster_columns" %in% input$heatmap_clustering){
+    cluster_cols = TRUE
+  } else {
+    cluster_cols = FALSE
+  }
+  print(colnames(table_switch(input$heatmap_dataset, r6)))
+
+  r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
+                  meta_table = r6$tables$meta_filtered,
+                  meta_table_features = r6$tables$feat_filtered,
+                  percentile = input$heatmap_percentile,
+                  cluster_rows = cluster_rows,
+                  cluster_cols = cluster_cols,
+                  row_annotations = input$heatmap_map_rows,
+                  col_annotations = input$heatmap_map_cols,
+                  width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                  height = dimensions_obj$ypx * dimensions_obj$y_plot)
+}
+
+heatmap_spawn = function(r6, output) {
+  print_time("Heatmap: spawning plot.")
+  output$heatmap_plot = plotly::renderPlotly(
+    r6$plots$heatmap
+  )
+}
+
+
 heatmap_ui = function(dimensions_obj, session) {
 
   get_plotly_box(id = "heatmap",
@@ -489,44 +529,45 @@ heatmap_ui = function(dimensions_obj, session) {
 }
 
 
-heatmap_server = function(r6, colour_list, dimensions_obj, input, output, session) {
+heatmap_server = function(r6, output, session) {
 
   ns = session$ns
+  print_time("Heatmap: START.")
 
   output$heatmap_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
         inputId = ns("heatmap_dataset"),
         label = "Select dataset",
-        choices = c("Lipid species", "Lipid classes"),
-        selected = "Lipid species"
+        choices = c("Z-scored total normalised data table", "Z-scored total normalised class table"),
+        selected = r6$params$heatmap$dataset
       ),
       shiny::checkboxGroupInput(
         label = "Clustering",
         inputId = ns("heatmap_clustering"),
         choices = c("Cluster samples" = "cluster_rows",
                     "Cluster features" = "cluster_columns"),
-        selected = NULL
+        selected = r6$params$heatmap$clustering
       ),
       shiny::selectizeInput(
         inputId = ns("heatmap_map_rows"),
         label = "Map sample data",
         multiple = TRUE,
         choices = colnames(r6$tables$meta_filtered),
-        selected = character(0)
+        selected = r6$params$heatmap$map_sample_data
       ),
       shiny::selectizeInput(
         inputId = ns("heatmap_map_cols"),
         label = "Map feature data",
         multiple = TRUE,
         choices = c("Class", "Carbon count", "Unsaturation count"),
-        selected = character(0)
+        selected = r6$params$heatmap$map_feature_data
       ),
       shiny::sliderInput(inputId = ns("heatmap_percentile"),
                          label = "Percentile",
                          min = 90,
                          max = 100,
-                         value = 99,
+                         value = r6$params$heatmap$percentile,
                          step = 1
       ),
       shiny::actionButton(
@@ -541,61 +582,25 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
       )
     )
   })
+}
 
+heatmap_events = function(r6, dimensions_obj, colour_list, input, output, session) {
 
   shiny::observeEvent(input$heatmap_run,{
-    if (input$heatmap_dataset == "Lipid species"){
-      data_table = r6$tables$data_total_norm_z_scored
-      col_annotations = input$heatmap_map_cols
-    } else {
-      data_table = r6$tables$data_class_table_z_scored
-      col_annotations = NULL
-    }
-
-    if ("cluster_rows" %in% input$heatmap_clustering){
-      cluster_rows = TRUE
-    } else {
-      cluster_rows = FALSE
-    }
-
-    if ("cluster_columns" %in% input$heatmap_clustering){
-      cluster_cols = TRUE
-    } else {
-      cluster_cols = FALSE
-    }
-
-
-    if (input$heatmap_plotbox$maximized) {
-      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-    } else {
-      width = dimensions_obj$xpx * dimensions_obj$x_plot
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    }
-
-
-
-    r6$plot_heatmap(data_table = data_table,
-                    meta_table = r6$tables$meta_filtered,
-                    meta_table_features = r6$tables$feat_filtered,
-                    percentile = input$heatmap_percentile,
-                    cluster_rows = cluster_rows,
-                    cluster_cols = cluster_cols,
-                    row_annotations = input$heatmap_map_rows,
-                    col_annotations = col_annotations,
-                    width = dimensions_obj$xpx * dimensions_obj$x_plot,
-                    height = dimensions_obj$ypx * dimensions_obj$y_plot)
-
-    output$heatmap_plot = plotly::renderPlotly(
-      r6$plots$heatmap
-    )
-
+    print_time("Heatmap: Updating params...")
+    r6$params$heatmap$dataset = input$heatmap_dataset
+    r6$params$heatmap$clustering = input$heatmap_clustering
+    r6$params$heatmap$map_sample_data = input$heatmap_map_rows
+    r6$params$heatmap$map_feature_data = input$heatmap_map_cols
+    r6$params$heatmap$percentile = input$heatmap_percentile
+    heatmap_generate(r6, colour_list, dimensions_obj, input)
+    heatmap_spawn(r6, output)
   })
 
 
   # Download associated table
   output$download_heatmap_table = shiny::downloadHandler(
-    filename = function(){"heatmap_table.csv"},
+    filename = function(){timestamped_name("heatmap_table.csv")},
     content = function(file_name){
       write.csv(r6$tables$heatmap_table, file_name)
     }
@@ -627,6 +632,31 @@ heatmap_server = function(r6, colour_list, dimensions_obj, input, output, sessio
 
 #---------------------------------------------------------------------- PCA ----
 
+pca_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("PCA: generating plot.")
+  
+  if (input$pca_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
+  r6$plot_pca(data_table = table_switch(input$pca_dataset, r6),
+              col_group = input$pca_metacol,
+              width = width,
+              height = height,
+              colour_list = colour_list)
+}
+
+pca_spawn = function(r6, output) {
+  print_time("PCA: spawning plot.")
+  output$pca_plot = plotly::renderPlotly(
+    r6$plots$pca_plot
+  )
+}
+
 pca_ui = function(dimensions_obj, session) {
 
   get_plotly_box(id = "pca",
@@ -636,23 +666,24 @@ pca_ui = function(dimensions_obj, session) {
 }
 
 
-pca_server = function(r6, colour_list, dimensions_obj, input, output, session) {
+pca_server = function(r6, output, session) {
 
   ns = session$ns
+  print_time("PCA: START.")
 
   output$pca_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
         inputId = ns("pca_dataset"),
         label = "Select dataset",
-        choices = c("Lipid species normalised", "Lipid class normalised"),
-        selected = "Lipid species normalised"
+        choices = c("Z-scored total normalised data table", "Z-scored total normalised class table"),
+        selected = r6$params$pca$dataset
       ),
       shiny::selectInput(
         inputId = ns("pca_metacol"),
         label = "Select metadata column",
         choices = colnames(r6$tables$meta_filtered),
-        selected = r6$texts$col_group
+        selected = r6$params$pca$group_column
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
@@ -670,47 +701,28 @@ pca_server = function(r6, colour_list, dimensions_obj, input, output, session) {
 
     )
   })
+}
+
+pca_events = function(r6, dimensions_obj, colour_list, input, output, session) {
 
   shiny::observeEvent(c(input$pca_dataset, input$pca_metacol),{
-
-    if (input$pca_dataset == "Lipid species normalised"){
-      data_table = r6$tables$data_total_norm_z_scored
-    } else {
-      data_table = r6$tables$data_class_table_z_scored
-    }
-
-    if (input$pca_plotbox$maximized) {
-      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-    } else {
-      width = dimensions_obj$xpx * dimensions_obj$x_plot
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    }
-
-
-
-    r6$plot_pca(data_table = data_table,
-                col_group = input$pca_metacol,
-                width = width,
-                height = height,
-                colour_list = colour_list)
-
-
-    output$pca_plot = plotly::renderPlotly(
-      r6$plots$pca_plot
-    )
+    print_time("PCA: Updating params...")
+    r6$params$pca$dataset = input$pca_dataset
+    r6$params$pca$group_column = input$pca_metacol
+    pca_generate(r6, colour_list, dimensions_obj, input)
+    pca_spawn(r6, output)
   })
 
 
   # Download associated tables
   output$download_pca_scores_table = shiny::downloadHandler(
-    filename = function(){"pca_scores_table.csv"},
+    filename = function(){timestamped_name("pca_scores_table.csv")},
     content = function(file_name){
       write.csv(r6$tables$pca_scores_table, file_name)
     }
   )
   output$download_pca_loadings_table = shiny::downloadHandler(
-    filename = function(){"pca_loadings_table.csv"},
+    filename = function(){timestamped_name("pca_loadings_table.csv")},
     content = function(file_name){
       write.csv(r6$tables$pca_loadings_table, file_name)
     }
@@ -740,6 +752,104 @@ pca_server = function(r6, colour_list, dimensions_obj, input, output, session) {
 
 
 #-------------------------------------------------------- Double bonds plot ----
+double_bonds_generate_single = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Double bonds plot: generating plot.")
+  
+  if (input$double_bonds_plotbox$maximized) {
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  r6$get_dbplot_table_single(data_table = table_switch(selection = input$double_bonds_dataset, r6 = r6),
+                             dbplot_table = r6$tables$feat_filtered,
+                             col_group = input$double_bonds_metacol,
+                             used_function =  input$double_bonds_function,
+                             group_1 = input$double_bonds_metagroup[1])
+  
+  r6$plot_doublebonds_single(lipid_class = input$double_bonds_class,
+                             group_1 = input$double_bonds_metagroup[1],
+                             width = width,
+                             height = height)
+}
+
+double_bonds_generate_double = function(r6, colour_list, dimensions_obj, input, session) {
+  print_time("Double bonds plot: generating plot.")
+  if (input$double_bonds_plotbox$maximized) {
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
+  r6$get_dbplot_table_double(data_table = table_switch(selection = input$double_bonds_dataset, r6 = r6),
+                             dbplot_table = r6$tables$feat_filtered,
+                             col_group = input$double_bonds_metacol,
+                             used_function =  input$double_bonds_function,
+                             group_1 = input$double_bonds_metagroup[1],
+                             group_2 = input$double_bonds_metagroup[2])
+  
+  selected_rows = rownames(r6$tables$dbplot_table)[r6$tables$dbplot_table["lipid_class"] == input$double_bonds_class]
+  
+  fc_limits = round(max(abs(r6$tables$dbplot_table[selected_rows, "log2_fold_change"])), 1) + 1
+  r6$params$db_plot$fc_range = c(-fc_limits, fc_limits)
+  if (fc_limits > 1) {
+    r6$params$db_plot$fc_values = c(-1, 1)
+  } else {
+    r6$params$db_plot$fc_values = c(0, 0)
+  }
+  
+  r6$params$db_plot$pval_range = c(0, round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1)
+  r6$params$db_plot$pval_values = c(0, round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1)
+  
+  shiny::updateSliderInput(
+    session = session,
+    inputId = "log2_fc_slider",
+    min = r6$params$db_plot$fc_range[1],
+    max = r6$params$db_plot$fc_range[2],
+    value = r6$params$db_plot$fc_values,
+  )
+  
+  shiny::updateSliderInput(
+    session = session,
+    inputId = "min_log10_bh_pval_slider",
+    max = r6$params$db_plot$pval_range[2],
+    value = r6$params$db_plot$pval_values
+  )
+}
+
+
+double_bonds_generate_double_sliders = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Double bonds plot: generating plot.")
+  if (input$double_bonds_plotbox$maximized) {
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
+  r6$plot_doublebonds_double(lipid_class = input$double_bonds_class,
+                             fc_limits = input$log2_fc_slider,
+                             pval_limits = input$min_log10_bh_pval_slider,
+                             group_1 = input$double_bonds_metagroup[1],
+                             group_2 = input$double_bonds_metagroup[2],
+                             width = width,
+                             height = height)
+}
+
+
+
+double_bonds_spawn = function(r6, output) {
+  print_time("Double bonds plot: spawning plot.")
+  output$double_bonds_plot = plotly::renderPlotly(
+    r6$plots$double_bond_plot
+  )
+}
+
+
 
 double_bonds_ui = function(dimensions_obj, session) {
 
@@ -751,59 +861,60 @@ double_bonds_ui = function(dimensions_obj, session) {
 }
 
 
-double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, session) {
+double_bonds_server = function(r6, output, session) {
 
   ns = session$ns
+  print_time("Double bonds plot: START.")
 
   output$double_bonds_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
-        inputId = ns("double_bonds_tables"),
+        inputId = ns("double_bonds_dataset"),
         label = "Select data table",
         choices = c("Filtered data table", "Class normalised data table", "Total normalised data table"),
-        selected = "Filtered data table"
+        selected = r6$params$db_plot$dataset
       ),
       shiny::selectInput(
         inputId = ns("double_bonds_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$meta_filtered),
-        selected = r6$texts$col_group
+        selected = r6$params$db_plot$group_column
       ),
       shiny::selectizeInput(
         inputId = ns("double_bonds_metagroup"),
         label = "Select group(s)",
-        choices = NULL,
+        choices = unique(r6$tables$meta_filtered[,r6$params$db_plot$group_column]),
+        selected = r6$params$db_plot$selected_groups,
         multiple = TRUE
       ),
       shiny::selectizeInput(
         inputId = ns("double_bonds_class"),
         label = "Select lipid class",
         choices = unique(r6$tables$feat_filtered$lipid_class),
-        selected = unique(r6$tables$feat_filtered$lipid_class)[1],
+        selected = r6$params$db_plot$selected_lipid_class,
         multiple = FALSE
       ),
       shiny::selectizeInput(
         inputId = ns("double_bonds_function"),
         label = "Select function",
         choices = c("median", "mean"),
-        selected = "median",
+        selected = r6$params$db_plot$selected_function,
         multiple = FALSE
       ),
       shiny::sliderInput(
         inputId = ns("log2_fc_slider"),
-        label = "Coloring : Log2(Fold change) slider",
-        min = -5,
-        max = 5,
-        value = c(-1, 1),
+        label = "Coloring : Log2(Fold change) (exlude)",
+        min = r6$params$db_plot$fc_range[1],
+        max = r6$params$db_plot$fc_range[2],
+        value = r6$params$db_plot$fc_values,
         step = 0.1
       ),
-      
       shiny::sliderInput(
         inputId = ns("min_log10_bh_pval_slider"),
-        label = "Size : -Log10(BH(p-value)) slider",
-        min = 0,
-        max = 5,
-        value = c(0,5),
+        label = "Size : -Log10(BH(p-value))",
+        min = r6$params$db_plot$pval_range[1],
+        max = r6$params$db_plot$pval_range[2],
+        value = r6$params$db_plot$pval_values,
         step = 0.1
       ),
       
@@ -815,7 +926,12 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
       )
     )
   })
+}
 
+db_plot_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+
+  # chain_of_events = shiny::reactiveVal(TRUE)
+  
   shiny::observeEvent(input$double_bonds_metacol,{
     shiny::updateSelectizeInput(
       inputId = "double_bonds_metagroup",
@@ -825,85 +941,50 @@ double_bonds_server = function(r6, colour_list, dimensions_obj, input, output, s
     )
   })
 
-  
+  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_dataset, input$double_bonds_function), {
 
-  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_tables, input$double_bonds_function), {
+    print_time("Double bonds plot single: Updating params...")
+    
+    r6$params$db_plot$dataset = input$double_bonds_dataset
+    r6$params$db_plot$group_column = input$double_bonds_metacol
+    r6$params$db_plot$selected_groups = input$double_bonds_metagroup
+    r6$params$db_plot$selected_lipid_class = input$double_bonds_class
+    r6$params$db_plot$selected_function = input$double_bonds_function
 
-    if (input$double_bonds_plotbox$maximized) {
-      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-    } else {
-      width = dimensions_obj$xpx * dimensions_obj$x_plot
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    }
-
-    r6$get_dbplot_table_single(data_table = table_switch(selection = input$double_bonds_tables, r6 = r6),
-                               dbplot_table = r6$tables$feat_filtered,
-                               col_group = input$double_bonds_metacol,
-                               used_function =  input$double_bonds_function,
-                               group_1 = input$double_bonds_metagroup[1])
-
-    r6$plot_doublebonds_single(lipid_class = input$double_bonds_class,
-                               group_1 = input$double_bonds_metagroup[1],
-                               width = width,
-                               height = height)
-    output$double_bonds_plot = plotly::renderPlotly(
-      r6$plots$double_bond_plot
-    )
+    double_bonds_generate_single(r6, colour_list, dimensions_obj, input)
+    double_bonds_spawn(r6, output)
     
   })
   
-  
-  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 2), input$double_bonds_class, input$log2_fc_slider, input$min_log10_bh_pval_slider, input$double_bonds_tables, input$double_bonds_function),{
+  # Non-slider events
+  shiny::observeEvent(c(input$double_bonds_dataset, input$double_bonds_metagroup, input$double_bonds_class, input$double_bonds_function),{
+    shiny::req(length(input$double_bonds_metagroup) == 2)
     
-    if (input$double_bonds_plotbox$maximized) {
-      width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-    } else {
-      width = dimensions_obj$xpx * dimensions_obj$x_plot
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    }
-    
-    r6$get_dbplot_table_double(data_table = table_switch(selection = input$double_bonds_tables, r6 = r6),
-                               dbplot_table = r6$tables$feat_filtered,
-                               col_group = input$double_bonds_metacol,
-                               used_function =  input$double_bonds_function,
-                               group_1 = input$double_bonds_metagroup[1],
-                               group_2 = input$double_bonds_metagroup[2])
-    
-    selected_rows = rownames(r6$tables$dbplot_table)[r6$tables$dbplot_table["lipid_class"] == input$double_bonds_class]
-    fc_limits = round(max(abs(r6$tables$dbplot_table[selected_rows, "log2_fold_change"])), 1) + 1
-    pval_limit = round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1
+    print_time("Double bonds plot non-sliders: Updating params...")
+    r6$params$db_plot$dataset = input$double_bonds_dataset
+    r6$params$db_plot$group_column = input$double_bonds_metacol
+    r6$params$db_plot$selected_groups = input$double_bonds_metagroup
+    r6$params$db_plot$selected_lipid_class = input$double_bonds_class
+    r6$params$db_plot$selected_function = input$double_bonds_function
+    double_bonds_generate_double(r6, colour_list, dimensions_obj, input, session)
 
-    shiny::updateSliderInput(
-      session = session,
-      inputId = "log2_fc_slider",
-      min = -fc_limits,
-      max = fc_limits
-    )
-
-    shiny::updateSliderInput(
-      session = session,
-      inputId = "min_log10_bh_pval_slider",
-      max = pval_limit
-    )
-    r6$plot_doublebonds_double(lipid_class = input$double_bonds_class,
-                               fc_limits = input$log2_fc_slider,
-                               pval_limits = input$min_log10_bh_pval_slider,
-                               group_1 = input$double_bonds_metagroup[1],
-                               group_2 = input$double_bonds_metagroup[2],
-                               width = width,
-                               height = height)
-    output$double_bonds_plot = plotly::renderPlotly(
-      r6$plots$double_bond_plot
-    )
-
-    
   })
+
+  # Slider events
+  shiny::observeEvent(c(input$log2_fc_slider, input$min_log10_bh_pval_slider),{
+    shiny::req(length(input$double_bonds_metagroup) == 2)
+    
+    print_time("Double bonds plot sliders: Updating params...")
+    r6$params$db_plot$fc_values = input$log2_fc_slider
+    r6$params$db_plot$pval_values = input$min_log10_bh_pval_slider
+    
+    double_bonds_generate_double_sliders(r6, colour_list, dimensions_obj, input)
+    double_bonds_spawn(r6, output)
+  }) 
 
   # Download associated tables
   output$download_double_bond_table = shiny::downloadHandler(
-    filename = function(){"double_bond_table.csv"},
+    filename = function(){timestamped_name("double_bond_table.csv")},
     content = function(file_name){
       write.csv(r6$tables$dbplot_table, file_name)
     }

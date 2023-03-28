@@ -15,6 +15,7 @@ library(R6)
 library(DT)
 library(markdown)
 library(dplyr)
+library(readxl)
 
 # Plotting
 library(ggplot2)

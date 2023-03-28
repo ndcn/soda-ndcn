@@ -78,7 +78,7 @@ soda_upload_meta_ui = function(id, head = F) {
           shiny::h2("Upload metadata"),
 
           # Data upload
-          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt"), width = "100%"),
+          shiny::fileInput(inputId = ns("file"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt", ".xlsx"), width = "100%"),
           
           # Table preview box
           bs4Dash::box(
@@ -256,11 +256,17 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6) {
       # Load data as raw metadata
       shiny::observe({
         if (!is.null(table_file()$datapath)){
-          sep = find_delim(path = table_file()$datapath)
-          r6$set_raw_meta(read.csv(table_file()$datapath,
-                                   header = T,
-                                   sep = sep,
-                                   check.names = FALSE))
+
+          if (stringr::str_sub(table_file()$datapath, -5, -1) == ".xlsx") {
+            r6$set_raw_meta(as.data.frame(readxl::read_xlsx(table_file()$datapath)))
+          } else {
+            sep = find_delim(path = table_file()$datapath)
+            r6$set_raw_meta(read.csv(table_file()$datapath,
+                                     header = T,
+                                     sep = sep,
+                                     check.names = FALSE))
+          }
+          
           r6$tables$meta_raw[is.na(r6$tables$meta_raw)] = "missing"
           r6$tables$meta_raw[r6$tables$meta_raw == ""] = "missing"
 
@@ -521,7 +527,7 @@ soda_upload_meta_server = function(id, max_rows = 10, max_cols = 8, r6) {
 
       # Download filtered metadata
       output$meta_filtered_download = shiny::downloadHandler(
-        filename = function(){"metadata_filtered.csv"},
+        filename = function(){timestamped_name("metadata_filtered.csv")},
         content = function(file_name){
           write.csv(r6$tables$meta_filtered, file_name)
         }
