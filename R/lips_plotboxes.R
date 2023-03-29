@@ -497,7 +497,6 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
   } else {
     cluster_cols = FALSE
   }
-  print(colnames(table_switch(input$heatmap_dataset, r6)))
 
   r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
                   meta_table = r6$tables$meta_filtered,
