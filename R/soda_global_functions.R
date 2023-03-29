@@ -485,3 +485,12 @@ get_feature_metadata = function(data_table) {
   feature_table$unsat_2 = as.numeric(s_count_2)
   return(feature_table)
 }
+
+#------------------------------------------------------------- UI functions ----
+soda_get_col_ui = function(label = "Column selection", desc = "Description"){
+  shiny::tagList(
+    shiny::strong(label),
+    shiny::br(),
+    shiny::helpText(desc)
+  )
+}

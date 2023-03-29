@@ -68,12 +68,14 @@ sidebar_ui = function() {
         icon = shiny::icon("upload"),
         
         bs4Dash::menuSubItem(
-          text = "Metadata",
-          tabName = "meta_upload"),
+          text = "Lipidomics",
+          tabName = "lips_upload"),
         
         bs4Dash::menuSubItem(
-          text = "Lipidomics",
-          tabName = "lips_upload")),
+          text = "Proteomics",
+          tabName = "prot_upload")
+        
+        ),
       
       # Data visualisation and submenus
       bs4Dash::menuItem(
@@ -128,12 +130,8 @@ body_ui = function() {
       
       # Data upload pages
       bs4Dash::tabItem(
-        tabName = "meta_upload",
-        soda_upload_meta_ui(id = "upload_metadata", head = F)
-      ),
-      bs4Dash::tabItem(
         tabName = "lips_upload",
-        soda_upload_lips_ui(id = "upload_lipidomics", head = T)
+        soda_upload_lips_ui(id = "upload_lipidomics", head = F)
       ),
       
       # Data visualisation pages
@@ -204,7 +202,6 @@ server = function(input, output, session) {
   colour_list = grDevices::colorRampPalette(colour_list)(60)
 
   # Load modules
-  soda_upload_meta_server("upload_metadata", r6 = lipidomics_data)
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
   soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = colour_list)
   soda_merge_tables_server("merge_tables_page", r6 = lipidomics_data)
