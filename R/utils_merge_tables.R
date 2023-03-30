@@ -1,9 +1,5 @@
-library(shiny)
-library(bs4Dash)
 
-
-
-#------------------------------------------------------ Meta data upload UI ----
+#----------------------------------------------------------- Merge table UI ----
 soda_merge_tables_ui = function(id, head = T) {
   
   ns = shiny::NS(id)
@@ -26,11 +22,6 @@ soda_merge_tables_ui = function(id, head = T) {
           DT::dataTableOutput(ns("meta_table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
           collapsible = FALSE
         ),
-        
-        # Text feedback for blanks, QCs and pools found (text patterns)
-        shiny::span(textOutput(outputId = ns("found_blanks"))),
-        shiny::span(textOutput(outputId = ns("found_qcs"))),
-        shiny::span(textOutput(outputId = ns("found_pools")))
       ),
       
       # Second column for lipidomics data upload
@@ -96,14 +87,12 @@ soda_merge_tables_ui = function(id, head = T) {
 
 }
 
-#-------------------------------------------------- Meta data upload server ----
+#------------------------------------------------------- Merge table server ----
 
-soda_merge_tables_server = function(id, max_rows = 10, max_cols = 8, r6) {
+soda_merge_tables_server = function(id, max_rows = 10, max_cols = 8) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      
-      ############################ UPLOAD TAB ##################################
       
       # Initialise merged table
       main_meta = shiny::reactiveVal()

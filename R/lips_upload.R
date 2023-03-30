@@ -1,6 +1,3 @@
-library(shiny)
-library(bs4Dash)
-
 
 lips_update_fields = function(input, session, r6) {
   
@@ -23,8 +20,6 @@ lips_update_fields = function(input, session, r6) {
     selected = character(0)
   )
 }
-
-
 lips_get_del_cols = function(input, r6) {
   del_cols = blank_filter(data_table = r6$tables$data_filtered,
                           blank_table = r6$tables$blank_table,
@@ -43,10 +38,7 @@ lips_get_del_cols = function(input, r6) {
   del_cols = setdiff(del_cols,saved_cols)
   return(del_cols)
 }
-
-
-
-meta_row_selection = function(input, r6) {
+meta_row_selection_lips = function(input, r6) {
   # Initialise selection
   selected_rows = c()
   
@@ -71,7 +63,7 @@ meta_row_selection = function(input, r6) {
   
   return(selected_rows)
 }
-meta_reset_fields = function(input, session, r6) {
+meta_reset_fields_lips = function(input, session, r6) {
   # Set all checkboxes to False
   shinyWidgets::updateCheckboxGroupButtons(
     session = session,
@@ -104,10 +96,8 @@ meta_reset_fields = function(input, session, r6) {
   )
 }
 
-
-
 #------------------------------------------------------ Meta data upload UI ----
-soda_upload_lips_ui = function(id, head = F) {
+soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
   
   ns = shiny::NS(id)
   bs4Dash::tabsetPanel(
@@ -134,6 +124,7 @@ soda_upload_lips_ui = function(id, head = F) {
           ),
           
           # Text feedback for blanks, QCs and pools found (text patterns)
+          shiny::span(textOutput(outputId = ns("found_groups"))),
           shiny::span(textOutput(outputId = ns("found_blanks"))),
           shiny::span(textOutput(outputId = ns("found_qcs"))),
           shiny::span(textOutput(outputId = ns("found_pools")))
@@ -145,7 +136,7 @@ soda_upload_lips_ui = function(id, head = F) {
           shiny::tags$h3("Select columns"),
           
           # Display preview or full table
-          shiny::checkboxInput(inputId = ns("preview_meta"), label = "Display preview only", value = head),
+          shiny::checkboxInput(inputId = ns("preview_meta"), label = "Display preview only", value = head_meta),
           
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
@@ -155,6 +146,10 @@ soda_upload_lips_ui = function(id, head = F) {
           # Select sample type column
           soda_get_col_ui(label ="Type column", desc = "Column containing the sample types."),
           shiny::selectInput(inputId = ns("select_sample_type"), choices = NULL, label = NULL, multiple = F, width = "100%"),
+          
+          # Select group column
+          soda_get_col_ui(label = "Group column", desc = "Column containing the sample groups"),
+          shiny::selectInput(inputId = ns("select_sample_group"), choices = NULL, label = NULL, multiple = F, width = "100%"),
           
           # Section for regex text patterns
           shiny::h3("Text patterns"),
@@ -299,10 +294,7 @@ soda_upload_lips_ui = function(id, head = F) {
             width = 12,
             DT::dataTableOutput(ns("table_data")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
             collapsible = FALSE
-          ),
-          
-          # Text feedback for groups to be analysed
-          shiny::span(textOutput(outputId = ns("found_groups")))
+          )
         ),
         
         # Second column for data curation
@@ -311,16 +303,13 @@ soda_upload_lips_ui = function(id, head = F) {
           shiny::tags$h3("Select columns"),
           
           # Display preview or full table
-          shiny::checkboxInput(inputId = ns("preview_data"), label = "Display preview only", value = head),
+          shiny::checkboxInput(inputId = ns("preview_data"), label = "Display preview only", value = head_data),
           
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
           shiny::selectInput(inputId = ns("select_id_data"), choices = NULL, label = NULL, multiple = F, width = "100%"),
-          shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red"),
+          shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red")
           
-          # Select group column
-          soda_get_col_ui(label = "Group column", desc = "Metadata column with groups for each sample."),
-          shiny::selectInput(inputId = ns("select_sample_group"), choices = NULL, label = NULL, multiple = F, width = "100%")
         )
       )
     ),
@@ -484,6 +473,14 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             choices = colnames(r6$tables$meta_raw),
             selected = colnames(r6$tables$meta_raw)[2]
           )
+          
+          # Select sample group column from the raw meta data
+          shiny::updateSelectInput(
+            session = session,
+            inputId = "select_sample_group",
+            choices = colnames(r6$tables$meta_raw),
+            selected = colnames(r6$tables$meta_raw)[3]
+          )
         }
       })
       
@@ -546,6 +543,14 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             
             # Set columns
             r6$set_col(col = input$select_sample_type, type = "type")
+            r6$set_col(col = input$select_sample_group, type = "group")
+            
+            # Set parameters
+            r6$set_params_class_distribution(input$select_sample_group)
+            r6$set_params_class_comparison(input$select_sample_group)
+            r6$params$volcano_plot$group_column = input$select_sample_group
+            r6$params$pca$group_column = input$select_sample_group
+            r6$params$db_plot$group_column = input$select_sample_group
             
             # Text patterns
             r6$set_text_pattern(pattern = input$qc_pattern, type = "qc")
@@ -579,8 +584,13 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             
             # Get indices
             r6$set_all_indices()
-            
+
+            # Get found groups (upload table)
+            unique_groups = unique(r6$tables$meta_filtered[r6$indices$rownames_samples, r6$texts$col_group])
+            unique_groups = paste(unique_groups, collapse  = ", ")
+                        
             # Update text pattern feedback
+            output$found_groups = shiny::renderText({paste0("Groups found: ", unique_groups)})
             output$found_blanks = shiny::renderText({paste0("Blanks found: ", as.character(count_blanks))})
             output$found_qcs = shiny::renderText({paste0("QCs found: ", as.character(count_qcs))})
             output$found_pools = shiny::renderText({paste0("Pools found: ", as.character(count_pools))})
@@ -622,7 +632,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       # Drop button
       shiny::observeEvent(input$selection_drop, {
         
-        selected_rows = meta_row_selection(input = input, r6 = r6)
+        selected_rows = meta_row_selection_lips(input = input, r6 = r6)
         
         # Drop the data
         if (!is.null(selected_rows)){
@@ -650,13 +660,13 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         })
         
         # Reset fields
-        meta_reset_fields(input = input, session = session, r6 = r6)
+        meta_reset_fields_lips(input = input, session = session, r6 = r6)
       })
       
       # Keep button
       shiny::observeEvent(input$selection_keep, {
         
-        selected_rows = meta_row_selection(input = input, r6 = r6)
+        selected_rows = meta_row_selection_lips(input = input, r6 = r6)
         
         # Keep the data
         if (!is.null(selected_rows)){
@@ -683,7 +693,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         })
         
         # Reset fields
-        meta_reset_fields(input = input, session = session, r6 = r6)
+        meta_reset_fields_lips(input = input, session = session, r6 = r6)
         
         
       })
@@ -692,7 +702,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       shiny::observeEvent(input$clear_filters, {
         
         # Reset fields
-        meta_reset_fields(input = input, session = session, r6 = r6)
+        meta_reset_fields_lips(input = input, session = session, r6 = r6)
       })
       
       # Reset button
@@ -720,7 +730,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         })
         
         # Reset fields
-        meta_reset_fields(input = input, session = session, r6 = r6)
+        meta_reset_fields_lips(input = input, session = session, r6 = r6)
       })
       
       # Download filtered metadata
@@ -761,14 +771,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               choices = colnames(r6$tables$data_raw)
             )
           })
-          
-          # Select sample group column from the raw meta data
-          shiny::updateSelectInput(
-            session = session,
-            inputId = "select_sample_group",
-            choices = colnames(r6$tables$meta_filtered),
-            selected = colnames(r6$tables$meta_filtered)[2]
-          )
         }
       })
       
@@ -788,21 +790,12 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       })
       
       # Set values to the R6 object
-      shiny::observeEvent(c(input$select_id_data, input$select_sample_group), {
+      shiny::observeEvent(input$select_id_data, {
         if (input$select_id_data != ""){
           
           # Initialise filtered data with the ID column
           r6$set_col(col = input$select_id_data, type = "id_data")
-          r6$set_col(col = input$select_sample_group, type = "group")
           r6$set_data_filtered()
-          
-          # Set parameters
-          r6$set_params_class_distribution(input$select_sample_group)
-          r6$set_params_class_comparison(input$select_sample_group)
-          
-          r6$params$volcano_plot$group_column = input$select_sample_group
-          r6$params$pca$group_column = input$select_sample_group
-          r6$params$db_plot$group_column = input$select_sample_group
           
           # Send error message if non-unique IDs are selected
           if (r6$non_unique_ids_data){
@@ -857,13 +850,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               
             }
           }
-          
-          # Get found groups (upload table)
-          unique_groups = unique(r6$tables$meta_filtered[r6$indices$rownames_samples, r6$texts$col_group])
-          unique_groups = paste(unique_groups, collapse  = ", ")
-          
-          # Display found groups (upload table)
-          output$found_groups = shiny::renderText({paste0("Groups found: ", unique_groups)})
         }
       })
       

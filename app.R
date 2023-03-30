@@ -85,13 +85,22 @@ sidebar_ui = function() {
         
         bs4Dash::menuSubItem(
           text = "Lipidomics",
-          tabName = "lips_visual")), 
+          tabName = "lips_visual")
+        ), 
       
       # Table merge menu
       bs4Dash::menuItem(
-        text = "Merge & download",
-        tabName = "merge_tables",
-        icon = shiny::icon("download")
+        text = "Utilities",
+        tabName = "utilities",
+        icon = shiny::icon("wrench"),
+
+        bs4Dash::menuSubItem(
+          text = "Merge & download",
+          tabName = "merge_tables"),
+        
+        bs4Dash::menuSubItem(
+          text = "Convert table",
+          tabName = "table_convert")
       ),
       
       # Help menu and submenus
@@ -131,7 +140,13 @@ body_ui = function() {
       # Data upload pages
       bs4Dash::tabItem(
         tabName = "lips_upload",
-        soda_upload_lips_ui(id = "upload_lipidomics", head = F)
+        soda_upload_lips_ui(id = "upload_lipidomics", head_meta = F, head_data = T)
+      ),
+      
+      # Data upload pages
+      bs4Dash::tabItem(
+        tabName = "prot_upload",
+        soda_upload_prot_ui(id = "upload_proteomics", head_meta = F, head_data = T)
       ),
       
       # Data visualisation pages
@@ -144,6 +159,12 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "merge_tables",
         soda_merge_tables_ui(id = "merge_tables_page")
+      ),
+      
+      # Table convert page
+      bs4Dash::tabItem(
+        tabName = "table_convert",
+        utils_convert_table_ui(id = "convert_tables_page")
       ),
       
       # Help pages
@@ -192,9 +213,14 @@ server = function(input, output, session) {
   # Initiate some variables
   options(shiny.maxRequestSize=30*1024^2)
   
-  lipidomics_data = Omics_data$new(
+  lipidomics_data = Lips_data$new(
     name = "lips_1",
     type = "lipidomics"
+  )
+  
+  proteomics_data = Prot_data$new(
+    name = "prot_1",
+    type = "proteomics"
   )
   
   colour_list= RColorBrewer::brewer.pal(n = 11, name = 'Spectral')
@@ -203,8 +229,10 @@ server = function(input, output, session) {
 
   # Load modules
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
+  soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
   soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = colour_list)
-  soda_merge_tables_server("merge_tables_page", r6 = lipidomics_data)
+  soda_merge_tables_server("merge_tables_page")
+  utils_convert_table_server("convert_tables_page")
   
   
 }
