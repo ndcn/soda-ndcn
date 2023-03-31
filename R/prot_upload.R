@@ -217,6 +217,51 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
         )
       )
     ),
+    
+    shiny::tabPanel(
+      #################################################### Feature metadata ####
+      title = "Feature metadata",
+      shiny::fluidRow(
+        shiny::column(
+          width = 9,
+          # Feature table preview box
+          bs4Dash::box(
+            title = "Feature table (raw)",
+            width = 12,
+            DT::dataTableOutput(ns("table_features")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
+            collapsible = FALSE
+          ),
+          # Progress bar for the feature count
+          shinyWidgets::progressBar(
+            id = ns("feature_count_bar"),
+            title = "Feature count",
+            value = 100,
+            total = 100,
+            unit_mark = "%"
+          ),
+        ),
+        shiny::column(
+          width = 3,
+          shiny::h4("Get feature metadata"),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+          soda_get_col_ui(label = "Get from Uniprot", desc = NULL),
+          shiny::actionButton(inputId = ns("feat_uniprot"),
+                              label = "Query",
+                              width = "100%"),
+          shiny::fileInput(inputId = ns("feat_local"),
+                           label = "Get from local file",
+                           accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                           width = "100%"),
+          shiny::h4("Download"),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+          shiny::downloadButton(outputId = ns("feat_download"),
+                                label = "Feature table",
+                                style = "width:100%;")
+        )
+      )
+    ),
+    
+    
     shiny::tabPanel(
       ######################################################### Filter data ####
       title = "Filter data",
@@ -626,6 +671,19 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
           }
         }
       })
+      
+      
+      #################################################### Feature metadata ####
+      
+      shiny::observeEvent(input$feat_uniprot, {
+        prot_list = colnames(r6$tables$data_raw)[2:length(colnames(r6$tables$data_raw))]
+        prot_list = cleanup_prot_list(prot_list)
+        prots_feature_table_raw = prots_get_feature_table(prot_list)
+        r6$tables$feat_raw = prots_feature_table_raw
+        print(colnames(r6$tables$feat_raw))
+      })
+      
+      
     }
   )
 }

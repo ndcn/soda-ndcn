@@ -1,6 +1,6 @@
 
 #----------------------------------------------------------- Merge table UI ----
-soda_merge_tables_ui = function(id, head = T) {
+utils_merge_tables_ui = function(id, head = T) {
   
   ns = shiny::NS(id)
   shiny::tagList(
@@ -89,7 +89,7 @@ soda_merge_tables_ui = function(id, head = T) {
 
 #------------------------------------------------------- Merge table server ----
 
-soda_merge_tables_server = function(id, max_rows = 10, max_cols = 8) {
+utils_merge_tables_server = function(id, max_rows = 10, max_cols = 8) {
   shiny::moduleServer(
     id,
     function(input, output, session) {

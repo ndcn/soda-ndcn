@@ -1,12 +1,3 @@
-library(shiny)
-library(bs4Dash)
-library(shinyWidgets)
-library(shinybrowser)
-library(plotly)
-
-
-
-
 
 plot_one = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
   ns = session$ns
