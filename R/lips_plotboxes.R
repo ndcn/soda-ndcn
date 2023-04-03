@@ -437,8 +437,7 @@ volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, s
     r6$params$volcano_plot$classes = input$volcano_plot_lipclass
     r6$params$volcano_plot$selected_function = input$volcano_plot_function
     r6$params$volcano_plot$colouring = input$volcano_plot_colouring
-    
-    
+
     volcano_plot_generate(r6, colour_list, dimensions_obj, input)
     volcano_plot_spawn(r6, output)
   })

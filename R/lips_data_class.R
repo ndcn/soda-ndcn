@@ -311,7 +311,7 @@ Lips_data = R6::R6Class(
         table = table[rownames(self$tables$meta_filtered),]
         table = remove_empty_cols(table)
       }
-
+      
       # Coerce to numeric matrix and save
       table = as.matrix(table)
       class(table) = "numeric"
@@ -403,7 +403,7 @@ Lips_data = R6::R6Class(
 
     # Volcano table
     get_volcano_table = function(data_table = self$tables$data_filtered, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
-
+      
       # Set the averaging function
       if (used_function == "median") {
         av_function = function(x) {return(median(x, na.rm = T))}
@@ -430,8 +430,12 @@ Lips_data = R6::R6Class(
       data_table = data_table[idx_all,]
       
       # Remove empty columns
+      dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
-
+      dead_features = setdiff(dead_features, colnames(data_table))
+      dead_features = which(rownames(volcano_table) %in% dead_features)
+      volcano_table = volcano_table[-dead_features,]
+      
       # Collect fold change and p-values
       fold_change = c()
       p_value = c()
@@ -475,8 +479,6 @@ Lips_data = R6::R6Class(
 
       # Adjust p-value
       p_value_bh_adj = p.adjust(p_value, method = "BH")
-
-      
       
       volcano_table$fold_change = fold_change
       volcano_table$p_value = p_value
@@ -626,7 +628,7 @@ Lips_data = R6::R6Class(
       
       # Create feature table
       self$set_feat_filtered()
-      
+
       # Class table
       self$class_grouping_raw()
       self$class_grouping_total_norm()

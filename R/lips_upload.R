@@ -832,6 +832,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               
               # Produce ensuing tables
               r6$set_all_tables()
+
               
               # Update the class filter
               shiny::updateSelectizeInput(

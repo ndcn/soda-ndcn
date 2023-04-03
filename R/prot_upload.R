@@ -244,6 +244,10 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           width = 3,
           shiny::h4("Get feature metadata"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+          
+          # Display preview or full table
+          shiny::checkboxInput(inputId = ns("preview_feat"), label = "Display preview only", value = TRUE),
+          
           soda_get_col_ui(label = "Get from Uniprot", desc = NULL),
           shiny::actionButton(inputId = ns("feat_uniprot"),
                               label = "Query",
@@ -252,11 +256,17 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
                            label = "Get from local file",
                            accept = c(".csv", ".tsv", ".txt", ".xlsx"),
                            width = "100%"),
-          shiny::h4("Download"),
+          shiny::h4("Download feature tables"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-          shiny::downloadButton(outputId = ns("feat_download"),
-                                label = "Feature table",
-                                style = "width:100%;")
+          shiny::fluidRow(
+            shiny::downloadButton(outputId = ns("feat_download_raw"),
+                                  label = "Raw",
+                                  style = "width:50%;"),
+            shiny::downloadButton(outputId = ns("feat_download_filtered"),
+                                  label = "Filtered",
+                                  style = "width:50%;")
+          )
+
         )
       )
     ),
@@ -675,13 +685,99 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       #################################################### Feature metadata ####
       
+      # Table preview
+      shiny::observeEvent(input$preview_feat,{
+        if (!is.null(r6$tables$feat_raw)) {
+          if(input$preview_feat) {
+            output$table_features = renderDataTable({
+              DT::datatable(r6$tables$feat_raw[1:max_rows,1:min(max_cols, ncol(r6$tables$feat_raw))], options = list(paging = FALSE))
+            })
+          } else{
+            output$table_features = renderDataTable({
+              DT::datatable(r6$tables$feat_raw, options = list(paging = FALSE))
+            })
+            
+          }
+        }
+      })
+      
+      # File name to upload
+      table_file_feat = reactive({
+        validate(need(input$feat_local, message = FALSE))
+        input$feat_local
+      })
+      
+      # Upload file to R6
+      shiny::observe({
+        if (!is.null(table_file_feat()$datapath)){
+          
+          if (stringr::str_sub(table_file_feat()$datapath, -5, -1) == ".xlsx") {
+            r6$tables$feat_raw = as.data.frame(readxl::read_xlsx(table_file_feat()$datapath))
+          } else {
+            sep = find_delim(path = table_file_feat()$datapath)
+            r6$tables$feat_raw = read.csv(table_file_feat()$datapath,
+                                     header = T,
+                                     sep = sep,
+                                     check.names = FALSE)
+          }
+          
+          if (input$preview_feat) {
+            output$table_features = renderDataTable({
+              DT::datatable(r6$tables$feat_raw[1:max_rows,1:min(max_cols, ncol(r6$tables$feat_raw))], options = list(paging = FALSE))
+            })
+          } else{
+            output$table_features = renderDataTable({
+              DT::datatable(r6$tables$feat_raw, options = list(paging = FALSE))
+            })
+          }
+          
+          
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "feature_count_bar",
+            value = nrow(r6$tables$feat_raw),
+            total = nrow(r6$tables$feat_raw)
+          )
+
+        }
+      })
+      
+      
+      
+      # Get data from uniprot
       shiny::observeEvent(input$feat_uniprot, {
         prot_list = colnames(r6$tables$data_raw)[2:length(colnames(r6$tables$data_raw))]
         prot_list = cleanup_prot_list(prot_list)
         prots_feature_table_raw = prots_get_feature_table(prot_list)
         r6$tables$feat_raw = prots_feature_table_raw
-        print(colnames(r6$tables$feat_raw))
+        
+        if (input$preview_feat) {
+          output$table_features = renderDataTable({
+            DT::datatable(r6$tables$feat_raw[1:max_rows,1:min(max_cols, ncol(r6$tables$feat_raw))], options = list(paging = FALSE))
+          })
+        } else{
+          output$table_features = renderDataTable({
+            DT::datatable(r6$tables$feat_raw, options = list(paging = FALSE))
+          })
+        }
+        
+        
+        prot_list = colnames(r6$tables$data_filtered)
+        prot_list = cleanup_prot_list(prot_list)
+        # r6$tables$feat_filtered
+        # print(colnames(r6$tables$feat_raw))
       })
+      
+      output$feat_download_raw = shiny::downloadHandler(
+        filename = timestamped_name("feature_metadata_raw.tsv"),
+        content = function(file_name){
+          write.table(r6$tables$feat_raw,
+                      file_name,
+                      sep = "\t",
+                      row.names = F,
+                      na='')
+        }
+      )
       
       
     }
