@@ -15,6 +15,16 @@ table_switch = function(selection, r6){
   )
 }
 
+#-------------------------------------------------- P-val adjustment switch ----
+
+
+adjustment_switch = function(selection){
+  switch(EXPR = selection,
+         "None" = "minus_log10_p_value",
+         "Benjamini-Hochberg" = "minus_log10_p_value_bh_adj"
+  )
+}
+
 #----------------------------------------------- Plotting function controls ----
 
 plotbox_switch_ui = function(selection_list){
@@ -329,6 +339,7 @@ volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
                        group_2 = input$volcano_plot_metagroup[2])
 
   r6$plot_volcano(data_table = r6$tables$volcano_table,
+                  adjustment = adjustment_switch(input$volcano_plot_adjustment),
                   colour_list = colour_list,
                   group_1 = input$volcano_plot_metagroup[1],
                   group_2 = input$volcano_plot_metagroup[2],
@@ -399,6 +410,13 @@ volcano_plot_server = function(r6, output, session) {
         multiple = FALSE
       ),
       shiny::selectizeInput(
+        inputId = ns("volcano_plot_adjustment"),
+        label = "Select adjustment",
+        choices = c("None", "Benjamini-Hochberg"),
+        selected = r6$params$volcano_plot$adjustment,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
         inputId = ns("volcano_plot_colouring"),
         label = "Select colouring",
         choices = c("Lipid class", "Double bonds", "Total carbons"),
@@ -428,7 +446,7 @@ volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, s
     )
   })
   
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment), {
     print_time("Volcano plot: Updating params...")
     
     r6$params$volcano_plot$data_table = input$volcano_plot_tables
@@ -437,6 +455,7 @@ volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, s
     r6$params$volcano_plot$classes = input$volcano_plot_lipclass
     r6$params$volcano_plot$selected_function = input$volcano_plot_function
     r6$params$volcano_plot$colouring = input$volcano_plot_colouring
+    r6$params$volcano_plot$adjustment = input$volcano_plot_adjustment
 
     volcano_plot_generate(r6, colour_list, dimensions_obj, input)
     volcano_plot_spawn(r6, output)
@@ -830,6 +849,7 @@ double_bonds_generate_double_sliders = function(r6, colour_list, dimensions_obj,
   }
   
   r6$plot_doublebonds_double(lipid_class = input$double_bonds_class,
+                             adjustment = adjustment_switch(input$double_bonds_plot_adjustment),
                              fc_limits = input$log2_fc_slider,
                              pval_limits = input$min_log10_bh_pval_slider,
                              group_1 = input$double_bonds_metagroup[1],
@@ -899,6 +919,13 @@ double_bonds_server = function(r6, output, session) {
         selected = r6$params$db_plot$selected_function,
         multiple = FALSE
       ),
+      shiny::selectizeInput(
+        inputId = ns("double_bonds_plot_adjustment"),
+        label = "Select adjustment",
+        choices = c("None", "Benjamini-Hochberg"),
+        selected = r6$params$db_plot$adjustment,
+        multiple = FALSE
+      ),
       shiny::sliderInput(
         inputId = ns("log2_fc_slider"),
         label = "Coloring : Log2(Fold change) (exlude)",
@@ -928,8 +955,7 @@ double_bonds_server = function(r6, output, session) {
 
 db_plot_events = function(r6, dimensions_obj, colour_list, input, output, session) {
 
-  # chain_of_events = shiny::reactiveVal(TRUE)
-  
+  # Group col selection
   shiny::observeEvent(input$double_bonds_metacol,{
     shiny::updateSelectizeInput(
       inputId = "double_bonds_metagroup",
@@ -939,6 +965,7 @@ db_plot_events = function(r6, dimensions_obj, colour_list, input, output, sessio
     )
   })
 
+  # Double bonds plot SINGLE 
   shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_dataset, input$double_bonds_function), {
 
     print_time("Double bonds plot single: Updating params...")
@@ -954,8 +981,8 @@ db_plot_events = function(r6, dimensions_obj, colour_list, input, output, sessio
     
   })
   
-  # Non-slider events
-  shiny::observeEvent(c(input$double_bonds_dataset, input$double_bonds_metagroup, input$double_bonds_class, input$double_bonds_function),{
+  # Double bonds plot DOUBLE : Non-slider events
+  shiny::observeEvent(c(input$double_bonds_dataset, input$double_bonds_metagroup, input$double_bonds_class, input$double_bonds_function, input$double_bonds_plot_adjustment),{
     shiny::req(length(input$double_bonds_metagroup) == 2)
     
     print_time("Double bonds plot non-sliders: Updating params...")
@@ -964,11 +991,12 @@ db_plot_events = function(r6, dimensions_obj, colour_list, input, output, sessio
     r6$params$db_plot$selected_groups = input$double_bonds_metagroup
     r6$params$db_plot$selected_lipid_class = input$double_bonds_class
     r6$params$db_plot$selected_function = input$double_bonds_function
+    r6$params$db_plot$adjustment = input$double_bonds_plot_adjustment
     double_bonds_generate_double(r6, colour_list, dimensions_obj, input, session)
 
   })
 
-  # Slider events
+  # Double bonds plot DOUBLE : Slider events
   shiny::observeEvent(c(input$log2_fc_slider, input$min_log10_bh_pval_slider),{
     shiny::req(length(input$double_bonds_metagroup) == 2)
     
