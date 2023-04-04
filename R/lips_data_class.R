@@ -107,6 +107,7 @@ Lips_data = R6::R6Class(
       # Volcano plot parameters
       volcano_plot = shiny::reactiveValues(
         data_table = "Filtered data table",
+        adjustment = "Benjamini-Hochberg",
         group_column = NULL,
         groups = NULL,
         classes = NULL,
@@ -132,6 +133,7 @@ Lips_data = R6::R6Class(
       # Double bonds parameters
       db_plot = shiny::reactiveValues(
         dataset = "Filtered data table",
+        adjustment = "Benjamini-Hochberg",
         group_column = NULL,
         selected_groups = NULL,
         selected_lipid_class = NULL,
@@ -403,14 +405,14 @@ Lips_data = R6::R6Class(
 
     # Volcano table
     get_volcano_table = function(data_table = self$tables$data_filtered, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
-      
+
       # Set the averaging function
       if (used_function == "median") {
         av_function = function(x) {return(median(x, na.rm = T))}
       } else {
         av_function = function(x) {return(mean(x, na.rm = T))}
       }
-      
+
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
@@ -428,14 +430,17 @@ Lips_data = R6::R6Class(
 
       # Filter data to keep only the two groups
       data_table = data_table[idx_all,]
-      
+
       # Remove empty columns
       dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
       dead_features = setdiff(dead_features, colnames(data_table))
-      dead_features = which(rownames(volcano_table) %in% dead_features)
-      volcano_table = volcano_table[-dead_features,]
       
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(volcano_table) %in% dead_features)
+        volcano_table = volcano_table[-dead_features,]
+      }
+
       # Collect fold change and p-values
       fold_change = c()
       p_value = c()
@@ -476,12 +481,12 @@ Lips_data = R6::R6Class(
       
       # Imputation of NAs for p-values to be the min p-val
       p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
-
       # Adjust p-value
       p_value_bh_adj = p.adjust(p_value, method = "BH")
       
       volcano_table$fold_change = fold_change
       volcano_table$p_value = p_value
+      volcano_table$minus_log10_p_value = -log10(p_value)
       volcano_table$log2_fold_change = log2(fold_change)
       volcano_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
       
@@ -506,15 +511,15 @@ Lips_data = R6::R6Class(
                                        row_names = T)
       
       # Filter data to keep only the two groups
+      dead_features = colnames(data_table)
       data_table = data_table[idx_group_1,]
       data_table = remove_empty_cols(table = data_table)
+      dead_features = setdiff(dead_features, colnames(data_table))
+      dead_features = which(rownames(dbplot_table) %in% dead_features)
+      dbplot_table = dbplot_table[-dead_features,]
+      
       
       averages = apply(data_table,2,av_function)
-      
-      # Dead rows/cols (removed because only NAs)
-      del_rows = setdiff(rownames(dbplot_table), colnames(data_table))
-      dbplot_table = dbplot_table[!(row.names(dbplot_table) %in% del_rows),]
-      
       dbplot_table[, "averages"] = averages
       
       lips = rownames(dbplot_table)
@@ -605,6 +610,7 @@ Lips_data = R6::R6Class(
 
       dbplot_table$fold_change = fold_change
       dbplot_table$p_value = p_value
+      dbplot_table$minus_log10_p_value = -log10(p_value)
       dbplot_table$log2_fold_change = log2(fold_change)
       dbplot_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
       
@@ -788,6 +794,7 @@ Lips_data = R6::R6Class(
 
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
+                            adjustment = "minus_log10_p_value_bh_adj",
                             colour_list,
                             group_1,
                             group_2,
@@ -840,7 +847,7 @@ Lips_data = R6::R6Class(
         )
         i = i + 1
       }
-      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot")),
+      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot"), hline(-log10(0.05), dash = "dot")),
                            title = paste0(group_1, " (left), ", group_2, " (right)"),
                            xaxis = list(title = "Log2(fold change)",
                                         range = c(-max_fc,max_fc)
@@ -1007,21 +1014,29 @@ Lips_data = R6::R6Class(
     },
     
     
-    plot_doublebonds_double = function(data_table = self$tables$dbplot_table, lipid_class, fc_limits, pval_limits, group_1, group_2, width, height){
+    plot_doublebonds_double = function(data_table = self$tables$dbplot_table,
+                                       adjustment = "minus_log10_p_value_bh_adj",
+                                       lipid_class,
+                                       fc_limits,
+                                       pval_limits,
+                                       group_1,
+                                       group_2,
+                                       width,
+                                       height){
 
       selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
       data_table = data_table[selected_rows,]
       x_lims = c(min(data_table$carbons_1) -1, max(data_table$carbons_1) +1)
       y_lims = c(min(data_table$unsat_1) -0.5, max(data_table$unsat_1) +1)
       data_table = data_table[!dplyr::between(data_table[,"log2_fold_change"], fc_limits[1], fc_limits[2]),]
-      data_table = data_table[dplyr::between(data_table[,"minus_log10_p_value_bh_adj"], pval_limits[1], pval_limits[2]),]
+      data_table = data_table[dplyr::between(data_table[,adjustment], pval_limits[1], pval_limits[2]),]
       if (nrow(data_table) > 0) {
         fig = plotly::plot_ly(data_table,
                               x = ~carbons_1,
                               y = ~unsat_1,
                               type = "scatter",
                               mode = "markers",
-                              size = ~minus_log10_p_value_bh_adj,
+                              size = data_table[,adjustment],
                               sizes = ~c(5,40),
                               marker = list(color = ~log2_fold_change,
                                             sizemode ='diameter',
@@ -1059,12 +1074,6 @@ Lips_data = R6::R6Class(
                      range = y_lims
                      )
       )
-      fig = fig %>% config(modeBarButtonsToAdd = c('drawline',
-                                                   'drawopenpath',
-                                                   'drawclosedpath',
-                                                   'drawcircle',
-                                                   'drawrect',
-                                                   'eraseshape'))
       self$plots$double_bond_plot = fig
     }
     #------------------------------------------------------------------ END ----

@@ -156,7 +156,11 @@ get_lipid_class_table = function(table){
   out_table = sapply(X = classes,
                      FUN = function(x) {
                        col_list = which(col_vector == x)
-                       rowSums(table[,col_list])
+                       if (length(col_list) > 1) {
+                         rowSums(table[,col_list])
+                       } else {
+                         table[,col_list]
+                       }
                      }
   )
 
@@ -358,7 +362,7 @@ pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
 }
 #------------------------------------------------------- Plotting functions ----
 
-hline = function(y = 0, color = "black") {
+hline = function(y = 0, color = "black", dash = NULL) {
   list(
     type = "line",
     x0 = 0,
@@ -366,7 +370,7 @@ hline = function(y = 0, color = "black") {
     xref = "paper",
     y0 = y,
     y1 = y,
-    line = list(color = color)
+    line = list(color = color, dash=dash)
   )
 }
 
