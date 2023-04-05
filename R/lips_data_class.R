@@ -112,6 +112,7 @@ Lips_data = R6::R6Class(
         groups = NULL,
         classes = NULL,
         selected_function = "median",
+        selected_test = "Wilcoxon",
         colouring = "Lipid class"
       ),
       
@@ -138,6 +139,7 @@ Lips_data = R6::R6Class(
         selected_groups = NULL,
         selected_lipid_class = NULL,
         selected_function = "median",
+        selected_test = "Wilcoxon",
         fc_range = c(-5, 5),
         fc_values = c(-1, 1),
         pval_range = c(0, 5),
@@ -404,7 +406,13 @@ Lips_data = R6::R6Class(
     },
 
     # Volcano table
-    get_volcano_table = function(data_table = self$tables$data_filtered, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
+    get_volcano_table = function(data_table = self$tables$data_filtered,
+                                 volcano_table = self$tables$feat_filtered,
+                                 col_group = self$texts$col_group,
+                                 used_function = "median",
+                                 test = "Wilcoxon",
+                                 group_1,
+                                 group_2) {
 
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
@@ -434,7 +442,7 @@ Lips_data = R6::R6Class(
       }
 
       # Collect fold change and p-values
-      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function)
+      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function, test)
       fold_change = stat_vals$fold_change
       p_value = stat_vals$p_value
       p_value_bh_adj = stat_vals$p_value_bh_adj
@@ -446,12 +454,19 @@ Lips_data = R6::R6Class(
       volcano_table$log2_fold_change = log2(fold_change)
       volcano_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
       
+      # Drop NA p-values
+      volcano_table = volcano_table[-which(is.na(volcano_table[,'p_value'])),]
+      
       self$tables$volcano_table = volcano_table
     },
 
     # Double bond plot table
     
-    get_dbplot_table_single = function(data_table = self$tables$data_filtered, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1){
+    get_dbplot_table_single = function(data_table = self$tables$data_filtered,
+                                       dbplot_table = self$tables$feat_filtered,
+                                       col_group = self$texts$col_group,
+                                       used_function = "median",
+                                       group_1){
       
       # Set the averaging function
       if (used_function == "median") {
@@ -489,7 +504,13 @@ Lips_data = R6::R6Class(
       self$tables$dbplot_table = dbplot_table
     },
     
-    get_dbplot_table_double = function(data_table = self$tables$data_filtered, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
+    get_dbplot_table_double = function(data_table = self$tables$data_filtered,
+                                       dbplot_table = self$tables$feat_filtered,
+                                       col_group = self$texts$col_group,
+                                       used_function = "median",
+                                       test = "Wilcoxon",
+                                       group_1,
+                                       group_2) {
 
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
@@ -520,7 +541,7 @@ Lips_data = R6::R6Class(
         dbplot_table = dbplot_table[-dead_features,]
       }
 
-      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function)
+      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function, test)
       fold_change = stat_vals$fold_change
       p_value = stat_vals$p_value
       p_value_bh_adj = stat_vals$p_value_bh_adj
@@ -537,6 +558,9 @@ Lips_data = R6::R6Class(
       fc = as.character(round(dbplot_table[,"log2_fold_change"],2))
       pval = as.character(round(dbplot_table[,"minus_log10_p_value_bh_adj"],2))
       dbplot_table$text = paste0(lips, " | log2(fc): ", fc, " | -log10(bh(pval)): ", pval)
+      
+      # Drop NA p-values
+      dbplot_table = dbplot_table[-which(is.na(dbplot_table[,'p_value'])),]
 
       self$tables$dbplot_table = dbplot_table
     },

@@ -40,7 +40,8 @@ prot_plotbox_switch_ui = function(selection_list){
     ui_functions = c(ui_functions, switch(EXPR = plot,
                                           "select_pca" = prot_pca_ui,
                                           "select_heatmap" = prot_heatmap_ui,
-                                          "select_volcano_plot" = prot_volcano_plot_ui
+                                          "select_volcano_plot" = prot_volcano_plot_ui,
+                                          "select_class_distribution" = prot_class_distribution_ui
                                           )
     )
   }
@@ -53,7 +54,8 @@ prot_plotbox_switch_server = function(selection_list){
     server_functions = c(server_functions, switch(EXPR = plot,
                                                   "select_pca" = prot_pca_server,
                                                   "select_heatmap" = prot_heatmap_server,
-                                                  "select_volcano_plot" = prot_volcano_plot_server
+                                                  "select_volcano_plot" = prot_volcano_plot_server,
+                                                  "select_class_distribution" = prot_class_distribution_server
                                                   )
                          )
   }
@@ -61,6 +63,116 @@ prot_plotbox_switch_server = function(selection_list){
 }
 
 
+
+#------------------------------------------------------- Class distribution ----
+
+prot_class_distribution_generate = function(r6, colour_list, dimensions_obj, input, plot_name) {
+  print_time(paste0(plot_name, ": generating plot."))
+  
+  if (input$class_distribution_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
+  r6$plot_class_distribution(table = table_switch(input$class_distribution_dataset, r6),
+                             col_group = input$class_distribution_metacol,
+                             colour_list = colour_list,
+                             width = width,
+                             height = height)
+}
+
+
+prot_class_distribution_spawn = function(r6, output, plot_name) {
+  print_time(paste0(plot_name, ": spawning plot."))
+  output$class_distribution_plot = plotly::renderPlotly(
+    r6$plots$class_distribution
+  )
+}
+
+
+prot_class_distribution_ui = function(dimensions_obj, session) {
+  
+  get_plotly_box(id = "class_distribution",
+                 label = "Class distribution",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+  
+}
+
+
+prot_class_distribution_server = function(r6, output, session) {
+  
+  ns = session$ns
+  
+  print_time("Class distribution : START.")
+  # Generate UI
+  output$class_distribution_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::selectInput(
+        inputId = ns("class_distribution_dataset"),
+        label = "Select table",
+        choices = c("Raw class table", "Total normalised class table"),
+        selected = r6$params$class_distribution$dataset
+      ),
+      shiny::selectInput(
+        inputId = ns("class_distribution_metacol"),
+        label = "Select group column",
+        choices = colnames(r6$tables$meta_filtered),
+        selected = r6$params$class_distribution$group_col
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::downloadButton(
+        outputId = ns("download_class_distribution_table"),
+        label = "Download associated table",
+        style = "width:100%;"
+      )
+    )
+  })
+}
+
+prot_class_distribution_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+  
+  # Generate the plot
+  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol), {
+    print_time("Class distribution: Updating params...")
+    r6$params$class_distribution$dataset = input$class_distribution_dataset
+    r6$set_params_class_distribution(val = input$class_distribution_metacol)
+    prot_class_distribution_generate(r6, colour_list, dimensions_obj, input, "Class distribution")
+    prot_class_distribution_spawn(r6, output, "Class distribution")
+  })
+  
+  # Download associated table
+  output$download_class_distribution_table = shiny::downloadHandler(
+    filename = function(){timestamped_name("class_distribution_table.csv")},
+    content = function(file_name){
+      write.csv(r6$tables$class_distribution_table, file_name)
+    }
+  )
+  
+  # Expanded boxes
+  class_distribution_proxy = plotly::plotlyProxy(outputId = "class_distribution_plot",
+                                                 session = session)
+  
+  shiny::observeEvent(input$class_distribution_plotbox,{
+    if (input$class_distribution_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = class_distribution_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = class_distribution_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+  
+}
 
 #------------------------------------------------------------- Volcano plot ----
 
@@ -78,6 +190,7 @@ prot_volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
                        col_group = input$volcano_plot_metacol,
                        used_function =  input$volcano_plot_function,
+                       test = input$volcano_plot_test,
                        group_1 = input$volcano_plot_metagroup[1],
                        group_2 = input$volcano_plot_metagroup[2])
   
@@ -144,6 +257,13 @@ prot_volcano_plot_server = function(r6, output, session) {
         multiple = FALSE
       ),
       shiny::selectizeInput(
+        inputId = ns("volcano_plot_test"),
+        label = "Select test",
+        choices = c("Wilcoxon", "T-test"),
+        selected = r6$params$volcano_plot$selected_test,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
         inputId = ns("volcano_plot_adjustment"),
         label = "Select adjustment",
         choices = c("None", "Benjamini-Hochberg"),
@@ -173,7 +293,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, colour_list, input, outp
     )
   })
   
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test), {
     print_time("Volcano plot: Updating params...")
     
     r6$params$volcano_plot$data_table = input$volcano_plot_tables
@@ -181,6 +301,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, colour_list, input, outp
     r6$params$volcano_plot$groups = input$volcano_plot_metagroup
     r6$params$volcano_plot$selected_function = input$volcano_plot_function
     r6$params$volcano_plot$adjustment = input$volcano_plot_adjustment
+    r6$params$volcano_plot$selected_test = input$volcano_plot_test
     
     prot_volcano_plot_generate(r6, colour_list, dimensions_obj, input)
     prot_volcano_plot_spawn(r6, output)

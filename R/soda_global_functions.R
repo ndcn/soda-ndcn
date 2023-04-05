@@ -362,12 +362,20 @@ pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
 }
 
 
-get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function){
+get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, test){
   
   if (used_function == "median") {
     av_function = function(x) {return(median(x, na.rm = T))}
   } else {
     av_function = function(x) {return(mean(x, na.rm = T))}
+  }
+  
+  if (test == "Wilcoxon") {
+    test_function = stats::wilcox.test
+    print("Wilcoxon selected")
+  } else if (test == "T-test") {
+    test_function = stats::t.test
+    print("T-test selected")
   }
   
   # Collect fold change and p-values
@@ -378,11 +386,21 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function){
     
     # If both groups contain data
     if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
-      fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
-      p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
+      
+      # If at least one of the groups contains only one value
+      if ((length(na.exclude(data_table[idx_group_1, col])) == 1) | (length(na.exclude(data_table[idx_group_2, col])) == 1)) {
+        fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
+        p_value = c(p_value, NA)
+      } else {
+        
+        # If there is actual comparable data
+        fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
+        p_value = c(p_value, test_function(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
+      }
+
     } else {
       # If at least one of the groups is full NA, default values
-      p_value = c(p_value, NA)
+      p_value = c(p_value, 666)
       # For fold changes, if it is the denominator
       if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
         fold_change = c(fold_change, 777)
@@ -409,7 +427,8 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function){
   fold_change[is.na(fold_change)] = 1
   
   # Imputation of NAs for p-values to be the min p-val
-  p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
+  p_value[p_value == 666] = 0.99*min(p_value, na.rm = T)
+
   # Adjust p-value
   p_value_bh_adj = p.adjust(p_value, method = "BH")
   
