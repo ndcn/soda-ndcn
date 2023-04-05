@@ -818,8 +818,11 @@ double_bonds_generate_double = function(r6, colour_list, dimensions_obj, input, 
     r6$params$db_plot$fc_values = c(0, 0)
   }
   
-  r6$params$db_plot$pval_range = c(0, round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1)
-  r6$params$db_plot$pval_values = c(0, round(max(r6$tables$dbplot_table[selected_rows, "minus_log10_p_value_bh_adj"]), 1) + 1)
+  
+  
+  
+  r6$params$db_plot$pval_range = c(0, round(max(r6$tables$dbplot_table[selected_rows, adjustment_switch(input$double_bonds_plot_adjustment)]), 1) + 1)
+  r6$params$db_plot$pval_values = c(0, round(max(r6$tables$dbplot_table[selected_rows, adjustment_switch(input$double_bonds_plot_adjustment)]), 1) + 1)
   
   shiny::updateSliderInput(
     session = session,
@@ -936,7 +939,7 @@ double_bonds_server = function(r6, output, session) {
       ),
       shiny::sliderInput(
         inputId = ns("min_log10_bh_pval_slider"),
-        label = "Size : -Log10(BH(p-value))",
+        label = "Size : -Log10(p-value)",
         min = r6$params$db_plot$pval_range[1],
         max = r6$params$db_plot$pval_range[2],
         value = r6$params$db_plot$pval_values,

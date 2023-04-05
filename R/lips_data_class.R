@@ -406,14 +406,6 @@ Lips_data = R6::R6Class(
     # Volcano table
     get_volcano_table = function(data_table = self$tables$data_filtered, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
 
-      # Set the averaging function
-      if (used_function == "median") {
-        av_function = function(x) {return(median(x, na.rm = T))}
-      } else {
-        av_function = function(x) {return(mean(x, na.rm = T))}
-      }
-
-      # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
                                        pattern = group_1,
@@ -442,47 +434,11 @@ Lips_data = R6::R6Class(
       }
 
       # Collect fold change and p-values
-      fold_change = c()
-      p_value = c()
-
-      for (col in colnames(data_table)) {
-
-        # If both groups contain data
-        if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
-          fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
-          p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
-        } else {
-          # If at least one of the groups is full NA, default values
-          p_value = c(p_value, NA)
-          # For fold changes, if it is the denominator
-          if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
-            fold_change = c(fold_change, 777)
-          } else {
-            # If it is the numerator
-            fold_change = c(fold_change, 666)
-          }
-        }
-      }
-
-      # Imputation of Inf for when denominator average is 0 
-      fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function)
+      fold_change = stat_vals$fold_change
+      p_value = stat_vals$p_value
+      p_value_bh_adj = stat_vals$p_value_bh_adj
       
-      # Imputation of 0 for when numerator average is 0 
-      fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
-      
-      # Imputation of NAs for denominator FC with a value slightly above max FC
-      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
-      
-      # Imputation of NAs for nominator FC with a value slightly below min FC
-      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
-      
-      # Imputation of NAs for when both numerators and denominator medians are 0
-      fold_change[is.na(fold_change)] = fold_change[is.na(fold_change)] = 1
-      
-      # Imputation of NAs for p-values to be the min p-val
-      p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
-      # Adjust p-value
-      p_value_bh_adj = p.adjust(p_value, method = "BH")
       
       volcano_table$fold_change = fold_change
       volcano_table$p_value = p_value
@@ -510,13 +466,17 @@ Lips_data = R6::R6Class(
                                        pattern = group_1,
                                        row_names = T)
       
-      # Filter data to keep only the two groups
+      
+      
+      # Remove empty columns
       dead_features = colnames(data_table)
-      data_table = data_table[idx_group_1,]
       data_table = remove_empty_cols(table = data_table)
       dead_features = setdiff(dead_features, colnames(data_table))
-      dead_features = which(rownames(dbplot_table) %in% dead_features)
-      dbplot_table = dbplot_table[-dead_features,]
+      
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(dbplot_table) %in% dead_features)
+        dbplot_table = dbplot_table[-dead_features,]
+      }
       
       
       averages = apply(data_table,2,av_function)
@@ -531,14 +491,6 @@ Lips_data = R6::R6Class(
     
     get_dbplot_table_double = function(data_table = self$tables$data_filtered, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
 
-      # Set the averaging function
-      if (used_function == "median") {
-        av_function = function(x) {return(median(x, na.rm = T))}
-      } else {
-        av_function = function(x) {return(mean(x, na.rm = T))}
-      }
-      
-      
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
@@ -557,56 +509,23 @@ Lips_data = R6::R6Class(
       # Filter data to keep only the two groups
       data_table = data_table[idx_all,]
       
+      
       # Remove empty columns
+      dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
-
-      # Collect fold change and p-values
-      fold_change = c()
-      p_value = c()
-
-      for (col in colnames(data_table)) {
-
-        # If both groups contain data
-        if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
-          fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
-          p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
-        } else {
-          # If at least one of the groups is full NA, default values
-          p_value = c(p_value, NA)
-          # For fold changes, if it is the denominator
-          if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
-            fold_change = c(fold_change, 777)
-          } else {
-            # If it is the numerator
-            fold_change = c(fold_change, 666)
-          }
-        }
+      dead_features = setdiff(dead_features, colnames(data_table))
+      
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(dbplot_table) %in% dead_features)
+        dbplot_table = dbplot_table[-dead_features,]
       }
 
-      # Imputation of Inf for when denominator av_value is 0 
-      fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function)
+      fold_change = stat_vals$fold_change
+      p_value = stat_vals$p_value
+      p_value_bh_adj = stat_vals$p_value_bh_adj
       
-      # Imputation of 0 for when numerator av_value is 0 
-      fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
-      
-      # Imputation of NAs for denominator FC with a value slightly above max FC
-      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
-      
-      # Imputation of NAs for nominator FC with a value slightly below min FC
-      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
-      
-      # Imputation of NAs for when both numerators and denominator medians are 0
-      fold_change[is.na(fold_change)] = 1
 
-      # Imputation of NAs for p-values to be the min p-val
-      p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
-
-      # Adjust p value
-      p_value_bh_adj = p.adjust(p_value, method = "BH")
-      
-      # Dead rows/cols (removed because only NAs)
-      del_rows = setdiff(rownames(dbplot_table), colnames(data_table))
-      dbplot_table = dbplot_table[!(row.names(dbplot_table) %in% del_rows),]
 
       dbplot_table$fold_change = fold_change
       dbplot_table$p_value = p_value
@@ -839,7 +758,7 @@ Lips_data = R6::R6Class(
       for (feature in feature_vector) {
         tmp_idx = rownames(data_table)[data_table[, feat_col] == feature]
         fig = fig %>% add_trace(x = data_table[tmp_idx, "log2_fold_change"],
-                                y = data_table[tmp_idx, "minus_log10_p_value_bh_adj"],
+                                y = data_table[tmp_idx, adjustment],
                                 name = feature,
                                 color = colour_list[i],
                                 text = tmp_idx,
@@ -852,7 +771,7 @@ Lips_data = R6::R6Class(
                            xaxis = list(title = "Log2(fold change)",
                                         range = c(-max_fc,max_fc)
                                         ),
-                           yaxis = list(title = "-Log10(BH(p-value))"))
+                           yaxis = list(title = adjustment_title_switch(adjustment)))
       self$plots$volcano_plot = fig
     },
 

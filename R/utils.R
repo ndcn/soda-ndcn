@@ -15,7 +15,7 @@ print_time = function(in_print) {
 }
 
 
-convert_long = function(long_table, id_col, feature_col, values_col, meta_cols) {
+convert_long = function(long_table, id_col, feature_col, values_col, meta_cols, remove_conflicts = TRUE) {
   print_time("Table convert: Converting table")
   out_table = long_table[,c(id_col, feature_col, values_col, meta_cols)]
   out_table = out_table[!is.na(out_table[,feature_col]),]
@@ -24,6 +24,10 @@ convert_long = function(long_table, id_col, feature_col, values_col, meta_cols) 
   meta_table = out_table[,c(id_col, meta_cols)]
   data_table = out_table[,-which(colnames(out_table) %in% meta_cols)]
   data_table = data_table[,-c(which(colnames(data_table) == "NaN"))]
+  if (remove_conflicts) {
+    new_colnames = new_colnames = stringr::str_split_i(colnames(data_table), ";", 1)
+    colnames(data_table) = new_colnames
+  }
   return(list("meta_table" = meta_table,
               "data_table" = data_table))
 }

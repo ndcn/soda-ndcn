@@ -61,11 +61,17 @@ utils_convert_table_ui = function(id, head = T) {
         
         # Merge tables
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::tags$h3("Convert"),
+        shiny::checkboxInput(inputId = ns("remove_conflicts"),
+                             label = "Remove conflicts",
+                             value = TRUE,
+                             width = "100%"),
         shiny::actionButton(inputId = ns("convert_table"),
-                            label = "Convert",
+                            label = "Start",
                             width = "100%"
         ),
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::tags$h3("Download"),
         shiny::fluidRow(
           shiny::downloadButton(outputId = ns("download_meta"),
                                 label = "Metadata",
@@ -143,7 +149,8 @@ utils_convert_table_server = function(id, max_rows = 10, max_cols = 15) {
                                 id_col = input$select_id,
                                 feature_col = input$select_features,
                                 values_col = input$select_values,
-                                meta_cols = input$select_metas))
+                                meta_cols = input$select_metas,
+                                remove_conflicts = input$remove_conflicts))
         output$prots_preview_meta = renderDataTable({
           DT::datatable(out_tables()$meta_table[1:max_rows, 1:min(ncol(out_tables()$meta_table), max_cols)], options = list(paging = FALSE))
         })

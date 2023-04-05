@@ -360,6 +360,64 @@ pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
 
   return(fig)
 }
+
+
+get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function){
+  
+  if (used_function == "median") {
+    av_function = function(x) {return(median(x, na.rm = T))}
+  } else {
+    av_function = function(x) {return(mean(x, na.rm = T))}
+  }
+  
+  # Collect fold change and p-values
+  fold_change = c()
+  p_value = c()
+  
+  for (col in colnames(data_table)) {
+    
+    # If both groups contain data
+    if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
+      fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
+      p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
+    } else {
+      # If at least one of the groups is full NA, default values
+      p_value = c(p_value, NA)
+      # For fold changes, if it is the denominator
+      if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
+        fold_change = c(fold_change, 777)
+      } else {
+        # If it is the numerator
+        fold_change = c(fold_change, 666)
+      }
+    }
+  }
+  
+  # Imputation of Inf for when denominator average is 0 
+  fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+  
+  # Imputation of 0 for when numerator average is 0 
+  fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+  
+  # Imputation of NAs for denominator FC with a value slightly above max FC
+  fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+  
+  # Imputation of NAs for nominator FC with a value slightly below min FC
+  fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+  
+  # Imputation of NAs for when both numerators and denominator medians are 0
+  fold_change[is.na(fold_change)] = 1
+  
+  # Imputation of NAs for p-values to be the min p-val
+  p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
+  # Adjust p-value
+  p_value_bh_adj = p.adjust(p_value, method = "BH")
+  
+  return(list("fold_change" = fold_change,
+              "p_value" = p_value,
+              "p_value_bh_adj" = p_value_bh_adj))
+}
+
 #------------------------------------------------------- Plotting functions ----
 
 hline = function(y = 0, color = "black", dash = NULL) {
