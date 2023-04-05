@@ -90,7 +90,10 @@ sidebar_ui = function() {
         
         bs4Dash::menuSubItem(
           text = "Lipidomics",
-          tabName = "lips_visual")
+          tabName = "lips_visual"),
+        bs4Dash::menuSubItem(
+          text = "Proteomics",
+          tabName = "prot_visual")
         ), 
       
       # Table merge menu
@@ -158,6 +161,11 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "lips_visual",
         soda_visualise_lips_ui(id = "visualise_lipidomics")
+      ),
+      
+      bs4Dash::tabItem(
+        tabName = "prot_visual",
+        soda_visualise_prot_ui(id = "visualise_proteomics")
       ),
       
       # Table merge page
@@ -236,6 +244,7 @@ server = function(input, output, session) {
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
   soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
   soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = colour_list)
+  soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, colour_list = colour_list)
   utils_merge_tables_server("merge_tables_page")
   utils_convert_table_server("convert_tables_page")
   

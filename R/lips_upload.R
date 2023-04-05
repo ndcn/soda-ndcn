@@ -307,7 +307,7 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
-          shiny::selectInput(inputId = ns("select_id_data"), choices = NULL, label = NULL, multiple = F, width = "100%"),
+          shiny::selectizeInput(inputId = ns("select_id_data"), choices = NULL, label = NULL, multiple = F, width = "100%"),
           shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red")
           
         )
@@ -765,10 +765,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           
           # Select ID column from the raw data
           observe({
-            shiny::updateSelectInput(
+            shiny::updateSelectizeInput(
               session = session,
               inputId = "select_id_data",
-              choices = colnames(r6$tables$data_raw)
+              choices = colnames(r6$tables$data_raw),
+              server = TRUE
             )
           })
         }

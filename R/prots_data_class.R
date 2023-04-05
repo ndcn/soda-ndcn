@@ -104,11 +104,10 @@ Prot_data = R6::R6Class(
       # Volcano plot parameters
       volcano_plot = shiny::reactiveValues(
         data_table = "Filtered data table",
+        adjustment = "Benjamini-Hochberg",
         group_column = NULL,
         groups = NULL,
-        classes = NULL,
-        selected_function = "median",
-        colouring = "Lipid class"
+        selected_function = "median"
       ),
       
       # Heatmap parameters
@@ -329,7 +328,27 @@ Prot_data = R6::R6Class(
       self$tables$feat_raw = get_feature_metadata(data_table = data_table)
     },
     set_feat_filtered = function() {
-      self$tables$feat_filtered = get_feature_metadata(data_table = self$tables$data_filtered)
+      # Copy from the raw feature table and set index
+      feat_filtered = self$tables$feat_raw
+      feat_filtered = set_index_col(data_table = feat_filtered, idx= "accession")
+      
+      # Filter by keeping only features from the filtered data table
+      kept_features = colnames(self$tables$data_filtered)
+      feat_filtered = feat_filtered[which(rownames(feat_filtered) %in% kept_features),]
+      
+      # Filter out from the data table all features which have no metadata associated
+      dead_features = setdiff(kept_features, rownames(feat_filtered))
+      drop_cols = which(colnames(self$tables$data_filtered) %in% dead_features)
+
+      # Refresh data table
+      self$tables$data_filtered = self$tables$data_filtered[,-drop_cols]
+      
+      # Refresh other tables
+      self$normalise_total()
+      self$normalise_total_z_score()
+      
+      # Set filtered features
+      self$tables$feat_filtered = feat_filtered
     },
     
     # Filter filtered table
@@ -370,14 +389,7 @@ Prot_data = R6::R6Class(
     
     # Volcano table
     get_volcano_table = function(data_table = self$tables$data_filtered, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
-      
-      # Set the averaging function
-      if (used_function == "median") {
-        av_function = function(x) {return(median(x, na.rm = T))}
-      } else {
-        av_function = function(x) {return(mean(x, na.rm = T))}
-      }
-      
+
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
                                        col = col_group,
@@ -397,56 +409,25 @@ Prot_data = R6::R6Class(
       data_table = data_table[idx_all,]
       
       # Remove empty columns
+      dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
+      dead_features = setdiff(dead_features, colnames(data_table))
       
-      # Collect fold change and p-values
-      fold_change = c()
-      p_value = c()
-      
-      for (col in colnames(data_table)) {
-        
-        # If both groups contain data
-        if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
-          fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
-          p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
-        } else {
-          # If at least one of the groups is full NA, default values
-          p_value = c(p_value, NA)
-          # For fold changes, if it is the denominator
-          if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
-            fold_change = c(fold_change, 777)
-          } else {
-            # If it is the numerator
-            fold_change = c(fold_change, 666)
-          }
-        }
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(volcano_table) %in% dead_features)
+        volcano_table = volcano_table[-dead_features,]
       }
       
-      # Imputation of Inf for when denominator average is 0 
-      fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
-      
-      # Imputation of 0 for when numerator average is 0 
-      fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
-      
-      # Imputation of NAs for denominator FC with a value slightly above max FC
-      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
-      
-      # Imputation of NAs for nominator FC with a value slightly below min FC
-      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
-      
-      # Imputation of NAs for when both numerators and denominator medians are 0
-      fold_change[is.na(fold_change)] = fold_change[is.na(fold_change)] = 1
-      
-      # Imputation of NAs for p-values to be the min p-val
-      p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
-      
-      # Adjust p-value
-      p_value_bh_adj = p.adjust(p_value, method = "BH")
-      
+      # Collect fold change and p-values
+      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function)
+      fold_change = stat_vals$fold_change
+      p_value = stat_vals$p_value
+      p_value_bh_adj = stat_vals$p_value_bh_adj
       
       
       volcano_table$fold_change = fold_change
       volcano_table$p_value = p_value
+      volcano_table$minus_log10_p_value = -log10(p_value)
       volcano_table$log2_fold_change = log2(fold_change)
       volcano_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
       
@@ -734,77 +715,39 @@ Prot_data = R6::R6Class(
     
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
+                            adjustment = "minus_log10_p_value_bh_adj",
                             colour_list,
                             group_1,
                             group_2,
-                            displayed_classes = NULL,
-                            colouring = "Lipid class",
                             width,
                             height){
       
-      # Select the colouring column
-      if (colouring == "Lipid class") {
-        feat_col = "lipid_class"
-      } else if (colouring == "Double bonds") {
-        feat_col = "unsat_1"
-      } else if (colouring == "Total carbons") {
-        feat_col = "carbons_1"
-      }
-      
-      # If null, display all classes
-      if (is.null(displayed_classes)) {
-        displayed_classes = unique(data_table[, "lipid_class"])
-      }
-      
-      # Filter out classes to skip
-      removed_classes = setdiff(unique(data_table[, "lipid_class"]), displayed_classes)
-      if (length(removed_classes) > 0) {
-        del_rows = c()
-        for (lipclass in removed_classes) {
-          del_rows = c(del_rows, which(data_table[, "lipid_class"] == lipclass))
-        }
-        data_table = data_table[-del_rows,]
-      }
-      
-      
-      
-      feature_vector = sort(unique(data_table[, feat_col]))
-      
+
       max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
-      i = 1
-      fig = plotly::plot_ly(colors = colour_list, type  = "scatter", mode  = "markers", width = width, height = height)
       
+      fig = plotly::plot_ly(x = data_table[, "log2_fold_change"],
+                            y = data_table[, adjustment],
+                            text = rownames(data_table),
+                            hoverinfo = "text",
+                            colors = colour_list,
+                            type  = "scatter",
+                            mode  = "markers",
+                            width = width,
+                            height = height)
       
-      for (feature in feature_vector) {
-        tmp_idx = rownames(data_table)[data_table[, feat_col] == feature]
-        fig = fig %>% add_trace(x = data_table[tmp_idx, "log2_fold_change"],
-                                y = data_table[tmp_idx, "minus_log10_p_value_bh_adj"],
-                                name = feature,
-                                color = colour_list[i],
-                                text = tmp_idx,
-                                hoverinfo = "text"
-        )
-        i = i + 1
-      }
-      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot")),
+      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot"), hline(-log10(0.05), dash = "dot")),
                            title = paste0(group_1, " (left), ", group_2, " (right)"),
                            xaxis = list(title = "Log2(fold change)",
                                         range = c(-max_fc,max_fc)
                            ),
-                           yaxis = list(title = "-Log10(BH(p-value))"))
+                           yaxis = list(title = adjustment_title_switch(adjustment)))
       self$plots$volcano_plot = fig
     },
     
     
     ## Heatmap plot
     plot_heatmap = function(data_table = self$tables$data_total_norm_z_scored,
-                            meta_table = self$tables$meta_filtered,
-                            meta_table_features = self$tables$feat_filtered,
                             percentile,
-                            cluster_rows = TRUE,
-                            cluster_cols = TRUE,
-                            row_annotations = c("Genotype", "GroupName"),
-                            col_annotations = c("Class"),
                             width,
                             height
     ) {
@@ -813,16 +756,6 @@ Prot_data = R6::R6Class(
       # Save table as heatmap table
       self$tables$heatmap_table = data_table
       
-      # Set the clustering
-      if (cluster_rows & cluster_cols) {
-        dendrogram_list = "both"
-      } else if (cluster_rows) {
-        dendrogram_list = "column" # Because of the transpose, rows => cols
-      } else if (cluster_cols) {
-        dendrogram_list = "row" # Because of the transpose, cols => rows
-      } else {
-        dendrogram_list = "none"
-      }
       
       # Set percentiles
       percentile = percentile/100
@@ -842,33 +775,11 @@ Prot_data = R6::R6Class(
       data_table[data_table > zmax] = zmax
       data_table[data_table < zmin] = zmin
       
-      # Annotations
-      if (!is.null(row_annotations)) {
-        row_annotations = meta_table[, row_annotations]
-      } else {
-        row_annotations = NULL
-      }
-      
-      if (!is.null(col_annotations)) {
-        # Convert annotations to their column names in the feature metadata table
-        col_annotations = feature_switch(col_annotations)
-        col_annotations = meta_table_features[, col_annotations]
-      }
-      
       # Plot the data
-      self$plots$heatmap = heatmaply::heatmaply(x = t(data_table),
-                                                scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                                  low = "blue",
-                                                  high = "red",
-                                                  midpoint = 0,
-                                                  limits = c(-col_lim, col_lim)
-                                                ),
-                                                width = width,
-                                                height = height,
-                                                limits = c(zmin, zmax),
-                                                col_side_colors = row_annotations,
-                                                row_side_colors = col_annotations,
-                                                dendrogram = dendrogram_list)
+      self$plots$heatmap = plotly::plot_ly(
+        x = colnames(data_table), y = rownames(data_table),
+        z = data_table, type = "heatmap"
+      )
       
     },
     

@@ -1,3 +1,18 @@
+
+feature_table_preview = function(table, preview, max_rows, max_cols, output) {
+  if (preview) {
+    output$table_features = renderDataTable({
+      DT::datatable(table[1:max_rows,1:min(max_cols, ncol(table))], options = list(paging = FALSE))
+    })
+  } else{
+    output$table_features = renderDataTable({
+      DT::datatable(table, options = list(paging = FALSE))
+    })
+  }
+}
+
+
+
 meta_row_selection_prot = function(input, r6) {
   # Initialise selection
   selected_rows = c()
@@ -15,7 +30,8 @@ meta_reset_fields_prot = function(input, session, r6) {
     session = session,
     inputId = "selection_manual",
     choices = rownames(r6$tables$meta_filtered),
-    selected = character(0)
+    selected = character(0),
+    server = TRUE
   )
   
   
@@ -43,13 +59,13 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
     type = "tabs",
     shiny::tabPanel(
       ##################################################### Upload metadata ####
-      title = "Upload metadata",
+      title = "Sample metadata",
       shiny::fluidRow(
         
         # First column with the table input and preview of the raw data
         shiny::column(
           width = 9,
-          shiny::h2("Upload metadata"),
+          shiny::h2("Upload sample metadata"),
           
           # Data upload
           shiny::fileInput(inputId = ns("file_meta"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt", ".xlsx"), width = "100%"),
@@ -86,7 +102,7 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
     ),
     shiny::tabPanel(
       ##################################################### Filter metadata ####
-      title = "Filter metadata",
+      title = "Filter samples",
       shiny::fluidRow(
         
         # First column with the table input and preview of the filtered data
@@ -94,7 +110,7 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           width = 9,
           
           # Filtered table preview
-          shiny::h2("Filter metadata"),
+          shiny::h2("Filter samples"),
           bs4Dash::box(
             title = "Sample metadata table (filtered)",
             width = 12,
@@ -185,7 +201,7 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
         # First column with the table input and preview
         shiny::column(
           width = 9,
-          shiny::h2("Upload lipidomics data"),
+          shiny::h2("Upload proteomics data"),
           
           # Data upload
           shiny::fileInput(inputId = ns("file_data"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt", ".xlsx"), width = "100%"),
@@ -225,8 +241,13 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
         shiny::column(
           width = 9,
           # Feature table preview box
+          shiny::h2("Upload proteomics metadata"),
+          shiny::fileInput(inputId = ns("feat_local"),
+                           label = NULL,
+                           accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                           width = "100%"),
           bs4Dash::box(
-            title = "Feature table (raw)",
+            title = "Feature table",
             width = 12,
             DT::dataTableOutput(ns("table_features")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
             collapsible = FALSE
@@ -248,14 +269,16 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           # Display preview or full table
           shiny::checkboxInput(inputId = ns("preview_feat"), label = "Display preview only", value = TRUE),
           
+          shiny::selectInput(inputId = ns("displayed_table"),
+                             label = "Table to display",
+                             choices = c("Feature table raw", "Feature table filtered"),
+                             selected = "Feature table raw",
+                             width = "100%"),
+          
           soda_get_col_ui(label = "Get from Uniprot", desc = NULL),
           shiny::actionButton(inputId = ns("feat_uniprot"),
                               label = "Query",
                               width = "100%"),
-          shiny::fileInput(inputId = ns("feat_local"),
-                           label = "Get from local file",
-                           accept = c(".csv", ".tsv", ".txt", ".xlsx"),
-                           width = "100%"),
           shiny::h4("Download feature tables"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           shiny::fluidRow(
@@ -370,7 +393,8 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
             shiny::updateSelectizeInput(
               session = session,
               inputId = "select_id_meta",
-              choices = colnames(r6$tables$meta_raw)
+              choices = colnames(r6$tables$meta_raw),
+              server = TRUE
             )
           })
           
@@ -506,6 +530,8 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         # If there is already uploaded data_raw, refresh
         if (!is.null(r6$tables$data_raw)) {
           r6$set_data_filtered()
+          r6$normalise_total()
+          r6$normalise_total_z_score()
         }
         
         # Update feedback on the row count progress bar
@@ -540,6 +566,8 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         # If there is already uploaded data_raw, refresh
         if (!is.null(r6$tables$data_raw)) {
           r6$set_data_filtered()
+          r6$normalise_total()
+          r6$normalise_total_z_score()
         }
         
         # Update feedback on the row count progress bar
@@ -577,6 +605,8 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         # If there is already uploaded data_raw, refresh
         if (!is.null(r6$tables$data_raw)) {
           r6$set_data_filtered()
+          r6$normalise_total()
+          r6$normalise_total_z_score()
         }
         
         # Update the progress bar
@@ -630,7 +660,8 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
             shiny::updateSelectizeInput(
               session = session,
               inputId = "select_id_data",
-              choices = colnames(r6$tables$data_raw)
+              choices = colnames(r6$tables$data_raw),
+              server = TRUE
             )
           })
         }
@@ -658,6 +689,8 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
           # Initialise filtered data with the ID column
           r6$set_col(col = input$select_id_data, type = "id_data")
           r6$set_data_filtered()
+          r6$normalise_total()
+          r6$normalise_total_z_score()
           
           # Send error message if non-unique IDs are selected
           if (r6$non_unique_ids_data){
@@ -719,17 +752,14 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                      header = T,
                                      sep = sep,
                                      check.names = FALSE)
+            r6$set_feat_filtered()
           }
           
-          if (input$preview_feat) {
-            output$table_features = renderDataTable({
-              DT::datatable(r6$tables$feat_raw[1:max_rows,1:min(max_cols, ncol(r6$tables$feat_raw))], options = list(paging = FALSE))
-            })
-          } else{
-            output$table_features = renderDataTable({
-              DT::datatable(r6$tables$feat_raw, options = list(paging = FALSE))
-            })
-          }
+          feature_table_preview(table = r6$tables$feat_raw,
+                                preview = input$preview_feat,
+                                max_rows = max_rows,
+                                max_cols = max_cols,
+                                output = output)
           
           
           shinyWidgets::updateProgressBar(
@@ -742,6 +772,35 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         }
       })
       
+      shiny::observeEvent(input$displayed_table, {
+        shiny::req(r6$tables$feat_filtered)
+        if (input$displayed_table == "Feature table filtered"){
+          feature_table_preview(table = r6$tables$feat_filtered,
+                                preview = input$preview_feat,
+                                max_rows = max_rows,
+                                max_cols = max_cols,
+                                output = output)
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "feature_count_bar",
+            value = nrow(r6$tables$feat_filtered),
+            total = nrow(r6$tables$feat_raw)
+          )
+        } else {
+          feature_table_preview(table = r6$tables$feat_raw,
+                                preview = input$preview_feat,
+                                max_rows = max_rows,
+                                max_cols = max_cols,
+                                output = output)
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "feature_count_bar",
+            value = nrow(r6$tables$feat_raw),
+            total = nrow(r6$tables$feat_raw)
+          )
+        }
+      })
+      
       
       
       # Get data from uniprot
@@ -750,28 +809,30 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         prot_list = cleanup_prot_list(prot_list)
         prots_feature_table_raw = prots_get_feature_table(prot_list)
         r6$tables$feat_raw = prots_feature_table_raw
+        r6$set_feat_filtered()
         
-        if (input$preview_feat) {
-          output$table_features = renderDataTable({
-            DT::datatable(r6$tables$feat_raw[1:max_rows,1:min(max_cols, ncol(r6$tables$feat_raw))], options = list(paging = FALSE))
-          })
-        } else{
-          output$table_features = renderDataTable({
-            DT::datatable(r6$tables$feat_raw, options = list(paging = FALSE))
-          })
-        }
-        
-        
-        prot_list = colnames(r6$tables$data_filtered)
-        prot_list = cleanup_prot_list(prot_list)
-        # r6$tables$feat_filtered
-        # print(colnames(r6$tables$feat_raw))
+        feature_table_preview(table = r6$tables$feat_raw,
+                              preview = input$preview_feat,
+                              max_rows = max_rows,
+                              max_cols = max_cols,
+                              output = output)
       })
       
       output$feat_download_raw = shiny::downloadHandler(
         filename = timestamped_name("feature_metadata_raw.tsv"),
         content = function(file_name){
           write.table(r6$tables$feat_raw,
+                      file_name,
+                      sep = "\t",
+                      row.names = F,
+                      na='')
+        }
+      )
+      
+      output$feat_download_filtered = shiny::downloadHandler(
+        filename = timestamped_name("feature_metadata_filtered.tsv"),
+        content = function(file_name){
+          write.table(r6$tables$feat_filtered,
                       file_name,
                       sep = "\t",
                       row.names = F,
