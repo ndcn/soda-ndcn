@@ -79,9 +79,12 @@ prot_plot_four = function(r6, dimensions_obj, selection_list, colour_list, input
 
 
 get_plot_list_prot = function() {
-  plot_list = c("Heatmap" = "select_heatmap",
-                "PCA" = "select_pca",
-                "Volcano plot" = "select_volcano_plot")
+  plot_list = c("Class distribution" = "select_class_distribution",
+                "Class comparison" = "select_class_comparison",
+                "Volcano plot" = "select_volcano_plot",
+                "Heatmap" = "select_heatmap",
+                "PCA" = "select_pca"
+                )
   return(plot_list)
 }
 
@@ -173,6 +176,7 @@ soda_visualise_prot_server = function(id, r6, colour_list) {
       prot_pca_events(r6, dimensions_obj, colour_list, input, output, session)
       prot_heatmap_events(r6, dimensions_obj, colour_list, input, output, session)
       prot_volcano_plot_events(r6, dimensions_obj, colour_list, input, output, session)
+      prot_class_distribution_events(r6, dimensions_obj, colour_list, input, output, session)
       
       # Plot selection
       shiny::observeEvent(input$showPlots, {

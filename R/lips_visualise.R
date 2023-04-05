@@ -80,12 +80,12 @@ plot_four = function(r6, dimensions_obj, selection_list, colour_list, input, out
 
 get_plot_list = function() {
   plot_list = c("Class distribution" = "select_class_distribution",
-              "Class comparison" = "select_class_comparison",
-              "Volcano plot" = "select_volcano_plot",
-              "Heatmap" = "select_heatmap",
-              "PCA" = "select_pca",
-              "Double bond plot" = "select_double_bond_plot"
-  )
+                "Class comparison" = "select_class_comparison",
+                "Volcano plot" = "select_volcano_plot",
+                "Heatmap" = "select_heatmap",
+                "PCA" = "select_pca",
+                "Double bond plot" = "select_double_bond_plot"
+                )
   return(plot_list)
 }
 

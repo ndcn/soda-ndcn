@@ -107,7 +107,8 @@ Prot_data = R6::R6Class(
         adjustment = "Benjamini-Hochberg",
         group_column = NULL,
         groups = NULL,
-        selected_function = "median"
+        selected_function = "median",
+        selected_test = "Wilcoxon"
       ),
       
       # Heatmap parameters
@@ -388,7 +389,13 @@ Prot_data = R6::R6Class(
     },
     
     # Volcano table
-    get_volcano_table = function(data_table = self$tables$data_filtered, volcano_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
+    get_volcano_table = function(data_table = self$tables$data_filtered,
+                                 volcano_table = self$tables$feat_filtered,
+                                 col_group = self$texts$col_group,
+                                 used_function = "median",
+                                 test = "Wilcoxon",
+                                 group_1,
+                                 group_2) {
 
       # Get the rownames for each group
       idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
@@ -419,7 +426,7 @@ Prot_data = R6::R6Class(
       }
       
       # Collect fold change and p-values
-      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function)
+      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function, test)
       fold_change = stat_vals$fold_change
       p_value = stat_vals$p_value
       p_value_bh_adj = stat_vals$p_value_bh_adj
@@ -430,6 +437,9 @@ Prot_data = R6::R6Class(
       volcano_table$minus_log10_p_value = -log10(p_value)
       volcano_table$log2_fold_change = log2(fold_change)
       volcano_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
+      
+      # Drop NA p-values
+      volcano_table = volcano_table[-which(is.na(volcano_table[,'p_value'])),]
       
       self$tables$volcano_table = volcano_table
     },

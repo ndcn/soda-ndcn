@@ -335,6 +335,7 @@ volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   r6$get_volcano_table(data_table = table_switch(selection = input$volcano_plot_tables, r6 = r6),
                        col_group = input$volcano_plot_metacol,
                        used_function =  input$volcano_plot_function,
+                       test = input$volcano_plot_test,
                        group_1 = input$volcano_plot_metagroup[1],
                        group_2 = input$volcano_plot_metagroup[2])
 
@@ -410,6 +411,13 @@ volcano_plot_server = function(r6, output, session) {
         multiple = FALSE
       ),
       shiny::selectizeInput(
+        inputId = ns("volcano_plot_test"),
+        label = "Select test",
+        choices = c("Wilcoxon", "T-test"),
+        selected = r6$params$volcano_plot$selected_test,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
         inputId = ns("volcano_plot_adjustment"),
         label = "Select adjustment",
         choices = c("None", "Benjamini-Hochberg"),
@@ -446,7 +454,7 @@ volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, s
     )
   })
   
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment, input$volcano_plot_test), {
     print_time("Volcano plot: Updating params...")
     
     r6$params$volcano_plot$data_table = input$volcano_plot_tables
@@ -456,7 +464,10 @@ volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, s
     r6$params$volcano_plot$selected_function = input$volcano_plot_function
     r6$params$volcano_plot$colouring = input$volcano_plot_colouring
     r6$params$volcano_plot$adjustment = input$volcano_plot_adjustment
+    r6$params$volcano_plot$selected_test = input$volcano_plot_test
 
+    print(input$volcano_plot_test)
+    
     volcano_plot_generate(r6, colour_list, dimensions_obj, input)
     volcano_plot_spawn(r6, output)
   })
@@ -782,7 +793,7 @@ double_bonds_generate_single = function(r6, colour_list, dimensions_obj, input) 
   r6$get_dbplot_table_single(data_table = table_switch(selection = input$double_bonds_dataset, r6 = r6),
                              dbplot_table = r6$tables$feat_filtered,
                              col_group = input$double_bonds_metacol,
-                             used_function =  input$double_bonds_function,
+                             used_function = input$double_bonds_function,
                              group_1 = input$double_bonds_metagroup[1])
   
   r6$plot_doublebonds_single(lipid_class = input$double_bonds_class,
@@ -805,6 +816,7 @@ double_bonds_generate_double = function(r6, colour_list, dimensions_obj, input, 
                              dbplot_table = r6$tables$feat_filtered,
                              col_group = input$double_bonds_metacol,
                              used_function =  input$double_bonds_function,
+                             test = input$double_bonds_test,
                              group_1 = input$double_bonds_metagroup[1],
                              group_2 = input$double_bonds_metagroup[2])
   
@@ -923,6 +935,13 @@ double_bonds_server = function(r6, output, session) {
         multiple = FALSE
       ),
       shiny::selectizeInput(
+        inputId = ns("double_bonds_test"),
+        label = "Select test",
+        choices = c("Wilcoxon", "T-test"),
+        selected = r6$params$db_plot$selected_test,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
         inputId = ns("double_bonds_plot_adjustment"),
         label = "Select adjustment",
         choices = c("None", "Benjamini-Hochberg"),
@@ -969,7 +988,7 @@ db_plot_events = function(r6, dimensions_obj, colour_list, input, output, sessio
   })
 
   # Double bonds plot SINGLE 
-  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_dataset, input$double_bonds_function), {
+  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_dataset, input$double_bonds_function, input$double_bonds_test), {
 
     print_time("Double bonds plot single: Updating params...")
     
@@ -978,6 +997,7 @@ db_plot_events = function(r6, dimensions_obj, colour_list, input, output, sessio
     r6$params$db_plot$selected_groups = input$double_bonds_metagroup
     r6$params$db_plot$selected_lipid_class = input$double_bonds_class
     r6$params$db_plot$selected_function = input$double_bonds_function
+    r6$params$db_plot$selected_test = input$double_bonds_test
 
     double_bonds_generate_single(r6, colour_list, dimensions_obj, input)
     double_bonds_spawn(r6, output)
