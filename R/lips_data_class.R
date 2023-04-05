@@ -455,7 +455,9 @@ Lips_data = R6::R6Class(
       volcano_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
       
       # Drop NA p-values
-      volcano_table = volcano_table[-which(is.na(volcano_table[,'p_value'])),]
+      if (length(which(is.na(volcano_table[,'p_value']))) > 0) {
+        volcano_table = volcano_table[-which(is.na(volcano_table[,'p_value'])),]
+      }
       
       self$tables$volcano_table = volcano_table
     },
@@ -560,7 +562,10 @@ Lips_data = R6::R6Class(
       dbplot_table$text = paste0(lips, " | log2(fc): ", fc, " | -log10(bh(pval)): ", pval)
       
       # Drop NA p-values
-      dbplot_table = dbplot_table[-which(is.na(dbplot_table[,'p_value'])),]
+      if (length(which(is.na(dbplot_table[,'p_value']))) > 0) {
+        dbplot_table = dbplot_table[-which(is.na(dbplot_table[,'p_value'])),]
+      }
+      
 
       self$tables$dbplot_table = dbplot_table
     },

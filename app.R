@@ -29,6 +29,7 @@ library(RColorBrewer)
 
 # Statistics
 library(pcaMethods)
+library(glmnet)
 
 # Text
 library(stringr)
