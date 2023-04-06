@@ -122,13 +122,18 @@ Lips_data = R6::R6Class(
         clustering = NULL,
         map_sample_data = character(0),
         map_feature_data = character(0),
-        percentile = 95
+        percentile = 95,
+        group_column_da = NULL,
+        apply_da = FALSE,
+        alpha_da = 0.8
       ),
       
       # PCA parameters
       pca = shiny::reactiveValues(
         dataset = "Z-scored total normalised data table",
-        group_column = NULL
+        group_column = NULL,
+        apply_da = FALSE,
+        alpha_da = 0.8
       ),
       
       # Double bonds parameters

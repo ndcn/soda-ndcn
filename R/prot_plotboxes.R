@@ -498,7 +498,20 @@ prot_pca_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
   
-  r6$plot_pca(data_table = table_switch(input$pca_dataset, r6),
+  if (input$pca_apply_da) {
+    data_table = table_switch(input$pca_dataset, r6)
+    kept_features = apply_discriminant_analysis(data_table = data_table,
+                                                group_list = r6$tables$meta_filtered[,input$pca_metacol],
+                                                nlambda = 100,
+                                                alpha = input$pca_alpha_da)
+    kept_features = which(colnames(data_table) %in% kept_features)
+    data_table = data_table[,kept_features]
+    
+  } else {
+    data_table = table_switch(input$pca_dataset, r6)
+  }
+  
+  r6$plot_pca(data_table = data_table,
               col_group = input$pca_metacol,
               width = width,
               height = height,
@@ -540,6 +553,23 @@ prot_pca_server = function(r6, output, session) {
         choices = colnames(r6$tables$meta_filtered),
         selected = r6$params$pca$group_column
       ),
+      
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::h4("Discriminant analysis"),
+      
+      shinyWidgets::switchInput(inputId = ns("pca_apply_da"),
+                                label = "Apply discriminant analysis",
+                                value = FALSE,
+                                width = "100%"),
+      
+      shiny::sliderInput(inputId = ns("pca_alpha_da"),
+                         label = "Alpha",
+                         min = 0,
+                         max = 1,
+                         value = 0.8,
+                         step = 0.1,
+                         width = "100%"),
+      
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::downloadButton(
@@ -560,10 +590,12 @@ prot_pca_server = function(r6, output, session) {
 
 prot_pca_events = function(r6, dimensions_obj, colour_list, input, output, session) {
 
-  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol),{
+  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da),{
     print_time("PCA: Updating params...")
     r6$params$pca$dataset = input$pca_dataset
     r6$params$pca$group_column = input$pca_metacol
+    r6$params$pca$apply_da = input$pca_apply_da
+    r6$params$pca$alpha_da = input$pca_alpha_da
     prot_pca_generate(r6, colour_list, dimensions_obj, input)
     prot_pca_spawn(r6, output)
   })
