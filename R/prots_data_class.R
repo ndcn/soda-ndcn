@@ -123,7 +123,9 @@ Prot_data = R6::R6Class(
       # PCA parameters
       pca = shiny::reactiveValues(
         dataset = "Z-scored total normalised data table",
-        group_column = NULL
+        group_column = NULL,
+        apply_da = FALSE,
+        alpha_da = 0.8
       ),
       
       # Double bonds parameters

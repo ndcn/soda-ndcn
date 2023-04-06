@@ -439,9 +439,6 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 
 
 apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, alpha = 0.8) {
-  
-  truffles = lipidomics_data$tables$data_class_norm_z_scored
-  truffles = lipidomics_data$tables$data_total_norm_z_scored
   if (length(unique(group_list) > 2)) {
     family = "multinomial"
   } else {

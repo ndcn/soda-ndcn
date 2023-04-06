@@ -452,13 +452,15 @@ volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, s
       choices = unique(r6$tables$meta_filtered[,input$volcano_plot_metacol]),
       selected = r6$params$volcano_plot$groups
     )
+    r6$params$volcano_plot$group_column = input$volcano_plot_metacol
+    r6$params$volcano_plot$groups = input$volcano_plot_metagroup
   })
   
   shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment, input$volcano_plot_test), {
     print_time("Volcano plot: Updating params...")
     
     r6$params$volcano_plot$data_table = input$volcano_plot_tables
-    r6$params$volcano_plot$group_column = input$volcano_plot_metacol
+    
     r6$params$volcano_plot$groups = input$volcano_plot_metagroup
     r6$params$volcano_plot$classes = input$volcano_plot_lipclass
     r6$params$volcano_plot$selected_function = input$volcano_plot_function
@@ -513,6 +515,20 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
   
+  if (input$heatmap_apply_da) {
+    data_table = table_switch(input$heatmap_dataset, r6)
+    kept_features = apply_discriminant_analysis(data_table = data_table,
+                                                group_list = r6$tables$meta_filtered[,input$heatmap_group_col_da],
+                                                nlambda = 100,
+                                                alpha = input$heatmap_alpha_da)
+    kept_features = which(colnames(data_table) %in% kept_features)
+    data_table = data_table[,kept_features]
+    meta_table_features = r6$tables$feat_filtered[kept_features, ]
+  } else {
+    data_table = table_switch(input$heatmap_dataset, r6)
+    meta_table_features = r6$tables$feat_filtered
+  }
+  
   if ("cluster_rows" %in% input$heatmap_clustering){
     cluster_rows = TRUE
   } else {
@@ -525,9 +541,9 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
     cluster_cols = FALSE
   }
 
-  r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
+  r6$plot_heatmap(data_table = data_table,
                   meta_table = r6$tables$meta_filtered,
-                  meta_table_features = r6$tables$feat_filtered,
+                  meta_table_features = meta_table_features,
                   percentile = input$heatmap_percentile,
                   cluster_rows = cluster_rows,
                   cluster_cols = cluster_cols,
@@ -596,10 +612,34 @@ heatmap_server = function(r6, output, session) {
                          value = r6$params$heatmap$percentile,
                          step = 1
       ),
+
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::h4("Discriminant analysis"),
+      
+      shinyWidgets::switchInput(inputId = ns("heatmap_apply_da"),
+                                label = "Apply discriminant analysis",
+                                value = FALSE,
+                                width = "100%"),
+      
+      shiny::selectizeInput(inputId = ns("heatmap_group_col_da"),
+                            label = "Group column",
+                            choices = colnames(r6$tables$meta_filtered),
+                            selected = r6$params$heatmap$group_column_da,
+                            multiple = FALSE,
+                            width = "100%"),
+      shiny::sliderInput(inputId = ns("heatmap_alpha_da"),
+                         label = "Alpha",
+                         min = 0,
+                         max = 1,
+                         value = 0.8,
+                         step = 0.1,
+                         width = "100%"),
       shiny::actionButton(
         inputId = ns("heatmap_run"),
-        label = "Generate heatmap"
+        label = "Generate heatmap",
+        width = "100%"
       ),
+      
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
         outputId = ns("download_heatmap_table"),
@@ -619,6 +659,12 @@ heatmap_events = function(r6, dimensions_obj, colour_list, input, output, sessio
     r6$params$heatmap$map_sample_data = input$heatmap_map_rows
     r6$params$heatmap$map_feature_data = input$heatmap_map_cols
     r6$params$heatmap$percentile = input$heatmap_percentile
+    
+    r6$params$heatmap$apply_da = input$heatmap_apply_da
+    r6$params$heatmap$group_column_da = input$heatmap_group_col_da
+    r6$params$heatmap$alpha_da = input$heatmap_alpha_da
+    
+    
     heatmap_generate(r6, colour_list, dimensions_obj, input)
     heatmap_spawn(r6, output)
   })
@@ -669,7 +715,20 @@ pca_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
   
-  r6$plot_pca(data_table = table_switch(input$pca_dataset, r6),
+  if (input$pca_apply_da) {
+    data_table = table_switch(input$pca_dataset, r6)
+    kept_features = apply_discriminant_analysis(data_table = data_table,
+                                                group_list = r6$tables$meta_filtered[,input$pca_metacol],
+                                                nlambda = 100,
+                                                alpha = input$pca_alpha_da)
+    kept_features = which(colnames(data_table) %in% kept_features)
+    data_table = data_table[,kept_features]
+
+  } else {
+    data_table = table_switch(input$pca_dataset, r6)
+  }
+  
+  r6$plot_pca(data_table = data_table,
               col_group = input$pca_metacol,
               width = width,
               height = height,
@@ -711,6 +770,23 @@ pca_server = function(r6, output, session) {
         choices = colnames(r6$tables$meta_filtered),
         selected = r6$params$pca$group_column
       ),
+      
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::h4("Discriminant analysis"),
+      
+      shinyWidgets::switchInput(inputId = ns("pca_apply_da"),
+                                label = "Apply discriminant analysis",
+                                value = FALSE,
+                                width = "100%"),
+      
+      shiny::sliderInput(inputId = ns("pca_alpha_da"),
+                         label = "Alpha",
+                         min = 0,
+                         max = 1,
+                         value = 0.8,
+                         step = 0.1,
+                         width = "100%"),
+      
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::downloadButton(
@@ -730,11 +806,13 @@ pca_server = function(r6, output, session) {
 }
 
 pca_events = function(r6, dimensions_obj, colour_list, input, output, session) {
-
-  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol),{
+  
+  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da),{
     print_time("PCA: Updating params...")
     r6$params$pca$dataset = input$pca_dataset
     r6$params$pca$group_column = input$pca_metacol
+    r6$params$pca$apply_da = input$pca_apply_da
+    r6$params$pca$alpha_da = input$pca_alpha_da
     pca_generate(r6, colour_list, dimensions_obj, input)
     pca_spawn(r6, output)
   })

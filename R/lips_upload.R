@@ -320,6 +320,7 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
         # First column displaying the effects of the parameters on the data
         shiny::column(
           width = 9,
+          shiny::h2("Filter lipidomics data"),
           
           # Declare progress bar
           shinyWidgets::progressBar(
@@ -387,8 +388,8 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
             shiny::actionButton(inputId = ns("reset_data"), label =  "Reset", width = "50%")
           ),
           
-          
           # Button to download filtered data
+          shiny::h4("Download tables"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           shiny::fluidRow(
             shiny::downloadButton(
@@ -397,7 +398,6 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
               style = "width:100%;"
             )
           ),
-          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           shiny::fluidRow(
             shiny::selectizeInput(
               inputId = ns("other_tables_select"),
@@ -551,6 +551,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             r6$params$volcano_plot$group_column = input$select_sample_group
             r6$params$pca$group_column = input$select_sample_group
             r6$params$db_plot$group_column = input$select_sample_group
+            r6$params$heatmap$group_column_da = input$select_sample_group
             
             # Text patterns
             r6$set_text_pattern(pattern = input$qc_pattern, type = "qc")
