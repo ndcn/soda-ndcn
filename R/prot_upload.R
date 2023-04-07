@@ -242,10 +242,24 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           width = 9,
           # Feature table preview box
           shiny::h2("Upload proteomics metadata"),
-          shiny::fileInput(inputId = ns("feat_local"),
-                           label = NULL,
-                           accept = c(".csv", ".tsv", ".txt", ".xlsx"),
-                           width = "100%"),
+          shiny::fluidRow(
+            shiny::fileInput(inputId = ns("feat_local"),
+                             label = "Feature metadata",
+                             accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                             width = "25%"),
+            shiny::fileInput(inputId = ns("up_go_components"),
+                             label = "GO components",
+                             accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                             width = "25%"),
+            shiny::fileInput(inputId = ns("up_go_functions"),
+                             label = "GO functions",
+                             accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                             width = "25%"),
+            shiny::fileInput(inputId = ns("up_go_processes"),
+                             label = "GO processes",
+                             accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                             width = "25%"),
+          ),
           bs4Dash::box(
             title = "Feature table",
             width = 12,
@@ -271,25 +285,36 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           
           shiny::selectInput(inputId = ns("displayed_table"),
                              label = "Table to display",
-                             choices = c("Feature table raw", "Feature table filtered"),
-                             selected = "Feature table raw",
+                             choices = c("Raw feature table", "Filtered feature table"),
+                             selected = "Raw feature table",
                              width = "100%"),
           
           soda_get_col_ui(label = "Get from Uniprot", desc = NULL),
           shiny::actionButton(inputId = ns("feat_uniprot"),
                               label = "Query",
                               width = "100%"),
+          shiny::checkboxInput(inputId = ns("main_go"),
+                               label = "Only main attributes",
+                               value = TRUE),
           shiny::h4("Download feature tables"),
-          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-          shiny::fluidRow(
-            shiny::downloadButton(outputId = ns("feat_download_raw"),
-                                  label = "Raw",
-                                  style = "width:50%;"),
-            shiny::downloadButton(outputId = ns("feat_download_filtered"),
-                                  label = "Filtered",
-                                  style = "width:50%;")
+          
+          shiny::selectizeInput(
+            inputId = ns("select_dl_table"),
+            label = "Select table to download",
+            choices = c("Raw feature table", "Filtered feature table",
+                        "GO components raw", "GO components filtered",
+                        "GO functions raw", "GO functions filtered",
+                        "GO processes raw", "GO processes filtered"),
+            selected = "Filtered feature table",
+            multiple = FALSE,
+            width = "100%"
+          ),
+          
+          shiny::downloadButton(
+            outputId = ns("dl_table"),
+            label = "Download selected",
+            style = "width:100%;"
           )
-
         )
       )
     ),
@@ -740,7 +765,22 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         input$feat_local
       })
       
-      # Upload file to R6
+      table_file_go_components = reactive({
+        validate(need(input$up_go_components, message = FALSE))
+        input$up_go_components
+      })
+      
+      table_file_go_functions = reactive({
+        validate(need(input$up_go_functions, message = FALSE))
+        input$up_go_functions
+      })
+      
+      table_file_go_processes = reactive({
+        validate(need(input$up_go_processes, message = FALSE))
+        input$up_go_processes
+      })
+      
+      # Upload feature file to R6
       shiny::observe({
         if (!is.null(table_file_feat()$datapath)){
           
@@ -774,7 +814,90 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       shiny::observeEvent(input$displayed_table, {
         shiny::req(r6$tables$feat_filtered)
-        if (input$displayed_table == "Feature table filtered"){
+        if (input$displayed_table == "Filtered feature table"){
+          feature_table_preview(table = r6$tables$feat_filtered,
+                                preview = input$preview_feat,
+                                max_rows = max_rows,
+                                max_cols = max_cols,
+                                output = output)
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "feature_count_bar",
+            value = nrow(r6$tables$feat_filtered),
+            total = nrow(r6$tables$feat_raw)
+          )
+        } else {
+          feature_table_preview(table = r6$tables$feat_raw,
+                                preview = input$preview_feat,
+                                max_rows = max_rows,
+                                max_cols = max_cols,
+                                output = output)
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "feature_count_bar",
+            value = nrow(r6$tables$feat_raw),
+            total = nrow(r6$tables$feat_raw)
+          )
+        }
+      })
+      
+      
+      # Upload Go components file to R6
+      shiny::observe({
+        if (!is.null(table_file_go_components()$datapath)){
+          
+          if (stringr::str_sub(table_file_go_components()$datapath, -5, -1) == ".xlsx") {
+            r6$tables$go_components_raw = as.data.frame(readxl::read_xlsx(table_file_go_components()$datapath))
+          } else {
+            sep = find_delim(path = table_file_go_components()$datapath)
+            r6$tables$go_components_raw = read.csv(table_file_go_components()$datapath,
+                                          header = T,
+                                          sep = sep,
+                                          check.names = FALSE)
+            r6$set_go_components_filtered()
+          }
+        }
+      })
+      
+      # Upload Go functions file to R6
+      shiny::observe({
+        if (!is.null(table_file_go_functions()$datapath)){
+          
+          if (stringr::str_sub(table_file_go_functions()$datapath, -5, -1) == ".xlsx") {
+            r6$tables$go_functions_raw = as.data.frame(readxl::read_xlsx(table_file_go_functions()$datapath))
+          } else {
+            sep = find_delim(path = table_file_go_functions()$datapath)
+            r6$tables$go_functions_raw = read.csv(table_file_go_functions()$datapath,
+                                                   header = T,
+                                                   sep = sep,
+                                                   check.names = FALSE)
+            r6$set_go_functions_filtered()
+          }
+        }
+      })
+      
+      # Upload Go processes file to R6
+      shiny::observe({
+        if (!is.null(table_file_go_processes()$datapath)){
+          
+          if (stringr::str_sub(table_file_go_processes()$datapath, -5, -1) == ".xlsx") {
+            r6$tables$go_processes_raw = as.data.frame(readxl::read_xlsx(table_file_go_processes()$datapath))
+          } else {
+            sep = find_delim(path = table_file_go_processes()$datapath)
+            r6$tables$go_processes_raw = read.csv(table_file_go_processes()$datapath,
+                                                  header = T,
+                                                  sep = sep,
+                                                  check.names = FALSE)
+            r6$set_go_processes_filtered()
+          }
+        }
+      })
+      
+      
+      
+      shiny::observeEvent(input$displayed_table, {
+        shiny::req(r6$tables$feat_filtered)
+        if (input$displayed_table == "Filtered feature table"){
           feature_table_preview(table = r6$tables$feat_filtered,
                                 preview = input$preview_feat,
                                 max_rows = max_rows,
@@ -807,9 +930,17 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
       shiny::observeEvent(input$feat_uniprot, {
         prot_list = colnames(r6$tables$data_raw)[2:length(colnames(r6$tables$data_raw))]
         prot_list = cleanup_prot_list(prot_list)
-        prots_feature_table_raw = prots_get_feature_table(prot_list)
-        r6$tables$feat_raw = prots_feature_table_raw
+        features_bundle = prots_get_feature_table(prot_list = prot_list, 
+                                                  main_go = input$main_go)
+        r6$tables$feat_raw = features_bundle$feature_table
+        r6$tables$go_components_raw = features_bundle$go_components
+        r6$tables$go_functions_raw = features_bundle$go_functions
+        r6$tables$go_processes_raw = features_bundle$go_processes
+        
         r6$set_feat_filtered()
+        r6$set_go_components_filtered()
+        r6$set_go_functions_filtered()
+        r6$set_go_processes_filtered()
         
         feature_table_preview(table = r6$tables$feat_raw,
                               preview = input$preview_feat,
@@ -818,28 +949,23 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
                               output = output)
       })
       
-      output$feat_download_raw = shiny::downloadHandler(
-        filename = timestamped_name("feature_metadata_raw.tsv"),
-        content = function(file_name){
-          write.table(r6$tables$feat_raw,
-                      file_name,
-                      sep = "\t",
-                      row.names = F,
-                      na='')
-        }
+      dl_selection = shiny::reactiveValues(
+        name = NULL,
+        table = NULL
       )
       
-      output$feat_download_filtered = shiny::downloadHandler(
-        filename = timestamped_name("feature_metadata_filtered.tsv"),
-        content = function(file_name){
-          write.table(r6$tables$feat_filtered,
-                      file_name,
-                      sep = "\t",
-                      row.names = F,
-                      na='')
+      shiny::observeEvent(input$select_dl_table , {
+        dl_selection$name = timestamped_name(paste0(stringr::str_replace_all(input$select_dl_table, " ", "_"), ".tsv"))
+        dl_selection$table = table_switch(selection = input$select_dl_table, r6 = r6)
+      })
+      
+      # Download other tables
+      output$dl_table = shiny::downloadHandler(
+        filename = shiny::reactive(dl_selection$name),
+        content = function(file_name) {
+          write.table(dl_selection$table, file_name, sep = "\t")
         }
       )
-      
       
     }
   )

@@ -225,7 +225,7 @@ server = function(input, output, session) {
   )
 
   # Initiate some variables
-  options(shiny.maxRequestSize=30*1024^2)
+  options(shiny.maxRequestSize=300*1024^2)
   
   lipidomics_data = Lips_data$new(
     name = "lips_1",
