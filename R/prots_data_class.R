@@ -48,6 +48,15 @@ Prot_data = R6::R6Class(
       feat_raw = NULL,
       feat_filtered = NULL,
       
+      # GO tables
+      go_components_raw = NULL,
+      go_functions_raw = NULL,
+      go_processes_raw = NULL,
+      
+      go_components_filtered = NULL,
+      go_functions_filtered = NULL,
+      go_processes_filtered = NULL,
+      
       # Normalised
       data_class_norm = NULL,
       data_total_norm = NULL,
@@ -331,6 +340,7 @@ Prot_data = R6::R6Class(
       self$tables$feat_raw = get_feature_metadata(data_table = data_table)
     },
     set_feat_filtered = function() {
+      print_time("Setting filtered feature table")
       # Copy from the raw feature table and set index
       feat_filtered = self$tables$feat_raw
       feat_filtered = set_index_col(data_table = feat_filtered, idx= "accession")
@@ -344,7 +354,9 @@ Prot_data = R6::R6Class(
       drop_cols = which(colnames(self$tables$data_filtered) %in% dead_features)
 
       # Refresh data table
-      self$tables$data_filtered = self$tables$data_filtered[,-drop_cols]
+      if (length(drop_cols) > 0) {
+        self$tables$data_filtered = self$tables$data_filtered[,-drop_cols]
+      }
       
       # Refresh other tables
       self$normalise_total()
@@ -353,6 +365,47 @@ Prot_data = R6::R6Class(
       # Set filtered features
       self$tables$feat_filtered = feat_filtered
     },
+    
+    set_go_components_filtered = function() {
+      print_time("Setting filtered GO components table")
+      # Copy from the raw go_components table
+      go_components_filtered = self$tables$go_components_raw
+      
+      # Filter by keeping only features from the filtered data table
+      kept_features = colnames(self$tables$data_filtered)
+      go_components_filtered = go_components_filtered[which(rownames(go_components_filtered) %in% kept_features),]
+      
+      # Set filtered go_components
+      self$tables$go_components_filtered = go_components_filtered
+    },
+    
+    set_go_functions_filtered = function() {
+      print_time("Setting filtered GO functions table")
+      # Copy from the raw go_functions table
+      go_functions_filtered = self$tables$go_functions_raw
+      
+      # Filter by keeping only features from the filtered data table
+      kept_features = colnames(self$tables$data_filtered)
+      go_functions_filtered = go_functions_filtered[which(rownames(go_functions_filtered) %in% kept_features),]
+      
+      # Set filtered go_functions
+      self$tables$go_functions_filtered = go_functions_filtered
+    },
+    
+    set_go_processes_filtered = function() {
+      print_time("Setting filtered GO processes table")
+      # Copy from the raw go_processes table
+      go_processes_filtered = self$tables$go_processes_raw
+      
+      # Filter by keeping only features from the filtered data table
+      kept_features = colnames(self$tables$data_filtered)
+      go_processes_filtered = go_processes_filtered[which(rownames(go_processes_filtered) %in% kept_features),]
+      
+      # Set filtered go_processes
+      self$tables$go_processes_filtered = go_processes_filtered
+    },
+    
+    
     
     # Filter filtered table
     feature_filter = function(blank_multiplier, sample_threshold, group_threshold) {

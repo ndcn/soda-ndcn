@@ -1,19 +1,3 @@
-#----------------------------------------------------------- Table switches ----
-table_switch = function(selection, r6){
-  switch(EXPR = selection,
-         "Filtered data table" = r6$tables$data_filtered,
-         "Class normalised data table" = r6$tables$data_class_norm,
-         "Total normalised data table" = r6$tables$data_total_norm,
-         "Raw class table" = r6$tables$data_class_table_raw,
-         "Total normalised class table" = r6$tables$data_class_table_total_norm,
-         "Z-scored data table" = r6$tables$data_z_scored,
-         "Z-scored class normalised data table" = r6$tables$data_class_norm_z_scored,
-         "Z-scored total normalised data table" = r6$tables$data_total_norm_z_scored,
-         "Z-scored total normalised class table" = r6$tables$data_class_table_z_scored,
-         "Raw feature table" = r6$tables$feat_raw,
-         "Filtered feature table" = r6$tables$feat_filtered
-  )
-}
 
 #-------------------------------------------------- P-val adjustment switch ----
 
