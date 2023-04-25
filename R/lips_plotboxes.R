@@ -12,6 +12,8 @@ table_switch = function(selection, r6){
          "Z-scored total normalised class table" = r6$tables$data_class_table_z_scored,
          "Raw feature table" = r6$tables$feat_raw,
          "Filtered feature table" = r6$tables$feat_filtered,
+         "Group summary species" = r6$tables$group_species,
+         "Group summary classes" = r6$tables$group_classes,
          
          # Proteomics specific
          "GO components raw" = r6$tables$go_components_raw,

@@ -48,6 +48,26 @@ drop_rows = function(data_table, rows) {
   return(data_table[!(row.names(data_table) %in% rows),])
 }
 
+#----------------------------------------------------------- Summary tables ----
+
+get_group_median_table = function(data_table,
+                                  meta_table,
+                                  col_group) {
+  unique_groups = unique(meta_table[,col_group])
+  out_table = as.data.frame(matrix(data = 0.0,
+                                   nrow = length(unique_groups),
+                                   ncol = ncol(data_table)))
+  colnames(out_table) = colnames(data_table)
+  rownames(out_table) = unique_groups
+  for (group in unique_groups) {
+    idx = rownames(meta_table)[which(meta_table[,col_group] == group)]
+    group_table = data_table[idx,]
+    group_values = apply(group_table,2,median, na.rm = TRUE)
+    group_values[is.na(group_values)] = 0.0
+    out_table[group,] = group_values
+  }
+  return(out_table)
+}
 
 #------------------------------------------------------ Filtering functions ----
 get_col_means = function(data_table) {
@@ -55,6 +75,8 @@ get_col_means = function(data_table) {
   means[is.na(means)] = 0
   return(means)
 }
+
+
 
 
 blank_filter = function(data_table, blank_table, blank_multiplier, sample_threshold) {
@@ -90,6 +112,96 @@ group_filter = function(data_table, blank_table, meta_table, del_cols, col_group
   }
   return(saved_cols)
 }
+
+# Combination of both the above functions
+bland_and_group_filter = function(data_table,
+                                  blank_table,
+                                  meta_table,
+                                  col_group,
+                                  blank_multiplier,
+                                  sample_threshold,
+                                  group_threshold
+                                  ) {
+  del_cols = blank_filter(data_table, blank_table, blank_multiplier, sample_threshold)
+  if (!is.null(del_cols)) {
+    saved_cols = group_filter(data_table, blank_table, meta_table, del_cols, col_group, blank_multiplier, group_threshold)
+    del_cols = setdiff(del_cols,saved_cols)
+  }
+  return(del_cols)
+}
+
+# Implementation of blank filtering methods with r6 object
+lips_get_del_cols = function(data_table,
+                             blank_table,
+                             meta_table_raw,
+                             meta_table_filtered,
+                             idx_blanks = r6$indices$idx_blanks,
+                             idx_samples = r6$indices$idx_samples,
+                             col_id_meta = r6$texts$col_id_meta,
+                             col_group,
+                             col_batch,
+                             blank_multiplier,
+                             sample_threshold,
+                             group_threshold,
+                             drop_method
+                             ) {
+  
+  all_del_cols = c()
+  if (drop_method == "flatten") {
+    
+    # Blank and group filter
+    del_cols = bland_and_group_filter(data_table = data_table,
+                                      blank_table = blank_table,
+                                      meta_table = meta_table_filtered,
+                                      col_group = col_group,
+                                      blank_multiplier = blank_multiplier,
+                                      sample_threshold = sample_threshold,
+                                      group_threshold = group_threshold
+                                      )
+    
+  } else {
+    
+    
+    all_batches = unique(meta_table_raw[, col_batch])
+    
+    for (b in all_batches) {
+      # Get indices
+      batch_idx = which(meta_table_raw[, col_batch] == b)
+      batch_blanks = base::intersect(batch_idx, idx_blanks)
+      batch_samples = base::intersect(batch_idx, idx_samples)
+      
+      # Get rownames
+      batch_blanks = meta_table_raw[batch_blanks, col_id_meta]
+      batch_samples = meta_table_raw[batch_samples, col_id_meta]
+      
+      # Blank and group filter
+      del_cols = bland_and_group_filter(data_table = data_table[batch_samples,],
+                                        blank_table = blank_table[batch_blanks,],
+                                        meta_table = meta_table_filtered,
+                                        col_group = col_group,
+                                        blank_multiplier = blank_multiplier,
+                                        sample_threshold = sample_threshold,
+                                        group_threshold = group_threshold)
+      
+      all_del_cols[[length(all_del_cols) + 1]] = del_cols
+    }
+    
+    
+    if (drop_method == "union") {
+      del_cols = base::unlist(x = all_del_cols,
+                              recursive = TRUE,
+                              use.names = FALSE)
+      del_cols = sort(unique(del_cols))
+    } else if (drop_method == "intersect") {
+      del_cols = all_del_cols[[1]]
+      for (i in 1:length(all_del_cols)){
+        del_cols = base::intersect(del_cols, all_del_cols[[i]])
+      }
+    }
+  }
+  return(del_cols)
+}
+
 #-------------------------------------------------- Normalisation functions ----
 
 get_lipid_classes = function(feature_list, uniques = TRUE){

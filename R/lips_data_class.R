@@ -16,6 +16,7 @@ Lips_data = R6::R6Class(
       col_id_data = NULL,
       col_type = NULL,
       col_group = NULL,
+      col_batch = NULL,
 
       ### Text patterns
       pattern_qc = NULL,
@@ -50,6 +51,10 @@ Lips_data = R6::R6Class(
       data_filtered = NULL,
       feat_raw = NULL,
       feat_filtered = NULL,
+      
+      # Summary
+      group_species = NULL,
+      group_classes = NULL,
 
       # Normalised
       data_class_norm = NULL,
@@ -173,6 +178,8 @@ Lips_data = R6::R6Class(
         self$texts$col_id_meta = col
       } else if (type == "id_data") {
         self$texts$col_id_data = col
+      } else if (type == "batch") {
+        self$texts$col_batch = col
       }
     },
 
@@ -373,28 +380,38 @@ Lips_data = R6::R6Class(
       blank_table = blank_table[rownames_blanks, ]
       self$tables$blank_table = blank_table
     },
+    
+    set_group_summary_species = function() {
+      
+      self$tables$group_species = get_group_median_table(data_table = self$tables$data_filtered,
+                                                         meta_table = self$tables$meta_filtered,
+                                                         col_group = self$texts$col_group) 
+    },
+    
+    set_group_summary_classes = function() {
+      
+      self$tables$group_classes = get_group_median_table(data_table = self$tables$data_class_table_raw,
+                                                         meta_table = self$tables$meta_filtered,
+                                                         col_group = self$texts$col_group) 
+    },
 
     # Filter filtered table
-    feature_filter = function(blank_multiplier, sample_threshold, group_threshold) {
-
-      # Find features / columns below threshold
-      del_cols = blank_filter(data_table = self$tables$data_filtered,
-                              blank_table = self$tables$blank_table,
-                              blank_multiplier = blank_multiplier,
-                              sample_threshold = sample_threshold)
-
-      # Salvage some of the features with a group filtering (same as above but applied to groups)
-      if (!is.null(del_cols)) {
-        saved_cols = group_filter(data_table = self$tables$data_filtered,
-                                  blank_table = self$tables$blank_table,
-                                  meta_table= self$tables$meta_filtered,
-                                  del_cols = del_cols,
-                                  col_group = self$texts$col_group,
-                                  blank_multiplier = blank_multiplier,
-                                  group_threshold = group_threshold)
-        del_cols = setdiff(del_cols,saved_cols)
-      }
-
+    feature_filter = function(blank_multiplier, sample_threshold, group_threshold, drop_method) {
+      
+      del_cols = lips_get_del_cols(data_table = self$tables$data_filtered,
+                                   blank_table = self$tables$blank_table,
+                                   meta_table_raw = self$tables$meta_raw,
+                                   meta_table_filtered = self$tables$meta_filtered,
+                                   idx_blanks = self$indices$idx_blanks,
+                                   idx_samples = self$indices$idx_samples,
+                                   col_id_meta = self$texts$col_id_meta,
+                                   col_group = self$texts$col_group,
+                                   col_batch = self$texts$col_batch,
+                                   blank_multiplier = blank_multiplier,
+                                   sample_threshold = sample_threshold,
+                                   group_threshold = group_threshold,
+                                   drop_method = drop_method
+                                   )
       if (length(del_cols) > 0) {
         self$tables$data_filtered = self$tables$data_filtered[,!(colnames(self$tables$data_filtered) %in% del_cols)]
       }
@@ -592,6 +609,11 @@ Lips_data = R6::R6Class(
       self$class_grouping_raw()
       self$class_grouping_total_norm()
       self$normalise_class_table_z_score()
+      
+      # Summary tables
+      self$set_group_summary_species()
+      self$set_group_summary_classes()
+      
     },
     
     #------------------------------------------------ Normalisation methods ----

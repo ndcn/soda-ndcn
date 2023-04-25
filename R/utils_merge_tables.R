@@ -127,7 +127,7 @@ utils_merge_tables_server = function(id, max_rows = 10, max_cols = 8) {
           selected = colnames(meta_table_input())[1]
         )
         output$meta_table = renderDataTable({
-          DT::datatable(meta_table_input()[1:max_rows, 1:max_cols], options = list(paging = FALSE))
+          DT::datatable(meta_table_input()[1:min(nrow(meta_table_input()), max_rows), 1:min(ncol(meta_table_input()), max_cols)], options = list(paging = FALSE))
         })
       })
       
@@ -140,7 +140,7 @@ utils_merge_tables_server = function(id, max_rows = 10, max_cols = 8) {
           selected = colnames(data_table_input())[1]
         )
         output$data_table = renderDataTable({
-          DT::datatable(data_table_input()[1:max_rows, 1:max_cols], options = list(paging = FALSE))
+          DT::datatable(data_table_input()[1:min(nrow(data_table_input()), max_rows), 1:min(ncol(data_table_input()), max_cols)], options = list(paging = FALSE))
         })
       })
       
