@@ -1,7 +1,20 @@
 
 lips_update_fields = function(input, session, r6) {
   
-  del_cols = lips_get_del_cols(input = input, r6 = r6)
+  del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
+                               blank_table = r6$tables$blank_table,
+                               meta_table_raw = r6$tables$meta_raw,
+                               meta_table_filtered = r6$tables$meta_filtered,
+                               idx_blanks = r6$indices$idx_blanks,
+                               idx_samples = r6$indices$idx_samples,
+                               col_id_meta = r6$texts$col_id_meta,
+                               col_group = r6$texts$col_group,
+                               col_batch = r6$texts$col_batch,
+                               blank_multiplier = as.numeric(input$blank_multiplier),
+                               sample_threshold = as.numeric(input$sample_threshold),
+                               group_threshold = as.numeric(input$group_threshold),
+                               drop_method = input$drop_method
+                               )
   remaining_cols = setdiff(colnames(r6$tables$data_filtered), del_cols)
   
   # Update class selection
@@ -20,24 +33,7 @@ lips_update_fields = function(input, session, r6) {
     selected = character(0)
   )
 }
-lips_get_del_cols = function(input, r6) {
-  del_cols = blank_filter(data_table = r6$tables$data_filtered,
-                          blank_table = r6$tables$blank_table,
-                          blank_multiplier = as.numeric(input$blank_multiplier),
-                          sample_threshold = input$sample_threshold)
-  
-  saved_cols = group_filter(data_table = r6$tables$data_filtered,
-                            blank_table = r6$tables$blank_table,
-                            meta_table = r6$tables$meta_filtered,
-                            del_cols = del_cols,
-                            col_group = r6$texts$col_group,
-                            blank_multiplier = as.numeric(input$blank_multiplier),
-                            group_threshold = input$group_threshold)
-  
-  
-  del_cols = setdiff(del_cols,saved_cols)
-  return(del_cols)
-}
+
 meta_row_selection_lips = function(input, r6) {
   # Initialise selection
   selected_rows = c()
@@ -127,7 +123,8 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           shiny::span(textOutput(outputId = ns("found_groups"))),
           shiny::span(textOutput(outputId = ns("found_blanks"))),
           shiny::span(textOutput(outputId = ns("found_qcs"))),
-          shiny::span(textOutput(outputId = ns("found_pools")))
+          shiny::span(textOutput(outputId = ns("found_pools"))),
+          shiny::span(textOutput(outputId = ns("found_batches")))
         ),
         
         # Second column for data curation
@@ -150,6 +147,10 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           # Select group column
           soda_get_col_ui(label = "Group column", desc = "Column containing the sample groups"),
           shiny::selectInput(inputId = ns("select_sample_group"), choices = NULL, label = NULL, multiple = F, width = "100%"),
+          
+          # Select batch column
+          soda_get_col_ui(label = "Batch column", desc = "Column containing the sample batchs"),
+          shiny::selectInput(inputId = ns("select_sample_batch"), choices = NULL, label = NULL, multiple = F, width = "100%"),
           
           # Section for regex text patterns
           shiny::h3("Text patterns"),
@@ -371,6 +372,13 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           shiny::h4("Blank & Group filtering"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           
+          # Feature drop method between batches
+          shiny::selectInput(inputId = ns("drop_method"),
+                             label = "Drop between batches",
+                             choices = c("union", "intersect", "flatten"),
+                             selected = "union",
+                             width = "100%"),
+          
           # Blank multiplier
           shiny::textInput(inputId = ns("blank_multiplier"), label = "Blank multiplier", value = 2, width = "100%"),
           
@@ -408,7 +416,9 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
                           "Z-scored total normalised data table",
                           "Z-scored total normalised class table",
                           "Raw feature table",
-                          "Filtered feature table"),
+                          "Filtered feature table",
+                          "Group summary species",
+                          "Group summary classes"),
               selected = "Class normalised data table",
               multiple = FALSE,
               width = "100%"
@@ -481,6 +491,15 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             choices = colnames(r6$tables$meta_raw),
             selected = colnames(r6$tables$meta_raw)[3]
           )
+          
+          # Select sample batch column from the raw meta data
+          shiny::updateSelectInput(
+            session = session,
+            inputId = "select_sample_batch",
+            choices = colnames(r6$tables$meta_raw),
+            selected = colnames(r6$tables$meta_raw)[4]
+          )
+          
         }
       })
       
@@ -544,6 +563,9 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             # Set columns
             r6$set_col(col = input$select_sample_type, type = "type")
             r6$set_col(col = input$select_sample_group, type = "group")
+            r6$set_col(col = input$select_sample_batch, type = "batch")
+            
+            
             
             # Set parameters
             r6$set_params_class_distribution(input$select_sample_group)
@@ -581,6 +603,12 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             }else{
               count_pools = 0
             }
+            if (!is.null(r6$texts$col_batch)) {
+              count_batches = length(unique(r6$tables$meta_raw[,r6$texts$col_batch]))
+            }else{
+              count_batches = 0
+            }
+            
             
             
             # Get indices
@@ -595,6 +623,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             output$found_blanks = shiny::renderText({paste0("Blanks found: ", as.character(count_blanks))})
             output$found_qcs = shiny::renderText({paste0("QCs found: ", as.character(count_qcs))})
             output$found_pools = shiny::renderText({paste0("Pools found: ", as.character(count_pools))})
+            output$found_batches = shiny::renderText({paste0("Batches found: ", as.character(count_batches))})
+
           }
         }
       })
@@ -813,7 +843,20 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
               r6$set_blank_table()
               r6$set_feat_raw()
               
-              del_cols = lips_get_del_cols(input = input, r6 = r6)
+              del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
+                                           blank_table = r6$tables$blank_table,
+                                           meta_table_raw = r6$tables$meta_raw,
+                                           meta_table_filtered = r6$tables$meta_filtered,
+                                           idx_blanks = r6$indices$idx_blanks,
+                                           idx_samples = r6$indices$idx_samples,
+                                           col_id_meta = r6$texts$col_id_meta,
+                                           col_group = r6$texts$col_group,
+                                           col_batch = r6$texts$col_batch,
+                                           blank_multiplier = as.numeric(input$blank_multiplier),
+                                           sample_threshold = as.numeric(input$sample_threshold),
+                                           group_threshold = as.numeric(input$group_threshold),
+                                           drop_method = input$drop_method
+                                           )
               remaining_cols = setdiff(colnames(r6$tables$data_filtered), del_cols)
               
               # Initialise bar plot
@@ -870,7 +913,20 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         r6$set_feat_filtered()
         r6$params$db_plot$selected_lipid_class = unique(r6$tables$feat_filtered$lipid_class)[1]
         
-        del_cols = lips_get_del_cols(input = input, r6 = r6)
+        del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
+                                     blank_table = r6$tables$blank_table,
+                                     meta_table_raw = r6$tables$meta_raw,
+                                     meta_table_filtered = r6$tables$meta_filtered,
+                                     idx_blanks = r6$indices$idx_blanks,
+                                     idx_samples = r6$indices$idx_samples,
+                                     col_id_meta = r6$texts$col_id_meta,
+                                     col_group = r6$texts$col_group,
+                                     col_batch = r6$texts$col_batch,
+                                     blank_multiplier = as.numeric(input$blank_multiplier),
+                                     sample_threshold = as.numeric(input$sample_threshold),
+                                     group_threshold = as.numeric(input$group_threshold),
+                                     drop_method = input$drop_method
+                                     )
         
         # Update class bar plot
         output$class_barplot = shiny::renderPlot(
@@ -911,7 +967,20 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         r6$params$db_plot$selected_lipid_class = unique(r6$tables$feat_filtered$lipid_class)[1]
         
         # Get del cols from the blank and group filtering
-        del_cols = lips_get_del_cols(input = input, r6 = r6)
+        del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
+                                     blank_table = r6$tables$blank_table,
+                                     meta_table_raw = r6$tables$meta_raw,
+                                     meta_table_filtered = r6$tables$meta_filtered,
+                                     idx_blanks = r6$indices$idx_blanks,
+                                     idx_samples = r6$indices$idx_samples,
+                                     col_id_meta = r6$texts$col_id_meta,
+                                     col_group = r6$texts$col_group,
+                                     col_batch = r6$texts$col_batch,
+                                     blank_multiplier = as.numeric(input$blank_multiplier),
+                                     sample_threshold = as.numeric(input$sample_threshold),
+                                     group_threshold = as.numeric(input$group_threshold),
+                                     drop_method = input$drop_method
+                                     )
         
         # Update class bar plot
         output$class_barplot = shiny::renderPlot(
@@ -940,11 +1009,24 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       
       # Display filtering preview
-      shiny::observeEvent(c(input$blank_multiplier, input$sample_threshold, input$group_threshold),{
+      shiny::observeEvent(c(input$drop_method, input$blank_multiplier, input$sample_threshold, input$group_threshold),{
         if (!is.null(r6$tables$data_filtered)){
           
           # Calculate remaining cols
-          del_cols = lips_get_del_cols(input = input, r6 = r6)
+          del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
+                                       blank_table = r6$tables$blank_table,
+                                       meta_table_raw = r6$tables$meta_raw,
+                                       meta_table_filtered = r6$tables$meta_filtered,
+                                       idx_blanks = r6$indices$idx_blanks,
+                                       idx_samples = r6$indices$idx_samples,
+                                       col_id_meta = r6$texts$col_id_meta,
+                                       col_group = r6$texts$col_group,
+                                       col_batch = r6$texts$col_batch,
+                                       blank_multiplier = as.numeric(input$blank_multiplier),
+                                       sample_threshold = as.numeric(input$sample_threshold),
+                                       group_threshold = as.numeric(input$group_threshold),
+                                       drop_method = input$drop_method
+                                       )
           
           remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
           
@@ -975,7 +1057,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         # Apply filtering to the filtered table
         r6$feature_filter(blank_multiplier = as.numeric(input$blank_multiplier),
                           sample_threshold = input$sample_threshold,
-                          group_threshold = input$group_threshold)
+                          group_threshold = input$group_threshold,
+                          drop_method = input$drop_method)
         
         # Update progress bar
         shinyWidgets::updateProgressBar(
@@ -995,7 +1078,20 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         r6$set_data_filtered()
         r6$set_all_tables()
         
-        del_cols = lips_get_del_cols(input = input, r6 = r6)
+        del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
+                                     blank_table = r6$tables$blank_table,
+                                     meta_table_raw = r6$tables$meta_raw,
+                                     meta_table_filtered = r6$tables$meta_filtered,
+                                     idx_blanks = r6$indices$idx_blanks,
+                                     idx_samples = r6$indices$idx_samples,
+                                     col_id_meta = r6$texts$col_id_meta,
+                                     col_group = r6$texts$col_group,
+                                     col_batch = r6$texts$col_batch,
+                                     blank_multiplier = as.numeric(input$blank_multiplier),
+                                     sample_threshold = as.numeric(input$sample_threshold),
+                                     group_threshold = as.numeric(input$group_threshold),
+                                     drop_method = input$drop_method
+                                     )
         remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
         
         # Update class bar plot
