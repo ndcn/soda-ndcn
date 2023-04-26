@@ -33,16 +33,16 @@ Downloads the *Lipidomics filtered table* as a CSV file.
 **Blank and Group filtering**.  
 Removes features that are not significantly above blanks. It is applied using the following method:  
 ```
-Omics_data$feature_filter(blank_multiplier, sample_threshold, group_threshold)
+Lips_data$feature_filter(blank_multiplier, sample_threshold, group_threshold)
 ```
-This method updates the *Filtered data table* (created at import) by removing non-significant features. It uses itself two functions: blank_filter and group_filter.  
-1. **blank_filter**.  
+This method updates the *Filtered data table* (created at import) by removing non-significant features.  
+1. **Step 1: blank filter**.  
 Takes as input the initial *Filtered data table*, the *Blank table*, blank_multiplier, and sample_threshold. This function returns a list of features that will be set for deletion (del_cols).  
 Missing values from the *Filtered data table* are imputed by 0. Feature means are calculated from the *Blank table*. Features with only missing values will have their mean set to 0. These means multiplied by the blank_multiplier will constitute the threshold. For each feature, the ratio of samples above threshold is calculated and if that ratio is strictly below the sample_threshold, the feature is set for deletion.  
-2. **group_filter**.  
+This operates batch-wise, i.e. the values from a batch will be compared to the mean blanks of that batch. The features set for deletion constitute the union of all features set for deletion in each batch.  
+2. **Step 2: group filter**.  
 Takes as input the initial *Filtered data table*, the *Blank table*, the *Filtered metadata table*, del_cols (see above), the group column name, the blank_multiplier and the group_threshold. It returns a list of columns to be saved from deletion from inside del_cols (saved_cols).  
-Missing values in the *Filtered data table* are ignored (same as 0 imputation). Feature means are calculated from the *Blank table* as before, missing values being set to 0 and all means multiplied by the blank_multiplier to constitute the threshold. This time, the ratio of samples is calculated for each sample group and if any of the groups has a ratio above or equal to the group_threshold, the feature is saved from deletion.  
-  
-The saved_cols are then removed from the del_cols and the remaining del_cols are removed from the *Filtered data table*.  
+Missing values in the *Filtered data table* are imputed by 0. Contraty to blank filter, the group filter operates across batches too (because a single group can be spread across batches). It operates on each group individually by splitting them into the different batches they are spread across (i.e. group_1 => batches 1, 3 and 6). It will compare the values in each batch for that specific group to the mean blanks of that batch. Once all batches for the group have been examined, it will apply the group_threshold to check how many samples overall (across batches) are above the blank threshold (for each feature). Features that were above threshold in any of the groups will be removed from del_cols and therefore saved from deletion.  
+
 </details>
 

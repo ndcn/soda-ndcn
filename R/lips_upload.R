@@ -12,8 +12,7 @@ lips_update_fields = function(input, session, r6) {
                                col_batch = r6$texts$col_batch,
                                blank_multiplier = as.numeric(input$blank_multiplier),
                                sample_threshold = as.numeric(input$sample_threshold),
-                               group_threshold = as.numeric(input$group_threshold),
-                               drop_method = input$drop_method
+                               group_threshold = as.numeric(input$group_threshold)
                                )
   remaining_cols = setdiff(colnames(r6$tables$data_filtered), del_cols)
   
@@ -371,14 +370,7 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           
           shiny::h4("Blank & Group filtering"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-          
-          # Feature drop method between batches
-          shiny::selectInput(inputId = ns("drop_method"),
-                             label = "Drop between batches",
-                             choices = c("union", "intersect", "flatten"),
-                             selected = "union",
-                             width = "100%"),
-          
+
           # Blank multiplier
           shiny::textInput(inputId = ns("blank_multiplier"), label = "Blank multiplier", value = 2, width = "100%"),
           
@@ -854,8 +846,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                            col_batch = r6$texts$col_batch,
                                            blank_multiplier = as.numeric(input$blank_multiplier),
                                            sample_threshold = as.numeric(input$sample_threshold),
-                                           group_threshold = as.numeric(input$group_threshold),
-                                           drop_method = input$drop_method
+                                           group_threshold = as.numeric(input$group_threshold)
                                            )
               remaining_cols = setdiff(colnames(r6$tables$data_filtered), del_cols)
               
@@ -924,8 +915,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                      col_batch = r6$texts$col_batch,
                                      blank_multiplier = as.numeric(input$blank_multiplier),
                                      sample_threshold = as.numeric(input$sample_threshold),
-                                     group_threshold = as.numeric(input$group_threshold),
-                                     drop_method = input$drop_method
+                                     group_threshold = as.numeric(input$group_threshold)
                                      )
         
         # Update class bar plot
@@ -978,8 +968,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                      col_batch = r6$texts$col_batch,
                                      blank_multiplier = as.numeric(input$blank_multiplier),
                                      sample_threshold = as.numeric(input$sample_threshold),
-                                     group_threshold = as.numeric(input$group_threshold),
-                                     drop_method = input$drop_method
+                                     group_threshold = as.numeric(input$group_threshold)
                                      )
         
         # Update class bar plot
@@ -1009,7 +998,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       
       # Display filtering preview
-      shiny::observeEvent(c(input$drop_method, input$blank_multiplier, input$sample_threshold, input$group_threshold),{
+      shiny::observeEvent(c(input$blank_multiplier, input$sample_threshold, input$group_threshold),{
         if (!is.null(r6$tables$data_filtered)){
           
           # Calculate remaining cols
@@ -1024,8 +1013,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                        col_batch = r6$texts$col_batch,
                                        blank_multiplier = as.numeric(input$blank_multiplier),
                                        sample_threshold = as.numeric(input$sample_threshold),
-                                       group_threshold = as.numeric(input$group_threshold),
-                                       drop_method = input$drop_method
+                                       group_threshold = as.numeric(input$group_threshold)
                                        )
           
           remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
@@ -1057,8 +1045,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         # Apply filtering to the filtered table
         r6$feature_filter(blank_multiplier = as.numeric(input$blank_multiplier),
                           sample_threshold = input$sample_threshold,
-                          group_threshold = input$group_threshold,
-                          drop_method = input$drop_method)
+                          group_threshold = input$group_threshold
+                          )
         
         # Update progress bar
         shinyWidgets::updateProgressBar(
@@ -1089,8 +1077,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                      col_batch = r6$texts$col_batch,
                                      blank_multiplier = as.numeric(input$blank_multiplier),
                                      sample_threshold = as.numeric(input$sample_threshold),
-                                     group_threshold = as.numeric(input$group_threshold),
-                                     drop_method = input$drop_method
+                                     group_threshold = as.numeric(input$group_threshold)
                                      )
         remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
         
