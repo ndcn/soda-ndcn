@@ -435,6 +435,22 @@ Lips_data = R6::R6Class(
         self$tables$data_filtered = self$tables$data_filtered[,!(colnames(self$tables$data_filtered) %in% del_cols)]
       }
     },
+    
+    # Normalise to a metadata column
+    normalise_to_metadata = function(meta_col) {
+      if (meta_col == "None") {
+        return()
+      }
+      
+      data_table = self$tables$data_filtered
+      norm_list = as.numeric(self$tables$meta_filtered[, meta_col])
+      if (any(is.na(norm_list))) {
+        print_time("Normalisation: selected column contains non-numeric values, skipping.")
+        return()
+      }
+      self$tables$data_filtered = meta_normalise(data_table = data_table,
+                                                 norm_list = norm_list)
+    },
 
     # Class tables
     class_grouping_raw = function(table = self$tables$data_filtered){

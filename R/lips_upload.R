@@ -393,6 +393,12 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           tags$style(HTML(".js-irs-1 .irs-single, .js-irs-1 .irs-bar-edge, .js-irs-1 .irs-bar {background: #007bff}")),
           shiny::sliderInput(inputId = ns("group_threshold"), label = "Group threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%"),
           
+          # Normalisation
+          shiny::selectizeInput(inputId = ns("normalise_to_col"),
+                                label = "Normalise to column",
+                                choices = character(0),
+                                width = "100%"),
+          
           # Buttons to save or reset the feature filtering
           shiny::fluidRow(
             shiny::actionButton(inputId = ns("save"), label = "Save filtering", width = "50%"),
@@ -403,17 +409,11 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           shiny::h4("Download tables"),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           shiny::fluidRow(
-            shiny::downloadButton(
-              outputId = ns("data_filtered_download"),
-              label = "Filtered data",
-              style = "width:100%;"
-            )
-          ),
-          shiny::fluidRow(
             shiny::selectizeInput(
               inputId = ns("other_tables_select"),
-              label = "Other tables",
-              choices = c("Class normalised data table", "Total normalised data table",
+              label = "Select table:",
+              choices = c("Filtered data table",
+                          "Class normalised data table", "Total normalised data table",
                           "Raw class table", "Total normalised class table",
                           "Z-scored data table", "Z-scored class normalised data table",
                           "Z-scored total normalised data table",
@@ -422,7 +422,7 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
                           "Filtered feature table",
                           "Group summary species",
                           "Group summary classes"),
-              selected = "Class normalised data table",
+              selected = "Filtered data table",
               multiple = FALSE,
               width = "100%"
             ),
@@ -562,6 +562,14 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                 choices = rownames(r6$tables$meta_filtered)
               )
             }
+            
+            # Update the column choices in the lipidomics data normalisation widget
+            shiny::updateSelectizeInput(
+              session = session,
+              inputId = "normalise_to_col",
+              choices = c("None", colnames(r6$tables$meta_filtered)),
+              selected = "None"
+            )
             
             # Set columns
             r6$set_col(col = input$select_sample_type, type = "type")
@@ -1062,6 +1070,9 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                           group_threshold = input$group_threshold
                           )
         
+        # Normalise to metacolumn
+        r6$normalise_to_metadata(meta_col = input$normalise_to_col)
+        
         # Update progress bar
         shinyWidgets::updateProgressBar(
           session = session,
@@ -1119,22 +1130,14 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       
       
       # Download filtered data
-      dl_data_filtered = shiny::reactive(r6$tables$data_filtered)
       dl_other_table = shiny::reactiveValues(
         name = NULL,
         table = NULL
       )
-      shiny::observeEvent(input$other_tables_select , {
+      shiny::observeEvent(c(input$other_tables_select, input$save) , {
         dl_other_table$name = timestamped_name(paste0(stringr::str_replace_all(input$other_tables_select, " ", "_"), ".csv"))
         dl_other_table$table = table_switch(selection = input$other_tables_select, r6 = r6)
       })
-      
-      output$data_filtered_download = shiny::downloadHandler(
-        filename = timestamped_name("lipidomics_filtered.csv"),
-        content = function(file_name){
-          write.csv(dl_data_filtered(), file_name)
-        }
-      )
       
       # Download other tables
       output$other_tables_download = shiny::downloadHandler(
