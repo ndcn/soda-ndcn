@@ -89,6 +89,41 @@ convert_long_file = function(file, id_col, feature_col, values_col, meta_cols) {
               row.names = FALSE)
 }
 
+na_imputation = function(data_table, mask, imputation) {
+  data_table[mask] = imputation
+  return(data_table)
+}
+
+batch_na_imputation = function(data_table, mask, batch_list, imputation_factor) {
+  
+  # Return directly if imputation is NA
+  if (is.na(imputation_factor)) {
+    return(data_table)
+  }
+  
+  # No batch requirements if imputation is fixed
+  if (imputation_factor == 0) {
+    data_table[mask] = 0.0
+    return(data_table)
+  }
+  
+  for (b in unique(batch_list)) {
+    batch_mask = mask
+    batch_mask[batch_list != b,] = FALSE
+    
+    
+    imputation = data_table[batch_list == b,2:ncol(data_table)]
+    imputation_mask = batch_mask[batch_list == b,2:ncol(batch_mask)]
+    imputation = imputation[!imputation_mask]
+    imputation = min(imputation)
+    imputation = imputation*imputation_factor
+    data_table = na_imputation(data_table = data_table,
+                               mask = batch_mask,
+                               imputation = imputation)
+  }
+  return(data_table)
+}
+
 
 #----------------------------------------------------------- Summary tables ----
 
@@ -136,45 +171,6 @@ blank_filter = function(data_table, blank_table, blank_multiplier, sample_thresh
   }
   return(del_cols)
 }
-
-
-
-# group_filter = function(data_table, blank_table, meta_table, del_cols, col_group, blank_multiplier, group_threshold){
-#   # Salvage some of the features with a group filtering (same as above but applied to groups)
-#   blank_means = get_col_means(data_table = blank_table)
-#   groups_total = table(meta_table[, col_group])
-#   saved_cols = c()
-#   for (col in del_cols) {
-#     threshold = blank_multiplier * blank_means[col]
-#     ratio = which(data_table[, col] > threshold)
-#     ratio = table(meta_table[, col_group][ratio])
-#     ratio = ratio/groups_total[names(ratio)]
-#     if (any(ratio >= group_threshold)) {
-#       saved_cols = c(saved_cols, col)
-#     }
-#   }
-#   return(saved_cols)
-# }
-
-# # Combination of both the above functions
-# bland_and_group_filter = function(data_table,
-#                                   blank_table,
-#                                   meta_table,
-#                                   col_group,
-#                                   blank_multiplier,
-#                                   sample_threshold,
-#                                   group_threshold
-# ) {
-#   del_cols = blank_filter(data_table, blank_table, blank_multiplier, sample_threshold)
-#   del_cols_2 = blank_filter_vec(data_table, blank_table, blank_multiplier, sample_threshold)
-#   setdiff(del_cols, del_cols_2)
-#   
-#   if (!is.null(del_cols)) {
-#     saved_cols = group_filter(data_table, blank_table, meta_table, del_cols, col_group, blank_multiplier, group_threshold)
-#     del_cols = setdiff(del_cols,saved_cols)
-#   }
-#   return(del_cols)
-# }
 
 # Implementation of blank filtering methods with r6 object
 lips_get_del_cols = function(data_table,

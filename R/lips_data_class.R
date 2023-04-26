@@ -33,7 +33,9 @@ Lips_data = R6::R6Class(
       rownames_blanks = NULL,
       rownames_qcs = NULL,
       rownames_pools = NULL,
-      rownames_samples = NULL
+      rownames_samples = NULL,
+      missing_vals = NULL,
+      batch_list = NULL
     ),
     
     #--------------------------------------------------------------- Tables ----
@@ -271,18 +273,28 @@ Lips_data = R6::R6Class(
       self$indices$rownames_samples = row_names
     },
     
+    get_missing_vals = function() {
+      self$indices$missing_vals = is.na(self$tables$data_raw)
+    },
+    
+    get_batch_list = function() {
+      self$indices$batch_list = self$tables$meta_raw[,self$texts$col_batch]
+    },
+    
     set_all_indices = function() {
       # Get rows by default index
       self$get_idx_blanks()
       self$get_idx_qcs()
       self$get_idx_pools()
       self$get_idx_samples()
+      self$get_batch_list()
       
       # Get rows by rowname
       self$get_rownames_blanks()
       self$get_rownames_qcs()
       self$get_rownames_pools()
       self$get_rownames_samples()
+
     },
     
     
@@ -304,6 +316,14 @@ Lips_data = R6::R6Class(
     # Set raw data
     set_raw_data = function(val) {
       self$tables$data_raw = val
+    },
+    
+    # Impute NAs
+    na_imputation_raw = function(imputation_factor = NA) {
+      self$tables$data_raw = batch_na_imputation(data_table = self$tables$data_raw,
+                                                 mask = self$indices$missing_vals,
+                                                 batch_list = self$indices$batch_list,
+                                                 imputation_factor = as.numeric(imputation_factor))
     },
 
     # Set or reset the filtered data
