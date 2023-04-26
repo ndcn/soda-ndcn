@@ -396,7 +396,7 @@ Lips_data = R6::R6Class(
     },
 
     # Filter filtered table
-    feature_filter = function(blank_multiplier, sample_threshold, group_threshold, drop_method) {
+    feature_filter = function(blank_multiplier, sample_threshold, group_threshold) {
       
       del_cols = lips_get_del_cols(data_table = self$tables$data_filtered,
                                    blank_table = self$tables$blank_table,
@@ -409,8 +409,7 @@ Lips_data = R6::R6Class(
                                    col_batch = self$texts$col_batch,
                                    blank_multiplier = blank_multiplier,
                                    sample_threshold = sample_threshold,
-                                   group_threshold = group_threshold,
-                                   drop_method = drop_method
+                                   group_threshold = group_threshold
                                    )
       if (length(del_cols) > 0) {
         self$tables$data_filtered = self$tables$data_filtered[,!(colnames(self$tables$data_filtered) %in% del_cols)]
