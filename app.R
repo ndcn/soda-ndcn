@@ -71,6 +71,12 @@ sidebar_ui = function() {
         tabName = "welcome",
         icon = shiny::icon("home")),
       
+      # General settings
+      bs4Dash::menuItem(
+        text = "General settings",
+        tabName = "gen_set",
+        icon = shiny::icon("gears")),
+      
       # Data upload and submenus
       bs4Dash::menuItem(
         text = "Data upload",
@@ -148,6 +154,12 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "welcome",
         soda_welcome()
+      ),
+      
+      # General settings page
+      bs4Dash::tabItem(
+        tabName = "gen_set",
+        soda_genset_ui(id = "general_settings")
       ),
       
       # Data upload pages
@@ -240,16 +252,28 @@ server = function(input, output, session) {
     name = "prot_1",
     type = "proteomics"
   )
+
   
-  colour_list= RColorBrewer::brewer.pal(n = 11, name = 'Spectral')
-  colour_list = colour_list[-6]
-  colour_list = grDevices::colorRampPalette(colour_list)(60)
+  
+  
+  general_settings = General_settings_class$new()
+  # general_settings$set_color_palette(name = "PuOr",
+  #                                    n = color_count_switch("PuOr"),
+  #                                    ramp = 30)
+  
+  soda_genset_server("general_settings", r6 = general_settings)
+
+  # 
+  # 
+  # colour_list= RColorBrewer::brewer.pal(n = 11, name = 'Spectral')
+  # colour_list = colour_list[-6]
+  # colour_list = grDevices::colorRampPalette(colour_list)(60)
 
   # Load modules
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
   soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
-  soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = colour_list)
-  soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, colour_list = colour_list)
+  soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = general_settings$color_settings$color_palette)
+  soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, colour_list = general_settings$color_settings$color_palette)
   utils_merge_tables_server("merge_tables_page")
   utils_convert_table_server("convert_tables_page")
   

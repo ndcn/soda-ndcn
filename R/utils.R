@@ -131,7 +131,6 @@ meta_normalise = function(data_table, norm_list) {
   return(data_table)
 }
 
-
 #----------------------------------------------------------- Table switches ----
 table_switch = function(selection, r6){
   switch(EXPR = selection,
@@ -1078,3 +1077,8 @@ prots_get_feature_table = function(prot_list, main_go) {
               "go_functions" = go_functions_table,
               "go_processes" = go_processes_table))
 }
+
+
+
+
+
