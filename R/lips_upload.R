@@ -308,7 +308,18 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
           shiny::selectizeInput(inputId = ns("select_id_data"), choices = NULL, label = NULL, multiple = F, width = "100%"),
-          shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red")
+          shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red"),
+          
+          shiny::tags$h3("NA imputation"),
+          
+          # Select ID column
+          soda_get_col_ui(label = "Imputation", desc = 'Values which will replace NAs will be this factor multiplied by the minimum value of each batch. "NA" keeps NAs.'),
+          shiny::selectizeInput(inputId = ns("na_imputation"),
+                                choices = c("NA", "0.00", "0.25", "0.50", "0.75", "1.00"),
+                                selected = "NA",
+                                label = NULL,
+                                multiple = F,
+                                width = "100%"),
           
         )
       )
@@ -556,6 +567,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
             r6$set_col(col = input$select_sample_type, type = "type")
             r6$set_col(col = input$select_sample_group, type = "group")
             r6$set_col(col = input$select_sample_batch, type = "batch")
+            r6$get_batch_list()
             
             
             
@@ -784,6 +796,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                      header = T,
                                      sep = sep,
                                      check.names = FALSE))
+            r6$get_missing_vals()
           }
           
           # Select ID column from the raw data
@@ -814,10 +827,11 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       })
       
       # Set values to the R6 object
-      shiny::observeEvent(input$select_id_data, {
+      shiny::observeEvent(c(input$select_id_data, input$na_imputation), {
         if (input$select_id_data != ""){
           
           # Initialise filtered data with the ID column
+          r6$na_imputation_raw(imputation_factor = input$na_imputation)
           r6$set_col(col = input$select_id_data, type = "id_data")
           r6$set_data_filtered()
           
