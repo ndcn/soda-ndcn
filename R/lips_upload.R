@@ -316,11 +316,10 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           soda_get_col_ui(label = "Imputation", desc = 'Values which will replace NAs will be this factor multiplied by the minimum value of each batch. "NA" keeps NAs.'),
           shiny::selectizeInput(inputId = ns("na_imputation"),
                                 choices = c("NA", "0.00", "0.25", "0.50", "0.75", "1.00"),
-                                selected = "NA",
+                                selected = "0.25",
                                 label = NULL,
                                 multiple = F,
                                 width = "100%"),
-          
         )
       )
     ),

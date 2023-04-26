@@ -129,6 +129,9 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
     function(input, output, session) {
       ns = session$ns
 
+      # # Get color settings
+      # colour_list = r6_settings$color_settings$color_palette
+      
 
       ## Create a dimensions object to store browser dimensions
       dimensions_obj = shiny::reactiveValues()
