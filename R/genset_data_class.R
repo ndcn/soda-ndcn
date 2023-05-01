@@ -3,14 +3,13 @@
 General_settings_class = R6::R6Class(
   "General_settings",
   public = list(
-    # Colors
+    # Colors 
     color_settings = list(
       name = "Spectral",
       n = 11,
       ramp = 40,
       color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40),
       color_preview = NULL
-      # color_preview = get_color_plot(color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40))
     ),
     
     color_list = list(

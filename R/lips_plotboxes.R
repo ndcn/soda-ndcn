@@ -135,14 +135,14 @@ class_distribution_server = function(r6, output, session) {
   })
 }
   
-class_distribution_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+class_distribution_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   # Generate the plot
   shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol), {
     print_time("Class distribution: Updating params...")
     r6$params$class_distribution$dataset = input$class_distribution_dataset
     r6$set_params_class_distribution(val = input$class_distribution_metacol)
-    class_distribution_generate(r6, colour_list, dimensions_obj, input, "Class distribution")
+    class_distribution_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input, "Class distribution")
     class_distribution_spawn(r6, output, "Class distribution")
   })
 
@@ -248,14 +248,14 @@ class_comparison_server = function(r6, output, session) {
     )
   })
 }
-class_comparison_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+class_comparison_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   # Generate the plot
   shiny::observeEvent(c(input$class_comparison_dataset, input$class_comparison_metacol), {
     print_time("Class comparison: Updating params...")
     r6$params$class_comparison$dataset = input$class_comparison_dataset
     r6$set_params_class_comparison(val = input$class_comparison_metacol)
-    class_comparison_generate(r6, colour_list, dimensions_obj, input)
+    class_comparison_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     class_comparison_spawn(r6, output)
   })
 
@@ -414,7 +414,7 @@ volcano_plot_server = function(r6, output, session) {
   })
 }
 
-volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
   # auto-update selected groups
   shiny::observeEvent(input$volcano_plot_metacol,{
@@ -441,7 +441,7 @@ volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, s
     r6$params$volcano_plot$adjustment = input$volcano_plot_adjustment
     r6$params$volcano_plot$selected_test = input$volcano_plot_test
     
-    volcano_plot_generate(r6, colour_list, dimensions_obj, input)
+    volcano_plot_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     volcano_plot_spawn(r6, output)
   })
 
@@ -623,7 +623,7 @@ heatmap_server = function(r6, output, session) {
   })
 }
 
-heatmap_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
   shiny::observeEvent(input$heatmap_run,{
     print_time("Heatmap: Updating params...")
@@ -638,7 +638,7 @@ heatmap_events = function(r6, dimensions_obj, colour_list, input, output, sessio
     r6$params$heatmap$alpha_da = input$heatmap_alpha_da
     
     
-    heatmap_generate(r6, colour_list, dimensions_obj, input)
+    heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     heatmap_spawn(r6, output)
   })
 
@@ -778,7 +778,7 @@ pca_server = function(r6, output, session) {
   })
 }
 
-pca_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+pca_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da),{
     print_time("PCA: Updating params...")
@@ -786,7 +786,7 @@ pca_events = function(r6, dimensions_obj, colour_list, input, output, session) {
     r6$params$pca$group_column = input$pca_metacol
     r6$params$pca$apply_da = input$pca_apply_da
     r6$params$pca$alpha_da = input$pca_alpha_da
-    pca_generate(r6, colour_list, dimensions_obj, input)
+    pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     pca_spawn(r6, output)
   })
 
@@ -1024,7 +1024,7 @@ double_bonds_server = function(r6, output, session) {
   })
 }
 
-db_plot_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+db_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
   # Group col selection
   shiny::observeEvent(input$double_bonds_metacol,{
@@ -1048,7 +1048,7 @@ db_plot_events = function(r6, dimensions_obj, colour_list, input, output, sessio
     r6$params$db_plot$selected_function = input$double_bonds_function
     
 
-    double_bonds_generate_single(r6, colour_list, dimensions_obj, input)
+    double_bonds_generate_single(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     double_bonds_spawn(r6, output)
     
   })

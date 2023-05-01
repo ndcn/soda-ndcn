@@ -117,14 +117,14 @@ prot_class_distribution_server = function(r6, output, session) {
   })
 }
 
-prot_class_distribution_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+prot_class_distribution_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   # Generate the plot
   shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol), {
     print_time("Class distribution: Updating params...")
     r6$params$class_distribution$dataset = input$class_distribution_dataset
     r6$set_params_class_distribution(val = input$class_distribution_metacol)
-    prot_class_distribution_generate(r6, colour_list, dimensions_obj, input, "Class distribution")
+    prot_class_distribution_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input, "Class distribution")
     prot_class_distribution_spawn(r6, output, "Class distribution")
   })
   
@@ -264,7 +264,7 @@ prot_volcano_plot_server = function(r6, output, session) {
   })
 }
 
-prot_volcano_plot_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+prot_volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   # auto-update selected groups
   shiny::observeEvent(input$volcano_plot_metacol,{
@@ -287,7 +287,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, colour_list, input, outp
     r6$params$volcano_plot$adjustment = input$volcano_plot_adjustment
     r6$params$volcano_plot$selected_test = input$volcano_plot_test
     
-    prot_volcano_plot_generate(r6, colour_list, dimensions_obj, input)
+    prot_volcano_plot_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     prot_volcano_plot_spawn(r6, output)
   })
   
@@ -395,13 +395,13 @@ prot_heatmap_server = function(r6, output, session) {
   })
 }
 
-prot_heatmap_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   shiny::observeEvent(input$heatmap_run,{
     print_time("Heatmap: Updating params...")
     r6$params$heatmap$dataset = input$heatmap_dataset
     r6$params$heatmap$percentile = input$heatmap_percentile
-    prot_heatmap_generate(r6, colour_list, dimensions_obj, input)
+    prot_heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     prot_heatmap_spawn(r6, output)
   })
   
@@ -572,7 +572,7 @@ prot_pca_server = function(r6, output, session) {
   })
 }
 
-prot_pca_events = function(r6, dimensions_obj, colour_list, input, output, session) {
+prot_pca_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
   shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da),{
     print_time("PCA: Updating params...")
@@ -580,7 +580,7 @@ prot_pca_events = function(r6, dimensions_obj, colour_list, input, output, sessi
     r6$params$pca$group_column = input$pca_metacol
     r6$params$pca$apply_da = input$pca_apply_da
     r6$params$pca$alpha_da = input$pca_alpha_da
-    prot_pca_generate(r6, colour_list, dimensions_obj, input)
+    prot_pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     prot_pca_spawn(r6, output)
   })
 
