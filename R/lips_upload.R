@@ -1089,7 +1089,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         # Reset table
         r6$set_data_filtered()
         r6$set_all_tables()
-        
         del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
                                      blank_table = r6$tables$blank_table,
                                      meta_table_raw = r6$tables$meta_raw,
@@ -1103,6 +1102,7 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                      sample_threshold = as.numeric(input$sample_threshold),
                                      group_threshold = as.numeric(input$group_threshold)
                                      )
+        print(3)
         remaining_cols = ncol(r6$tables$data_filtered) - length(del_cols)
         
         # Update class bar plot
