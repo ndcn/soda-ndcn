@@ -263,8 +263,8 @@ server = function(input, output, session) {
   # Load modules
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
   soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
-  soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, colour_list = general_settings$color_settings$color_palette)
-  soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, colour_list = general_settings$color_settings$color_palette)
+  soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, r6_settings = general_settings)
+  soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, r6_settings = general_settings)
   utils_merge_tables_server("merge_tables_page")
   utils_convert_table_server("convert_tables_page")
   

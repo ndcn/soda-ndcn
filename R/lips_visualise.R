@@ -1,5 +1,5 @@
 
-plot_one = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+plot_one = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = plotbox_switch_ui(selection_list = selection_list)
 
@@ -18,7 +18,7 @@ plot_one = function(r6, dimensions_obj, selection_list, colour_list, input, outp
 }
 
 
-plot_two = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+plot_two = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = plotbox_switch_ui(selection_list = selection_list)
   output$plotbox_field = shiny::renderUI({
@@ -36,7 +36,7 @@ plot_two = function(r6, dimensions_obj, selection_list, colour_list, input, outp
   }
 }
 
-plot_three = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+plot_three = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = plotbox_switch_ui(selection_list = selection_list)
   output$plotbox_field = shiny::renderUI({
@@ -55,7 +55,7 @@ plot_three = function(r6, dimensions_obj, selection_list, colour_list, input, ou
   }
 }
 
-plot_four = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+plot_four = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = plotbox_switch_ui(selection_list = selection_list)
   output$plotbox_field = shiny::renderUI({
@@ -123,15 +123,11 @@ soda_visualise_lips_ui = function(id) {
 }
 
 #------------------------------------- Lipidomics data visualisation server ----
-soda_visualise_lips_server = function(id, r6, colour_list) {
+soda_visualise_lips_server = function(id, r6, r6_settings) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
       ns = session$ns
-
-      # # Get color settings
-      # colour_list = r6_settings$color_settings$color_palette
-      
 
       ## Create a dimensions object to store browser dimensions
       dimensions_obj = shiny::reactiveValues()
@@ -175,12 +171,12 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
       })
 
       # Plotting events
-      class_distribution_events(r6, dimensions_obj, colour_list, input, output, session)
-      class_comparison_events(r6, dimensions_obj, colour_list, input, output, session)
-      volcano_plot_events(r6, dimensions_obj, colour_list, input, output, session)
-      heatmap_events(r6, dimensions_obj, colour_list, input, output, session)
-      pca_events(r6, dimensions_obj, colour_list, input, output, session)
-      db_plot_events(r6, dimensions_obj, colour_list, input, output, session)
+      class_distribution_events(r6, dimensions_obj, r6_settings, input, output, session)
+      class_comparison_events(r6, dimensions_obj, r6_settings, input, output, session)
+      volcano_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
+      heatmap_events(r6, dimensions_obj, r6_settings, input, output, session)
+      pca_events(r6, dimensions_obj, r6_settings, input, output, session)
+      db_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
       
       # Plot selection
       shiny::observeEvent(input$showPlots, {
@@ -191,7 +187,6 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
           plot_one(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)
@@ -200,7 +195,6 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
           plot_two(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)
@@ -209,7 +203,6 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
           plot_three(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)
@@ -218,7 +211,6 @@ soda_visualise_lips_server = function(id, r6, colour_list) {
           plot_four(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)

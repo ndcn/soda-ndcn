@@ -1,5 +1,5 @@
 
-prot_plot_one = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+prot_plot_one = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = prot_plotbox_switch_ui(selection_list = selection_list)
 
@@ -18,7 +18,7 @@ prot_plot_one = function(r6, dimensions_obj, selection_list, colour_list, input,
 }
 
 
-prot_plot_two = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+prot_plot_two = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = prot_plotbox_switch_ui(selection_list = selection_list)
   output$plotbox_field = shiny::renderUI({
@@ -36,7 +36,7 @@ prot_plot_two = function(r6, dimensions_obj, selection_list, colour_list, input,
   }
 }
 
-prot_plot_three = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+prot_plot_three = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = prot_plotbox_switch_ui(selection_list = selection_list)
   output$plotbox_field = shiny::renderUI({
@@ -55,7 +55,7 @@ prot_plot_three = function(r6, dimensions_obj, selection_list, colour_list, inpu
   }
 }
 
-prot_plot_four = function(r6, dimensions_obj, selection_list, colour_list, input, output, session) {
+prot_plot_four = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = prot_plotbox_switch_ui(selection_list = selection_list)
   output$plotbox_field = shiny::renderUI({
@@ -124,7 +124,7 @@ soda_visualise_prot_ui = function(id) {
 }
 
 #------------------------------------- Lipidomics data visualisation server ----
-soda_visualise_prot_server = function(id, r6, colour_list) {
+soda_visualise_prot_server = function(id, r6, r6_settings) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
@@ -173,10 +173,10 @@ soda_visualise_prot_server = function(id, r6, colour_list) {
       })
 
       # Plotting events
-      prot_pca_events(r6, dimensions_obj, colour_list, input, output, session)
-      prot_heatmap_events(r6, dimensions_obj, colour_list, input, output, session)
-      prot_volcano_plot_events(r6, dimensions_obj, colour_list, input, output, session)
-      prot_class_distribution_events(r6, dimensions_obj, colour_list, input, output, session)
+      prot_pca_events(r6, dimensions_obj, r6_settings, input, output, session)
+      prot_heatmap_events(r6, dimensions_obj, r6_settings, input, output, session)
+      prot_volcano_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
+      prot_class_distribution_events(r6, dimensions_obj, r6_settings, input, output, session)
       
       # Plot selection
       shiny::observeEvent(input$showPlots, {
@@ -187,7 +187,6 @@ soda_visualise_prot_server = function(id, r6, colour_list) {
           prot_plot_one(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)
@@ -196,7 +195,6 @@ soda_visualise_prot_server = function(id, r6, colour_list) {
           prot_plot_two(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)
@@ -205,7 +203,6 @@ soda_visualise_prot_server = function(id, r6, colour_list) {
           prot_plot_three(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)
@@ -214,7 +211,6 @@ soda_visualise_prot_server = function(id, r6, colour_list) {
           prot_plot_four(r6 = r6,
                    dimensions_obj = dimensions_obj,
                    selection_list = input$showPlots,
-                   colour_list = colour_list,
                    input = input,
                    output = output,
                    session = session)
