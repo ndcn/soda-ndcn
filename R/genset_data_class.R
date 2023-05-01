@@ -1,3 +1,4 @@
+
 #------------------------- Class General settings -------------------------------
 General_settings_class = R6::R6Class(
   "General_settings",
@@ -7,7 +8,9 @@ General_settings_class = R6::R6Class(
       name = "Spectral",
       n = 11,
       ramp = 40,
-      color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
+      color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40),
+      color_preview = NULL
+      # color_preview = get_color_plot(color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40))
     ),
     
     color_list = list(
@@ -49,12 +52,22 @@ General_settings_class = R6::R6Class(
     ),
     
     # Colors methods
+    
+    get_color_preview = function(color_palette = self$color_settings$color_palette) {
+      self$color_settings$color_preview = get_color_plot(color_palette)
+    },
+    
     set_color_palette = function(name, n, ramp) {
       print_time(paste0("Changing color palette to ", name))
       self$color_settings$name = name
       self$color_settings$n = n
       self$color_settings$ramp = ramp
       self$color_settings$color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = n, name = name))(ramp)
+      self$get_color_preview()
     }
+    
+
   )
 )
+
+

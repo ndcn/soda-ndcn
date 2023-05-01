@@ -13,7 +13,8 @@ soda_genset_ui = function(id) {
         shiny::column(
           width = 9,
           shiny::h2("Preview"),
-          shiny::imageOutput(ns("palette_preview"))
+          shiny::plotOutput(ns("palette_preview"),
+                            height = "800px")
         ),
         shiny::column(
           width = 3,
@@ -23,7 +24,7 @@ soda_genset_ui = function(id) {
                                 choices = NULL,
                                 selected = NULL,
                                 multiple = F),
-          shiny::sliderInput(inputId = ns("platte_ramp"),
+          shiny::sliderInput(inputId = ns("palette_ramp"),
                              label = "Color ramp",
                              min = 20,
                              max = 60,
@@ -42,6 +43,7 @@ soda_genset_server = function(id, r6) {
     id,
     function(input, output, session) {
       
+      # Update available palettes using the ones in the R6 object
       shiny::updateSelectizeInput(
         session = session,
         inputId = "palette_name",
@@ -49,14 +51,15 @@ soda_genset_server = function(id, r6) {
         selected = r6$color_settings$name
       )
       
-      shiny::observeEvent(c(input$palette_name, input$platte_ramp),{
+      # Preview the palette
+      shiny::observeEvent(c(input$palette_name, input$palette_ramp), {
         req(input$palette_name)
         r6$set_color_palette(name = input$palette_name,
                              n = r6$color_list[[input$palette_name]],
-                             ramp = as.numeric(input$platte_ramp))
-        # output$palette_preview = renderImage({
-        #   display.brewer.pal(n = 8, name = 'Dark2')
-        # })
+                             ramp = as.numeric(input$palette_ramp))
+        output$palette_preview = shiny::renderPlot({
+          r6$color_settings$color_preview
+        }, bg="transparent")  
       })
     }
   )

@@ -1078,6 +1078,24 @@ prots_get_feature_table = function(prot_list, main_go) {
               "go_processes" = go_processes_table))
 }
 
+#------------------------------------------------ General settings function ----
+get_color_plot = function(color_palette) {
+  color_df = data.frame(color=color_palette,
+                        int=rep(1,length(color_palette)))
+  color_df$color = factor(color_df$color, levels = color_df$color)
+  color_plot = ggplot(color_df, aes(x=color, y=int)) + 
+    geom_bar(stat="identity", fill=color_df$color, width=1) +
+    theme(axis.title.y=element_blank(),
+          axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.background = element_rect(fill='transparent', color=NA),
+          panel.background = element_rect(fill='transparent')) + 
+    coord_flip()
+  return(color_plot)
+}
+
 
 
 
