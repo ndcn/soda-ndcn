@@ -920,6 +920,9 @@ Lips_data = R6::R6Class(
         row_annotations = NULL
       }
 
+      # Reorder the feature metadata according to the data_table order
+      meta_table_features = meta_table_features[c(colnames(data_table)),]
+
       if (!is.null(col_annotations)) {
         # Convert annotations to their column names in the feature metadata table
         col_annotations = feature_switch(col_annotations)
