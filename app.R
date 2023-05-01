@@ -257,17 +257,8 @@ server = function(input, output, session) {
   
   
   general_settings = General_settings_class$new()
-  # general_settings$set_color_palette(name = "PuOr",
-  #                                    n = color_count_switch("PuOr"),
-  #                                    ramp = 30)
-  
   soda_genset_server("general_settings", r6 = general_settings)
 
-  # 
-  # 
-  # colour_list= RColorBrewer::brewer.pal(n = 11, name = 'Spectral')
-  # colour_list = colour_list[-6]
-  # colour_list = grDevices::colorRampPalette(colour_list)(60)
 
   # Load modules
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
