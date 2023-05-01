@@ -241,6 +241,7 @@ lips_get_del_cols = function(data_table,
     # Get rownames
     batch_blanks = meta_table_raw[batch_blanks, col_id_meta]
     batch_samples = meta_table_raw[batch_samples, col_id_meta]
+    batch_samples = base::intersect(rownames(data_table), batch_samples)
     
     del_cols = c(del_cols, blank_filter(data_table = data_table[batch_samples,],
                                         blank_table = blank_table[batch_blanks,],
@@ -270,6 +271,7 @@ lips_get_del_cols = function(data_table,
       # Get rownames
       batch_blanks = meta_table_raw[batch_blanks, col_id_meta]
       batch_samples = meta_table_raw[batch_samples, col_id_meta]
+      batch_samples = base::intersect(rownames(data_table), batch_samples)
       
       # get batch blank means
       blank_means = get_col_means(data_table = blank_table[batch_blanks,])
