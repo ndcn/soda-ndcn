@@ -471,15 +471,8 @@ Lips_data = R6::R6Class(
                                  group_1,
                                  group_2) {
 
-      idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
-                                       col = col_group,
-                                       pattern = group_1,
-                                       row_names = T)
-
-      idx_group_2 = get_idx_by_pattern(table = self$tables$meta_filtered,
-                                       col = col_group,
-                                       pattern = group_2,
-                                       row_names = T)
+      idx_group_1 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_1]
+      idx_group_2 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_2]
 
       # Get all row names from both groups
       idx_all = c(idx_group_1, idx_group_2)
@@ -535,12 +528,7 @@ Lips_data = R6::R6Class(
       }
       
       # Get the rownames for each group
-      idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
-                                       col = col_group,
-                                       pattern = group_1,
-                                       row_names = T)
-      
-      
+      idx_group_1 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_1]
       
       # Remove empty columns
       dead_features = colnames(data_table)
@@ -572,15 +560,8 @@ Lips_data = R6::R6Class(
                                        group_2) {
 
       # Get the rownames for each group
-      idx_group_1 = get_idx_by_pattern(table = self$tables$meta_filtered,
-                                       col = col_group,
-                                       pattern = group_1,
-                                       row_names = T)
-
-      idx_group_2 = get_idx_by_pattern(table = self$tables$meta_filtered,
-                                       col = col_group,
-                                       pattern = group_2,
-                                       row_names = T)
+      idx_group_1 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_1]
+      idx_group_2 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_2]
 
       # Get all row names from both groups
       idx_all = c(idx_group_1, idx_group_2)
