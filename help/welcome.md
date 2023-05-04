@@ -1,4 +1,4 @@
-Welcome to NDCN's SODA - Simple Omics Data Analyzer
+Welcome to NDCN's SODA - Simple Omics Data Analysis
 =======================
 This browser was developed as part of the CZI NDCN's Data Science Concierge program. It grew out of a need to enable quick and consistent data exploration, and for researchers to share curated data with colleagues and collaborators.<br><br>
 Please visit [this project's](https://ndcn.github.io/omicser/) website for more information.

@@ -14,25 +14,7 @@ Prot_data = R6::R6Class(
       ### Columns
       col_id_meta = NULL,
       col_id_data = NULL,
-      col_type = NULL,
-      col_group = NULL,
-      
-      ### Text patterns
-      pattern_qc = NULL,
-      pattern_blank = NULL,
-      pattern_pool = NULL
-    ),
-    
-    #-------------------------------------------------------------- Indices ----
-    indices = list(
-      idx_blanks = NULL,
-      idx_qcs = NULL,
-      idx_pools = NULL,
-      idx_samples = NULL,
-      rownames_blanks = NULL,
-      rownames_qcs = NULL,
-      rownames_pools = NULL,
-      rownames_samples = NULL
+      col_group = NULL
     ),
     
     #--------------------------------------------------------------- Tables ----
@@ -45,49 +27,35 @@ Prot_data = R6::R6Class(
       # Filtered
       meta_filtered = NULL,
       data_filtered = NULL,
-      feat_raw = NULL,
-      feat_filtered = NULL,
-      
-      # GO tables
-      go_components_raw = NULL,
-      go_functions_raw = NULL,
-      go_processes_raw = NULL,
-      
-      go_components_filtered = NULL,
-      go_functions_filtered = NULL,
-      go_processes_filtered = NULL,
       
       # Normalised
-      data_class_norm = NULL,
       data_total_norm = NULL,
       
       # Z-scored
       data_z_scored = NULL,
-      data_class_norm_z_scored = NULL,
       data_total_norm_z_scored = NULL,
       
-      # class tables
-      data_class_table_raw = NULL,
-      data_class_table_total_norm = NULL,
-      data_class_table_z_scored = NULL,
-      
       # Plot tables
-      class_distribution_table = NULL,
       volcano_table = NULL,
       heatmap_table = NULL,
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
-      dbplot_table = NULL
+      
+      # GSEA tables
+      prot_list = NULL,
+      gsea_object = NULL
+      
     ),
     
     #---------------------------------------------------------------- Plots ----
     plots = list(
-      class_distribution = NULL,
-      class_comparison = NULL,
       volcano_plot = NULL,
       heatmap = NULL,
       pca_plot = NULL,
-      double_bond_plot = NULL
+      dotplot = NULL,
+      emapplot = NULL,
+      cnetplot = NULL,
+      ridgeplot = NULL
     ),
     
     ### Methods
@@ -98,21 +66,10 @@ Prot_data = R6::R6Class(
     
     #----------------------------------------------------------- Parameters ----
     params = list(
-      # Class distribution parameters
-      class_distribution = shiny::reactiveValues(
-        dataset = "Total normalised class table",
-        group_col = NULL
-      ),
-      
-      # Class comparison parameters
-      class_comparison = shiny::reactiveValues(
-        dataset = "Total normalised class table",
-        group_col = NULL
-      ),
-      
+
       # Volcano plot parameters
       volcano_plot = shiny::reactiveValues(
-        data_table = "Filtered data table",
+        data_table = "Total normalised data table",
         adjustment = "Benjamini-Hochberg",
         group_column = NULL,
         groups = NULL,
@@ -126,7 +83,10 @@ Prot_data = R6::R6Class(
         clustering = NULL,
         map_sample_data = character(0),
         map_feature_data = character(0),
-        percentile = 95
+        percentile = 95,
+        group_column_da = NULL,
+        apply_da = TRUE,
+        alpha_da = 0.8
       ),
       
       # PCA parameters
@@ -135,19 +95,6 @@ Prot_data = R6::R6Class(
         group_column = NULL,
         apply_da = FALSE,
         alpha_da = 0.8
-      ),
-      
-      # Double bonds parameters
-      db_plot = shiny::reactiveValues(
-        dataset = "Filtered data table",
-        group_column = NULL,
-        selected_groups = NULL,
-        selected_lipid_class = NULL,
-        selected_function = "median",
-        fc_range = c(-5, 5),
-        fc_values = c(-1, 1),
-        pval_range = c(0, 5),
-        pval_values = c(1, 5)
       )
     ),
     
@@ -166,111 +113,11 @@ Prot_data = R6::R6Class(
     set_col = function(col, type) {
       if (type == "group"){
         self$texts$col_group = col
-      } else if (type == "type") {
-        self$texts$col_type = col
       } else if (type == "id_meta") {
         self$texts$col_id_meta = col
       } else if (type == "id_data") {
         self$texts$col_id_data = col
       }
-    },
-    
-    # Text patterns
-    set_text_pattern = function(pattern, type) {
-      if (type == "qc"){
-        self$texts$pattern_qc = pattern
-      } else if (type == "blank"){
-        self$texts$pattern_blank = pattern
-      } else if (type == "pool"){
-        self$texts$pattern_pool = pattern
-      } else {
-        stop("Text pattern selection : choose either qc, blank or pool.")
-      }
-    },
-    
-    
-    #-------------------------------------------------------- Index methods ----
-    # Index functions - Blanks
-    get_idx_blanks = function() {
-      idx_blanks = get_idx_by_pattern(table = self$tables$meta_raw,
-                                      col = self$texts$col_type,
-                                      pattern = self$texts$pattern_blank,
-                                      row_names = F)
-      if (length(idx_blanks) == 0) {idx_blanks = NULL}
-      self$indices$idx_blanks = idx_blanks
-    },
-    get_rownames_blanks = function() {
-      row_names = get_rownames_from_idx(idx = self$indices$idx_blanks,
-                                        id_col = self$texts$col_id_meta,
-                                        data_table = self$tables$meta_raw)
-      if (length(row_names) == 0) {row_names = NULL}
-      self$indices$rownames_blanks = row_names
-    },
-    
-    # Index functions - QCs
-    get_idx_qcs = function() {
-      idx_qcs = get_idx_by_pattern(table = self$tables$meta_raw,
-                                   col = self$texts$col_type,
-                                   pattern = self$texts$pattern_qc,
-                                   row_names = F)
-      if (length(idx_qcs) == 0) {idx_qcs = NULL}
-      self$indices$idx_qcs = idx_qcs
-    },
-    get_rownames_qcs = function() {
-      row_names = get_rownames_from_idx(idx = self$indices$idx_qcs,
-                                        id_col = self$texts$col_id_meta,
-                                        data_table = self$tables$meta_raw)
-      if (length(row_names) == 0) {row_names = NULL}
-      self$indices$rownames_qcs = row_names
-    },
-    
-    # Index functions - Pools
-    get_idx_pools = function() {
-      idx_pools = get_idx_by_pattern(table = self$tables$meta_raw,
-                                     col = self$texts$col_type,
-                                     pattern = self$texts$pattern_pool,
-                                     row_names = F)
-      if (length(idx_pools) == 0) {idx_pools = NULL}
-      self$indices$idx_pools = idx_pools
-    },
-    get_rownames_pools = function() {
-      row_names = get_rownames_from_idx(idx = self$indices$idx_pools,
-                                        id_col = self$texts$col_id_meta,
-                                        data_table = self$tables$meta_raw)
-      if (length(row_names) == 0) {row_names = NULL}
-      self$indices$rownames_pools = row_names
-    },
-    
-    # Index functions - Samples
-    get_idx_samples = function(){
-      idx_samples = as.numeric(rownames(self$tables$meta_raw))
-      idx_non_samples = c(self$indices$idx_blanks,
-                          self$indices$idx_qcs,
-                          self$indices$idx_pools)
-      
-      if (length(idx_non_samples) > 0) {
-        idx_non_samples = sort(unique(idx_non_samples))
-        idx_samples = idx_samples[!(idx_samples %in% idx_non_samples)]
-      }
-      self$indices$idx_samples = idx_samples
-    },
-    
-    get_rownames_samples = function() {
-      row_names = get_rownames_from_idx(idx = self$indices$idx_samples,
-                                        id_col = self$texts$col_id_meta,
-                                        data_table = self$tables$meta_raw)
-      if (length(row_names) == 0) {row_names = NULL}
-      self$indices$rownames_samples = row_names
-    },
-    
-    
-    #---------------------------------------------------- Parameter methods ----
-    set_params_class_distribution = function(val){
-      self$params$class_distribution$group_col = val
-    },
-    
-    set_params_class_comparison = function(val){
-      self$params$class_comparison$group_col = val
     },
     
     #-------------------------------------------------------- Table methods ----
@@ -331,129 +178,17 @@ Prot_data = R6::R6Class(
       
     },
     
-    # Set feature tables
-    set_feat_raw = function() {
-      id_col = self$texts$col_id_data
-      data_table = self$tables$data_raw
-      rownames(data_table) = data_table[,id_col]
-      data_table = data_table[,-which(colnames(data_table) == id_col)]
-      self$tables$feat_raw = get_feature_metadata(data_table = data_table)
-    },
-    set_feat_filtered = function() {
-      print_time("Setting filtered feature table")
-      # Copy from the raw feature table and set index
-      feat_filtered = self$tables$feat_raw
-      feat_filtered = set_index_col(data_table = feat_filtered, idx= "accession")
-      
-      # Filter by keeping only features from the filtered data table
-      kept_features = colnames(self$tables$data_filtered)
-      feat_filtered = feat_filtered[which(rownames(feat_filtered) %in% kept_features),]
-      
-      # Filter out from the data table all features which have no metadata associated
-      dead_features = setdiff(kept_features, rownames(feat_filtered))
-      drop_cols = which(colnames(self$tables$data_filtered) %in% dead_features)
-
-      # Refresh data table
-      if (length(drop_cols) > 0) {
-        self$tables$data_filtered = self$tables$data_filtered[,-drop_cols]
-      }
-      
-      # Refresh other tables
-      self$normalise_total()
-      self$normalise_total_z_score()
-      
-      # Set filtered features
-      self$tables$feat_filtered = feat_filtered
-    },
-    
-    set_go_components_filtered = function() {
-      print_time("Setting filtered GO components table")
-      # Copy from the raw go_components table
-      go_components_filtered = self$tables$go_components_raw
-      
-      # Filter by keeping only features from the filtered data table
-      kept_features = colnames(self$tables$data_filtered)
-      go_components_filtered = go_components_filtered[which(rownames(go_components_filtered) %in% kept_features),]
-      
-      # Set filtered go_components
-      self$tables$go_components_filtered = go_components_filtered
-    },
-    
-    set_go_functions_filtered = function() {
-      print_time("Setting filtered GO functions table")
-      # Copy from the raw go_functions table
-      go_functions_filtered = self$tables$go_functions_raw
-      
-      # Filter by keeping only features from the filtered data table
-      kept_features = colnames(self$tables$data_filtered)
-      go_functions_filtered = go_functions_filtered[which(rownames(go_functions_filtered) %in% kept_features),]
-      
-      # Set filtered go_functions
-      self$tables$go_functions_filtered = go_functions_filtered
-    },
-    
-    set_go_processes_filtered = function() {
-      print_time("Setting filtered GO processes table")
-      # Copy from the raw go_processes table
-      go_processes_filtered = self$tables$go_processes_raw
-      
-      # Filter by keeping only features from the filtered data table
-      kept_features = colnames(self$tables$data_filtered)
-      go_processes_filtered = go_processes_filtered[which(rownames(go_processes_filtered) %in% kept_features),]
-      
-      # Set filtered go_processes
-      self$tables$go_processes_filtered = go_processes_filtered
-    },
-    
-    
-    
-    # Filter filtered table
-    feature_filter = function(blank_multiplier, sample_threshold, group_threshold) {
-      
-      # Find features / columns below threshold
-      del_cols = blank_filter(data_table = self$tables$data_filtered,
-                              blank_table = self$tables$blank_table,
-                              blank_multiplier = blank_multiplier,
-                              sample_threshold = sample_threshold)
-      
-      # Salvage some of the features with a group filtering (same as above but applied to groups)
-      if (!is.null(del_cols)) {
-        saved_cols = group_filter(data_table = self$tables$data_filtered,
-                                  blank_table = self$tables$blank_table,
-                                  meta_table= self$tables$meta_filtered,
-                                  del_cols = del_cols,
-                                  col_group = self$texts$col_group,
-                                  blank_multiplier = blank_multiplier,
-                                  group_threshold = group_threshold)
-        del_cols = setdiff(del_cols,saved_cols)
-      }
-      
-      if (length(del_cols) > 0) {
-        self$tables$data_filtered = self$tables$data_filtered[,!(colnames(self$tables$data_filtered) %in% del_cols)]
-      }
-    },
-    
-    # Class tables
-    class_grouping_raw = function(table = self$tables$data_filtered){
-      self$tables$data_class_table_raw = get_lipid_class_table(table)
-    },
-    
-    
-    class_grouping_total_norm = function(table = self$tables$data_total_norm){
-      self$tables$data_class_table_total_norm = get_lipid_class_table(table)
-    },
-    
     # Volcano table
     get_volcano_table = function(data_table = self$tables$data_filtered,
-                                 volcano_table = self$tables$feat_filtered,
                                  col_group = self$texts$col_group,
                                  used_function = "median",
                                  test = "Wilcoxon",
                                  group_1,
                                  group_2) {
 
-      # Get the rownames for each group
+      volcano_table = data.frame(matrix(data = NA, nrow = ncol(data_table), ncol = 0))
       
+      # Get the rownames for each group
       idx_group_1 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_1]
       idx_group_2 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_2]
       
@@ -495,122 +230,80 @@ Prot_data = R6::R6Class(
       self$tables$volcano_table = volcano_table
     },
     
-    # Double bond plot table
-    
-    get_dbplot_table_single = function(data_table = self$tables$data_filtered, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1){
-      
-      # Set the averaging function
-      if (used_function == "median") {
-        av_function = function(x) {return(median(x, na.rm = T))}
-      } else {
-        av_function = function(x) {return(mean(x, na.rm = T))}
-      }
-      
-      # Get the rownames for each group
-      idx_group_1 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_1]
-      
-      # Filter data to keep only the two groups
-      data_table = data_table[idx_group_1,]
-      data_table = remove_empty_cols(table = data_table)
-      
-      averages = apply(data_table,2,av_function)
-      
-      # Dead rows/cols (removed because only NAs)
-      del_rows = setdiff(rownames(dbplot_table), colnames(data_table))
-      dbplot_table = dbplot_table[!(row.names(dbplot_table) %in% del_rows),]
-      
-      dbplot_table[, "averages"] = averages
-      
-      lips = rownames(dbplot_table)
-      txt_medians = as.character(round(dbplot_table[,"averages"],5))
-      dbplot_table$text = paste0(lips, " | ", used_function, ": ", txt_medians)
-      
-      self$tables$dbplot_table = dbplot_table
-    },
-    
-    get_dbplot_table_double = function(data_table = self$tables$data_filtered, dbplot_table = self$tables$feat_filtered, col_group = self$texts$col_group, used_function = "median", group_1, group_2) {
-      
-      # Set the averaging function
-      if (used_function == "median") {
-        av_function = function(x) {return(median(x, na.rm = T))}
-      } else {
-        av_function = function(x) {return(mean(x, na.rm = T))}
-      }
-      
+    # GSEA table
+    get_prot_list = function(data_table = self$tables$data_filtered,
+                             meta_table = self$tables$meta_filtered,
+                             col_group,
+                             group_1,
+                             group_2,
+                             used_function = "median",
+                             test = "T-test",
+                             p_value_cutoff = NA) {
       
       # Get the rownames for each group
-      idx_group_1 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_1]
-      idx_group_2 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_2]
+      idx_group_1 = rownames(meta_table)[meta_table[, col_group] == group_1]
+      idx_group_2 = rownames(meta_table)[meta_table[, col_group] == group_2]
       
       # Get all row names from both groups
       idx_all = c(idx_group_1, idx_group_2)
-      idx_all = sort(unique(idx_all))
+      idx_all = unique(idx_all)
       
       # Filter data to keep only the two groups
       data_table = data_table[idx_all,]
       
       # Remove empty columns
+      dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
+      dead_features = setdiff(dead_features, colnames(data_table))
       
-      # Collect fold change and p-values
-      fold_change = c()
-      p_value = c()
-      
-      for (col in colnames(data_table)) {
-        
-        # If both groups contain data
-        if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
-          fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
-          p_value = c(p_value, wilcox.test(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
-        } else {
-          # If at least one of the groups is full NA, default values
-          p_value = c(p_value, NA)
-          # For fold changes, if it is the denominator
-          if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
-            fold_change = c(fold_change, 777)
-          } else {
-            # If it is the numerator
-            fold_change = c(fold_change, 666)
-          }
-        }
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(data_table) %in% dead_features)
+        data_table = data_table[,-dead_features]
       }
       
-      # Imputation of Inf for when denominator av_value is 0 
-      fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      # Prepare the protein list with log2 fold changes
+      stat_vals = get_fc_and_pval(data_table = data_table,
+                                  idx_group_1 = idx_group_1,
+                                  idx_group_2 = idx_group_2,
+                                  used_function = used_function,
+                                  test = test)
+
+      stat_vals = as.data.frame(stat_vals, row.names = colnames(data_table))
       
-      # Imputation of 0 for when numerator av_value is 0 
-      fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+      if (!is.na(p_value_cutoff)) {
+        stat_vals = stat_vals[stat_vals$p_value <= p_value_cutoff,]
+      }
       
-      # Imputation of NAs for denominator FC with a value slightly above max FC
-      fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+      prot_list = log2(stat_vals$fold_change)
+      names(prot_list) = rownames(stat_vals)
       
-      # Imputation of NAs for nominator FC with a value slightly below min FC
-      fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+      # NA omit and sort
+      prot_list = na.omit(prot_list)
+      prot_list = sort(prot_list, decreasing = TRUE)
+      self$tables$prot_list = prot_list
+    },
+    
+    # GSEA object 
+    get_gsea_object = function(prot_list = self$tables$prot_list,
+                               ont = "ALL",
+                               nPerm = 10000,
+                               minGSSize = 3,
+                               maxGSSize = 800, 
+                               pvalueCutoff = 0.05, 
+                               verbose = TRUE, 
+                               OrgDb = "org.Hs.eg.db", 
+                               pAdjustMethod = "none") {
+      self$tables$gsea_object = clusterProfiler::gseGO(geneList=prot_list, 
+                                                       ont = ont, 
+                                                       keyType = "UNIPROT", 
+                                                       nPerm = nPerm, 
+                                                       minGSSize = minGSSize, 
+                                                       maxGSSize = maxGSSize, 
+                                                       pvalueCutoff = pvalueCutoff, 
+                                                       verbose = TRUE, 
+                                                       OrgDb = "org.Hs.eg.db", 
+                                                       pAdjustMethod = pAdjustMethod)
       
-      # Imputation of NAs for when both numerators and denominator medians are 0
-      fold_change[is.na(fold_change)] = 1
-      
-      # Imputation of NAs for p-values to be the min p-val
-      p_value[is.na(p_value)] = 0.99*min(p_value, na.rm = T)
-      
-      # Adjust p value
-      p_value_bh_adj = p.adjust(p_value, method = "BH")
-      
-      # Dead rows/cols (removed because only NAs)
-      del_rows = setdiff(rownames(dbplot_table), colnames(data_table))
-      dbplot_table = dbplot_table[!(row.names(dbplot_table) %in% del_rows),]
-      
-      dbplot_table$fold_change = fold_change
-      dbplot_table$p_value = p_value
-      dbplot_table$log2_fold_change = log2(fold_change)
-      dbplot_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
-      
-      lips = rownames(dbplot_table)
-      fc = as.character(round(dbplot_table[,"log2_fold_change"],2))
-      pval = as.character(round(dbplot_table[,"minus_log10_p_value_bh_adj"],2))
-      dbplot_table$text = paste0(lips, " | log2(fc): ", fc, " | -log10(bh(pval)): ", pval)
-      
-      self$tables$dbplot_table = dbplot_table
     },
     
     #------------------------------------------------ Normalisation methods ----
@@ -621,20 +314,9 @@ Prot_data = R6::R6Class(
                                                         impute = NA)
     },
     
-    # Class normalisation
-    normalise_class = function(){
-      self$tables$data_class_norm = normalise_lipid_class(self$tables$data_filtered)
-    },
-    
     # Total or Row normalisation
     normalise_total = function(){
       self$tables$data_total_norm = self$tables$data_filtered/rowSums(self$tables$data_filtered, na.rm = T)
-    },
-    
-    # Class and z-score normalisation
-    normalise_class_z_score = function() {
-      self$tables$data_class_norm_z_scored = z_score_normalisation(data_table = self$tables$data_class_norm,
-                                                                   impute = 0)
     },
     
     # Total and z-score normalisation
@@ -643,126 +325,10 @@ Prot_data = R6::R6Class(
                                                                    impute = 0)
     },
     
-    # Z-score the class table (generated by the class_grouping method)
-    normalise_class_table_z_score = function() {
-      self$tables$data_class_table_z_scored = z_score_normalisation(data_table = self$tables$data_class_table_total_norm,
-                                                                    impute = 0)
-    },
-    
     
     
     
     #----------------------------------------------------- Plotting methods ----
-    # Class distribution
-    plot_class_distribution = function(table = self$tables$data_class_table_total_norm,
-                                       meta_table = self$tables$meta_filtered,
-                                       col_group = self$texts$col_group,
-                                       colour_list,
-                                       width,
-                                       height){
-      
-      # Produce the class x group table
-      samp_list = rownames(table)
-      class_list = colnames(table)
-      group_list = sort(unique(meta_table[,col_group]))
-      
-      plot_table = data.frame(matrix(data = 0.0,
-                                     nrow = length(class_list),
-                                     ncol = length(group_list)))
-      rownames(plot_table) = class_list
-      colnames(plot_table) = group_list
-      
-      for (c in class_list) {
-        for (g in group_list){
-          s = rownames(meta_table)[meta_table[,col_group] == g]
-          m = mean(as.matrix(table[s, c]))
-          plot_table[c,g] = m
-        }
-      }
-      
-      # Store the plot_table
-      self$tables$class_distribution_table = plot_table
-      
-      
-      # Produce the plot
-      i = 1
-      fig = plotly::plot_ly(colors = colour_list, width = width, height = height)
-      for (col in colnames(plot_table)) {
-        fig = fig %>% add_trace(x = rownames(plot_table), y = plot_table[,col],
-                                name = col, color = colour_list[i], type  = "bar")
-        fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
-                             yaxis = list(title = "Concentration"))
-        i = i + 1
-      }
-      self$plots$class_distribution = fig
-    },
-    
-    ## Class comparison
-    plot_class_comparison = function(data_table = self$tables$data_class_table_total_norm,
-                                     meta_table = self$tables$meta_filtered,
-                                     col_group = self$texts$col_group,
-                                     colour_list,
-                                     width,
-                                     height){
-      
-      # Get sample groups and the list of classes
-      groups = sort(unique(meta_table[,col_group]))
-      class_list = colnames(data_table)
-      
-      # Annotations are for now a way to display each subplot title
-      annotations = get_subplot_titles(class_list)
-      
-      # dims makes the grid of subplots to be generated
-      dims = get_subplot_dim(class_list)
-      
-      # Plot list will be the list of subplots
-      plot_list = c()
-      
-      # Cleared groups is created for the legends
-      cleared_groups = c()
-      j = 1
-      for (c in class_list) {
-        i = 1
-        subplot = plot_ly(colors = colour_list, width = width, height = height)
-        for (g in groups){
-          if (g %in% cleared_groups) {
-            first_bool = FALSE
-          }else{
-            first_bool = TRUE
-            cleared_groups = c(cleared_groups, g)
-          }
-          
-          # For each class, each group
-          s = rownames(meta_table)[meta_table[, col_group] == g] # Get the samples for the current group
-          d = data_table[s, c] # Get the concentrations for all s samples in the current class c
-          m = mean(d) # Get the mean concentration for samples s for class c
-          
-          # Subplot for the bar chart displaying the mean concentration
-          subplot = subplot %>% add_trace(x = g, y = m, type  = "bar", name = g,
-                                          color = colour_list[i], alpha = 1,
-                                          legendgroup=i, showlegend = first_bool)
-          
-          # Subplot for boxplots displaying the median and all datapoints
-          subplot = subplot %>% add_trace(x = g, y = d, type  = "box", boxpoints = "all",
-                                          pointpos = 0, name = g, color = colour_list[i],
-                                          line = list(color = 'rgb(100,100,100)'),
-                                          marker = list(color = 'rgb(100,100,100)'), alpha = 1,
-                                          legendgroup=i, showlegend = FALSE,
-                                          text = s,
-                                          hoverinfo = "text")
-          subplot = subplot %>% layout(xaxis= list(showticklabels = FALSE),
-                                       yaxis = list(tickfont = list(size = 8)))
-          i = i + 1
-        }
-        plot_list[[j]] = plotly_build(subplot)
-        j = j + 1
-      }
-      
-      fig = subplot(plot_list, nrows = dims, margin = 0.035, titleX = TRUE)
-      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
-                           annotations = annotations)
-      self$plots$class_comparison = fig
-    },
     
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
@@ -798,7 +364,11 @@ Prot_data = R6::R6Class(
     
     ## Heatmap plot
     plot_heatmap = function(data_table = self$tables$data_total_norm_z_scored,
+                            meta_table = self$tables$meta_filtered,
                             percentile,
+                            cluster_rows = TRUE,
+                            cluster_cols = TRUE,
+                            row_annotations = c("Genotype", "GroupName"),
                             width,
                             height
     ) {
@@ -806,7 +376,18 @@ Prot_data = R6::R6Class(
       
       # Save table as heatmap table
       self$tables$heatmap_table = data_table
+      meta_table = meta_table[rownames(data_table),]
       
+      # Set the clustering
+      if (cluster_rows & cluster_cols) {
+        dendrogram_list = "both"
+      } else if (cluster_rows) {
+        dendrogram_list = "column" # Because of the transpose, rows => cols
+      } else if (cluster_cols) {
+        dendrogram_list = "row" # Because of the transpose, cols => rows
+      } else {
+        dendrogram_list = "none"
+      }
       
       # Set percentiles
       percentile = percentile/100
@@ -826,11 +407,26 @@ Prot_data = R6::R6Class(
       data_table[data_table > zmax] = zmax
       data_table[data_table < zmin] = zmin
       
+      # Annotations
+      if (!is.null(row_annotations)) {
+        row_annotations = meta_table[, row_annotations]
+      } else {
+        row_annotations = NULL
+      }
+      
       # Plot the data
-      self$plots$heatmap = plotly::plot_ly(
-        x = colnames(data_table), y = rownames(data_table),
-        z = data_table, type = "heatmap"
-      )
+      self$plots$heatmap = heatmaply::heatmaply(x = t(data_table),
+                                                scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                                                  low = "blue",
+                                                  high = "red",
+                                                  midpoint = 0,
+                                                  limits = c(-col_lim, col_lim)
+                                                ),
+                                                width = width,
+                                                height = height,
+                                                limits = c(zmin, zmax),
+                                                col_side_colors = row_annotations,
+                                                dendrogram = dendrogram_list)
       
     },
     
@@ -871,112 +467,34 @@ Prot_data = R6::R6Class(
       self$plots$pca_plot = fig
     },
     
-    ## Double bond plot
-    plot_doublebonds_single = function(data_table = self$tables$dbplot_table, lipid_class, group_1, width, height){
+    plot_dot_plot = function(gsea_object = self$tables$gsea_object, showCategory=10, split=".sign") {
+      self$plots$dotplot = enrichplot::dotplot(gsea_object,
+                                               showCategory = showCategory,
+                                               split = split) + facet_grid(.~.sign)
+      # print(self$plots$dotplot)
       
-      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
-      data_table = data_table[selected_rows,]
-      x_lims = c(min(data_table$carbons_1) -1, max(data_table$carbons_1) +1)
-      y_lims = c(min(data_table$unsat_1) -0.5, max(data_table$unsat_1) +1)
-      
-      fig = plotly::plot_ly(data_table,
-                            x = ~carbons_1,
-                            y = ~unsat_1,
-                            type = "scatter",
-                            mode = "markers",
-                            size = ~averages,
-                            sizes = ~c(5,40),
-                            marker = list(sizemode ='diameter',
-                                          opacity = 0.5,
-                                          sizeref=1
-                            ),
-                            text = data_table$text,
-                            hoverinfo = "text",
-                            width = width,
-                            height = height)
-      
-      
-      fig = fig %>% layout(
-        title = paste0("Lipids in class ", lipid_class, " - ", group_1),
-        xaxis = list(title = 'Total carbons',
-                     range = x_lims
-        ),
-        yaxis = list(title = 'Total double bonds',
-                     range = y_lims
-        )
-      )
-      fig = fig %>% config(modeBarButtonsToAdd = c('drawline',
-                                                   'drawopenpath',
-                                                   'drawclosedpath',
-                                                   'drawcircle',
-                                                   'drawrect',
-                                                   'eraseshape'))
-      self$plots$double_bond_plot = fig
     },
     
+    plot_cnet_plot = function(gsea_object = self$tables$gsea_object, categorySize="pvalue", foldChange=self$tables$prot_list, showCategory = 3) {
+      self$plots$cnetplot = enrichplot::cnetplot(gsea_object,
+                                                 categorySize=categorySize,
+                                                 foldChange=foldChange,
+                                                 showCategory = showCategory)
+      # print(self$plots$cnetplot)
+    },
     
-    plot_doublebonds_double = function(data_table = self$tables$dbplot_table, lipid_class, fc_limits, pval_limits, group_1, group_2, width, height){
+    plot_ridge_plot = function(gsea_object = self$tables$gsea_object) {
+      self$plots$ridgeplot = enrichplot::ridgeplot(gsea_object) + labs(x = "enrichment distribution")
       
-      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
-      data_table = data_table[selected_rows,]
-      x_lims = c(min(data_table$carbons_1) -1, max(data_table$carbons_1) +1)
-      y_lims = c(min(data_table$unsat_1) -0.5, max(data_table$unsat_1) +1)
-      data_table = data_table[!dplyr::between(data_table[,"log2_fold_change"], fc_limits[1], fc_limits[2]),]
-      data_table = data_table[dplyr::between(data_table[,"minus_log10_p_value_bh_adj"], pval_limits[1], pval_limits[2]),]
-      if (nrow(data_table) > 0) {
-        fig = plotly::plot_ly(data_table,
-                              x = ~carbons_1,
-                              y = ~unsat_1,
-                              type = "scatter",
-                              mode = "markers",
-                              size = ~minus_log10_p_value_bh_adj,
-                              sizes = ~c(5,40),
-                              marker = list(color = ~log2_fold_change,
-                                            sizemode ='diameter',
-                                            opacity = 0.5,
-                                            sizeref=1,
-                                            colorscale = 'RdBu',
-                                            cmax = max(abs(data_table[, "log2_fold_change"])),
-                                            cmin = -max(abs(data_table[, "log2_fold_change"])),
-                                            colorbar=list(
-                                              title='Log2(fold change)'
-                                            ),
-                                            line = list(width = 0)
-                              ),
-                              text = data_table$text,
-                              hoverinfo = "text",
-                              width = width,
-                              height = height)
-      } else {
-        fig = plotly::plot_ly(data_table,
-                              x = ~carbons_1,
-                              y = ~unsat_1,
-                              type = "scatter",
-                              mode = "markers",
-                              width = width,
-                              height = height)
-      }
-      
-      fig = fig %>% layout(
-        legend= list(itemsizing='constant'),
-        title = paste0("Comparison in ", lipid_class, " - ", group_1, " (blue), ", group_2, " (red)"),
-        xaxis = list(title = 'Total carbons',
-                     range = x_lims
-        ),
-        yaxis = list(title = 'Total double bonds',
-                     range = y_lims
-        )
-      )
-      fig = fig %>% config(modeBarButtonsToAdd = c('drawline',
-                                                   'drawopenpath',
-                                                   'drawclosedpath',
-                                                   'drawcircle',
-                                                   'drawrect',
-                                                   'eraseshape'))
-      self$plots$double_bond_plot = fig
+      # print(self$plots$ridgeplot)
     }
+    
+    
+
+
+
+    
+    
     #------------------------------------------------------------------ END ----
-    
-    
   )
 )

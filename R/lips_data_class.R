@@ -113,7 +113,7 @@ Lips_data = R6::R6Class(
       
       # Volcano plot parameters
       volcano_plot = shiny::reactiveValues(
-        data_table = "Filtered data table",
+        data_table = "Total normalised data table",
         adjustment = "Benjamini-Hochberg",
         group_column = NULL,
         groups = NULL,
@@ -145,7 +145,7 @@ Lips_data = R6::R6Class(
       
       # Double bonds parameters
       db_plot = shiny::reactiveValues(
-        dataset = "Filtered data table",
+        dataset = "Total normalised data table",
         adjustment = "Benjamini-Hochberg",
         group_column = NULL,
         selected_groups = NULL,

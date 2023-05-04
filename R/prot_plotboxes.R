@@ -1,20 +1,5 @@
 
-#-------------------------------------------------- P-val adjustment switch ----
 
-
-adjustment_switch = function(selection){
-  switch(EXPR = selection,
-         "None" = "minus_log10_p_value",
-         "Benjamini-Hochberg" = "minus_log10_p_value_bh_adj"
-  )
-}
-
-adjustment_title_switch = function(selection) {
-  switch(EXPR = selection,
-         "minus_log10_p_value" = "-Log10(p-value)",
-         "minus_log10_p_value_bh_adj" = "-Log10(BH(p-value))"
-  )
-}
 
 #----------------------------------------------- Plotting function controls ----
 
@@ -24,8 +9,7 @@ prot_plotbox_switch_ui = function(selection_list){
     ui_functions = c(ui_functions, switch(EXPR = plot,
                                           "select_pca" = prot_pca_ui,
                                           "select_heatmap" = prot_heatmap_ui,
-                                          "select_volcano_plot" = prot_volcano_plot_ui,
-                                          "select_class_distribution" = prot_class_distribution_ui
+                                          "select_volcano_plot" = prot_volcano_plot_ui
                                           )
     )
   }
@@ -38,124 +22,11 @@ prot_plotbox_switch_server = function(selection_list){
     server_functions = c(server_functions, switch(EXPR = plot,
                                                   "select_pca" = prot_pca_server,
                                                   "select_heatmap" = prot_heatmap_server,
-                                                  "select_volcano_plot" = prot_volcano_plot_server,
-                                                  "select_class_distribution" = prot_class_distribution_server
+                                                  "select_volcano_plot" = prot_volcano_plot_server
                                                   )
                          )
   }
   return(server_functions)
-}
-
-
-
-#------------------------------------------------------- Class distribution ----
-
-prot_class_distribution_generate = function(r6, colour_list, dimensions_obj, input, plot_name) {
-  print_time(paste0(plot_name, ": generating plot."))
-  
-  if (input$class_distribution_plotbox$maximized){
-    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-  } else {
-    width = dimensions_obj$xpx * dimensions_obj$x_plot
-    height = dimensions_obj$ypx * dimensions_obj$y_plot
-  }
-  
-  r6$plot_class_distribution(table = table_switch(input$class_distribution_dataset, r6),
-                             col_group = input$class_distribution_metacol,
-                             colour_list = colour_list,
-                             width = width,
-                             height = height)
-}
-
-
-prot_class_distribution_spawn = function(r6, output, plot_name) {
-  print_time(paste0(plot_name, ": spawning plot."))
-  output$class_distribution_plot = plotly::renderPlotly(
-    r6$plots$class_distribution
-  )
-}
-
-
-prot_class_distribution_ui = function(dimensions_obj, session) {
-  
-  get_plotly_box(id = "class_distribution",
-                 label = "Class distribution",
-                 dimensions_obj = dimensions_obj,
-                 session = session)
-  
-}
-
-
-prot_class_distribution_server = function(r6, output, session) {
-  
-  ns = session$ns
-  
-  print_time("Class distribution : START.")
-  # Generate UI
-  output$class_distribution_sidebar_ui = shiny::renderUI({
-    shiny::tagList(
-      shiny::selectInput(
-        inputId = ns("class_distribution_dataset"),
-        label = "Select table",
-        choices = c("Raw class table", "Total normalised class table"),
-        selected = r6$params$class_distribution$dataset
-      ),
-      shiny::selectInput(
-        inputId = ns("class_distribution_metacol"),
-        label = "Select group column",
-        choices = colnames(r6$tables$meta_filtered),
-        selected = r6$params$class_distribution$group_col
-      ),
-      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-      shiny::downloadButton(
-        outputId = ns("download_class_distribution_table"),
-        label = "Download associated table",
-        style = "width:100%;"
-      )
-    )
-  })
-}
-
-prot_class_distribution_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
-  
-  # Generate the plot
-  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol), {
-    print_time("Class distribution: Updating params...")
-    r6$params$class_distribution$dataset = input$class_distribution_dataset
-    r6$set_params_class_distribution(val = input$class_distribution_metacol)
-    prot_class_distribution_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input, "Class distribution")
-    prot_class_distribution_spawn(r6, output, "Class distribution")
-  })
-  
-  # Download associated table
-  output$download_class_distribution_table = shiny::downloadHandler(
-    filename = function(){timestamped_name("class_distribution_table.csv")},
-    content = function(file_name){
-      write.csv(r6$tables$class_distribution_table, file_name)
-    }
-  )
-  
-  # Expanded boxes
-  class_distribution_proxy = plotly::plotlyProxy(outputId = "class_distribution_plot",
-                                                 session = session)
-  
-  shiny::observeEvent(input$class_distribution_plotbox,{
-    if (input$class_distribution_plotbox$maximized) {
-      plotly::plotlyProxyInvoke(p = class_distribution_proxy,
-                                method = "relayout",
-                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
-                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-                                ))
-    } else {
-      plotly::plotlyProxyInvoke(p = class_distribution_proxy,
-                                method = "relayout",
-                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
-                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
-                                ))
-    }
-  })
-  
 }
 
 #------------------------------------------------------------- Volcano plot ----
@@ -321,14 +192,10 @@ prot_volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, outp
   
 }
 
-
-
-
 #----------------------------------------------------------------- Heat map ----
 
 prot_heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
   print_time("Heatmap: generating plot.")
-  
   if (input$heatmap_plotbox$maximized){
     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
@@ -337,8 +204,37 @@ prot_heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
   
-  r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
+  if (input$heatmap_apply_da) {
+    data_table = table_switch(input$heatmap_dataset, r6)
+    data_table = apply_discriminant_analysis(data_table = data_table,
+                                             group_list = r6$tables$meta_filtered[,input$heatmap_group_col_da],
+                                             nlambda = 100,
+                                             alpha = input$heatmap_alpha_da)
+    
+    meta_table_features = r6$tables$feat_filtered[colnames(data_table), ]
+  } else {
+    data_table = table_switch(input$heatmap_dataset, r6)
+    meta_table_features = r6$tables$feat_filtered
+  }
+  
+  if ("cluster_rows" %in% input$heatmap_clustering){
+    cluster_rows = TRUE
+  } else {
+    cluster_rows = FALSE
+  }
+  
+  if ("cluster_columns" %in% input$heatmap_clustering){
+    cluster_cols = TRUE
+  } else {
+    cluster_cols = FALSE
+  }
+  
+  r6$plot_heatmap(data_table = data_table,
+                  meta_table = r6$tables$meta_filtered,
                   percentile = input$heatmap_percentile,
+                  cluster_rows = cluster_rows,
+                  cluster_cols = cluster_cols,
+                  row_annotations = input$heatmap_map_rows,
                   width = dimensions_obj$xpx * dimensions_obj$x_plot,
                   height = dimensions_obj$ypx * dimensions_obj$y_plot)
 }
@@ -374,6 +270,20 @@ prot_heatmap_server = function(r6, output, session) {
         choices = c("Z-scored total normalised data table"),
         selected = r6$params$heatmap$dataset
       ),
+      shiny::checkboxGroupInput(
+        label = "Clustering",
+        inputId = ns("heatmap_clustering"),
+        choices = c("Cluster samples" = "cluster_rows",
+                    "Cluster features" = "cluster_columns"),
+        selected = r6$params$heatmap$clustering
+      ),
+      shiny::selectizeInput(
+        inputId = ns("heatmap_map_rows"),
+        label = "Map sample data",
+        multiple = TRUE,
+        choices = colnames(r6$tables$meta_filtered),
+        selected = r6$params$heatmap$map_sample_data
+      ),
       shiny::sliderInput(inputId = ns("heatmap_percentile"),
                          label = "Percentile",
                          min = 90,
@@ -381,10 +291,35 @@ prot_heatmap_server = function(r6, output, session) {
                          value = r6$params$heatmap$percentile,
                          step = 1
       ),
+      
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::h4("Discriminant analysis"),
+      
+      shinyWidgets::switchInput(inputId = ns("heatmap_apply_da"),
+                                label = "Apply discriminant analysis",
+                                value = TRUE,
+                                width = "100%",
+                                disabled = TRUE),
+      
+      shiny::selectizeInput(inputId = ns("heatmap_group_col_da"),
+                            label = "Group column",
+                            choices = colnames(r6$tables$meta_filtered),
+                            selected = r6$params$heatmap$group_column_da,
+                            multiple = FALSE,
+                            width = "100%"),
+      shiny::sliderInput(inputId = ns("heatmap_alpha_da"),
+                         label = "Alpha",
+                         min = 0,
+                         max = 0.99,
+                         value = 0.8,
+                         step = 0.01,
+                         width = "100%"),
       shiny::actionButton(
         inputId = ns("heatmap_run"),
-        label = "Generate heatmap"
+        label = "Generate heatmap",
+        width = "100%"
       ),
+      
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::downloadButton(
         outputId = ns("download_heatmap_table"),
@@ -400,7 +335,15 @@ prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, s
   shiny::observeEvent(input$heatmap_run,{
     print_time("Heatmap: Updating params...")
     r6$params$heatmap$dataset = input$heatmap_dataset
+    r6$params$heatmap$clustering = input$heatmap_clustering
+    r6$params$heatmap$map_sample_data = input$heatmap_map_rows
     r6$params$heatmap$percentile = input$heatmap_percentile
+    
+    r6$params$heatmap$apply_da = input$heatmap_apply_da
+    r6$params$heatmap$group_column_da = input$heatmap_group_col_da
+    r6$params$heatmap$alpha_da = input$heatmap_alpha_da
+    
+    
     prot_heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
     prot_heatmap_spawn(r6, output)
   })
@@ -437,37 +380,119 @@ prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, s
 }
 
 
-
-#-------------------------------------------------------- Default plotboxes ----
-
-get_plotly_box = function(id, label, dimensions_obj, session) {
-
-  ns = session$ns
-
-  bs4Dash::box(
-    id = ns(paste0(id, "_plotbox")),
-    title = label,
-    width = dimensions_obj$xbs,
-    height = dimensions_obj$ypx * dimensions_obj$y_box,
-    solidHeader = TRUE,
-    maximizable = TRUE,
-    collapsible = FALSE,
-    status = "gray",
-    sidebar = bs4Dash::boxSidebar(
-      id = ns(paste0(id, "_sidebar")),
-      width = 40,
-      shiny::uiOutput(
-        outputId = ns(paste0(id, "_sidebar_ui"))
-      )
-    ),
-    plotly::plotlyOutput(
-      outputId = ns(paste0(id, "_plot")),
-      width = dimensions_obj$xpx * dimensions_obj$x_plot,
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    )
-  )
-}
-
+# 
+# 
+# 
+# 
+# prot_heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
+#   print_time("Heatmap: generating plot.")
+#   
+#   if (input$heatmap_plotbox$maximized){
+#     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+#     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+#   } else {
+#     width = dimensions_obj$xpx * dimensions_obj$x_plot
+#     height = dimensions_obj$ypx * dimensions_obj$y_plot
+#   }
+#   
+#   r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
+#                   percentile = input$heatmap_percentile,
+#                   width = dimensions_obj$xpx * dimensions_obj$x_plot,
+#                   height = dimensions_obj$ypx * dimensions_obj$y_plot)
+# }
+# 
+# prot_heatmap_spawn = function(r6, output) {
+#   print_time("Heatmap: spawning plot.")
+#   output$heatmap_plot = plotly::renderPlotly(
+#     r6$plots$heatmap
+#   )
+# }
+# 
+# 
+# prot_heatmap_ui = function(dimensions_obj, session) {
+#   
+#   get_plotly_box(id = "heatmap",
+#                  label = "Heatmap",
+#                  dimensions_obj = dimensions_obj,
+#                  session = session)
+#   
+# }
+# 
+# 
+# prot_heatmap_server = function(r6, output, session) {
+#   
+#   ns = session$ns
+#   print_time("Heatmap: START.")
+#   
+#   output$heatmap_sidebar_ui = shiny::renderUI({
+#     shiny::tagList(
+#       shiny::selectInput(
+#         inputId = ns("heatmap_dataset"),
+#         label = "Select dataset",
+#         choices = c("Z-scored total normalised data table"),
+#         selected = r6$params$heatmap$dataset
+#       ),
+#       shiny::sliderInput(inputId = ns("heatmap_percentile"),
+#                          label = "Percentile",
+#                          min = 90,
+#                          max = 100,
+#                          value = r6$params$heatmap$percentile,
+#                          step = 1
+#       ),
+#       shiny::actionButton(
+#         inputId = ns("heatmap_run"),
+#         label = "Generate heatmap"
+#       ),
+#       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+#       shiny::downloadButton(
+#         outputId = ns("download_heatmap_table"),
+#         label = "Download associated table",
+#         style = "width:100%;"
+#       )
+#     )
+#   })
+# }
+# 
+# prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
+#   
+#   shiny::observeEvent(input$heatmap_run,{
+#     print_time("Heatmap: Updating params...")
+#     r6$params$heatmap$dataset = input$heatmap_dataset
+#     r6$params$heatmap$percentile = input$heatmap_percentile
+#     prot_heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+#     prot_heatmap_spawn(r6, output)
+#   })
+#   
+#   
+#   # Download associated table
+#   output$download_heatmap_table = shiny::downloadHandler(
+#     filename = function(){timestamped_name("heatmap_table.csv")},
+#     content = function(file_name){
+#       write.csv(r6$tables$heatmap_table, file_name)
+#     }
+#   )
+#   
+#   # Expanded boxes
+#   heatmap_proxy = plotly::plotlyProxy(outputId = "heatmap_plot",
+#                                       session = session)
+#   
+#   shiny::observeEvent(input$heatmap_plotbox,{
+#     if (input$heatmap_plotbox$maximized) {
+#       plotly::plotlyProxyInvoke(p = heatmap_proxy,
+#                                 method = "relayout",
+#                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+#                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+#                                 ))
+#     } else {
+#       plotly::plotlyProxyInvoke(p = heatmap_proxy,
+#                                 method = "relayout",
+#                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+#                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
+#                                 ))
+#     }
+#   })
+#   
+# }
 
 #---------------------------------------------------------------------- PCA ----
 
@@ -484,12 +509,10 @@ prot_pca_generate = function(r6, colour_list, dimensions_obj, input) {
   
   if (input$pca_apply_da) {
     data_table = table_switch(input$pca_dataset, r6)
-    kept_features = apply_discriminant_analysis(data_table = data_table,
+    data_table = apply_discriminant_analysis(data_table = data_table,
                                                 group_list = r6$tables$meta_filtered[,input$pca_metacol],
                                                 nlambda = 100,
                                                 alpha = input$pca_alpha_da)
-    kept_features = which(colnames(data_table) %in% kept_features)
-    data_table = data_table[,kept_features]
     
   } else {
     data_table = table_switch(input$pca_dataset, r6)
@@ -549,9 +572,9 @@ prot_pca_server = function(r6, output, session) {
       shiny::sliderInput(inputId = ns("pca_alpha_da"),
                          label = "Alpha",
                          min = 0,
-                         max = 1,
+                         max = 0.99,
                          value = 0.8,
-                         step = 0.1,
+                         step = 0.01,
                          width = "100%"),
       
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
@@ -621,6 +644,259 @@ prot_pca_events = function(r6, dimensions_obj, r6_settings, input, output, sessi
 
 }
 
+#------------------------------------------------------------- gsea dotplot ----
 
 
+prot_dot_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Dot plot: generating plot.")
+  r6$plot_dot_plot()
+}
+
+prot_dot_plot_spawn = function(r6, output) {
+  print_time("Dot plot: spawning plot.")
+  output$dot_plot_plot = shiny::renderPlot(
+    r6$plots$dotplot
+  )
+}
+
+prot_dot_plot_ui = function(dimensions_obj, session) {
+  
+  get_plot_box(id = "dot_plot",
+               label = "Dot plot",
+               dimensions_obj = dimensions_obj,
+               session = session)
+}
+
+
+prot_dot_plot_server = function(r6, output, session) {
+  
+  ns = session$ns
+ 
+  print_time("Dot plot: START.")
+  
+  output$dot_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::actionButton(
+        inputId = ns("spawn_dot_plot"),
+        label = "Spawn"
+      )
+    )
+  })
+  
+  # output$dot_plot_plot = shiny::renderPlot(
+  #   r6$plots$plot_dot_plot
+  # )
+}
+
+prot_dot_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
+
+  shiny::observeEvent(input$spawn_dot_plot,{
+    prot_dot_plot_generate(r6, colour_list, dimensions_obj, input)
+    prot_dot_plot_spawn(r6, output)
+  })
+
+# 
+#   # Download associated tables
+#   output$download_pca_scores_table = shiny::downloadHandler(
+#     filename = function(){timestamped_name("pca_scores_table.csv")},
+#     content = function(file_name){
+#       write.csv(r6$tables$pca_scores_table, file_name)
+#     }
+#   )
+#   output$download_pca_loadings_table = shiny::downloadHandler(
+#     filename = function(){timestamped_name("pca_loadings_table.csv")},
+#     content = function(file_name){
+#       write.csv(r6$tables$pca_loadings_table, file_name)
+#     }
+#   )
+# 
+#   # Expanded boxes
+#   pca_proxy = plotly::plotlyProxy(outputId = "pca_plot",
+#                                   session = session)
+# 
+#   shiny::observeEvent(input$pca_plotbox,{
+#     if (input$pca_plotbox$maximized) {
+#       plotly::plotlyProxyInvoke(p = pca_proxy,
+#                                 method = "relayout",
+#                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+#                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+#                                 ))
+#     } else {
+#       plotly::plotlyProxyInvoke(p = pca_proxy,
+#                                 method = "relayout",
+#                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+#                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
+#                                 ))
+#     }
+#   })
+
+}
+
+#----------------------------------------------------------- gsea cnet plot ----
+
+
+prot_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Cnet plot: generating plot.")
+  r6$plot_cnet_plot()
+}
+
+prot_cnet_plot_spawn = function(r6, output) {
+  print_time("Cnet plot: spawning plot.")
+  output$cnet_plot_plot = shiny::renderPlot(
+    r6$plots$cnetplot
+  )
+}
+
+prot_cnet_plot_ui = function(dimensions_obj, session) {
+  
+  get_plot_box(id = "cnet_plot",
+               label = "Cnet plot",
+               dimensions_obj = dimensions_obj,
+               session = session)
+}
+
+
+prot_cnet_plot_server = function(r6, output, session) {
+  
+  ns = session$ns
+  
+  print_time("Cnet plot: START.")
+  
+  output$cnet_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::actionButton(
+        inputId = ns("spawn_cnet_plot"),
+        label = "Spawn"
+      )
+    )
+  })
+}
+
+prot_cnet_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
+  
+  shiny::observeEvent(input$spawn_cnet_plot,{
+    prot_cnet_plot_generate(r6, colour_list, dimensions_obj, input)
+    prot_cnet_plot_spawn(r6, output)
+  })
+  
+  # 
+  #   # Download associated tables
+  #   output$download_pca_scores_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_scores_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_scores_table, file_name)
+  #     }
+  #   )
+  #   output$download_pca_loadings_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_loadings_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_loadings_table, file_name)
+  #     }
+  #   )
+  # 
+  #   # Expanded boxes
+  #   pca_proxy = plotly::plotlyProxy(outputId = "pca_plot",
+  #                                   session = session)
+  # 
+  #   shiny::observeEvent(input$pca_plotbox,{
+  #     if (input$pca_plotbox$maximized) {
+  #       plotly::plotlyProxyInvoke(p = pca_proxy,
+  #                                 method = "relayout",
+  #                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+  #                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  #                                 ))
+  #     } else {
+  #       plotly::plotlyProxyInvoke(p = pca_proxy,
+  #                                 method = "relayout",
+  #                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+  #                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
+  #                                 ))
+  #     }
+  #   })
+  
+}
+
+#----------------------------------------------------------- gsea Ridge plot ----
+
+
+prot_ridge_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Ridge plot: generating plot.")
+  r6$plot_ridge_plot()
+}
+
+prot_ridge_plot_spawn = function(r6, output) {
+  print_time("Ridge plot: spawning plot.")
+  output$ridge_plot_plot = shiny::renderPlot(
+    r6$plots$ridgeplot
+  )
+}
+
+prot_ridge_plot_ui = function(dimensions_obj, session) {
+  
+  get_plot_box(id = "ridge_plot",
+               label = "Ridge plot",
+               dimensions_obj = dimensions_obj,
+               session = session)
+}
+
+
+prot_ridge_plot_server = function(r6, output, session) {
+  
+  ns = session$ns
+  
+  print_time("Ridge plot: START.")
+  
+  output$ridge_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::actionButton(
+        inputId = ns("spawn_ridge_plot"),
+        label = "Spawn"
+      )
+    )
+  })
+}
+
+prot_ridge_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
+  
+  shiny::observeEvent(input$spawn_ridge_plot,{
+    prot_ridge_plot_generate(r6, colour_list, dimensions_obj, input)
+    prot_ridge_plot_spawn(r6, output)
+  })
+  
+  # 
+  #   # Download associated tables
+  #   output$download_pca_scores_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_scores_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_scores_table, file_name)
+  #     }
+  #   )
+  #   output$download_pca_loadings_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_loadings_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_loadings_table, file_name)
+  #     }
+  #   )
+  # 
+  #   # Expanded boxes
+  #   pca_proxy = plotly::plotlyProxy(outputId = "pca_plot",
+  #                                   session = session)
+  # 
+  #   shiny::observeEvent(input$pca_plotbox,{
+  #     if (input$pca_plotbox$maximized) {
+  #       plotly::plotlyProxyInvoke(p = pca_proxy,
+  #                                 method = "relayout",
+  #                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+  #                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  #                                 ))
+  #     } else {
+  #       plotly::plotlyProxyInvoke(p = pca_proxy,
+  #                                 method = "relayout",
+  #                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+  #                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
+  #                                 ))
+  #     }
+  #   })
+  
+}
 

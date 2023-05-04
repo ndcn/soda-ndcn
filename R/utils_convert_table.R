@@ -7,7 +7,7 @@ utils_convert_table_ui = function(id, head = T) {
       # Column to display a preview of the table uploaded
       shiny::column(
         width = 10,
-        shiny::h4("Upload proteomics long table"),
+        shiny::h4("Upload long table"),
         
         # Data upload
         shiny::fileInput(inputId = ns("file_prots"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt"), width = "100%"),

@@ -27,14 +27,14 @@ utils_merge_tables_ui = function(id, head = T) {
       # Second column for lipidomics data upload
       shiny::column(
         width = 5,
-        shiny::h4("Upload lipidomics data"),
+        shiny::h4("Upload data"),
         
         # Data upload
         shiny::fileInput(inputId = ns("file_data"), label = NULL, multiple = F, accept = c(".csv", ".tsv", ".txt"), width = "100%"),
         
         # Table preview box
         bs4Dash::box(
-          title = "Lipidomics table",
+          title = "Data table",
           width = 12,
           DT::dataTableOutput(ns("data_table")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
           collapsible = FALSE
@@ -51,7 +51,7 @@ utils_merge_tables_ui = function(id, head = T) {
         shiny::selectInput(inputId = ns("select_meta_id"), choices = NULL, label = NULL, multiple = F, width = "100%"),
         
         # Select ID column
-        soda_get_col_ui(label = "Lipidomics IDs", desc = NULL),
+        soda_get_col_ui(label = "Data IDs", desc = NULL),
         shiny::selectInput(inputId = ns("select_data_id"), choices = NULL, label = NULL, multiple = F, width = "100%"),
         
         # Merge tables

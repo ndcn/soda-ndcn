@@ -168,6 +168,13 @@ adjustment_switch = function(selection){
   )
 }
 
+adjustment_title_switch = function(selection) {
+  switch(EXPR = selection,
+         "minus_log10_p_value" = "-Log10(p-value)",
+         "minus_log10_p_value_bh_adj" = "-Log10(BH(p-value))"
+  )
+}
+
 #----------------------------------------------------------- Summary tables ----
 
 get_group_median_table = function(data_table,
@@ -642,6 +649,15 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 
 
 apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, alpha = 0.8) {
+  
+  count = table(group_list)
+  if (any(count < 3)) {
+    dead_groups = names(count)[count < 3]
+    print_time(paste0("Warning: ", length(dead_groups), " groups with fewer than 3 samples, dropped from analysis."))
+    data_table = data_table[!(group_list %in% dead_groups),]
+    group_list = group_list[!(group_list %in% dead_groups)]
+  }
+  
   if (length(unique(group_list) > 2)) {
     family = "multinomial"
   } else {
@@ -660,13 +676,72 @@ apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, al
   
   keep_cols = rownames(keep_cols)[which(keep_cols != 0)]
   keep_cols = keep_cols[2:length(keep_cols)]
-  return(keep_cols)
+  data_table = data_table[,keep_cols]
+  return(data_table)
 }
 
 
 
 
 #------------------------------------------------------- Plotting functions ----
+
+get_plotly_box = function(id, label, dimensions_obj, session) {
+  
+  ns = session$ns
+  
+  bs4Dash::box(
+    id = ns(paste0(id, "_plotbox")),
+    title = label,
+    width = dimensions_obj$xbs,
+    height = dimensions_obj$ypx * dimensions_obj$y_box,
+    solidHeader = TRUE,
+    maximizable = TRUE,
+    collapsible = FALSE,
+    status = "gray",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(paste0(id, "_sidebar")),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(paste0(id, "_sidebar_ui"))
+      )
+    ),
+    plotly::plotlyOutput(
+      outputId = ns(paste0(id, "_plot")),
+      width = dimensions_obj$xpx * dimensions_obj$x_plot,
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
+    )
+  )
+}
+
+
+get_plot_box = function(id, label, dimensions_obj, session) {
+  
+  ns = session$ns
+  
+  bs4Dash::box(
+    id = ns(paste0(id, "_plotbox")),
+    title = label,
+    width = dimensions_obj$xbs,
+    height = dimensions_obj$ypx * dimensions_obj$y_box,
+    solidHeader = TRUE,
+    maximizable = TRUE,
+    collapsible = FALSE,
+    status = "gray",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(paste0(id, "_sidebar")),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(paste0(id, "_sidebar_ui"))
+      )
+    ),
+    shiny::plotOutput(
+      outputId = ns(paste0(id, "_plot")),
+      width = dimensions_obj$xpx * dimensions_obj$x_plot,
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
+    )
+  )
+}
+
 
 hline = function(y = 0, color = "black", dash = NULL) {
   list(

@@ -32,40 +32,6 @@ plotbox_switch_server = function(selection_list){
   return(server_functions)
 }
 
-
-
-
-
-#-------------------------------------------------------- Default plotboxes ----
-
-get_plotly_box = function(id, label, dimensions_obj, session) {
-
-  ns = session$ns
-
-  bs4Dash::box(
-    id = ns(paste0(id, "_plotbox")),
-    title = label,
-    width = dimensions_obj$xbs,
-    height = dimensions_obj$ypx * dimensions_obj$y_box,
-    solidHeader = TRUE,
-    maximizable = TRUE,
-    collapsible = FALSE,
-    status = "gray",
-    sidebar = bs4Dash::boxSidebar(
-      id = ns(paste0(id, "_sidebar")),
-      width = 40,
-      shiny::uiOutput(
-        outputId = ns(paste0(id, "_sidebar_ui"))
-      )
-    ),
-    plotly::plotlyOutput(
-      outputId = ns(paste0(id, "_plot")),
-      width = dimensions_obj$xpx * dimensions_obj$x_plot,
-      height = dimensions_obj$ypx * dimensions_obj$y_plot
-    )
-  )
-}
-
 #------------------------------------------------------- Class distribution ----
 
 class_distribution_generate = function(r6, colour_list, dimensions_obj, input, plot_name) {
@@ -490,13 +456,12 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
   
   if (input$heatmap_apply_da) {
     data_table = table_switch(input$heatmap_dataset, r6)
-    kept_features = apply_discriminant_analysis(data_table = data_table,
+    data_table = apply_discriminant_analysis(data_table = data_table,
                                                 group_list = r6$tables$meta_filtered[,input$heatmap_group_col_da],
                                                 nlambda = 100,
                                                 alpha = input$heatmap_alpha_da)
-    kept_features = which(colnames(data_table) %in% kept_features)
-    data_table = data_table[,kept_features]
-    meta_table_features = r6$tables$feat_filtered[kept_features, ]
+
+    meta_table_features = r6$tables$feat_filtered[colnames(data_table), ]
   } else {
     data_table = table_switch(input$heatmap_dataset, r6)
     meta_table_features = r6$tables$feat_filtered
@@ -603,9 +568,9 @@ heatmap_server = function(r6, output, session) {
       shiny::sliderInput(inputId = ns("heatmap_alpha_da"),
                          label = "Alpha",
                          min = 0,
-                         max = 1,
+                         max = 0.99,
                          value = 0.8,
-                         step = 0.1,
+                         step = 0.01,
                          width = "100%"),
       shiny::actionButton(
         inputId = ns("heatmap_run"),
@@ -690,12 +655,10 @@ pca_generate = function(r6, colour_list, dimensions_obj, input) {
   
   if (input$pca_apply_da) {
     data_table = table_switch(input$pca_dataset, r6)
-    kept_features = apply_discriminant_analysis(data_table = data_table,
+    data_table = apply_discriminant_analysis(data_table = data_table,
                                                 group_list = r6$tables$meta_filtered[,input$pca_metacol],
                                                 nlambda = 100,
                                                 alpha = input$pca_alpha_da)
-    kept_features = which(colnames(data_table) %in% kept_features)
-    data_table = data_table[,kept_features]
 
   } else {
     data_table = table_switch(input$pca_dataset, r6)
@@ -755,9 +718,9 @@ pca_server = function(r6, output, session) {
       shiny::sliderInput(inputId = ns("pca_alpha_da"),
                          label = "Alpha",
                          min = 0,
-                         max = 1,
+                         max = 0.99,
                          value = 0.8,
-                         step = 0.1,
+                         step = 0.01,
                          width = "100%"),
       
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
