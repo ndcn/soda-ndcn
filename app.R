@@ -41,6 +41,9 @@ library(rjson)
 
 # Omics
 library(org.Hs.eg.db)
+library(clusterProfiler)
+library(enrichplot)
+library(ggridges)
 
 
 #------------------------------------------------------------- Setup header ----
@@ -71,41 +74,70 @@ sidebar_ui = function() {
         tabName = "welcome",
         icon = shiny::icon("home")),
       
+      bs4Dash::menuItem(
+        text = "Lipidomics",
+        tabName = "global_lipidomics",
+        
+        bs4Dash::menuSubItem(
+          text = "Data upload",
+          tabName = "lips_upload"
+        ),
+        
+        bs4Dash::menuSubItem(
+          text = "Visualisation",
+          tabName = "lips_visual"
+        )
+        
+      ),
+      
+      bs4Dash::menuItem(
+        text = "Proteomics",
+        tabName = "global_proteomics",
+        
+        bs4Dash::menuSubItem(
+          text = "Data upload",
+          tabName = "prot_upload"
+        ),
+        
+        bs4Dash::menuSubItem(
+          text = "Visualisation",
+          tabName = "prot_visual"
+        ),
+        
+        bs4Dash::menuSubItem(
+          text = "Geneset enrichment",
+          tabName = "prot_gse"
+        )
+        
+      ),
+      
+      bs4Dash::menuItem(
+        text = "Transcriptomics",
+        tabName = "global_transcriptomics",
+        
+        bs4Dash::menuSubItem(
+          text = "Data upload",
+          tabName = "tran_upload"
+        ),
+        
+        bs4Dash::menuSubItem(
+          text = "Visualisation",
+          tabName = "tran_visual"
+        ),
+        
+        bs4Dash::menuSubItem(
+          text = "Geneset enrichment",
+          tabName = "trans_gse"
+        )
+        
+      ),
+      
       # General settings
       bs4Dash::menuItem(
         text = "General settings",
         tabName = "gen_set",
         icon = shiny::icon("gears")),
-      
-      # Data upload and submenus
-      bs4Dash::menuItem(
-        text = "Data upload",
-        tabName = "data_upload",
-        icon = shiny::icon("upload"),
         
-        bs4Dash::menuSubItem(
-          text = "Lipidomics",
-          tabName = "lips_upload"),
-        
-        bs4Dash::menuSubItem(
-          text = "Proteomics",
-          tabName = "prot_upload")
-        
-        ),
-      
-      # Data visualisation and submenus
-      bs4Dash::menuItem(
-        text = "Visualisation",
-        tabName = "global_visual",
-        icon = shiny::icon("chart-simple"),
-        
-        bs4Dash::menuSubItem(
-          text = "Lipidomics",
-          tabName = "lips_visual"),
-        bs4Dash::menuSubItem(
-          text = "Proteomics",
-          tabName = "prot_visual")
-        ), 
       
       # Table merge menu
       bs4Dash::menuItem(
@@ -184,6 +216,12 @@ body_ui = function() {
         tabName = "prot_visual",
         soda_visualise_prot_ui(id = "visualise_proteomics")
       ),
+      
+      bs4Dash::tabItem(
+        tabName = "prot_gse",
+        soda_gsea_prot_ui(id = "gse_proteomics")
+      ),
+      
       
       # Table merge page
       bs4Dash::tabItem(
@@ -265,6 +303,9 @@ server = function(input, output, session) {
   soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
   soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, r6_settings = general_settings)
   soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, r6_settings = general_settings)
+  soda_gsea_prot_server("gse_proteomics", r6 = proteomics_data, r6_settings = general_settings)
+  
+  
   utils_merge_tables_server("merge_tables_page")
   utils_convert_table_server("convert_tables_page")
   

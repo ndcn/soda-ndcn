@@ -79,9 +79,7 @@ prot_plot_four = function(r6, dimensions_obj, selection_list, input, output, ses
 
 
 get_plot_list_prot = function() {
-  plot_list = c("Class distribution" = "select_class_distribution",
-                "Class comparison" = "select_class_comparison",
-                "Volcano plot" = "select_volcano_plot",
+  plot_list = c("Volcano plot" = "select_volcano_plot",
                 "Heatmap" = "select_heatmap",
                 "PCA" = "select_pca"
                 )
@@ -105,8 +103,6 @@ soda_visualise_prot_ui = function(id) {
                                            size = "normal",
                                            justified = TRUE
                                            ),
-        shiny::actionButton(inputId = ns("print_stuff"),
-                            label = "Print stuff")
       ),
       shiny::column(
         width = 1,
@@ -176,7 +172,6 @@ soda_visualise_prot_server = function(id, r6, r6_settings) {
       prot_pca_events(r6, dimensions_obj, r6_settings, input, output, session)
       prot_heatmap_events(r6, dimensions_obj, r6_settings, input, output, session)
       prot_volcano_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
-      prot_class_distribution_events(r6, dimensions_obj, r6_settings, input, output, session)
       
       # Plot selection
       shiny::observeEvent(input$showPlots, {
@@ -246,11 +241,6 @@ soda_visualise_prot_server = function(id, r6, r6_settings) {
           NULL
         )
       })
-      
-      shiny::observeEvent(input$print_stuff, {
-        print(r6$tables$data_total_norm_z_scored)
-      })
-      
     }
   )
 }
