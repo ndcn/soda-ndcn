@@ -30,7 +30,11 @@ soda_genset_ui = function(id) {
                              max = 60,
                              step = 1,
                              value = 40,
-                             width = "100%")
+                             width = "100%"),
+          shiny::checkboxInput(inputId = ns("reverse_order"),
+                               label = "Reverse order",
+                               value = FALSE,
+                               width = "100%")
         )
       )
     )
@@ -52,11 +56,12 @@ soda_genset_server = function(id, r6) {
       )
       
       # Preview the palette
-      shiny::observeEvent(c(input$palette_name, input$palette_ramp), {
+      shiny::observeEvent(c(input$palette_name, input$palette_ramp, input$reverse_order), {
         req(input$palette_name)
         r6$set_color_palette(name = input$palette_name,
                              n = r6$color_list[[input$palette_name]],
-                             ramp = as.numeric(input$palette_ramp))
+                             ramp = as.numeric(input$palette_ramp),
+                             reverse_order = input$reverse_order)
         output$palette_preview = shiny::renderPlot({
           r6$color_settings$color_preview
         }, bg="transparent")  
