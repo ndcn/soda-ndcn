@@ -56,12 +56,16 @@ General_settings_class = R6::R6Class(
       self$color_settings$color_preview = get_color_plot(color_palette)
     },
     
-    set_color_palette = function(name, n, ramp) {
+    set_color_palette = function(name, n, ramp, reverse_order = FALSE) {
       print_time(paste0("Changing color palette to ", name))
       self$color_settings$name = name
       self$color_settings$n = n
       self$color_settings$ramp = ramp
-      self$color_settings$color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = n, name = name))(ramp)
+      if (reverse_order) {
+        self$color_settings$color_palette = rev(grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = n, name = name))(ramp))
+      } else {
+        self$color_settings$color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = n, name = name))(ramp)
+      }
       self$get_color_preview()
     }
     

@@ -127,6 +127,8 @@ soda_gsea_prot_ui = function(id, head_meta = F, head_data = T) {
         shiny::column(
           width = 4,
           shiny::h3("Data preparation"),
+          shiny::actionButton(inputId = ns("refresh"),
+                              label = "Refresh"),
           shiny::selectInput(inputId = ns("select_group_col"),
                              label = "Select group column",
                              choices = NULL,
@@ -285,16 +287,16 @@ soda_gsea_prot_server = function(id, max_rows = 10, max_cols = 8, r6, r6_setting
         }
       })
       
-      
-      
       # Update metadata groups
-      shiny::observe({
-        shiny::updateSelectInput(
-          session = session,
-          inputId = "select_group_col",
-          choices = c("Condition", "Replicate"),
-          selected = "Condition"
-        )
+      shiny::observeEvent(input$refresh, {
+        if (!is.null(r6$tables$meta_filtered)) {
+          shiny::updateSelectInput(
+            session = session,
+            inputId = "select_group_col",
+            choices = colnames(r6$tables$meta_filtered),
+            selected = colnames(r6$tables$meta_filtered)[1]
+          )
+        }
       })
       
       # Update selected groups

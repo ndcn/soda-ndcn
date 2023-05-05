@@ -298,14 +298,16 @@ server = function(input, output, session) {
   soda_genset_server("general_settings", r6 = general_settings)
 
 
-  # Load modules
+  # Lipidomics modules
   soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
-  soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
   soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, r6_settings = general_settings)
+  
+  # Proteomics modules
+  soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
   soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, r6_settings = general_settings)
   soda_gsea_prot_server("gse_proteomics", r6 = proteomics_data, r6_settings = general_settings)
   
-  
+  # Utilities modules
   utils_merge_tables_server("merge_tables_page")
   utils_convert_table_server("convert_tables_page")
   

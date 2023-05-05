@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 331776 262144"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="house-solid.svg"
+   width="331776"
+   height="262144"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs8">
+    <inkscape:path-effect
+       effect="rough_hatches"
+       id="path-effect2709"
+       is_visible="true"
+       lpeversion="1.2"
+       direction="80.271189,328.55933 , 149.69492,10.305085"
+       dist_rdm="0;1"
+       growth="0"
+       do_bend="false"
+       bender="80.271189,333.55933 , 18.016949,2.1694915"
+       bottom_edge_variation="0;1"
+       top_edge_variation="0;1"
+       bottom_tgt_variation="0;1"
+       top_tgt_variation="0;1"
+       scale_bf="0"
+       scale_bb="0"
+       scale_tf="0"
+       scale_tb="0"
+       top_smth_variation="0;1"
+       bottom_smth_variation="0;1"
+       fat_output="false"
+       stroke_width_top="0"
+       stroke_width_bottom="0"
+       front_thickness="0"
+       back_thickness="0" />
+    <inkscape:path-effect
+       effect="rough_hatches"
+       id="path-effect2709-1"
+       is_visible="true"
+       lpeversion="1.2"
+       direction="80.271189,328.55933 , 149.69492,10.305085"
+       dist_rdm="0;1"
+       growth="0"
+       do_bend="false"
+       bender="80.271189,333.55933 , 18.016949,2.1694915"
+       bottom_edge_variation="0;1"
+       top_edge_variation="0;1"
+       bottom_tgt_variation="0;1"
+       top_tgt_variation="0;1"
+       scale_bf="0"
+       scale_bb="0"
+       scale_tf="0"
+       scale_tb="0"
+       top_smth_variation="0;1"
+       bottom_smth_variation="0;1"
+       fat_output="false"
+       stroke_width_top="0"
+       stroke_width_bottom="0"
+       front_thickness="0"
+       back_thickness="0" />
+    <inkscape:path-effect
+       effect="rough_hatches"
+       id="path-effect2709-1-4"
+       is_visible="true"
+       lpeversion="1.2"
+       direction="80.271189,328.55933 , 149.69492,10.305085"
+       dist_rdm="0;1"
+       growth="0"
+       do_bend="false"
+       bender="80.271189,333.55933 , 18.016949,2.1694915"
+       bottom_edge_variation="0;1"
+       top_edge_variation="0;1"
+       bottom_tgt_variation="0;1"
+       top_tgt_variation="0;1"
+       scale_bf="0"
+       scale_bb="0"
+       scale_tf="0"
+       scale_tb="0"
+       top_smth_variation="0;1"
+       bottom_smth_variation="0;1"
+       fat_output="false"
+       stroke_width_top="0"
+       stroke_width_bottom="0"
+       front_thickness="0"
+       back_thickness="0" />
+  </defs>
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="0.921875"
+     inkscape:cx="81.898305"
+     inkscape:cy="370.98305"
+     inkscape:window-width="1920"
+     inkscape:window-height="1137"
+     inkscape:window-x="1272"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+  <g
+     id="g2713">
+    <circle
+       style="fill:#000000;stroke:none;stroke-width:29.598;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;paint-order:normal"
+       id="path2703"
+       cx="76.745766"
+       cy="76.745766"
+       r="76.745766" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:15;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;paint-order:normal"
+       id="rect2705"
+       width="371.97955"
+       height="130.29428"
+       x="138.25414"
+       y="-146.77426"
+       inkscape:path-effect="#path-effect2709"
+       d="m 504.04468,-146.77426 c 0,0 -24.00996,130.29428 -24.00996,130.29428 0,0 -21.11134,-130.29428 -21.11134,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -19.86059,70.019154 -19.86059,70.019154"
+       sodipodi:type="rect"
+       transform="rotate(90)" />
+  </g>
+  <g
+     id="g2713-4"
+     transform="translate(422.50847)">
+    <circle
+       style="fill:#000000;stroke:none;stroke-width:29.598;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;paint-order:normal"
+       id="path2703-6"
+       cx="76.745766"
+       cy="76.745766"
+       r="76.745766" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:15;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;paint-order:normal"
+       id="rect2705-2"
+       width="371.97955"
+       height="130.29428"
+       x="138.25414"
+       y="-146.77426"
+       inkscape:path-effect="#path-effect2709-1"
+       d="m 504.04468,-146.77426 c 0,0 -24.00996,130.29428 -24.00996,130.29428 0,0 -21.11134,-130.29428 -21.11134,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -19.86059,70.019154 -19.86059,70.019154"
+       sodipodi:type="rect"
+       transform="rotate(90)" />
+  </g>
+  <g
+     id="g2713-4-6"
+     transform="translate(211.25423)">
+    <circle
+       style="fill:#000000;stroke:none;stroke-width:29.598;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;paint-order:normal"
+       id="path2703-6-1"
+       cx="76.745766"
+       cy="76.745766"
+       r="76.745766" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:15;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;paint-order:normal"
+       id="rect2705-2-8"
+       width="371.97955"
+       height="130.29428"
+       x="138.25414"
+       y="-146.77426"
+       inkscape:path-effect="#path-effect2709-1-4"
+       d="m 504.04468,-146.77426 c 0,0 -24.00996,130.29428 -24.00996,130.29428 0,0 -21.11134,-130.29428 -21.11134,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -39.0504,130.29428 -39.0504,130.29428 0,0 -21.11133,-130.29428 -21.11133,-130.29428 0,0 -19.86059,70.019154 -19.86059,70.019154"
+       sodipodi:type="rect"
+       transform="rotate(90)" />
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+/* Styling the lipidomics icon */
+.lipidomics {
+  background: url("lipidomics.svg");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 32px;
+  width: 32px;
+  display: block;
+}
