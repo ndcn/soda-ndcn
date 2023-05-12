@@ -658,7 +658,9 @@ prot_dot_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   }
   
   print_time("Dot plot: generating plot.")
-  r6$plot_dot_plot(width = width,
+  r6$plot_dot_plot(showCategory = as.numeric(input$dot_plot_showcat),
+                   mode = input$dot_plot_mode,
+                   width = width,
                    height = height)
 }
 
@@ -687,9 +689,16 @@ prot_dot_plot_server = function(r6, output, session) {
   
   output$dot_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
-      shiny::actionButton(
-        inputId = ns("spawn_dot_plot"),
-        label = "Spawn"
+      shiny::textInput(
+        inputId = ns("dot_plot_showcat"),
+        label = "Show category",
+        value = r6$params$dot_plot$showCategory
+      ),
+      shiny::selectInput(
+        inputId = ns("dot_plot_mode"),
+        label = "Mode",
+        choices = c("Both", "Activated", "Suppressed"),
+        selected = r6$params$dot_plot$mode
       )
     )
   })
@@ -697,7 +706,14 @@ prot_dot_plot_server = function(r6, output, session) {
 
 prot_dot_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
-  shiny::observeEvent(input$spawn_dot_plot,{
+  shiny::observeEvent(c(input$dot_plot_showcat, input$dot_plot_mode),{
+    
+    # Update parameters
+    print_time("Dot plot: Updating params...")
+    r6$params$dot_plot$showCategory = as.numeric(input$dot_plot_showcat)
+    r6$params$dot_plot$mode = input$dot_plot_mode
+    
+    # Produce the plot
     prot_dot_plot_generate(r6, colour_list, dimensions_obj, input)
     prot_dot_plot_spawn(r6, output)
   })
@@ -743,12 +759,22 @@ prot_dot_plot_events = function(r6, dimensions_obj, r6_settings, input, output, 
 
 
 prot_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
-  print_time("Cnet plot: generating plot.")
-  r6$plot_cnet_plot()
+  
+  print_time("CNET plot: generating plot.")
+  
+  if (input$cnet_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
+  r6$plot_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat))
 }
 
 prot_cnet_plot_spawn = function(r6, output) {
-  print_time("Cnet plot: spawning plot.")
+  print_time("CNET plot: spawning plot.")
   
   output$cnet_plot_plot = visNetwork::renderVisNetwork(
     expr = r6$plots$cnetplot,
@@ -772,9 +798,10 @@ prot_cnet_plot_server = function(r6, output, session) {
   
   output$cnet_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
-      shiny::actionButton(
-        inputId = ns("spawn_cnet_plot"),
-        label = "Spawn"
+      shiny::textInput(
+        inputId = ns("cnet_plot_showcat"),
+        label = "Show category",
+        value = r6$params$cnet_plot$showCategory
       )
     )
   })
@@ -782,7 +809,12 @@ prot_cnet_plot_server = function(r6, output, session) {
 
 prot_cnet_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
-  shiny::observeEvent(input$spawn_cnet_plot,{
+  shiny::observeEvent(input$cnet_plot_showcat,{
+    
+    # Update parameters
+    print_time("CNET plot: Updating params...")
+    r6$params$cnet_plot$showCategory = as.numeric(input$cnet_plot_showcat)
+    
     prot_cnet_plot_generate(r6, colour_list, dimensions_obj, input)
     prot_cnet_plot_spawn(r6, output)
   })
@@ -835,7 +867,8 @@ prot_ridge_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   }
   
   print_time("Ridge plot: generating plot.")
-  r6$plot_ridge_plot(width = width,
+  r6$plot_ridge_plot(showCategory = as.numeric(input$ridge_plot_showcat),
+                     width = width,
                      height = height)
 }
 
@@ -863,9 +896,10 @@ prot_ridge_plot_server = function(r6, output, session) {
   
   output$ridge_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
-      shiny::actionButton(
-        inputId = ns("spawn_ridge_plot"),
-        label = "Spawn"
+      shiny::textInput(
+        inputId = ns("ridge_plot_showcat"),
+        label = "Show category",
+        value = 30
       )
     )
   })
@@ -873,7 +907,12 @@ prot_ridge_plot_server = function(r6, output, session) {
 
 prot_ridge_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
-  shiny::observeEvent(input$spawn_ridge_plot,{
+  shiny::observeEvent(input$ridge_plot_showcat,{
+    
+    # Update parameters
+    print_time("Ridge plot: Updating params...")
+    r6$params$ridge_plot$showCategory = as.numeric(input$ridge_plot_showcat)
+    
     prot_ridge_plot_generate(r6, colour_list, dimensions_obj, input)
     prot_ridge_plot_spawn(r6, output)
   })
@@ -920,7 +959,7 @@ prot_ridge_plot_events = function(r6, dimensions_obj, r6_settings, input, output
 
 prot_emap_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   print_time("eMap plot: generating plot.")
-  r6$plot_emap_plot()
+  r6$plot_emap_plot(showCategory = as.numeric(input$emap_plot_showcat))
 }
 
 prot_emap_plot_spawn = function(r6, output) {
@@ -948,9 +987,10 @@ prot_emap_plot_server = function(r6, output, session) {
   
   output$emap_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
-      shiny::actionButton(
-        inputId = ns("spawn_emap_plot"),
-        label = "Spawn"
+      shiny::textInput(
+        inputId = ns("emap_plot_showcat"),
+        label = "Show category",
+        value = r6$params$emap_plot$showCategory
       )
     )
   })
@@ -958,7 +998,12 @@ prot_emap_plot_server = function(r6, output, session) {
 
 prot_emap_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
-  shiny::observeEvent(input$spawn_emap_plot,{
+  shiny::observeEvent(input$emap_plot_showcat,{
+    
+    # Update parameters
+    print_time("eMap plot: Updating params...")
+    r6$params$emap_plot$showCategory = as.numeric(input$emap_plot_showcat)
+    
     prot_emap_plot_generate(r6, colour_list, dimensions_obj, input)
     prot_emap_plot_spawn(r6, output)
   })
