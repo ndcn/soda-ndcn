@@ -95,7 +95,29 @@ Prot_data = R6::R6Class(
         group_column = NULL,
         apply_da = FALSE,
         alpha_da = 0.8
+      ),
+      
+      # Dot plot parameters
+      dot_plot = shiny::reactiveValues(
+        showCategory = 10,
+        mode = "Both"
+      ),
+      
+      # Ridge plot parameters
+      ridge_plot = shiny::reactiveValues(
+        showCategory = 30
+      ),
+      
+      # CNET plot parameters
+      cnet_plot = shiny::reactiveValues(
+        showCategory = 3
+      ),
+      
+      # eMap plot parameters
+      emap_plot = shiny::reactiveValues(
+        showCategory = 30
       )
+      
     ),
     
     
@@ -487,7 +509,10 @@ Prot_data = R6::R6Class(
                              width,
                              height){
       
-      
+      if (is.na(showCategory)) {
+        base::warning("Invalid showCategory, setting to 10 by default")
+        showCategory = 10
+      }
       
       colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
       if (x == "geneRatio" || x == "GeneRatio") {
@@ -532,6 +557,8 @@ Prot_data = R6::R6Class(
         df$.sign
       )
       
+      df[,"Description"] = as.character(df[,"Description"])
+      
       if (mode == "Activated") {
         df = df[df$.sign == "activated",]
         trace_hline = FALSE
@@ -542,7 +569,7 @@ Prot_data = R6::R6Class(
         mode = "Activated (top) - Suppressed (bottom)"
         trace_hline = TRUE
       } else {
-        message("Warning: invalid mode, setting to 'Both' by default")
+        warning("Invalid mode, setting to 'Both' by default")
         mode = "Activated (top) - Suppressed (bottom)"
         trace_hline = TRUE
       }
@@ -575,7 +602,9 @@ Prot_data = R6::R6Class(
         legend= list(itemsizing='constant'),
         title = mode,
         xaxis = list(title = 'GeneRatio'),
-        yaxis = list(title =  NA)
+        yaxis = list(title =  NA,
+                     categoryorder = "array",
+                     categoryarray = base::rev(df[,"Description"]))
       )
       if (trace_hline) {
         fig = fig %>% layout(
@@ -588,8 +617,13 @@ Prot_data = R6::R6Class(
     
     plot_cnet_plot = function(x = self$tables$gsea_object,
                               showCategory = 3) {
-      geneSets <- enrichplot:::extract_geneSets(x, showCategory)
+
+      if (is.na(showCategory)) {
+        base::warning("Invalid showCategory, setting to 3 by default")
+        showCategory = 3
+      }
       
+      geneSets <- enrichplot:::extract_geneSets(x, showCategory)
       
       main_nodes = names(geneSets)
       
@@ -619,7 +653,6 @@ Prot_data = R6::R6Class(
       edge_table$to = target_nodes
       edge_table$width = rep(1, nrow(edge_table))
       
-      
       self$plots$cnetplot = visNetwork::visNetwork(node_table, edge_table)
     },
     
@@ -633,6 +666,11 @@ Prot_data = R6::R6Class(
                                height) {
       
       print_time("Ridgeplot initiated")
+      
+      if (is.na(showCategory)) {
+        base::warning("Invalid showCategory, setting to 30 by default")
+        showCategory = 30
+      }
       
       n = showCategory
       if (core_enrichment) {
@@ -962,13 +1000,6 @@ Prot_data = R6::R6Class(
       print_time("Emapplot finished")
       self$plots$emapplot = visNetwork::visIgraph(g)
     }
-    
-    
-
-
-
-    
-    
     #------------------------------------------------------------------ END ----
   )
 )
