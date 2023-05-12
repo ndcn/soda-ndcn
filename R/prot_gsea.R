@@ -1,8 +1,9 @@
 
 get_gsea_list_prot = function() {
   plot_list = c("Dot plot" = "select_dot_plot",
-                "cnet plot" = "select_cnet_plot",
-                "Ridge plot" = "selecte_ridge_plot"
+                "Ridge plot" = "select_ridge_plot",
+                "CNET plot" = "select_cnet_plot",
+                "eMap plot" = "select_emap_plot"
   )
   return(plot_list)
 }
@@ -13,8 +14,9 @@ prot_gsea_plotbox_switch_ui = function(selection_list){
   for (plot in selection_list) {
     ui_functions = c(ui_functions, switch(EXPR = plot,
                                           "select_dot_plot" = prot_dot_plot_ui,
+                                          "select_ridge_plot" = prot_ridge_plot_ui,
                                           "select_cnet_plot" = prot_cnet_plot_ui,
-                                          "selecte_ridge_plot" = prot_ridge_plot_ui
+                                          "select_emap_plot" = prot_emap_plot_ui
     )
     )
   }
@@ -26,8 +28,9 @@ prot_gsea_plotbox_switch_server = function(selection_list){
   for (plot in selection_list) {
     server_functions = c(server_functions, switch(EXPR = plot,
                                                   "select_dot_plot" = prot_dot_plot_server,
-                                                  "select_cnet_plot" = prot_cnet_plot_server, 
-                                                  "selecte_ridge_plot" = prot_ridge_plot_server)
+                                                  "select_ridge_plot" = prot_ridge_plot_server,
+                                                  "select_cnet_plot" = prot_cnet_plot_server,
+                                                  "select_emap_plot" = prot_emap_plot_server)
     )
   }
   return(server_functions)
@@ -176,13 +179,6 @@ soda_gsea_prot_ui = function(id, head_meta = F, head_data = T) {
                              choices = c("ALL", "BP", "MF", "CC"),
                              selected = "ALL",
                              width = "100%"),
-          shiny::sliderInput(inputId = ns("select_nperm"),
-                             label = "Number of permutations",
-                             min = 1000,
-                             max = 20000,
-                             value = 10000,
-                             step = 100,
-                             width = "100%"),
           shiny::textInput(inputId = ns("min_gs_size"),
                            label = "Minimum geneset size",
                            value = 3,
@@ -203,6 +199,16 @@ soda_gsea_prot_ui = function(id, head_meta = F, head_data = T) {
                              choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
                              selected = "none",
                              width = "100%"),
+          shiny::selectInput(inputId = ns("termsim_method"),
+                             label = "Termsim - Method",
+                             choices = c("JC"),
+                             # choices = c("JC", "Resnik", "Lin", "Rel", "Jiang"),
+                             selected = "JC",
+                             width = "100%"),
+          shiny::textInput(inputId = ns("termsim_showcat"),
+                           label = "Show category",
+                           value = "200",
+                           width = "100%"),
           shiny::actionButton(inputId = ns("run_gsea"),
                               label = "Run GSEA",
                               width = "100%")
@@ -320,20 +326,22 @@ soda_gsea_prot_server = function(id, max_rows = 10, max_cols = 8, r6, r6_setting
                          p_value_cutoff = input$p_value_cutoff_1)
         
         r6$get_gsea_object(ont = input$select_go_ontology,
-                           nPerm = input$select_nperm,
                            minGSSize = as.numeric(input$min_gs_size),
                            maxGSSize = as.numeric(input$max_gs_size), 
                            pvalueCutoff = input$p_value_cutoff_2, 
                            verbose = TRUE, 
                            OrgDb = "org.Hs.eg.db", 
-                           pAdjustMethod = input$select_adjustment_2)
+                           pAdjustMethod = input$select_adjustment_2,
+                           termsim_method = input$termsim_method,
+                           termsim_showcat = as.numeric(input$termsim_showcat))
 
       })
       
       # Plot selection
       prot_dot_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
-      prot_cnet_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
       prot_ridge_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
+      prot_cnet_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
+      prot_emap_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
       
       # Plot selection
       shiny::observeEvent(input$showPlots, {

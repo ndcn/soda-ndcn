@@ -648,23 +648,34 @@ prot_pca_events = function(r6, dimensions_obj, r6_settings, input, output, sessi
 
 
 prot_dot_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+  
+  if (input$dot_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
   print_time("Dot plot: generating plot.")
-  r6$plot_dot_plot()
+  r6$plot_dot_plot(width = width,
+                   height = height)
 }
 
 prot_dot_plot_spawn = function(r6, output) {
   print_time("Dot plot: spawning plot.")
-  output$dot_plot_plot = shiny::renderPlot(
+  
+  output$dot_plot_plot = plotly::renderPlotly(
     r6$plots$dotplot
   )
 }
 
 prot_dot_plot_ui = function(dimensions_obj, session) {
   
-  get_plot_box(id = "dot_plot",
-               label = "Dot plot",
-               dimensions_obj = dimensions_obj,
-               session = session)
+  get_plotly_box(id = "dot_plot",
+                 label = "Dot plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
 }
 
 
@@ -682,10 +693,6 @@ prot_dot_plot_server = function(r6, output, session) {
       )
     )
   })
-  
-  # output$dot_plot_plot = shiny::renderPlot(
-  #   r6$plots$plot_dot_plot
-  # )
 }
 
 prot_dot_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
@@ -710,25 +717,25 @@ prot_dot_plot_events = function(r6, dimensions_obj, r6_settings, input, output, 
 #     }
 #   )
 # 
-#   # Expanded boxes
-#   pca_proxy = plotly::plotlyProxy(outputId = "pca_plot",
-#                                   session = session)
-# 
-#   shiny::observeEvent(input$pca_plotbox,{
-#     if (input$pca_plotbox$maximized) {
-#       plotly::plotlyProxyInvoke(p = pca_proxy,
-#                                 method = "relayout",
-#                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
-#                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-#                                 ))
-#     } else {
-#       plotly::plotlyProxyInvoke(p = pca_proxy,
-#                                 method = "relayout",
-#                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
-#                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
-#                                 ))
-#     }
-#   })
+  # Expanded boxes
+  dot_plot_proxy = plotly::plotlyProxy(outputId = "dot_plot_plot",
+                                  session = session)
+
+  shiny::observeEvent(input$dot_plot_plotbox,{
+    if (input$dot_plot_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = dot_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = dot_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
 
 }
 
@@ -742,17 +749,18 @@ prot_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 
 prot_cnet_plot_spawn = function(r6, output) {
   print_time("Cnet plot: spawning plot.")
-  output$cnet_plot_plot = shiny::renderPlot(
-    r6$plots$cnetplot
+  
+  output$cnet_plot_plot = visNetwork::renderVisNetwork(
+    expr = r6$plots$cnetplot,
   )
 }
 
 prot_cnet_plot_ui = function(dimensions_obj, session) {
   
-  get_plot_box(id = "cnet_plot",
-               label = "Cnet plot",
-               dimensions_obj = dimensions_obj,
-               session = session)
+  get_visnet_box(id = "cnet_plot",
+                 label = "CNET plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
 }
 
 
@@ -794,25 +802,22 @@ prot_cnet_plot_events = function(r6, dimensions_obj, r6_settings, input, output,
   #     }
   #   )
   # 
-  #   # Expanded boxes
-  #   pca_proxy = plotly::plotlyProxy(outputId = "pca_plot",
-  #                                   session = session)
-  # 
-  #   shiny::observeEvent(input$pca_plotbox,{
-  #     if (input$pca_plotbox$maximized) {
-  #       plotly::plotlyProxyInvoke(p = pca_proxy,
-  #                                 method = "relayout",
-  #                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
-  #                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-  #                                 ))
-  #     } else {
-  #       plotly::plotlyProxyInvoke(p = pca_proxy,
-  #                                 method = "relayout",
-  #                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
-  #                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
-  #                                 ))
-  #     }
-  #   })
+  # Expanded boxes
+  
+  cnet_plot_proxy = visNetwork::visNetworkProxy(shinyId = "cnet_plot_plot",
+                              session = session)
+
+  shiny::observeEvent(input$cnet_plot_plotbox,{
+    if (input$cnet_plot_plotbox$maximized) {
+      visNetwork::visOptions(graph = cnet_plot_proxy,
+                             width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                             height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full)
+    } else {
+      visNetwork::visOptions(graph = cnet_plot_proxy,
+                             width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                             height = dimensions_obj$ypx * dimensions_obj$y_plot)
+    }
+  })
   
 }
 
@@ -820,23 +825,33 @@ prot_cnet_plot_events = function(r6, dimensions_obj, r6_settings, input, output,
 
 
 prot_ridge_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+  
+  if (input$ridge_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+  
   print_time("Ridge plot: generating plot.")
-  r6$plot_ridge_plot()
+  r6$plot_ridge_plot(width = width,
+                     height = height)
 }
 
 prot_ridge_plot_spawn = function(r6, output) {
   print_time("Ridge plot: spawning plot.")
-  output$ridge_plot_plot = shiny::renderPlot(
+  output$ridge_plot_plot = plotly::renderPlotly(
     r6$plots$ridgeplot
   )
 }
 
 prot_ridge_plot_ui = function(dimensions_obj, session) {
   
-  get_plot_box(id = "ridge_plot",
-               label = "Ridge plot",
-               dimensions_obj = dimensions_obj,
-               session = session)
+  get_plotly_box(id = "ridge_plot",
+                 label = "Ridge plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
 }
 
 
@@ -878,25 +893,109 @@ prot_ridge_plot_events = function(r6, dimensions_obj, r6_settings, input, output
   #     }
   #   )
   # 
-  #   # Expanded boxes
-  #   pca_proxy = plotly::plotlyProxy(outputId = "pca_plot",
-  #                                   session = session)
+  # Expanded boxes
+  ridge_plot_proxy = plotly::plotlyProxy(outputId = "ridge_plot_plot",
+                                  session = session)
+
+  shiny::observeEvent(input$ridge_plot_plotbox,{
+    if (input$ridge_plot_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = ridge_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = ridge_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+  
+}
+
+#----------------------------------------------------------- gsea eMap plot ----
+
+
+prot_emap_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("eMap plot: generating plot.")
+  r6$plot_emap_plot()
+}
+
+prot_emap_plot_spawn = function(r6, output) {
+  print_time("eMap plot: spawning plot.")
+  
+  output$emap_plot_plot = visNetwork::renderVisNetwork(
+    expr = r6$plots$emapplot,
+  )
+}
+
+prot_emap_plot_ui = function(dimensions_obj, session) {
+  
+  get_visnet_box(id = "emap_plot",
+                 label = "eMap plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+}
+
+
+prot_emap_plot_server = function(r6, output, session) {
+  
+  ns = session$ns
+  
+  print_time("eMap plot: START.")
+  
+  output$emap_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::actionButton(
+        inputId = ns("spawn_emap_plot"),
+        label = "Spawn"
+      )
+    )
+  })
+}
+
+prot_emap_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
+  
+  shiny::observeEvent(input$spawn_emap_plot,{
+    prot_emap_plot_generate(r6, colour_list, dimensions_obj, input)
+    prot_emap_plot_spawn(r6, output)
+  })
+  
   # 
-  #   shiny::observeEvent(input$pca_plotbox,{
-  #     if (input$pca_plotbox$maximized) {
-  #       plotly::plotlyProxyInvoke(p = pca_proxy,
-  #                                 method = "relayout",
-  #                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
-  #                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-  #                                 ))
-  #     } else {
-  #       plotly::plotlyProxyInvoke(p = pca_proxy,
-  #                                 method = "relayout",
-  #                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
-  #                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
-  #                                 ))
+  #   # Download associated tables
+  #   output$download_pca_scores_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_scores_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_scores_table, file_name)
   #     }
-  #   })
+  #   )
+  #   output$download_pca_loadings_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_loadings_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_loadings_table, file_name)
+  #     }
+  #   )
+  # 
+  # Expanded boxes
+  
+  emap_plot_proxy = visNetwork::visNetworkProxy(shinyId = "emap_plot_plot",
+                                                session = session)
+  
+  shiny::observeEvent(input$emap_plot_plotbox,{
+    if (input$emap_plot_plotbox$maximized) {
+      print("max")
+      visNetwork::visOptions(graph = emap_plot_proxy,
+                             width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                             height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full)
+    } else {
+      print("min")
+      visNetwork::visOptions(graph = emap_plot_proxy,
+                             width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                             height = dimensions_obj$ypx * dimensions_obj$y_plot)
+    }
+  })
   
 }
 

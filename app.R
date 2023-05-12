@@ -22,6 +22,8 @@ library(ggplot2)
 library(plotly)
 library(gridExtra)
 library(heatmaply)
+library(visNetwork)
+library(igraph)
 
 # colouring
 library(grDevices)

@@ -682,6 +682,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                               rows = selected_rows)
         }
         
+        r6$get_batch_list()
+        
         # If there is already uploaded data_raw, refresh
         if (!is.null(r6$tables$data_raw)) {
           r6$set_data_filtered()
@@ -715,6 +717,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           r6$tables$meta_filtered = keep_rows(data_table = r6$tables$meta_filtered,
                                               rows = selected_rows)
         }
+        
+        r6$get_batch_list()
         
         # If there is already uploaded data_raw, refresh
         if (!is.null(r6$tables$data_raw)) {
@@ -752,6 +756,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
         
         # Reset the filtered metadata to the raw metadata
         r6$set_meta_filtered()
+        
+        r6$get_batch_list()
         
         # If there is already uploaded data_raw, refresh
         if (!is.null(r6$tables$data_raw)) {
@@ -836,7 +842,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
       # Set values to the R6 object
       shiny::observeEvent(c(input$select_id_data, input$na_imputation), {
         if (input$select_id_data != ""){
-          
           # Initialise filtered data with the ID column
           r6$na_imputation_raw(imputation_factor = input$na_imputation)
           r6$set_col(col = input$select_id_data, type = "id_data")
@@ -846,16 +851,13 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
           if (r6$non_unique_ids_data){
             output$id_error_data = shiny::renderText({"Non-uniques in ID column. Please correct or choose another column"})
           } else {
-            
             # if ID correct, filter out deleted rows from the lipids table
             output$id_error_data = shiny::renderText({NULL})
             
             # Initialise preview of the feature filtering
             if (!is.null(r6$tables$data_filtered)) {
-              
               r6$set_blank_table()
               r6$set_feat_raw()
-              
               del_cols = lips_get_del_cols(data_table = r6$tables$data_filtered,
                                            blank_table = r6$tables$blank_table,
                                            meta_table_raw = r6$tables$meta_raw,
@@ -870,7 +872,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                            group_threshold = as.numeric(input$group_threshold)
                                            )
               remaining_cols = setdiff(colnames(r6$tables$data_filtered), del_cols)
-              
               # Initialise bar plot
               output$class_barplot = shiny::renderPlot(
                 expr = preview_class_plot(data_table = r6$tables$data_filtered,

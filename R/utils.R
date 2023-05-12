@@ -260,9 +260,10 @@ lips_get_del_cols = function(data_table,
   del_cols = sort(del_cols)
   
   if (is.null(del_cols)) {
+    print(del_cols)
     return(del_cols)
   }
-  
+
   # Group filtering
   saved_cols = c()
   for (g in unique(meta_table_filtered[,col_group])) {
@@ -582,10 +583,10 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
   
   if (test == "Wilcoxon") {
     test_function = stats::wilcox.test
-    print("Wilcoxon selected")
+    print_time("Wilcoxon selected")
   } else if (test == "T-test") {
     test_function = stats::t.test
-    print("T-test selected")
+    print_time("T-test selected")
   }
   
   # Collect fold change and p-values
@@ -710,6 +711,34 @@ get_plotly_box = function(id, label, dimensions_obj, session) {
       width = dimensions_obj$xpx * dimensions_obj$x_plot,
       height = dimensions_obj$ypx * dimensions_obj$y_plot
     )
+  )
+}
+
+
+get_visnet_box = function(id, label, dimensions_obj, session) {
+  
+  ns = session$ns
+  
+  bs4Dash::box(
+    id = ns(paste0(id, "_plotbox")),
+    title = label,
+    width = dimensions_obj$xbs,
+    height = dimensions_obj$ypx * dimensions_obj$y_box,
+    solidHeader = TRUE,
+    maximizable = TRUE,
+    collapsible = FALSE,
+    status = "gray",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(paste0(id, "_sidebar")),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(paste0(id, "_sidebar_ui"))
+      )
+    ),
+    visNetwork::visNetworkOutput(outputId = ns(paste0(id, "_plot")),
+                                 width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                 height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                 )
   )
 }
 

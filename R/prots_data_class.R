@@ -286,23 +286,32 @@ Prot_data = R6::R6Class(
     # GSEA object 
     get_gsea_object = function(prot_list = self$tables$prot_list,
                                ont = "ALL",
-                               nPerm = 10000,
                                minGSSize = 3,
                                maxGSSize = 800, 
                                pvalueCutoff = 0.05, 
                                verbose = TRUE, 
                                OrgDb = "org.Hs.eg.db", 
-                               pAdjustMethod = "none") {
-      self$tables$gsea_object = clusterProfiler::gseGO(geneList=prot_list, 
-                                                       ont = ont, 
-                                                       keyType = "UNIPROT", 
-                                                       nPerm = nPerm, 
-                                                       minGSSize = minGSSize, 
-                                                       maxGSSize = maxGSSize, 
-                                                       pvalueCutoff = pvalueCutoff, 
-                                                       verbose = TRUE, 
-                                                       OrgDb = "org.Hs.eg.db", 
-                                                       pAdjustMethod = pAdjustMethod)
+                               pAdjustMethod = "none",
+                               termsim_method = "JC",
+                               termsim_showcat = 200) {
+      
+      print_time("GSEA started")
+      
+      gsea = clusterProfiler::gseGO(geneList=prot_list, 
+                                    ont = ont, 
+                                    keyType = "UNIPROT", 
+                                    minGSSize = minGSSize, 
+                                    maxGSSize = maxGSSize, 
+                                    pvalueCutoff = pvalueCutoff, 
+                                    verbose = TRUE, 
+                                    OrgDb = "org.Hs.eg.db", 
+                                    pAdjustMethod = pAdjustMethod)
+      
+      gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
+      
+      
+      print_time("GSEA finished")
+      self$tables$gsea_object = gsea
       
     },
     
@@ -467,26 +476,491 @@ Prot_data = R6::R6Class(
       self$plots$pca_plot = fig
     },
     
-    plot_dot_plot = function(gsea_object = self$tables$gsea_object, showCategory=10, split=".sign") {
-      self$plots$dotplot = enrichplot::dotplot(gsea_object,
-                                               showCategory = showCategory,
-                                               split = split) + facet_grid(.~.sign)
-      # print(self$plots$dotplot)
+    plot_dot_plot = function(object = self$tables$gsea_object,
+                             x = "GeneRatio",
+                             color = "p.adjust",
+                             showCategory=10,
+                             size = NULL,
+                             split = ".sign",
+                             orderBy="x",
+                             mode = "Both",
+                             width,
+                             height){
       
+      
+      
+      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
+      if (x == "geneRatio" || x == "GeneRatio") {
+        x <- "GeneRatio"
+        if (is.null(size))
+          size <- "Count"
+      } else if (x == "count" || x == "Count") {
+        x <- "Count"
+        if (is.null(size))
+          size <- "GeneRatio"
+      } else if (is(x, "formula")) {
+        x <- as.character(x)[2]
+        if (is.null(size))
+          size <- "Count"
+      } else {
+        if (is.null(size))
+          size  <- "Count"
+      }
+      
+      if (inherits(object, c("enrichResultList", "gseaResultList"))) {
+        ldf <- lapply(object, fortify, showCategory=showCategory, split=split)
+        df <- dplyr::bind_rows(ldf, .id="category")
+        df$category <- factor(df$category, levels=names(object))
+      } else {
+        df <- fortify(object, showCategory = showCategory, split=split)
+      }
+      
+      if (orderBy !=  'x' && !orderBy %in% colnames(df)) {
+        message('wrong orderBy parameter; set to default `orderBy = "x"`')
+        orderBy <- "x"
+      }
+      
+      if (orderBy == "x") {
+        df <- dplyr::mutate(df, x = eval(parse(text=x)))
+      }
+      
+      df$hover = paste0(
+        paste0(df[,"Description"], "\n"),
+        paste0("GeneRatio:", as.character(round(df[,"x"],2)), "\n"),
+        paste0(size, ": ", as.character(df[,size]), "\n"),
+        paste0(colorBy, ": ", as.character(round(df[,colorBy],5)), "\n"),
+        df$.sign
+      )
+      
+      if (mode == "Activated") {
+        df = df[df$.sign == "activated",]
+        trace_hline = FALSE
+      } else if (mode == "Suppressed") {
+        df = df[df$.sign == "suppressed",]
+        trace_hline = FALSE
+      } else if (mode == "Both") {
+        mode = "Activated (top) - Suppressed (bottom)"
+        trace_hline = TRUE
+      } else {
+        message("Warning: invalid mode, setting to 'Both' by default")
+        mode = "Activated (top) - Suppressed (bottom)"
+        trace_hline = TRUE
+      }
+      
+      
+      fig = plotly::plot_ly(data = df,
+                            x = ~x,
+                            y = df[,"Description"],
+                            size = df[,size],
+                            type = "scatter",
+                            mode = "markers",
+                            marker = list(color = df[,colorBy],
+                                          sizemode ='diameter',
+                                          opacity = 0.5,
+                                          sizeref=1,
+                                          colorscale = 'RdBu',
+                                          colorbar=list(
+                                            title=colorBy
+                                          ),
+                                          line = list(width = 0),
+                                          cmax = max(df[, colorBy]),
+                                          cmin = min(df[, colorBy])
+                            ),
+                            text = df$hover,
+                            hoverinfo = "text",
+                            width = width,
+                            height = height
+      )
+      fig = fig %>% layout(
+        legend= list(itemsizing='constant'),
+        title = mode,
+        xaxis = list(title = 'GeneRatio'),
+        yaxis = list(title =  NA)
+      )
+      if (trace_hline) {
+        fig = fig %>% layout(
+          shapes = list(hline(showCategory - 0.5))
+        )
+      }
+      print_time("Dot plot completed")
+      self$plots$dotplot = fig
     },
     
-    plot_cnet_plot = function(gsea_object = self$tables$gsea_object, categorySize="pvalue", foldChange=self$tables$prot_list, showCategory = 3) {
-      self$plots$cnetplot = enrichplot::cnetplot(gsea_object,
-                                                 categorySize=categorySize,
-                                                 foldChange=foldChange,
-                                                 showCategory = showCategory)
-      # print(self$plots$cnetplot)
+    plot_cnet_plot = function(x = self$tables$gsea_object,
+                              showCategory = 3) {
+      geneSets <- enrichplot:::extract_geneSets(x, showCategory)
+      
+      
+      main_nodes = names(geneSets)
+      
+      secondary_nodes = c()
+      for (n in geneSets) {
+        secondary_nodes = c(secondary_nodes, n)
+      }
+      secondary_nodes = sort(unique(secondary_nodes))
+      
+      all_nodes = c(main_nodes, secondary_nodes)
+      
+      node_table = data.frame(matrix(nrow = length(all_nodes), ncol = 1))
+      colnames(node_table) = c("id")
+      node_table$id = all_nodes
+      node_table$label = all_nodes
+      
+      source_nodes = c()
+      target_nodes = c()
+      for (n in main_nodes) {
+        target_nodes = c(target_nodes, geneSets[[n]])
+        source_nodes = c(source_nodes, rep(n, length(geneSets[[n]])))
+      }
+      
+      edge_table = data.frame(matrix(nrow = length(target_nodes), ncol = 2))
+      colnames(edge_table) = c("from", "to")
+      edge_table$from = source_nodes
+      edge_table$to = target_nodes
+      edge_table$width = rep(1, nrow(edge_table))
+      
+      
+      self$plots$cnetplot = visNetwork::visNetwork(node_table, edge_table)
     },
     
-    plot_ridge_plot = function(gsea_object = self$tables$gsea_object) {
-      self$plots$ridgeplot = enrichplot::ridgeplot(gsea_object) + labs(x = "enrichment distribution")
+    plot_ridge_plot = function(x = self$tables$gsea_object,
+                               showCategory = 30,
+                               fill="p.adjust",
+                               core_enrichment = TRUE,
+                               orderBy = "NES",
+                               decreasing = FALSE,
+                               width,
+                               height) {
       
-      # print(self$plots$ridgeplot)
+      print_time("Ridgeplot initiated")
+      
+      n = showCategory
+      if (core_enrichment) {
+        gs2id = geneInCategory(x)[seq_len(n)]
+      } else {
+        gs2id = x@geneSets[x$ID[seq_len(n)]]
+      }
+      
+      if (x@readable && length(x@gene2Symbol) > 0) {
+        id = match(names(x@geneList), names(x@gene2Symbol))
+        names(x@geneList) = x@gene2Symbol[id]
+      } 
+      
+      gs2val = lapply(gs2id, function(id) {
+        res = x@geneList[id]
+        res = res[!is.na(res)]
+      })
+      
+      nn = names(gs2val)
+      i = match(nn, x$ID)
+      nn = x$Description[i]
+      
+      j = order(x@result[[orderBy]][i], decreasing = decreasing)
+      len = sapply(gs2val, length)
+      gs2val.df = data.frame(category = rep(nn, times=len),
+                             color = rep(x[i, fill], times=len),
+                             value = unlist(gs2val))
+      
+      colnames(gs2val.df)[2] = fill
+      gs2val.df$category = factor(gs2val.df$category, levels=nn[j])
+      
+      xdata = na.omit(data.frame(x=gs2val.df$value, group=gs2val.df$category))
+      xs = split(xdata$x, xdata$group)
+      xs_mask = vapply(xs, length, numeric(1)) > 1
+      bws = vapply(xs[xs_mask], bw.nrd0, numeric(1))
+      bw = mean(bws, na.rm = TRUE)
+      
+      all_traces = levels(gs2val.df$category)
+      total_seq = seq(floor(min(gs2val.df$value)),ceiling(max(gs2val.df$value)), by=bw)
+      
+      col_values_hex = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = 'YlOrRd'))(length(unique(gs2val.df[,"p.adjust"])))
+      col_values = c()
+      for (col in col_values_hex){
+        col_values = c(col_values, paste0("rgba(",paste(as.vector(col2rgb(col)), collapse = ","), ",0.5)"))
+      }
+      names(col_values) = seq(1, length(col_values), by = 1)
+      col_pvals = sort(unique(gs2val.df[,"p.adjust"]))
+      
+      
+      p = plotly::plot_ly(width = width,
+                          height = height)
+      incr = 0
+      for (trace in all_traces) {
+        tmp_table = gs2val.df[gs2val.df[,"category"] == trace,]
+        fill_value = tmp_table[1, "p.adjust"]
+        fill_col = col_values[which(col_pvals == fill_value)]
+        
+        tmp_table = as.data.frame(table(cut(tmp_table$value, breaks=total_seq)))
+        tmp_table$Var1 = gsub("\\(|]", "", levels(tmp_table$Var1))
+        x_values = c()
+        for (l in tmp_table$Var1) {
+          x_values = c(x_values, mean(as.numeric(stringr::str_split(l, ",")[[1]])))
+        }
+        tmp_table$Var1 = x_values
+        
+        tmp_table$text = paste0(trace, ":\n", "Count: ", tmp_table$Freq, "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1,2))
+        
+        tmp_table$Freq = tmp_table$Freq / max(tmp_table$Freq) + incr
+        
+        p = add_trace(p,
+                      line = list(
+                        color = "#FFFFFF", 
+                        width = 0.1
+                      ), 
+                      mode = "lines", 
+                      type = "scatter", 
+                      x = c(0, max(gs2val.df$value)), 
+                      y = c(incr-0.01, incr-0.01),
+                      legendgroup=0,
+                      showlegend = F)
+        
+        incr = incr + 1
+        
+        p = add_trace(p,
+                      fill = "tonexty",
+                      line = list(color = "#000000",
+                                  width = 0.5,
+                                  shape = "spline",
+                                  smoothing = 1.3),
+                      mode = "lines",
+                      type = "scatter",
+                      x=tmp_table$Var1,
+                      y=tmp_table$Freq,
+                      name = trace,
+                      fillcolor = fill_col,
+                      text = tmp_table$text,
+                      hoverinfo = "text",
+                      legendgroup=0,
+                      showlegend = F)
+        
+      }
+      
+      p = add_trace(p,
+                    x = col_pvals,
+                    y = col_pvals,
+                    type = "scatter",
+                    mode = "markers",
+                    marker = list(
+                      color = col_pvals,
+                      colorscale = "YlOrRd",
+                      colorbar=list(title = fill),
+                      size = 1, 
+                      opacity = 0.1),
+                    legendgroup=0,
+                    showlegend = F
+      )
+      
+      
+      p = layout(p ,
+                 showlegend = T,
+                 yaxis = list(
+                   type = "linear", 
+                   range = c(0, length(all_traces)), 
+                   ticklen = 4, 
+                   showgrid = TRUE, 
+                   showline = FALSE, 
+                   ticktext = all_traces, 
+                   tickvals = seq(from = 0, to = length(all_traces)-1, by = 1), 
+                   zeroline = FALSE, 
+                   gridcolor = "rgb(255,255,255)", 
+                   gridwidth = 1
+                 ))
+      
+      self$plots$ridgeplot = p
+    },
+    
+    plot_emap_plot = function(x = self$tables$gsea_object,
+                              showCategory = 30) {
+      
+      print_time("Emapplot initiated")
+      
+      layout = NULL                    # removed
+      coords = NULL                   # removed
+      color = "p.adjust" 
+      min_edge = 0.2              # removed
+      cex_label_category  = 1       # removed
+      cex_category = 1              # removed
+      cex_line = 1                  # removed
+      shadowtext = TRUE     
+      label_style = "shadowtext"              # removed
+      repel = FALSE                     # removed       
+      node_label  = "category"     
+      with_edge = TRUE                 # removed
+      group_category = FALSE            # removed
+      group_legend = FALSE              # removed                      
+      cex_label_group = 1           # removed
+      nWords = 4                   # removed
+      label_format = 30              # removed
+      clusterFunction = stats::kmeans           # removed
+      nCluster = NULL                 # removed
+      layout.params = list(
+        layout = NULL, 
+        coords = NULL             
+      )
+      
+      edge.params = list(
+        show = TRUE,              
+        min = 0.2                           
+      )
+      cex.params = list(
+        category_node = 1,        
+        category_label = 1,       
+        line = 1                  
+      )
+      hilight.params = list(
+        category = NULL,          
+        alpha_hilight = 1,        
+        alpha_no_hilight = 0.3    
+      )
+      cluster.params = list(
+        cluster = FALSE,          
+        method = stats::kmeans,   
+        n = NULL,                               
+        legend = FALSE,           
+        label_style = "shadowtext",
+        label_words_n = 4,        
+        label_format = 30         
+      )
+      
+      
+      
+      enrichplot:::has_pairsim(x)
+      label_size_category <- 5
+      label_group <- 3
+      
+      # change parameter name
+      ##############################################################
+      params_df <- as.data.frame(rbind(
+        c("layout", "layout.params", "layout"),
+        c("coords", "layout.params", "coords"),
+        
+        c("with_edge", "edge.params", "show"),
+        c("min_edge", "edge.params", "min"),
+        
+        c("cex_category", "cex.params", "category_node"),
+        c("cex_label_category", "cex.params", "category_label"),
+        c("cex_line", "cex.params", "line"),
+        
+        c("group_category", "cluster.params", "cluster"),
+        c("clusterFunction", "cluster.params", "method"),
+        c("nCluster", "cluster.params", "n"),
+        c("group_legend", "cluster.params", "legend"),
+        c("label_style", "cluster.params", "label_style"),
+        c("nWords", "cluster.params", "label_words_n"),
+        c("label_format", "cluster.params", "label_format"))
+      )
+      colnames(params_df) <- c("original", "listname", "present")
+      rownames(params_df) <- params_df$original
+      
+      
+      default.layout.params <- list(
+        layout = NULL,                       
+        coords = NULL            
+      )
+      
+      default.edge.params <- list(
+        show = TRUE,                  
+        min = 0.2                             
+      )
+      
+      default.cex.params <- list(
+        category_node = 1,          
+        category_label = 1,         
+        line = 1                                       
+      )
+      
+      default.cluster.params <- list(
+        cluster = FALSE,            
+        method = stats::kmeans,     
+        n = NULL,                             
+        legend = FALSE,             
+        label_style = "shadowtext", 
+        label_words_n = 4,          
+        label_format = 30                          
+      )
+      
+      default.hilight.params <- list(
+        category = NULL,
+        alpha_hilight = 1,
+        alpha_no_hilight = 0.3
+      )
+      layout.params <- modifyList(default.layout.params, layout.params)
+      edge.params <- modifyList(default.edge.params, edge.params)
+      cex.params <- modifyList(default.cex.params, cex.params)
+      cluster.params <- modifyList(default.cluster.params, cluster.params)
+      hilight.params <- modifyList(default.hilight.params, hilight.params)
+      params_list <- list(x = x,
+                          showCategory = showCategory, 
+                          layout = layout,                    
+                          coords = coords,                    
+                          color = color,     
+                          min_edge = min_edge,                  
+                          cex_label_category = cex_label_category,        
+                          cex_category = cex_category,              
+                          cex_line = cex_line,                  
+                          shadowtext = shadowtext,      
+                          label_style = label_style,               
+                          repel = repel,                            
+                          node_label  = node_label,     
+                          with_edge = with_edge,                 
+                          group_category = group_category,            
+                          group_legend = group_legend,                                    
+                          cex_label_group = cex_label_group,           
+                          nWords = nWords,                    
+                          label_format = label_format,              
+                          clusterFunction = clusterFunction,           
+                          nCluster = nCluster,                  
+                          layout.params = layout.params,                    
+                          edge.params = edge.params,
+                          cex.params = cex.params,
+                          hilight.params = hilight.params,  
+                          cluster.params = cluster.params
+      )
+      # get all parameters value
+      args <- as.list(match.call())
+      removed_params <- intersect(params_df$original, names(args))
+      if (length(removed_params) > 0) {
+        for (i in removed_params) {
+          params_list[[params_df[i, 2]]][[params_df[i, 3]]] <- get(i)
+          warn <- get_param_change_message(i, params_df)
+          warning(warn)
+        }
+      }
+      
+      layout.params <- params_list[["layout.params"]]
+      edge.params <- params_list[["edge.params"]]
+      cex.params <- params_list[["cex.params"]]
+      cluster.params <- params_list[["cluster.params"]]
+      hilight.params <- params_list[["hilight.params"]]
+      
+      layout <- layout.params[["layout"]]
+      coords <- layout.params[["coords"]]
+      with_edge <- edge.params[["show"]]
+      min_edge <- edge.params[["min"]]
+      cex_category <- cex.params[["category_node"]]
+      cex_label_category <- cex.params[["category_label"]]
+      cex_line <- cex.params[["line"]]
+      group_category <- cluster.params[["cluster"]]
+      clusterFunction <- cluster.params[["method"]]
+      nCluster <- cluster.params[["n"]]
+      group_legend <- cluster.params[["legend"]]
+      label_style <- cluster.params[["label_style"]]
+      nWords <- cluster.params[["label_words_n"]]
+      label_format <- cluster.params[["label_format"]]
+      hilight_category <- hilight.params[["category"]]
+      alpha_hilight <- hilight.params[["alpha_hilight"]]
+      alpha_nohilight <- hilight.params[["alpha_no_hilight"]]
+      
+      n <- enrichplot:::update_n(x, showCategory)
+      y <- as.data.frame(x)
+      ## get graph.data.frame() object
+      g <- enrichplot:::get_igraph(x=x, nCategory=n, color=color, cex_line=cex_line,
+                                   min_edge=min_edge)
+      
+      igraph::V(g)$size = igraph::V(g)$size/3
+      
+      print_time("Emapplot finished")
+      self$plots$emapplot = visNetwork::visIgraph(g)
     }
     
     
