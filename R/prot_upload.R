@@ -214,7 +214,11 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           # Select ID column
           soda_get_col_ui(label = "Sample IDs", desc = "Column containing the sample IDs."),
           shiny::selectizeInput(inputId = ns("select_id_data"), choices = NULL, label = NULL, multiple = F, width = "100%"),
-          shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red")
+          shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red"),
+          shiny::selectInput(inputId = ns("feature_type"),
+                             label = "Feature ID type",
+                             choices = c("UNIPROT", "GENENAME", "ENTREZID"),
+                             selected = "UNIPROT")
           
         )
       )
@@ -529,6 +533,11 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
             )
           })
         }
+      })
+      
+      shiny::observeEvent(input$feature_type, {
+        print_time(paste0("Setting feature ID type to ", input$feature_type))
+        r6$params$global$feature_id_type = input$feature_type
       })
       
       # Output a preview or the whole table depending on the user input

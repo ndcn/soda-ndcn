@@ -129,7 +129,7 @@ sidebar_ui = function() {
         
         bs4Dash::menuSubItem(
           text = "Geneset enrichment",
-          tabName = "trans_gse"
+          tabName = "tran_gse"
         )
         
       ),
@@ -208,6 +208,12 @@ body_ui = function() {
         soda_upload_prot_ui(id = "upload_proteomics", head_meta = F, head_data = T)
       ),
       
+      # Data upload pages
+      bs4Dash::tabItem(
+        tabName = "tran_upload",
+        soda_upload_prot_ui(id = "upload_transcriptomics", head_meta = F, head_data = T)
+      ),
+      
       # Data visualisation pages
       bs4Dash::tabItem(
         tabName = "lips_visual",
@@ -222,6 +228,16 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "prot_gse",
         soda_gsea_prot_ui(id = "gse_proteomics")
+      ),
+      
+      bs4Dash::tabItem(
+        tabName = "tran_visual",
+        soda_visualise_prot_ui(id = "visualise_transcriptomics")
+      ),
+      
+      bs4Dash::tabItem(
+        tabName = "tran_gse", 
+        soda_gsea_prot_ui(id = "gse_transcriptomics")
       ),
       
       
@@ -292,6 +308,11 @@ server = function(input, output, session) {
     name = "prot_1",
     type = "proteomics"
   )
+  
+  transcriptomics_data = Prot_data$new(
+    name = "tran_1",
+    type = "Transcriptomics"
+  )
 
   
   
@@ -308,6 +329,12 @@ server = function(input, output, session) {
   soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
   soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, r6_settings = general_settings)
   soda_gsea_prot_server("gse_proteomics", r6 = proteomics_data, r6_settings = general_settings)
+  
+  # Transcriptomics modules
+  soda_upload_prot_server("upload_transcriptomics", r6 = transcriptomics_data)
+  soda_visualise_prot_server("visualise_transcriptomics", r6 = transcriptomics_data, r6_settings = general_settings)
+  soda_gsea_prot_server("gse_transcriptomics", r6 = transcriptomics_data, r6_settings = general_settings)
+  
   
   # Utilities modules
   utils_merge_tables_server("merge_tables_page")

@@ -148,7 +148,7 @@ table_switch = function(selection, r6){
          "Group summary species" = r6$tables$group_species,
          "Group summary classes" = r6$tables$group_classes,
          
-         # Proteomics specific
+         # Proteomics, Transcriptomics specific
          "GO components raw" = r6$tables$go_components_raw,
          "GO functions raw" = r6$tables$go_functions_raw,
          "GO processes raw" = r6$tables$go_processes_raw,

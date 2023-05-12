@@ -66,6 +66,11 @@ Prot_data = R6::R6Class(
     
     #----------------------------------------------------------- Parameters ----
     params = list(
+      
+      # Global
+      global = shiny::reactiveValues(
+        feature_id_type = NULL
+      ),
 
       # Volcano plot parameters
       volcano_plot = shiny::reactiveValues(
@@ -307,6 +312,7 @@ Prot_data = R6::R6Class(
     
     # GSEA object 
     get_gsea_object = function(prot_list = self$tables$prot_list,
+                               keyType,
                                ont = "ALL",
                                minGSSize = 3,
                                maxGSSize = 800, 
@@ -321,7 +327,7 @@ Prot_data = R6::R6Class(
       
       gsea = clusterProfiler::gseGO(geneList=prot_list, 
                                     ont = ont, 
-                                    keyType = "UNIPROT", 
+                                    keyType = self$params$global$feature_id_type, 
                                     minGSSize = minGSSize, 
                                     maxGSSize = maxGSSize, 
                                     pvalueCutoff = pvalueCutoff, 
