@@ -639,6 +639,12 @@ Prot_data = R6::R6Class(
       colnames(node_table) = c("id")
       node_table$id = all_nodes
       node_table$label = all_nodes
+      node_table$color = c(rep("#FFD800", length(main_nodes)),
+                           rep("#20D9D6", length(secondary_nodes)))
+      node_table$shape = rep("circle", nrow(node_table))
+      
+      
+      
       
       source_nodes = c()
       target_nodes = c()
