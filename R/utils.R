@@ -582,12 +582,30 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
   }
   
   if (test == "Wilcoxon") {
-    test_function = stats::wilcox.test
     print_time("Wilcoxon selected")
+    test_function=function(x,y){
+      
+      if(all(x==mean(x))&all(y==mean(y))) {
+        return(1)
+      } else{
+        return(stats::wilcox.test(x, y)$p.value)
+      }
+    }
   } else if (test == "T-test") {
-    test_function = stats::t.test
     print_time("T-test selected")
+    test_function=function(x,y){
+      
+      if(all(x==mean(x))&all(y==mean(y))) {
+        return(1)
+      } else{
+        return(stats::t.test(x, y)$p.value)
+      }
+    }
+    
   }
+  
+
+  
   
   # Collect fold change and p-values
   fold_change = c()
@@ -606,7 +624,7 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
         
         # If there is actual comparable data
         fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
-        p_value = c(p_value, test_function(data_table[idx_group_1, col], data_table[idx_group_2, col])$p.value)
+        p_value = c(p_value, test_function(data_table[idx_group_1, col], data_table[idx_group_2, col]))
       }
       
     } else {

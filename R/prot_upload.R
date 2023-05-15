@@ -194,7 +194,7 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           
           # Table preview box
           bs4Dash::box(
-            title = "Proteomics table (raw)",
+            title = "Data table (raw)",
             width = 12,
             DT::dataTableOutput(ns("table_data")),style = "height:500px; overflow-y: scroll;overflow-x: scroll;",
             collapsible = FALSE
