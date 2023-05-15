@@ -400,7 +400,7 @@ soda_upload_lips_ui = function(id, head_meta = F, head_data = T) {
           
           # Buttons to save or reset the feature filtering
           shiny::fluidRow(
-            shiny::actionButton(inputId = ns("save"), label = "Save filtering", width = "50%"),
+            shiny::actionButton(inputId = ns("save"), label = "Apply filtering", width = "50%"),
             shiny::actionButton(inputId = ns("reset_data"), label =  "Reset", width = "50%")
           ),
           

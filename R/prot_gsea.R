@@ -132,6 +132,11 @@ soda_gsea_prot_ui = function(id, head_meta = F, head_data = T) {
           shiny::h3("Data preparation"),
           shiny::actionButton(inputId = ns("refresh"),
                               label = "Refresh"),
+          shiny::selectInput(inputId = ns("input_table"),
+                             choices = c("Filtered data table",
+                                         "Total normalised data table"),
+                             label = "Select table",
+                             selected = "Total normalised data table"),
           shiny::selectInput(inputId = ns("select_group_col"),
                              label = "Select group column",
                              choices = NULL,
@@ -198,12 +203,6 @@ soda_gsea_prot_ui = function(id, head_meta = F, head_data = T) {
                              label = "Adjustment",
                              choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
                              selected = "none",
-                             width = "100%"),
-          shiny::selectInput(inputId = ns("termsim_method"),
-                             label = "Termsim - Method",
-                             choices = c("JC"),
-                             # choices = c("JC", "Resnik", "Lin", "Rel", "Jiang"),
-                             selected = "JC",
                              width = "100%"),
           shiny::textInput(inputId = ns("termsim_showcat"),
                            label = "Show category",
@@ -318,7 +317,8 @@ soda_gsea_prot_server = function(id, max_rows = 10, max_cols = 8, r6, r6_setting
       # Run GSEA
       shiny::observeEvent(input$run_gsea,{
         
-        r6$get_prot_list(col_group = input$select_group_col,
+        r6$get_prot_list(data_table = table_switch(input$input_table, r6),
+                         col_group = input$select_group_col,
                          group_1 = input$select_groups[1],
                          group_2 = input$select_groups[2],
                          used_function = input$select_method,
@@ -332,7 +332,6 @@ soda_gsea_prot_server = function(id, max_rows = 10, max_cols = 8, r6, r6_setting
                            verbose = TRUE, 
                            OrgDb = "org.Hs.eg.db", 
                            pAdjustMethod = input$select_adjustment_2,
-                           termsim_method = input$termsim_method,
                            termsim_showcat = as.numeric(input$termsim_showcat))
 
       })
