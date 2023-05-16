@@ -217,7 +217,7 @@ soda_upload_prot_ui = function(id, head_meta = F, head_data = T) {
           shiny::span(textOutput(outputId = ns("id_error_data")), style="color:red"),
           shiny::selectInput(inputId = ns("feature_type"),
                              label = "Feature ID type",
-                             choices = c("UNIPROT", "GENENAME", "ENTREZID"),
+                             choices = c("UNIPROT", "SYMBOL", "ENTREZID"),
                              selected = "UNIPROT")
           
         )
