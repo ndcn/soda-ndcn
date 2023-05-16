@@ -312,7 +312,7 @@ Prot_data = R6::R6Class(
     
     # GSEA object 
     get_gsea_object = function(prot_list = self$tables$prot_list,
-                               keyType,
+                               keyType = self$params$global$feature_id_type,
                                ont = "ALL",
                                minGSSize = 3,
                                maxGSSize = 800, 
@@ -327,7 +327,7 @@ Prot_data = R6::R6Class(
       
       gsea = clusterProfiler::gseGO(geneList=prot_list, 
                                     ont = ont, 
-                                    keyType = self$params$global$feature_id_type, 
+                                    keyType = keyType, 
                                     minGSSize = minGSSize, 
                                     maxGSSize = maxGSSize, 
                                     pvalueCutoff = pvalueCutoff, 
