@@ -811,7 +811,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                                      check.names = FALSE))
             r6$get_missing_vals()
           }
-          
           # Select ID column from the raw data
           observe({
             shiny::updateSelectizeInput(

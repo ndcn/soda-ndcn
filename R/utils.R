@@ -100,13 +100,13 @@ batch_na_imputation = function(data_table, mask, batch_list, imputation_factor) 
   if (is.na(imputation_factor)) {
     return(data_table)
   }
-  
+
   # No batch requirements if imputation is fixed
   if (imputation_factor == 0) {
     data_table[mask] = 0.0
     return(data_table)
   }
-  
+
   for (b in unique(batch_list)) {
     batch_mask = mask
     batch_mask[batch_list != b,] = FALSE
@@ -121,6 +121,7 @@ batch_na_imputation = function(data_table, mask, batch_list, imputation_factor) 
                                mask = batch_mask,
                                imputation = imputation)
   }
+
   return(data_table)
 }
 
@@ -251,7 +252,7 @@ lips_get_del_cols = function(data_table,
     batch_samples = base::intersect(rownames(data_table), batch_samples)
     
     del_cols = c(del_cols, blank_filter(data_table = data_table[batch_samples,],
-                                        blank_table = blank_table[batch_blanks,],
+                                        blank_table = blank_table[as.character(batch_blanks),],
                                         blank_multiplier = blank_multiplier,
                                         sample_threshold = sample_threshold))
   }
@@ -260,7 +261,6 @@ lips_get_del_cols = function(data_table,
   del_cols = sort(del_cols)
   
   if (is.null(del_cols)) {
-    print(del_cols)
     return(del_cols)
   }
 
@@ -282,7 +282,7 @@ lips_get_del_cols = function(data_table,
       batch_samples = base::intersect(rownames(data_table), batch_samples)
       
       # get batch blank means
-      blank_means = get_col_means(data_table = blank_table[batch_blanks,])
+      blank_means = get_col_means(data_table = blank_table[as.character(batch_blanks),])
       threshold = blank_multiplier * blank_means
       
       # Find features / columns below threshold
@@ -504,17 +504,11 @@ preview_class_plot = function(data_table, del_cols, feat_raw){
 #--------------------------------------------------------------- Statistics ----
 get_pca_data = function(data_table){
   
-  if (sum(is.na(data_table)) > 0) {
-    complete_obs = F
-  }else{
-    complete_obs = T
-  }
-  
   pca_data = pcaMethods::pca(object = data_table,
                              nPcs = 2,
                              scale = "none",
                              cv = "q2",
-                             completeObs = complete_obs)
+                             completeObs = T)
   
   return(pca_data)
 }
@@ -585,7 +579,7 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
     print_time("Wilcoxon selected")
     test_function=function(x,y){
       
-      if(all(x==mean(x))&all(y==mean(y))) {
+      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
         return(1)
       } else{
         return(stats::wilcox.test(x, y)$p.value)
@@ -595,7 +589,7 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
     print_time("T-test selected")
     test_function=function(x,y){
       
-      if(all(x==mean(x))&all(y==mean(y))) {
+      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
         return(1)
       } else{
         return(stats::t.test(x, y)$p.value)
@@ -668,6 +662,13 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 
 
 apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, alpha = 0.8) {
+  
+  ncol_1 = ncol(data_table)
+  data_table = data_table[,!is.na(colSums(data_table))]
+  ncol_2 = ncol(data_table)
+  if(ncol_2 != ncol_1) {
+    print_time(paste0("Discriminant analysis : dropped ", ncol_1 - ncol_2, " features with no signal variation."))
+  }
   
   count = table(group_list)
   if (any(count < 3)) {
