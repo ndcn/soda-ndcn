@@ -214,6 +214,7 @@ Prot_data = R6::R6Class(
                                  group_2) {
 
       volcano_table = data.frame(matrix(data = NA, nrow = ncol(data_table), ncol = 0))
+      rownames(volcano_table) = colnames(data_table)
       
       # Get the rownames for each group
       idx_group_1 = rownames(self$tables$meta_filtered)[self$tables$meta_filtered[, col_group] == group_1]
@@ -378,18 +379,40 @@ Prot_data = R6::R6Class(
       
 
       max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
+      data_table$coloring = rep("gray", nrow(data_table)) 
+      
+      upper_left = which(data_table[,adjustment] > -log10(0.05) & data_table[, "log2_fold_change"] < -1)
+      upper_right = which(data_table[,adjustment] > -log10(0.05) & data_table[, "log2_fold_change"] > 1)
+      lower_corners = which(data_table[,adjustment] <= -log10(0.05) & data_table[, "log2_fold_change"] < -1)
+      lower_corners = c(lower_corners, which(data_table[,adjustment] <= -log10(0.05) & data_table[, "log2_fold_change"] > 1))
+      
+       
+      if (length(upper_left)>0) {
+        data_table[upper_left,"coloring"] = "blue"
+      }
+      
+      if (length(upper_right)>0) {
+        data_table[upper_right,"coloring"] = "red"
+      }
+      
+      if (length(lower_corners)>0) {
+        data_table[lower_corners,"coloring"] = "black"
+      }
       
       fig = plotly::plot_ly(x = data_table[, "log2_fold_change"],
                             y = data_table[, adjustment],
                             text = rownames(data_table),
                             hoverinfo = "text",
-                            colors = colour_list,
+                            color = data_table[, "coloring"],
+                            colors = c("black", "blue", "gray", "red"),
+                            opacity = 0.5,
                             type  = "scatter",
                             mode  = "markers",
                             width = width,
                             height = height)
       
-      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot"), hline(-log10(0.05), dash = "dot")),
+      fig = fig %>% layout(showlegend = F,
+                           shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot"), hline(-log10(0.05), dash = "dot")),
                            title = paste0(group_1, " (left), ", group_2, " (right)"),
                            xaxis = list(title = "Log2(fold change)",
                                         range = c(-max_fc,max_fc)
