@@ -929,6 +929,13 @@ Lips_data = R6::R6Class(
 
     ## PCA scores and loading plots
     plot_pca = function(data_table, col_group, width, height, colour_list) {
+      
+      ncol_1 = ncol(data_table)
+      data_table = data_table[,!is.na(colSums(data_table))]
+      ncol_2 = ncol(data_table)
+      if(ncol_2 != ncol_1) {
+        print_time(paste0("PCA : dropped ", ncol_1 - ncol_2, " features with no signal variation."))
+      }
 
       pca_data = get_pca_data(data_table = data_table)
 
