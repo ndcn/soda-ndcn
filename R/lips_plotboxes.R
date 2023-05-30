@@ -556,7 +556,7 @@ heatmap_server = function(r6, output, session) {
       
       shinyWidgets::switchInput(inputId = ns("heatmap_apply_da"),
                                 label = "Apply discriminant analysis",
-                                value = FALSE,
+                                value = r6$params$heatmap$apply_da,
                                 width = "100%"),
       
       shiny::selectizeInput(inputId = ns("heatmap_group_col_da"),
@@ -569,7 +569,7 @@ heatmap_server = function(r6, output, session) {
                          label = "Alpha",
                          min = 0,
                          max = 0.99,
-                         value = 0.8,
+                         value = r6$params$heatmap$alpha_da,
                          step = 0.01,
                          width = "100%"),
       shiny::actionButton(
@@ -712,14 +712,14 @@ pca_server = function(r6, output, session) {
       
       shinyWidgets::switchInput(inputId = ns("pca_apply_da"),
                                 label = "Apply discriminant analysis",
-                                value = FALSE,
+                                value = r6$params$pca$apply_da,
                                 width = "100%"),
       
       shiny::sliderInput(inputId = ns("pca_alpha_da"),
                          label = "Alpha",
                          min = 0,
                          max = 0.99,
-                         value = 0.8,
+                         value = r6$params$pca$alpha_da,
                          step = 0.01,
                          width = "100%"),
       
@@ -842,9 +842,6 @@ double_bonds_generate_double = function(r6, colour_list, dimensions_obj, input, 
     r6$params$db_plot$fc_values = c(0, 0)
   }
   
-  
-  
-  
   r6$params$db_plot$pval_range = c(0, round(max(r6$tables$dbplot_table[selected_rows, adjustment_switch(input$double_bonds_plot_adjustment)]), 1) + 1)
   r6$params$db_plot$pval_values = c(0, round(max(r6$tables$dbplot_table[selected_rows, adjustment_switch(input$double_bonds_plot_adjustment)]), 1) + 1)
   
@@ -862,6 +859,15 @@ double_bonds_generate_double = function(r6, colour_list, dimensions_obj, input, 
     max = r6$params$db_plot$pval_range[2],
     value = r6$params$db_plot$pval_values
   )
+  
+  r6$plot_doublebonds_double(lipid_class = input$double_bonds_class,
+                             adjustment = adjustment_switch(input$double_bonds_plot_adjustment),
+                             fc_limits = input$log2_fc_slider,
+                             pval_limits = input$min_log10_bh_pval_slider,
+                             group_1 = input$double_bonds_metagroup[1],
+                             group_2 = input$double_bonds_metagroup[2],
+                             width = width,
+                             height = height)
 }
 
 
@@ -1029,6 +1035,7 @@ db_plot_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
     r6$params$db_plot$adjustment = input$double_bonds_plot_adjustment
     r6$params$db_plot$selected_test = input$double_bonds_test
     double_bonds_generate_double(r6, colour_list, dimensions_obj, input, session)
+    double_bonds_spawn(r6, output)
 
   })
 
