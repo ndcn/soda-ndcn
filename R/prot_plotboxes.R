@@ -517,7 +517,6 @@ prot_pca_generate = function(r6, colour_list, dimensions_obj, input) {
   } else {
     data_table = table_switch(input$pca_dataset, r6)
   }
-  
   r6$plot_pca(data_table = data_table,
               col_group = input$pca_metacol,
               width = width,
