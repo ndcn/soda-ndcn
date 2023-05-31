@@ -297,7 +297,7 @@ prot_heatmap_server = function(r6, output, session) {
       
       shinyWidgets::switchInput(inputId = ns("heatmap_apply_da"),
                                 label = "Apply discriminant analysis",
-                                value = TRUE,
+                                value = r6$params$heatmap$apply_da,
                                 width = "100%",
                                 disabled = TRUE),
       
@@ -311,7 +311,7 @@ prot_heatmap_server = function(r6, output, session) {
                          label = "Alpha",
                          min = 0,
                          max = 0.99,
-                         value = 0.8,
+                         value = r6$params$heatmap$alpha_da,
                          step = 0.01,
                          width = "100%"),
       shiny::actionButton(
@@ -517,7 +517,6 @@ prot_pca_generate = function(r6, colour_list, dimensions_obj, input) {
   } else {
     data_table = table_switch(input$pca_dataset, r6)
   }
-  
   r6$plot_pca(data_table = data_table,
               col_group = input$pca_metacol,
               width = width,
@@ -566,14 +565,14 @@ prot_pca_server = function(r6, output, session) {
       
       shinyWidgets::switchInput(inputId = ns("pca_apply_da"),
                                 label = "Apply discriminant analysis",
-                                value = FALSE,
+                                value = r6$params$pca$apply_da,
                                 width = "100%"),
       
       shiny::sliderInput(inputId = ns("pca_alpha_da"),
                          label = "Alpha",
                          min = 0,
                          max = 0.99,
-                         value = 0.8,
+                         value = r6$params$pca$alpha_da,
                          step = 0.01,
                          width = "100%"),
       

@@ -684,12 +684,23 @@ apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, al
     family = "binomial"
   }
   
-  coef = glmnet::cv.glmnet(data_table,
-                           group_list,
-                           nlambda = nlambda,
-                           alpha = alpha,
-                           family = family,
-                           type.multinomial = "grouped")
+  coef = NULL
+  attempt_count = 1
+  while(is.null(coef)) {
+    print_time(paste0("Discriminant analysis: attempt ", attempt_count))
+    attempt_count = attempt_count + 1
+    base::tryCatch(
+      {
+        coef = glmnet::cv.glmnet(data_table,
+                                 group_list,
+                                 nlambda = nlambda,
+                                 alpha = alpha,
+                                 family = family,
+                                 type.multinomial = "grouped")
+      },error=function(e){
+      },finally={}
+    )
+  }
   
   coef = stats::coef(coef, s = "lambda.min")
   keep_cols = as.matrix(coef[[1]])
