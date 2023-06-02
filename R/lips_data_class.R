@@ -102,13 +102,15 @@ Lips_data = R6::R6Class(
       # Class distribution parameters
       class_distribution = shiny::reactiveValues(
         dataset = "Total normalised class table",
-        group_col = NULL
+        group_col = NULL,
+        img_format = "png"
       ),
       
       # Class comparison parameters
       class_comparison = shiny::reactiveValues(
         dataset = "Total normalised class table",
-        group_col = NULL
+        group_col = NULL,
+        img_format = "png"
       ),
       
       # Volcano plot parameters
@@ -120,7 +122,8 @@ Lips_data = R6::R6Class(
         classes = NULL,
         selected_function = "median",
         selected_test = "Wilcoxon",
-        colouring = "Lipid class"
+        colouring = "Lipid class",
+        img_format = "png"
       ),
       
       # Heatmap parameters
@@ -132,7 +135,8 @@ Lips_data = R6::R6Class(
         percentile = 95,
         group_column_da = NULL,
         apply_da = FALSE,
-        alpha_da = 0.8
+        alpha_da = 0.8,
+        img_format = "png"
       ),
       
       # PCA parameters
@@ -140,7 +144,8 @@ Lips_data = R6::R6Class(
         dataset = "Z-scored total normalised data table",
         group_column = NULL,
         apply_da = FALSE,
-        alpha_da = 0.8
+        alpha_da = 0.8,
+        img_format = "png"
       ),
       
       # Double bonds parameters
@@ -155,7 +160,8 @@ Lips_data = R6::R6Class(
         fc_range = c(-5, 5),
         fc_values = c(-1, 1),
         pval_range = c(0, 5),
-        pval_values = c(1, 5)
+        pval_values = c(1, 5),
+        img_format = "png"
       )
     ),
     
