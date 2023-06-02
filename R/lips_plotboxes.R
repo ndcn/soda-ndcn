@@ -121,8 +121,13 @@ class_distribution_events = function(r6, dimensions_obj, r6_settings, input, out
     r6$set_params_class_distribution(val = input$class_distribution_metacol)
     r6$params$class_distribution$img_format = input$class_distribution_img_format
     
-    class_distribution_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    class_distribution_spawn(r6, input$class_distribution_img_format, output)
+    base::tryCatch({
+      class_distribution_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      class_distribution_spawn(r6, input$class_distribution_img_format, output)
+    },error=function(e){
+      print_time('Class distribution: error, missing data.')
+    },finally={}
+    )
   })
 
   # Download associated table
@@ -247,8 +252,15 @@ class_comparison_events = function(r6, dimensions_obj, r6_settings, input, outpu
     r6$set_params_class_comparison(val = input$class_comparison_metacol)
     r6$params$class_comparison$img_format = input$class_comparison_img_format
     
-    class_comparison_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    class_comparison_spawn(r6, input$class_comparison_img_format, output)
+    base::tryCatch({
+      class_comparison_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      class_comparison_spawn(r6, input$class_comparison_img_format, output)
+    },error=function(e){
+      print_time('Class comparison: error, missing data.')
+    },finally={}
+    )
+    
+
   })
 
   
@@ -428,8 +440,13 @@ volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, output, s
       choices = unique(r6$tables$meta_filtered[,input$volcano_plot_metacol]),
       selected = r6$params$volcano_plot$groups
     )
-    r6$params$volcano_plot$group_column = input$volcano_plot_metacol
-    r6$params$volcano_plot$groups = input$volcano_plot_metagroup
+    base::tryCatch({
+      r6$params$volcano_plot$group_column = input$volcano_plot_metacol
+      r6$params$volcano_plot$groups = input$volcano_plot_metagroup
+    },error=function(e){
+      print_time('Volcano plot: error, missing data.')
+    },finally={}
+    )
   })
   
   shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format), {
@@ -654,8 +671,14 @@ heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
     r6$params$heatmap$alpha_da = input$heatmap_alpha_da
     
     
-    heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    heatmap_spawn(r6, input$heatmap_img_format, output)
+    base::tryCatch({
+      heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      heatmap_spawn(r6, input$heatmap_img_format, output)
+    },error=function(e){
+      print_time('Heatmap: error, missing data.')
+      shinyjs::enable("heatmap_run")
+    },finally={}
+    )
     shinyjs::enable("heatmap_run")
   })
 
@@ -814,8 +837,13 @@ pca_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
     r6$params$pca$alpha_da = input$pca_alpha_da
     r6$params$pca$img_format = input$pca_img_format
     
-    pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    pca_spawn(r6, input$pca_img_format, output)
+    base::tryCatch({
+      pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      pca_spawn(r6, input$pca_img_format, output)
+    },error=function(e){
+      print_time('PCA: error, missing data.')
+    },finally={}
+    )
   })
 
 
@@ -1093,9 +1121,13 @@ db_plot_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
     r6$params$db_plot$selected_function = input$double_bonds_function
     r6$params$db_plot$img_format = input$double_bonds_plot_img_format
     
-
-    double_bonds_generate_single(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
+    base::tryCatch({
+      double_bonds_generate_single(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
+    },error=function(e){
+      print_time('Double bonds plot: error, missing data.')
+    },finally={}
+    )
     
   })
   

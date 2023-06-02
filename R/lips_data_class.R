@@ -121,7 +121,7 @@ Lips_data = R6::R6Class(
         groups = NULL,
         classes = NULL,
         selected_function = "median",
-        selected_test = "Wilcoxon",
+        selected_test = "T-test",
         colouring = "Lipid class",
         img_format = "png"
       ),
@@ -156,7 +156,7 @@ Lips_data = R6::R6Class(
         selected_groups = NULL,
         selected_lipid_class = NULL,
         selected_function = "median",
-        selected_test = "Wilcoxon",
+        selected_test = "T-test",
         fc_range = c(-5, 5),
         fc_values = c(-1, 1),
         pval_range = c(0, 5),
@@ -473,7 +473,7 @@ Lips_data = R6::R6Class(
                                  volcano_table = self$tables$feat_filtered,
                                  col_group = self$texts$col_group,
                                  used_function = "median",
-                                 test = "Wilcoxon",
+                                 test = "T-test",
                                  group_1,
                                  group_2) {
 
@@ -561,7 +561,7 @@ Lips_data = R6::R6Class(
                                        dbplot_table = self$tables$feat_filtered,
                                        col_group = self$texts$col_group,
                                        used_function = "median",
-                                       test = "Wilcoxon",
+                                       test = "T-test",
                                        group_1,
                                        group_2) {
 

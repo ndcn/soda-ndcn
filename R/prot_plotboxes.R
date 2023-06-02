@@ -170,8 +170,13 @@ prot_volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, outp
     r6$params$volcano_plot$selected_test = input$volcano_plot_test
     r6$params$volcano_plot$img_format = input$volcano_plot_img_format
     
-    prot_volcano_plot_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    prot_volcano_plot_spawn(r6, format = input$volcano_plot_img_format, output)
+    base::tryCatch({
+      prot_volcano_plot_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      prot_volcano_plot_spawn(r6, format = input$volcano_plot_img_format, output)
+    },error=function(e){
+      print_time('Volcano plot: error, missing data.')
+    },finally={}
+    )
   })
   
   # Export volcano table
@@ -284,7 +289,7 @@ prot_heatmap_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("heatmap_dataset"),
         label = "Select dataset",
-        choices = c("Z-scored total normalised data table"),
+        choices = c("Z-scored data table", "Z-scored total normalised data table"),
         selected = r6$params$heatmap$dataset
       ),
       shiny::checkboxGroupInput(
@@ -367,8 +372,15 @@ prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, s
     r6$params$heatmap$alpha_da = input$heatmap_alpha_da
     r6$params$heatmap$img_format = input$heatmap_img_format
     
-    prot_heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    prot_heatmap_spawn(r6, input$heatmap_img_format, output)
+    base::tryCatch({
+      prot_heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      prot_heatmap_spawn(r6, input$heatmap_img_format, output)
+    },error=function(e){
+      print_time('Heatmap: error, missing data.')
+      shinyjs::enable("heatmap_run")
+    },finally={}
+    )
+    
     shinyjs::enable("heatmap_run")
   })
   
@@ -466,7 +478,7 @@ prot_pca_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("pca_dataset"),
         label = "Select dataset",
-        choices = c("Z-scored total normalised data table"),
+        choices = c("Z-scored data table", "Z-scored total normalised data table"),
         selected = r6$params$pca$dataset
       ),
       shiny::selectInput(
@@ -526,8 +538,14 @@ prot_pca_events = function(r6, dimensions_obj, r6_settings, input, output, sessi
     r6$params$pca$alpha_da = input$pca_alpha_da
     r6$params$pca$img_format = input$pca_img_format
     
-    prot_pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    prot_pca_spawn(r6, input$pca_img_format, output)
+    base::tryCatch({
+      prot_pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+      prot_pca_spawn(r6, input$pca_img_format, output)
+    },error=function(e){
+      print_time('PCA: error, missing data.')
+    },finally={}
+    )
+    
   })
 
 
@@ -649,8 +667,13 @@ prot_dot_plot_events = function(r6, dimensions_obj, r6_settings, input, output, 
     r6$params$dot_plot$img_format = input$dot_plot_img_format
     
     # Produce the plot
-    prot_dot_plot_generate(r6, colour_list, dimensions_obj, input)
-    prot_dot_plot_spawn(r6, input$dot_plot_img_format, output)
+    base::tryCatch({
+      prot_dot_plot_generate(r6, colour_list, dimensions_obj, input)
+      prot_dot_plot_spawn(r6, input$dot_plot_img_format, output)
+    },error=function(e){
+      print_time('Dot plot: error, missing data.')
+    },finally={}
+    )
   })
 
 # 
@@ -750,8 +773,14 @@ prot_cnet_plot_events = function(r6, dimensions_obj, r6_settings, input, output,
     print_time("CNET plot: Updating params...")
     r6$params$cnet_plot$showCategory = as.numeric(input$cnet_plot_showcat)
     
-    prot_cnet_plot_generate(r6, colour_list, dimensions_obj, input)
-    prot_cnet_plot_spawn(r6, output)
+    base::tryCatch({
+      prot_cnet_plot_generate(r6, colour_list, dimensions_obj, input)
+      prot_cnet_plot_spawn(r6, output)
+    },error=function(e){
+      print_time('CNET plot: error, missing data.')
+    },finally={}
+    )
+    
   })
   
   # 
@@ -860,8 +889,14 @@ prot_ridge_plot_events = function(r6, dimensions_obj, r6_settings, input, output
     r6$params$ridge_plot$showCategory = as.numeric(input$ridge_plot_showcat)
     r6$params$ridge_plot$img_format = input$ridge_plot_img_format
     
-    prot_ridge_plot_generate(r6, colour_list, dimensions_obj, input)
-    prot_ridge_plot_spawn(r6, input$ridge_plot_img_format, output)
+    base::tryCatch({
+      prot_ridge_plot_generate(r6, colour_list, dimensions_obj, input)
+      prot_ridge_plot_spawn(r6, input$ridge_plot_img_format, output)
+    },error=function(e){
+      print_time('Ridge plot: error, missing data.')
+    },finally={}
+    )
+    
   })
   
   # 
@@ -951,8 +986,13 @@ prot_emap_plot_events = function(r6, dimensions_obj, r6_settings, input, output,
     print_time("eMap plot: Updating params...")
     r6$params$emap_plot$showCategory = as.numeric(input$emap_plot_showcat)
     
-    prot_emap_plot_generate(r6, colour_list, dimensions_obj, input)
-    prot_emap_plot_spawn(r6, output)
+    base::tryCatch({
+      prot_emap_plot_generate(r6, colour_list, dimensions_obj, input)
+      prot_emap_plot_spawn(r6, output)
+    },error=function(e){
+      print_time('eMap plot: error, missing data.')
+    },finally={}
+    )
   })
   
   # 

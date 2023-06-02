@@ -1,6 +1,5 @@
 # UI
 library(shiny)
-library(shinyjs)
 library(shinydashboard)
 library(shinyWidgets)
 library(shinybrowser)
@@ -48,6 +47,9 @@ library(clusterProfiler)
 library(enrichplot)
 library(ggridges)
 
+# New
+library(shinyjs)
+library(logr)
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
@@ -174,7 +176,19 @@ sidebar_ui = function() {
         bs4Dash::menuSubItem(
           text = "Tables",
           tabName = "help_data_tables")
+      ),
+      
+      # print output
+      shiny::htmlOutput(
+        outputId = "terminal_print"
+      ),
+      
+      tags$head(tags$style("#terminal_print{color: white;
+                                 font-size: 10px;
+                                 }"
       )
+      )
+      
     )
   )
 }
@@ -297,7 +311,27 @@ server = function(input, output, session) {
       stringsAsFactors = FALSE
     ))
   )
+  
+  # Create log_file
+  log_file = file.path(timestamped_name("file.log"))
+  lf = logr::log_open(log_file)
+  
+  lf_reactive = shiny::reactive(lf)
+  
+  # Update feedback grom log
+  shiny::observe({
+    shiny::invalidateLater(1000)
+    print_sequence = readLines(lf_reactive())[seq.int(length(readLines(lf_reactive()))-8, length(readLines(lf_reactive())), 1)]
+    print_sequence = print_sequence[print_sequence != ""]
+    print_sequence = paste(print_sequence, collapse = '<br/>')
+    output$terminal_print = shiny::renderUI({
+      shiny::HTML(print_sequence)
+    })
+  })
 
+
+
+  
   # Initiate some variables
   options(shiny.maxRequestSize=300*1024^2)
   

@@ -399,6 +399,7 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         if (!is.null(r6$tables$data_raw)) {
           r6$set_data_filtered()
           r6$normalise_total()
+          r6$normalise_z_score()
           r6$normalise_total_z_score()
         }
         
@@ -435,6 +436,7 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         if (!is.null(r6$tables$data_raw)) {
           r6$set_data_filtered()
           r6$normalise_total()
+          r6$normalise_z_score()
           r6$normalise_total_z_score()
         }
         
@@ -474,6 +476,7 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
         if (!is.null(r6$tables$data_raw)) {
           r6$set_data_filtered()
           r6$normalise_total()
+          r6$normalise_z_score()
           r6$normalise_total_z_score()
         }
         
@@ -563,6 +566,7 @@ soda_upload_prot_server = function(id, max_rows = 10, max_cols = 8, r6) {
           r6$set_col(col = input$select_id_data, type = "id_data")
           r6$set_data_filtered()
           r6$normalise_total()
+          r6$normalise_z_score()
           r6$normalise_total_z_score()
           
           # Send error message if non-unique IDs are selected

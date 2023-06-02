@@ -688,6 +688,7 @@ apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, al
   attempt_count = 1
   while(is.null(coef)) {
     print_time(paste0("Discriminant analysis: attempt ", attempt_count))
+    if (attempt_count == 5) {break}
     attempt_count = attempt_count + 1
     base::tryCatch(
       {
@@ -697,6 +698,7 @@ apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, al
                                  alpha = alpha,
                                  family = family,
                                  type.multinomial = "grouped")
+        
       },error=function(e){
       },finally={}
     )
@@ -954,8 +956,15 @@ timestamped_name = function(file_name) {
 }
 
 print_time = function(in_print) {
-  print(paste0(get_time(), " - ", in_print))
+  # if (!is.null(log_file)){
+  #   log_print(paste0(get_time(), " - ", in_print))
+  # } else {
+  #   print(paste0(get_time(), " - ", in_print))
+  # }
+
+  logr::log_print(paste0(get_time(), " - ", in_print), hide_notes = T)
 }
+
 
 #--------------------------------------------------------- String functions ----
 
