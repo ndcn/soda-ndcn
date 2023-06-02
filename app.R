@@ -1,5 +1,6 @@
 # UI
 library(shiny)
+library(shinyjs)
 library(shinydashboard)
 library(shinyWidgets)
 library(shinybrowser)
@@ -182,6 +183,7 @@ sidebar_ui = function() {
 #--------------------------------------------------------------- Setup body ----
 body_ui = function() {
   bs4Dash::dashboardBody(
+    shinyjs::useShinyjs(),
     bs4Dash::tabItems(
       
       # Welcome page

@@ -34,8 +34,8 @@ plotbox_switch_server = function(selection_list){
 
 #------------------------------------------------------- Class distribution ----
 
-class_distribution_generate = function(r6, colour_list, dimensions_obj, input, plot_name) {
-  print_time(paste0(plot_name, ": generating plot."))
+class_distribution_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_time("Class distribution: generating plot.")
 
   if (input$class_distribution_plotbox$maximized){
     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
@@ -53,11 +53,16 @@ class_distribution_generate = function(r6, colour_list, dimensions_obj, input, p
 }
 
 
-class_distribution_spawn = function(r6, output, plot_name) {
-  print_time(paste0(plot_name, ": spawning plot."))
-  output$class_distribution_plot = plotly::renderPlotly(
+class_distribution_spawn = function(r6, format, output) {
+  print_time("Class distribution: spawning plot.")
+  output$class_distribution_plot = plotly::renderPlotly({
     r6$plots$class_distribution
-  )
+    plotly::config(r6$plots$class_distribution, toImageButtonOptions = list(format= format,
+                                                                      filename= timestamped_name('class_distribution'),
+                                                                      height= NULL,
+                                                                      width= NULL,
+                                                                      scale= 1))
+  })
 }
 
 
@@ -92,6 +97,12 @@ class_distribution_server = function(r6, output, session) {
         selected = r6$params$class_distribution$group_col
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("class_distribution_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$class_distribution$img_format,
+        width = "100%"),
       shiny::downloadButton(
         outputId = ns("download_class_distribution_table"),
         label = "Download associated table",
@@ -104,12 +115,14 @@ class_distribution_server = function(r6, output, session) {
 class_distribution_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   # Generate the plot
-  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol), {
+  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol, input$class_distribution_img_format), {
     print_time("Class distribution: Updating params...")
     r6$params$class_distribution$dataset = input$class_distribution_dataset
     r6$set_params_class_distribution(val = input$class_distribution_metacol)
-    class_distribution_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input, "Class distribution")
-    class_distribution_spawn(r6, output, "Class distribution")
+    r6$params$class_distribution$img_format = input$class_distribution_img_format
+    
+    class_distribution_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
+    class_distribution_spawn(r6, input$class_distribution_img_format, output)
   })
 
   # Download associated table
@@ -165,11 +178,16 @@ class_comparison_generate = function(r6, colour_list, dimensions_obj, input) {
                            height = height)
 }
 
-class_comparison_spawn = function(r6, output) {
+class_comparison_spawn = function(r6, format, output) {
   print_time("Class comparison: spawning plot.")
-  output$class_comparison_plot = plotly::renderPlotly(
+  output$class_comparison_plot = plotly::renderPlotly({
     r6$plots$class_comparison
-  )
+    plotly::config(r6$plots$class_comparison, toImageButtonOptions = list(format= format,
+                                                                      filename= timestamped_name('class_comparison'),
+                                                                      height= NULL,
+                                                                      width= NULL,
+                                                                      scale= 1))
+  })
 }
 
 
@@ -206,6 +224,12 @@ class_comparison_server = function(r6, output, session) {
         selected = r6$params$class_comparison$group_col
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("class_comparison_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$class_comparison$img_format,
+        width = "100%"),
       shiny::downloadButton(
         outputId = ns("download_class_comparison_table"),
         label = "Download unavailable for now",
@@ -217,12 +241,14 @@ class_comparison_server = function(r6, output, session) {
 class_comparison_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   # Generate the plot
-  shiny::observeEvent(c(input$class_comparison_dataset, input$class_comparison_metacol), {
+  shiny::observeEvent(c(input$class_comparison_dataset, input$class_comparison_metacol, input$class_comparison_img_format), {
     print_time("Class comparison: Updating params...")
     r6$params$class_comparison$dataset = input$class_comparison_dataset
     r6$set_params_class_comparison(val = input$class_comparison_metacol)
+    r6$params$class_comparison$img_format = input$class_comparison_img_format
+    
     class_comparison_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    class_comparison_spawn(r6, output)
+    class_comparison_spawn(r6, input$class_comparison_img_format, output)
   })
 
   
@@ -291,11 +317,16 @@ volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 }
 
 
-volcano_plot_spawn = function(r6, output) {
+volcano_plot_spawn = function(r6, format, output) {
   print_time("Volcano plot: spawning plot.")
-  output$volcano_plot_plot = plotly::renderPlotly(
+  output$volcano_plot_plot = plotly::renderPlotly({
     r6$plots$volcano_plot
-  )
+    plotly::config(r6$plots$volcano_plot, toImageButtonOptions = list(format= format,
+                                                                      filename= timestamped_name('volcano_plot'),
+                                                                      height= NULL,
+                                                                      width= NULL,
+                                                                      scale= 1))
+  })
 }
 
 volcano_plot_ui = function(dimensions_obj, session) {
@@ -371,6 +402,12 @@ volcano_plot_server = function(r6, output, session) {
         multiple = FALSE
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("volcano_plot_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$volcano_plot$img_format,
+        width = "100%"),
       shiny::downloadButton(
         outputId = ns("download_volcano_table"),
         label = "Download associated table",
@@ -395,7 +432,7 @@ volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, output, s
     r6$params$volcano_plot$groups = input$volcano_plot_metagroup
   })
   
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment, input$volcano_plot_test), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format), {
     print_time("Volcano plot: Updating params...")
     
     r6$params$volcano_plot$data_table = input$volcano_plot_tables
@@ -406,9 +443,10 @@ volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, output, s
     r6$params$volcano_plot$colouring = input$volcano_plot_colouring
     r6$params$volcano_plot$adjustment = input$volcano_plot_adjustment
     r6$params$volcano_plot$selected_test = input$volcano_plot_test
+    r6$params$volcano_plot$img_format = input$volcano_plot_img_format
     
     volcano_plot_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    volcano_plot_spawn(r6, output)
+    volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
   })
 
   # Export volcano table
@@ -491,11 +529,16 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
                   height = dimensions_obj$ypx * dimensions_obj$y_plot)
 }
 
-heatmap_spawn = function(r6, output) {
+heatmap_spawn = function(r6, format, output) {
   print_time("Heatmap: spawning plot.")
-  output$heatmap_plot = plotly::renderPlotly(
+  output$heatmap_plot = plotly::renderPlotly({
     r6$plots$heatmap
-  )
+    plotly::config(r6$plots$heatmap, toImageButtonOptions = list(format= format,
+                                                                      filename= timestamped_name('heatmap'),
+                                                                      height= NULL,
+                                                                      width= NULL,
+                                                                      scale= 1))
+  })
 }
 
 
@@ -579,6 +622,12 @@ heatmap_server = function(r6, output, session) {
       ),
       
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("heatmap_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$heatmap$img_format,
+        width = "100%"),
       shiny::downloadButton(
         outputId = ns("download_heatmap_table"),
         label = "Download associated table",
@@ -591,12 +640,14 @@ heatmap_server = function(r6, output, session) {
 heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
   shiny::observeEvent(input$heatmap_run,{
+    shinyjs::disable("heatmap_run")
     print_time("Heatmap: Updating params...")
     r6$params$heatmap$dataset = input$heatmap_dataset
     r6$params$heatmap$clustering = input$heatmap_clustering
     r6$params$heatmap$map_sample_data = input$heatmap_map_rows
     r6$params$heatmap$map_feature_data = input$heatmap_map_cols
     r6$params$heatmap$percentile = input$heatmap_percentile
+    r6$params$heatmap$img_format = input$heatmap_img_format
     
     r6$params$heatmap$apply_da = input$heatmap_apply_da
     r6$params$heatmap$group_column_da = input$heatmap_group_col_da
@@ -604,7 +655,8 @@ heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
     
     
     heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    heatmap_spawn(r6, output)
+    heatmap_spawn(r6, input$heatmap_img_format, output)
+    shinyjs::enable("heatmap_run")
   })
 
 
@@ -671,11 +723,16 @@ pca_generate = function(r6, colour_list, dimensions_obj, input) {
               colour_list = colour_list)
 }
 
-pca_spawn = function(r6, output) {
+pca_spawn = function(r6, format, output) {
   print_time("PCA: spawning plot.")
-  output$pca_plot = plotly::renderPlotly(
+  output$pca_plot = plotly::renderPlotly({
     r6$plots$pca_plot
-  )
+    plotly::config(r6$plots$pca_plot, toImageButtonOptions = list(format= format,
+                                                                  filename= timestamped_name('pca_plot'),
+                                                                  height= NULL,
+                                                                  width= NULL,
+                                                                  scale= 1))
+  })
 }
 
 pca_ui = function(dimensions_obj, session) {
@@ -725,6 +782,12 @@ pca_server = function(r6, output, session) {
       
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
+        shiny::selectInput(
+          inputId = ns("pca_img_format"),
+          label = "Image format",
+          choices = c("png", "svg", "jpeg", "webp"),
+          selected = r6$params$pca$img_format,
+          width = "100%"),
         shiny::downloadButton(
           outputId = ns("download_pca_scores_table"),
           label = "Download scores table",
@@ -743,14 +806,16 @@ pca_server = function(r6, output, session) {
 
 pca_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
-  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da),{
+  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da, input$pca_img_format),{
     print_time("PCA: Updating params...")
     r6$params$pca$dataset = input$pca_dataset
     r6$params$pca$group_column = input$pca_metacol
     r6$params$pca$apply_da = input$pca_apply_da
     r6$params$pca$alpha_da = input$pca_alpha_da
+    r6$params$pca$img_format = input$pca_img_format
+    
     pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    pca_spawn(r6, output)
+    pca_spawn(r6, input$pca_img_format, output)
   })
 
 
@@ -893,11 +958,16 @@ double_bonds_generate_double_sliders = function(r6, colour_list, dimensions_obj,
 
 
 
-double_bonds_spawn = function(r6, output) {
+double_bonds_spawn = function(r6, format, output) {
   print_time("Double bonds plot: spawning plot.")
-  output$double_bonds_plot = plotly::renderPlotly(
+  output$double_bonds_plot = plotly::renderPlotly({
     r6$plots$double_bond_plot
-  )
+    plotly::config(r6$plots$double_bond_plot, toImageButtonOptions = list(format= format,
+                                                                      filename= timestamped_name('double_bond_plot'),
+                                                                      height= NULL,
+                                                                      width= NULL,
+                                                                      scale= 1))
+  })
 }
 
 
@@ -984,6 +1054,12 @@ double_bonds_server = function(r6, output, session) {
       ),
       
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("double_bonds_plot_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$db_plot$img_format,
+        width = "100%"),
       shiny::downloadButton(
         outputId = ns("download_double_bond_table"),
         label = "Download associated table",
@@ -1006,7 +1082,7 @@ db_plot_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
   })
 
   # Double bonds plot SINGLE 
-  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_dataset, input$double_bonds_function), {
+  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_dataset, input$double_bonds_function, input$double_bonds_plot_img_format), {
 
     print_time("Double bonds plot single: Updating params...")
     
@@ -1015,15 +1091,16 @@ db_plot_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
     r6$params$db_plot$selected_groups = input$double_bonds_metagroup
     r6$params$db_plot$selected_lipid_class = input$double_bonds_class
     r6$params$db_plot$selected_function = input$double_bonds_function
+    r6$params$db_plot$img_format = input$double_bonds_plot_img_format
     
 
     double_bonds_generate_single(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    double_bonds_spawn(r6, output)
+    double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
     
   })
   
   # Double bonds plot DOUBLE : Non-slider events
-  shiny::observeEvent(c(input$double_bonds_dataset, input$double_bonds_metagroup, input$double_bonds_class, input$double_bonds_function, input$double_bonds_plot_adjustment, input$double_bonds_test),{
+  shiny::observeEvent(c(input$double_bonds_dataset, input$double_bonds_metagroup, input$double_bonds_class, input$double_bonds_function, input$double_bonds_plot_adjustment, input$double_bonds_test, input$double_bonds_plot_img_format),{
     shiny::req(length(input$double_bonds_metagroup) == 2)
     
     print_time("Double bonds plot non-sliders: Updating params...")
@@ -1034,8 +1111,10 @@ db_plot_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
     r6$params$db_plot$selected_function = input$double_bonds_function
     r6$params$db_plot$adjustment = input$double_bonds_plot_adjustment
     r6$params$db_plot$selected_test = input$double_bonds_test
+    r6$params$db_plot$img_format = input$double_bonds_plot_img_format
+    
     double_bonds_generate_double(r6, colour_list, dimensions_obj, input, session)
-    double_bonds_spawn(r6, output)
+    double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
 
   })
 
@@ -1048,7 +1127,7 @@ db_plot_events = function(r6, dimensions_obj, r6_settings, input, output, sessio
     r6$params$db_plot$pval_values = input$min_log10_bh_pval_slider
     
     double_bonds_generate_double_sliders(r6, colour_list, dimensions_obj, input)
-    double_bonds_spawn(r6, output)
+    double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
   }) 
 
   # Download associated tables

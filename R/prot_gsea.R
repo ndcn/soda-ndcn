@@ -208,6 +208,7 @@ soda_gsea_prot_ui = function(id, head_meta = F, head_data = T) {
                            label = "Show category",
                            value = "200",
                            width = "100%"),
+          
           shiny::actionButton(inputId = ns("run_gsea"),
                               label = "Run GSEA",
                               width = "100%")
@@ -317,6 +318,8 @@ soda_gsea_prot_server = function(id, max_rows = 10, max_cols = 8, r6, r6_setting
       # Run GSEA
       shiny::observeEvent(input$run_gsea,{
         
+        
+        shinyjs::disable("run_gsea")
         r6$get_prot_list(data_table = table_switch(input$input_table, r6),
                          col_group = input$select_group_col,
                          group_1 = input$select_groups[1],
@@ -333,6 +336,7 @@ soda_gsea_prot_server = function(id, max_rows = 10, max_cols = 8, r6, r6_setting
                            OrgDb = "org.Hs.eg.db", 
                            pAdjustMethod = input$select_adjustment_2,
                            termsim_showcat = as.numeric(input$termsim_showcat))
+        shinyjs::enable("run_gsea")
 
       })
       

@@ -60,11 +60,16 @@ prot_volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 }
 
 
-prot_volcano_plot_spawn = function(r6, output) {
+prot_volcano_plot_spawn = function(r6, format, output) {
   print_time("Volcano plot: spawning plot.")
-  output$volcano_plot_plot = plotly::renderPlotly(
+  output$volcano_plot_plot = plotly::renderPlotly({
     r6$plots$volcano_plot
-  )
+    plotly::config(r6$plots$volcano_plot, toImageButtonOptions = list(format= format,
+                                                                 filename= timestamped_name('volcano_plot'),
+                                                                 height= NULL,
+                                                                 width= NULL,
+                                                                 scale= 1))
+  })
 }
 
 prot_volcano_plot_ui = function(dimensions_obj, session) {
@@ -126,6 +131,12 @@ prot_volcano_plot_server = function(r6, output, session) {
         multiple = FALSE
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("volcano_plot_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$volcano_plot$img_format,
+        width = "100%"),
       shiny::downloadButton(
         outputId = ns("download_volcano_table"),
         label = "Download associated table",
@@ -148,7 +159,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, outp
     )
   })
   
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format), {
     print_time("Volcano plot: Updating params...")
     
     r6$params$volcano_plot$data_table = input$volcano_plot_tables
@@ -157,9 +168,10 @@ prot_volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, outp
     r6$params$volcano_plot$selected_function = input$volcano_plot_function
     r6$params$volcano_plot$adjustment = input$volcano_plot_adjustment
     r6$params$volcano_plot$selected_test = input$volcano_plot_test
+    r6$params$volcano_plot$img_format = input$volcano_plot_img_format
     
     prot_volcano_plot_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    prot_volcano_plot_spawn(r6, output)
+    prot_volcano_plot_spawn(r6, format = input$volcano_plot_img_format, output)
   })
   
   # Export volcano table
@@ -239,11 +251,16 @@ prot_heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
                   height = dimensions_obj$ypx * dimensions_obj$y_plot)
 }
 
-prot_heatmap_spawn = function(r6, output) {
+prot_heatmap_spawn = function(r6, format, output) {
   print_time("Heatmap: spawning plot.")
-  output$heatmap_plot = plotly::renderPlotly(
+  output$heatmap_plot = plotly::renderPlotly({
     r6$plots$heatmap
-  )
+    plotly::config(r6$plots$heatmap, toImageButtonOptions = list(format= format,
+                                                                      filename= timestamped_name('heatmap_plot'),
+                                                                      height= NULL,
+                                                                      width= NULL,
+                                                                      scale= 1))
+  })
 }
 
 
@@ -321,6 +338,12 @@ prot_heatmap_server = function(r6, output, session) {
       ),
       
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("heatmap_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$heatmap$img_format,
+        width = "100%"),
       shiny::downloadButton(
         outputId = ns("download_heatmap_table"),
         label = "Download associated table",
@@ -333,19 +356,20 @@ prot_heatmap_server = function(r6, output, session) {
 prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
   shiny::observeEvent(input$heatmap_run,{
+    shinyjs::disable("heatmap_run")
     print_time("Heatmap: Updating params...")
     r6$params$heatmap$dataset = input$heatmap_dataset
     r6$params$heatmap$clustering = input$heatmap_clustering
     r6$params$heatmap$map_sample_data = input$heatmap_map_rows
     r6$params$heatmap$percentile = input$heatmap_percentile
-    
     r6$params$heatmap$apply_da = input$heatmap_apply_da
     r6$params$heatmap$group_column_da = input$heatmap_group_col_da
     r6$params$heatmap$alpha_da = input$heatmap_alpha_da
-    
+    r6$params$heatmap$img_format = input$heatmap_img_format
     
     prot_heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    prot_heatmap_spawn(r6, output)
+    prot_heatmap_spawn(r6, input$heatmap_img_format, output)
+    shinyjs::enable("heatmap_run")
   })
   
   
@@ -380,119 +404,6 @@ prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, s
 }
 
 
-# 
-# 
-# 
-# 
-# prot_heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
-#   print_time("Heatmap: generating plot.")
-#   
-#   if (input$heatmap_plotbox$maximized){
-#     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-#     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-#   } else {
-#     width = dimensions_obj$xpx * dimensions_obj$x_plot
-#     height = dimensions_obj$ypx * dimensions_obj$y_plot
-#   }
-#   
-#   r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
-#                   percentile = input$heatmap_percentile,
-#                   width = dimensions_obj$xpx * dimensions_obj$x_plot,
-#                   height = dimensions_obj$ypx * dimensions_obj$y_plot)
-# }
-# 
-# prot_heatmap_spawn = function(r6, output) {
-#   print_time("Heatmap: spawning plot.")
-#   output$heatmap_plot = plotly::renderPlotly(
-#     r6$plots$heatmap
-#   )
-# }
-# 
-# 
-# prot_heatmap_ui = function(dimensions_obj, session) {
-#   
-#   get_plotly_box(id = "heatmap",
-#                  label = "Heatmap",
-#                  dimensions_obj = dimensions_obj,
-#                  session = session)
-#   
-# }
-# 
-# 
-# prot_heatmap_server = function(r6, output, session) {
-#   
-#   ns = session$ns
-#   print_time("Heatmap: START.")
-#   
-#   output$heatmap_sidebar_ui = shiny::renderUI({
-#     shiny::tagList(
-#       shiny::selectInput(
-#         inputId = ns("heatmap_dataset"),
-#         label = "Select dataset",
-#         choices = c("Z-scored total normalised data table"),
-#         selected = r6$params$heatmap$dataset
-#       ),
-#       shiny::sliderInput(inputId = ns("heatmap_percentile"),
-#                          label = "Percentile",
-#                          min = 90,
-#                          max = 100,
-#                          value = r6$params$heatmap$percentile,
-#                          step = 1
-#       ),
-#       shiny::actionButton(
-#         inputId = ns("heatmap_run"),
-#         label = "Generate heatmap"
-#       ),
-#       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-#       shiny::downloadButton(
-#         outputId = ns("download_heatmap_table"),
-#         label = "Download associated table",
-#         style = "width:100%;"
-#       )
-#     )
-#   })
-# }
-# 
-# prot_heatmap_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
-#   
-#   shiny::observeEvent(input$heatmap_run,{
-#     print_time("Heatmap: Updating params...")
-#     r6$params$heatmap$dataset = input$heatmap_dataset
-#     r6$params$heatmap$percentile = input$heatmap_percentile
-#     prot_heatmap_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-#     prot_heatmap_spawn(r6, output)
-#   })
-#   
-#   
-#   # Download associated table
-#   output$download_heatmap_table = shiny::downloadHandler(
-#     filename = function(){timestamped_name("heatmap_table.csv")},
-#     content = function(file_name){
-#       write.csv(r6$tables$heatmap_table, file_name)
-#     }
-#   )
-#   
-#   # Expanded boxes
-#   heatmap_proxy = plotly::plotlyProxy(outputId = "heatmap_plot",
-#                                       session = session)
-#   
-#   shiny::observeEvent(input$heatmap_plotbox,{
-#     if (input$heatmap_plotbox$maximized) {
-#       plotly::plotlyProxyInvoke(p = heatmap_proxy,
-#                                 method = "relayout",
-#                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
-#                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-#                                 ))
-#     } else {
-#       plotly::plotlyProxyInvoke(p = heatmap_proxy,
-#                                 method = "relayout",
-#                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
-#                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
-#                                 ))
-#     }
-#   })
-#   
-# }
 
 #---------------------------------------------------------------------- PCA ----
 
@@ -524,11 +435,16 @@ prot_pca_generate = function(r6, colour_list, dimensions_obj, input) {
               colour_list = colour_list)
 }
 
-prot_pca_spawn = function(r6, output) {
+prot_pca_spawn = function(r6, format, output) {
   print_time("PCA: spawning plot.")
-  output$pca_plot = plotly::renderPlotly(
+  output$pca_plot = plotly::renderPlotly({
     r6$plots$pca_plot
-  )
+    plotly::config(r6$plots$pca_plot, toImageButtonOptions = list(format= format,
+                                                                 filename= timestamped_name('pca_plot'),
+                                                                 height= NULL,
+                                                                 width= NULL,
+                                                                 scale= 1))
+  })
 }
 
 prot_pca_ui = function(dimensions_obj, session) {
@@ -578,6 +494,12 @@ prot_pca_server = function(r6, output, session) {
       
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
+        shiny::selectInput(
+          inputId = ns("pca_img_format"),
+          label = "Image format",
+          choices = c("png", "svg", "jpeg", "webp"),
+          selected = r6$params$pca$img_format,
+          width = "100%"),
         shiny::downloadButton(
           outputId = ns("download_pca_scores_table"),
           label = "Download scores table",
@@ -596,14 +518,16 @@ prot_pca_server = function(r6, output, session) {
 
 prot_pca_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
-  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da),{
+  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da, input$pca_img_format),{
     print_time("PCA: Updating params...")
     r6$params$pca$dataset = input$pca_dataset
     r6$params$pca$group_column = input$pca_metacol
     r6$params$pca$apply_da = input$pca_apply_da
     r6$params$pca$alpha_da = input$pca_alpha_da
+    r6$params$pca$img_format = input$pca_img_format
+    
     prot_pca_generate(r6, r6_settings$color_settings$color_palette, dimensions_obj, input)
-    prot_pca_spawn(r6, output)
+    prot_pca_spawn(r6, input$pca_img_format, output)
   })
 
 
@@ -663,12 +587,17 @@ prot_dot_plot_generate = function(r6, colour_list, dimensions_obj, input) {
                    height = height)
 }
 
-prot_dot_plot_spawn = function(r6, output) {
+prot_dot_plot_spawn = function(r6, format, output) {
   print_time("Dot plot: spawning plot.")
   
-  output$dot_plot_plot = plotly::renderPlotly(
+  output$dot_plot_plot = plotly::renderPlotly({
     r6$plots$dotplot
-  )
+    plotly::config(r6$plots$dotplot, toImageButtonOptions = list(format= format,
+                                                                            filename= timestamped_name('dotplot'),
+                                                                            height= NULL,
+                                                                            width= NULL,
+                                                                            scale= 1))
+  })
 }
 
 prot_dot_plot_ui = function(dimensions_obj, session) {
@@ -698,23 +627,30 @@ prot_dot_plot_server = function(r6, output, session) {
         label = "Mode",
         choices = c("Both", "Activated", "Suppressed"),
         selected = r6$params$dot_plot$mode
-      )
+      ),
+      shiny::selectInput(
+        inputId = ns("dot_plot_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$dot_plot$img_format,
+        width = "100%"),
     )
   })
 }
 
 prot_dot_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
 
-  shiny::observeEvent(c(input$dot_plot_showcat, input$dot_plot_mode),{
+  shiny::observeEvent(c(input$dot_plot_showcat, input$dot_plot_mode, input$dot_plot_img_format),{
     
     # Update parameters
     print_time("Dot plot: Updating params...")
     r6$params$dot_plot$showCategory = as.numeric(input$dot_plot_showcat)
     r6$params$dot_plot$mode = input$dot_plot_mode
+    r6$params$dot_plot$img_format = input$dot_plot_img_format
     
     # Produce the plot
     prot_dot_plot_generate(r6, colour_list, dimensions_obj, input)
-    prot_dot_plot_spawn(r6, output)
+    prot_dot_plot_spawn(r6, input$dot_plot_img_format, output)
   })
 
 # 
@@ -871,11 +807,16 @@ prot_ridge_plot_generate = function(r6, colour_list, dimensions_obj, input) {
                      height = height)
 }
 
-prot_ridge_plot_spawn = function(r6, output) {
+prot_ridge_plot_spawn = function(r6, format, output) {
   print_time("Ridge plot: spawning plot.")
-  output$ridge_plot_plot = plotly::renderPlotly(
+  output$ridge_plot_plot = plotly::renderPlotly({
     r6$plots$ridgeplot
-  )
+    plotly::config(r6$plots$ridgeplot, toImageButtonOptions = list(format= format,
+                                                                   filename= timestamped_name('ridgeplot'),
+                                                                   height= NULL,
+                                                                   width= NULL,
+                                                                   scale= 1))
+  })
 }
 
 prot_ridge_plot_ui = function(dimensions_obj, session) {
@@ -899,21 +840,28 @@ prot_ridge_plot_server = function(r6, output, session) {
         inputId = ns("ridge_plot_showcat"),
         label = "Show category",
         value = 30
-      )
+      ),
+      shiny::selectInput(
+        inputId = ns("ridge_plot_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$ridge_plot$img_format,
+        width = "100%"),
     )
   })
 }
 
 prot_ridge_plot_events = function(r6, dimensions_obj, r6_settings, input, output, session) {
   
-  shiny::observeEvent(input$ridge_plot_showcat,{
+  shiny::observeEvent(c(input$ridge_plot_showcat, input$ridge_plot_img_format),{
     
     # Update parameters
     print_time("Ridge plot: Updating params...")
     r6$params$ridge_plot$showCategory = as.numeric(input$ridge_plot_showcat)
+    r6$params$ridge_plot$img_format = input$ridge_plot_img_format
     
     prot_ridge_plot_generate(r6, colour_list, dimensions_obj, input)
-    prot_ridge_plot_spawn(r6, output)
+    prot_ridge_plot_spawn(r6, input$ridge_plot_img_format, output)
   })
   
   # 

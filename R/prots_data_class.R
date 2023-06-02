@@ -79,7 +79,8 @@ Prot_data = R6::R6Class(
         group_column = NULL,
         groups = NULL,
         selected_function = "median",
-        selected_test = "Wilcoxon"
+        selected_test = "Wilcoxon",
+        img_format = "png"
       ),
       
       # Heatmap parameters
@@ -91,7 +92,8 @@ Prot_data = R6::R6Class(
         percentile = 95,
         group_column_da = NULL,
         apply_da = TRUE,
-        alpha_da = 0.8
+        alpha_da = 0.8,
+        img_format = "png"
       ),
       
       # PCA parameters
@@ -99,18 +101,21 @@ Prot_data = R6::R6Class(
         dataset = "Z-scored total normalised data table",
         group_column = NULL,
         apply_da = FALSE,
-        alpha_da = 0.8
+        alpha_da = 0.8,
+        img_format = "png"
       ),
       
       # Dot plot parameters
       dot_plot = shiny::reactiveValues(
         showCategory = 10,
-        mode = "Both"
+        mode = "Both",
+        img_format = "png"
       ),
       
       # Ridge plot parameters
       ridge_plot = shiny::reactiveValues(
-        showCategory = 30
+        showCategory = 30,
+        img_format = "png"
       ),
       
       # CNET plot parameters
@@ -283,9 +288,9 @@ Prot_data = R6::R6Class(
       dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
       dead_features = setdiff(dead_features, colnames(data_table))
+      dead_features = which(rownames(data_table) %in% dead_features)
       
       if (length(dead_features) > 0) {
-        dead_features = which(rownames(data_table) %in% dead_features)
         data_table = data_table[,-dead_features]
       }
       
@@ -531,6 +536,7 @@ Prot_data = R6::R6Class(
       fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
                            yaxis = list(title = paste0("PC2 (", round(pca_data@R2[2] * 100), "% of the variance)"))
       )
+      
       self$plots$pca_plot = fig
     },
     
