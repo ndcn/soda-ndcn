@@ -79,13 +79,13 @@ Prot_data = R6::R6Class(
         group_column = NULL,
         groups = NULL,
         selected_function = "median",
-        selected_test = "Wilcoxon",
+        selected_test = "T-test",
         img_format = "png"
       ),
       
       # Heatmap parameters
       heatmap = shiny::reactiveValues(
-        dataset = "Z-scored total normalised data table",
+        dataset = "Z-scored data table",
         clustering = NULL,
         map_sample_data = character(0),
         map_feature_data = character(0),
@@ -98,9 +98,9 @@ Prot_data = R6::R6Class(
       
       # PCA parameters
       pca = shiny::reactiveValues(
-        dataset = "Z-scored total normalised data table",
+        dataset = "Z-scored data table",
         group_column = NULL,
-        apply_da = FALSE,
+        apply_da = TRUE,
         alpha_da = 0.8,
         img_format = "png"
       ),
@@ -214,7 +214,7 @@ Prot_data = R6::R6Class(
     get_volcano_table = function(data_table = self$tables$data_filtered,
                                  col_group = self$texts$col_group,
                                  used_function = "median",
-                                 test = "Wilcoxon",
+                                 test = "T-test",
                                  group_1,
                                  group_2) {
 

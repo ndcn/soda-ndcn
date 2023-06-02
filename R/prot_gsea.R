@@ -136,7 +136,7 @@ soda_gsea_prot_ui = function(id, head_meta = F, head_data = T) {
                              choices = c("Filtered data table",
                                          "Total normalised data table"),
                              label = "Select table",
-                             selected = "Total normalised data table"),
+                             selected = "Filtered data table"),
           shiny::selectInput(inputId = ns("select_group_col"),
                              label = "Select group column",
                              choices = NULL,
