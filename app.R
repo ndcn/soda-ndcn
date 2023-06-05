@@ -318,7 +318,7 @@ server = function(input, output, session) {
   
   lf_reactive = shiny::reactive(lf)
   
-  # Update feedback grom log
+  # Update feedback from log
   shiny::observe({
     shiny::invalidateLater(1000)
     print_sequence = readLines(lf_reactive())[seq.int(length(readLines(lf_reactive()))-8, length(readLines(lf_reactive())), 1)]

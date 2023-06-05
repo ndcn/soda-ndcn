@@ -41,6 +41,9 @@ Prot_data = R6::R6Class(
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
       
+      # Selection tables
+      volcano_table_slice = NULL,
+      
       # GSEA tables
       prot_list = NULL,
       gsea_object = NULL
@@ -261,6 +264,16 @@ Prot_data = R6::R6Class(
       }
       
       self$tables$volcano_table = volcano_table
+    },
+    
+    # Slice volcano table on x & y values from a plot
+    slice_volcano_table = function(x, y, x_col, y_col, data_table = self$tables$volcano_table) {
+      self$tables$volcano_table_slice = slice_table_from_vals(x = x,
+                                                              y = y,
+                                                              x_col = x_col,
+                                                              y_col = y_col,
+                                                              data_table = data_table)
+      print_time(paste0("Volcano plot: ", nrow(self$tables$volcano_table_slice), " features selected"))
     },
     
     # GSEA table

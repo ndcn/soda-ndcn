@@ -132,6 +132,17 @@ meta_normalise = function(data_table, norm_list) {
   return(data_table)
 }
 
+slice_table_from_vals = function(x, y, x_col, y_col, data_table) {
+  summed = round(data_table[,x_col] + data_table[,y_col],4)
+  val = round(x + y, 4)
+  
+  selection = which(summed %in% val)
+  
+  selection = sort(unique(selection))
+  
+  return(data_table[selection,])
+}
+
 #----------------------------------------------------------- Table switches ----
 table_switch = function(selection, r6){
   switch(EXPR = selection,

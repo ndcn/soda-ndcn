@@ -130,6 +130,11 @@ prot_volcano_plot_server = function(r6, output, session) {
         selected = r6$params$volcano_plot$adjustment,
         multiple = FALSE
       ),
+      shiny::actionButton(
+        inputId = ns("volcano_feature_select"),
+        label = "Save selection",
+        width = "100%"
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("volcano_plot_img_format"),
@@ -137,11 +142,21 @@ prot_volcano_plot_server = function(r6, output, session) {
         choices = c("png", "svg", "jpeg", "webp"),
         selected = r6$params$volcano_plot$img_format,
         width = "100%"),
-      shiny::downloadButton(
-        outputId = ns("download_volcano_table"),
-        label = "Download associated table",
-        style = "width:100%;"
+      
+      shiny::fluidRow(
+        shiny::downloadButton(
+          outputId = ns("download_volcano_table"),
+          label = "Download associated table",
+          style = "width:50%;"
+        ),
+        shiny::downloadButton(
+          outputId = ns("download_volcano_subtable"),
+          label = "Download selection",
+          style = "width:50%;"
+        )
       )
+      
+
     )
   })
 }
@@ -179,6 +194,24 @@ prot_volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, outp
     )
   })
   
+  # Save selection
+  shiny::observeEvent(input$volcano_feature_select, {
+    print_time("Volcano plot: saving selection.")
+    volcano_selection = plotly::event_data(
+      "plotly_selected"
+    )
+    if (is.null(volcano_selection)){
+      print_time("Brushed points appear here (double-click to clear)")
+    }else {
+      r6$slice_volcano_table(
+        x = volcano_selection[3][[1]],
+        y = volcano_selection[4][[1]],
+        x_col = "log2_fold_change",
+        y_col = adjustment_switch(input$volcano_plot_adjustment)
+      )
+    }
+  })
+  
   # Export volcano table
   output$download_volcano_table = shiny::downloadHandler(
     filename = function(){timestamped_name("volcano_table.csv")},
@@ -186,6 +219,14 @@ prot_volcano_plot_events = function(r6, dimensions_obj, r6_settings, input, outp
       write.csv(r6$tables$volcano_table, file_name)
     }
   )
+  
+  output$download_volcano_subtable = shiny::downloadHandler(
+    filename = function(){timestamped_name("volcano_table_selection.csv")},
+    content = function(file_name){
+      write.csv(r6$tables$volcano_table_slice, file_name)
+    }
+  )
+  
   
   # Expanded boxes
   volcano_plot_proxy = plotly::plotlyProxy(outputId = "volcano_plot_plot",
@@ -264,7 +305,8 @@ prot_heatmap_spawn = function(r6, format, output) {
                                                                       filename= timestamped_name('heatmap_plot'),
                                                                       height= NULL,
                                                                       width= NULL,
-                                                                      scale= 1))
+                                                                      scale= 1),
+                   modeBarButtonsToRemove  = list("autoScale"))
   })
 }
 
