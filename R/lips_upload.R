@@ -886,10 +886,8 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                 value = length(remaining_cols),
                 total = ncol(r6$tables$data_raw) - 1
               )
-              
               # Produce ensuing tables
               r6$set_all_tables()
-
               
               # Update the class filter
               shiny::updateSelectizeInput(
@@ -905,7 +903,6 @@ soda_upload_lips_server = function(id, max_rows = 10, max_cols = 8, r6) {
                 choices = remaining_cols,
                 selected = character(0)
               )
-              
             }
           }
         }

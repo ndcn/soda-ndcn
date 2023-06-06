@@ -640,7 +640,7 @@ Lips_data = R6::R6Class(
       
       # Create feature table
       self$set_feat_filtered()
-
+      
       # Class table
       self$class_grouping_raw()
       self$class_grouping_total_norm()

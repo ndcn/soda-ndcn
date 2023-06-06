@@ -198,10 +198,18 @@ get_group_median_table = function(data_table,
                                    ncol = ncol(data_table)))
   colnames(out_table) = colnames(data_table)
   rownames(out_table) = unique_groups
+  
   for (group in unique_groups) {
     idx = rownames(meta_table)[which(meta_table[,col_group] == group)]
+    
     group_table = data_table[idx,]
-    group_values = apply(group_table,2,median, na.rm = TRUE)
+    
+    if (length(idx) == 1) {
+      group_values = group_table
+    } else {
+      group_values = apply(group_table,2,median, na.rm = TRUE)
+    }
+    
     group_values[is.na(group_values)] = 0.0
     out_table[group,] = group_values
   }
@@ -967,12 +975,6 @@ timestamped_name = function(file_name) {
 }
 
 print_time = function(in_print) {
-  # if (!is.null(log_file)){
-  #   log_print(paste0(get_time(), " - ", in_print))
-  # } else {
-  #   print(paste0(get_time(), " - ", in_print))
-  # }
-
   logr::log_print(paste0(get_time(), " - ", in_print), hide_notes = T)
 }
 
