@@ -408,9 +408,11 @@ soda_gsea_prot_server = function(id, max_rows = 10, max_cols = 8, r6, r6_setting
       
       shiny::observeEvent(input$clear_plots, {
         print_time("Clearing plots")
-        shinyWidgets::updateCheckboxGroupButtons(inputId = "showPlots",
-                                                 disabled = FALSE,
-                                                 selected = character(0))
+        shinyWidgets::updateCheckboxGroupButtons(
+          session = session,
+          inputId = "showPlots",
+          disabled = FALSE,
+          selected = character(0))
         output$plotbox_field = shiny::renderUI(
           NULL
         )
