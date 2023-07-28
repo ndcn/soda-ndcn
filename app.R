@@ -3,9 +3,6 @@ library(shinyjs)
 library(bs4Dash)
 library(shinyWidgets)
 
-# New
-library(shinythemes) # https://bootswatch.com/quartz/
-
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {

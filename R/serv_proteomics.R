@@ -1,10 +1,10 @@
-#-------------------------------------------------------- Lipidomics server ----
+#-------------------------------------------------------- Proteomics server ----
 
-lipidomics_server = function(id, ns, input, output, session) {
+proteomics_server = function(id, ns, input, output, session) {
   output$test_output = shiny::renderUI({
     shiny::selectInput(
       inputId = ns('truffles'),
-      label = 'Lipidomics',
+      label = 'Proteomics',
       choices = c(1, 2, 3)
     )
   })

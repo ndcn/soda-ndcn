@@ -45,17 +45,26 @@ experiment_server = function(id, type) {
     id,
     function(input, output, session) {
       ns = session$ns
-      output$test_output = shiny::renderUI({
-        shiny::selectInput(
-          inputId = ns('truffles'),
-          label = type,
-          choices = c(1, 2, 3)
-        )
-      })
-      
-      session$userData[[id]]$test = shiny::observeEvent(input$truffles,{
-        print(input$truffles)
-      })
+
+      if (type == 'Lipidomics') {
+        lipidomics_server(id = id, ns = ns, input = input, output = output, session = session)
+      } else if (type == 'Proteomics') {
+        proteomics_server(id = id, ns = ns, input = input, output = output, session = session)
+      } else if (type == 'Transcriptomics') {
+        transcriptomics_server(id = id, ns = ns, input = input, output = output, session = session)
+      }
+
+      # output$test_output = shiny::renderUI({
+      #   shiny::selectInput(
+      #     inputId = ns('truffles'),
+      #     label = type,
+      #     choices = c(1, 2, 3)
+      #   )
+      # })
+
+      # session$userData[[id]]$test = shiny::observeEvent(input$truffles,{
+      #   print(input$truffles)
+      # })
     }
   )
 }

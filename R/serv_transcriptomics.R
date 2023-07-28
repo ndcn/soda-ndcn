@@ -1,10 +1,10 @@
-#-------------------------------------------------------- Lipidomics server ----
+#--------------------------------------------------- Transcriptomics server ----
 
-lipidomics_server = function(id, ns, input, output, session) {
+transcriptomics_server = function(id, ns, input, output, session) {
   output$test_output = shiny::renderUI({
     shiny::selectInput(
       inputId = ns('truffles'),
-      label = 'Lipidomics',
+      label = 'Transcriptomics',
       choices = c(1, 2, 3)
     )
   })
