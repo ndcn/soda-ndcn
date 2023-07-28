@@ -122,14 +122,14 @@ start_ui = function(id){
                  and pressing ADD EXP. This will create a new module on the sidebar
                  for you to start importing and analysing your data. Made a mistake
                  creating an experiment? You can select one or multiple experiments
-                 in Delete exp. and remove them by pressing REMOVE EXP. Bear in 
+                 in Delete exp. and remove them by pressing REMOVE EXP. Bear in
                  mind, SODA is currently limited to a maximum of 6 simultaneous
                  experiments."),
         shiny::p('The general workflow consists in uploading a metadata and a data
                   table: samples and rows, descriptors/features as columns. The
                   metadata table contains all types of data describing each sample
                   and the data table contains only numeric data.'),
-        shiny::p('Samples and features are then be filtered and imputed according 
+        shiny::p('Samples and features are then be filtered and imputed according
                  to user set parameters.'),
         shiny::p('Finally, data can be analyzed and visualized via interactive
                  plots, and even further analysed with geneset enrichment, over-representation
@@ -141,11 +141,11 @@ start_ui = function(id){
 
 #------------------------------------------------------------- Start server ----
 
-start_server = function(id, main_output, main_session, module_controler) {
+start_server = function(id, main_input, main_output, main_session, module_controler) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
-      
+
       exp_slots = shiny::reactiveValues(
         exp_6 = FALSE,
         exp_5 = FALSE,
@@ -154,18 +154,18 @@ start_server = function(id, main_output, main_session, module_controler) {
         exp_2 = FALSE,
         exp_1 = FALSE
       )
-      
+
       exp_data = shiny::reactiveValues(
         exp_names_list = NULL,
         exp_names = NULL
-        
+
       )
-      
+
       # Create experiments
       shiny::observeEvent(input$add_exp,{
         exp_name = input$exp_name
         exp_type = input$exp_type
-        
+
         if (exp_name == '') {
           print('ERROR: please enter a name for the experiment')
           return()
@@ -174,85 +174,30 @@ start_server = function(id, main_output, main_session, module_controler) {
           print('ERROR: experiment already exists.')
           return()
         }
-        if (!exp_slots$exp_1) {
-          main_output$exp_1 = bs4Dash::renderMenu({
-            bs4Dash::sidebarMenu(
-              bs4Dash::menuItem(text = exp_name,
-                                tabName = 'exp_1',
-                                icon = icon(tolower(substr(exp_type, 1, 1))))
-            )
-          })
-          exp_slots$exp_1 = TRUE
-          exp_data$exp_names[[exp_name]] = "exp_1"
-          module_controler$exp_1 = exp_type
-          
-        } else if (!exp_slots$exp_2) {
-          main_output$exp_2 = bs4Dash::renderMenu({
-            bs4Dash::sidebarMenu(
-              bs4Dash::menuItem(text = exp_name,
-                                tabName = 'exp_2',
-                                icon = icon(tolower(substr(exp_type, 1, 1))))
-            )
-          })
-          exp_slots$exp_2 = TRUE
-          exp_data$exp_names[[exp_name]] = "exp_2"
-          module_controler$exp_2 = exp_type
-          
-        } else if (!exp_slots$exp_3) {
-          main_output$exp_3 = bs4Dash::renderMenu({
-            bs4Dash::sidebarMenu(
-              bs4Dash::menuItem(text = exp_name,
-                                tabName = 'exp_3',
-                                icon = icon(tolower(substr(exp_type, 1, 1))))
-            )
-          })
-          exp_slots$exp_3 = TRUE
-          exp_data$exp_names[[exp_name]] = "exp_3"
-          module_controler$exp_3 = exp_type
-          
-        } else if (!exp_slots$exp_4) {
-          main_output$exp_4 = bs4Dash::renderMenu({
-            bs4Dash::sidebarMenu(
-              bs4Dash::menuItem(text = exp_name,
-                                tabName = 'exp_3',
-                                icon = icon(tolower(substr(exp_type, 1, 1))))
-            )
-          })
-          exp_slots$exp_4 = TRUE
-          exp_data$exp_names[[exp_name]] = "exp_4"
-          module_controler$exp_4 = exp_type
-          
-        } else if (!exp_slots$exp_5) {
-          main_output$exp_5 = bs4Dash::renderMenu({
-            bs4Dash::sidebarMenu(
-              bs4Dash::menuItem(text = exp_name,
-                                tabName = 'exp_5',
-                                icon = icon(tolower(substr(exp_type, 1, 1))))
-            )
-          })
-          exp_slots$exp_5 = TRUE
-          exp_data$exp_names[[exp_name]] = "exp_5"
-          module_controler$exp_5 = exp_type
-          
-        } else if (!exp_slots$exp_6) {
-          main_output$exp_6 = bs4Dash::renderMenu({
-            bs4Dash::sidebarMenu(
-              bs4Dash::menuItem(text = exp_name,
-                                tabName = 'exp_6',
-                                icon = icon(tolower(substr(exp_type, 1, 1))))
-            )
-          })
-          exp_slots$exp_6 = TRUE
-          exp_data$exp_names[[exp_name]] = "exp_6"
-          module_controler$exp_6 = exp_type
+
+
+        for (slot in names(exp_slots)) {
+          if (!exp_slots[[slot]]) {
+            main_output[[slot]] = bs4Dash::renderMenu({
+              bs4Dash::sidebarMenu(
+                bs4Dash::menuItem(text = exp_name,
+                                  tabName = slot,
+                                  icon = icon(tolower(substr(exp_type, 1, 1))))
+              )
+            })
+            exp_slots[[slot]] = TRUE
+            exp_data$exp_names[[exp_name]] = slot
+            module_controler[[slot]] = exp_type
+            break
+          }
         }
-        
+
         if (length(exp_data$exp_names) >= 6) {
           shinyjs::disable("add_exp")
         }
-        
+
         print(paste0('Added ', input$exp_name, ' (', exp_type, ')'))
-        
+
         exp_data$exp_names_list = c(exp_data$exp_names_list, exp_name)
         shiny::updateSelectInput(
           inputId = 'del_exp',
@@ -262,49 +207,23 @@ start_server = function(id, main_output, main_session, module_controler) {
           inputId = 'exp_name',
           value = character(0)
         )
-        
+
       })
-      
+
       shiny::observeEvent(input$remove_exp, {
         shiny::req(input$del_exp)
-        
+
         for (mod in input$del_exp) {
+          print(paste0('Removing ', mod))
           exp_id = exp_data$exp_names[[mod]]
-          if (exp_id == "exp_1") {
-            main_output$exp_1 = NULL
-            exp_slots$exp_1 = FALSE
-            module_controler$exp_1 = NULL
-            session$userData$mod_exp_1$test$destroy()
-            # shiny::removeUI(selector = "#mod_exp_1")
-          } else if (exp_id == "exp_2") {
-            main_output$exp_2 = NULL
-            exp_slots$exp_2 = FALSE
-            module_controler$exp_2 = NULL
-            session$userData$mod_exp_2$test$destroy()
-          } else if (exp_id == "exp_3") {
-            main_output$exp_3 = NULL
-            exp_slots$exp_3 = FALSE
-            module_controler$exp_3 = NULL
-            session$userData$mod_exp_3$test$destroy()
-          } else if (exp_id == "exp_4") {
-            main_output$exp_4 = NULL
-            exp_slots$exp_4 = FALSE
-            module_controler$exp_4 = NULL
-            session$userData$mod_exp_4$test$destroy()
-          } else if (exp_id == "exp_5") {
-            main_output$exp_5 = NULL
-            exp_slots$exp_5 = FALSE
-            module_controler$exp_5 = NULL
-            session$userData$mod_exp_5$test$destroy()
-          } else if (exp_id == "exp_6") {
-            main_output$exp_6 = NULL
-            exp_slots$exp_6 = FALSE
-            module_controler$exp_6 = NULL
-            session$userData$mod_exp_6$test$destroy()
-          }
+          main_output[[exp_id]] = NULL
+          exp_slots[[exp_id]] = FALSE
+          module_controler[[exp_id]] = NULL
+          purge_module_inputs(id = exp_id, input_object = main_input)
+          session$userData[[paste0('mod_', exp_id)]]$test$destroy()
           exp_data$exp_names = exp_data$exp_names[names(exp_data$exp_names) != mod]
         }
-        
+
         shiny::updateSelectInput(
           inputId = 'del_exp',
           selected = character(0),
@@ -312,7 +231,7 @@ start_server = function(id, main_output, main_session, module_controler) {
         )
         shinyjs::enable('add_exp')
       })
-      
+
     }
   )
 }
