@@ -6,14 +6,13 @@ experiment_ui = function(id) {
     type = "tabs",
     shiny::tabPanel(
       title = "Upload metadata",
-      shiny::h4('Placeholder_1'),
       shiny::uiOutput(
-        outputId = ns('test_output')
+        outputId = ns('up_metadata_ui')
       )
     ),
     shiny::tabPanel(
       title = "Filter metadata",
-      shiny::h4('Placeholder_2')
+
     ),
     shiny::tabPanel(
       title = "Upload data",
@@ -53,18 +52,6 @@ experiment_server = function(id, type) {
       } else if (type == 'Transcriptomics') {
         transcriptomics_server(id = id, ns = ns, input = input, output = output, session = session)
       }
-
-      # output$test_output = shiny::renderUI({
-      #   shiny::selectInput(
-      #     inputId = ns('truffles'),
-      #     label = type,
-      #     choices = c(1, 2, 3)
-      #   )
-      # })
-
-      # session$userData[[id]]$test = shiny::observeEvent(input$truffles,{
-      #   print(input$truffles)
-      # })
     }
   )
 }

@@ -109,56 +109,68 @@ ui = bs4Dash::dashboardPage(header, sidebar, body)
 
 server = function(input, output, session) {
   module_controler = shiny::reactiveValues(
-    'exp_1' = NULL,
-    'exp_2' = NULL,
-    'exp_3' = NULL,
-    'exp_4' = NULL,
-    'exp_5' = NULL,
-    'exp_6' = NULL,
+
+    slot_taken = list(
+      'exp_1' = FALSE,
+      'exp_2' = FALSE,
+      'exp_3' = FALSE,
+      'exp_4' = FALSE,
+      'exp_5' = FALSE,
+      'exp_6' = FALSE
+    ),
+
+    module_loaded = list(
+      'exp_1' = FALSE,
+      'exp_2' = FALSE,
+      'exp_3' = FALSE,
+      'exp_4' = FALSE,
+      'exp_5' = FALSE,
+      'exp_6' = FALSE
+    ),
+
+    exp_types = list(
+      'exp_1' = NA,
+      'exp_2' = NA,
+      'exp_3' = NA,
+      'exp_4' = NA,
+      'exp_5' = NA,
+      'exp_6' = NA
+    ),
+
+    exp_names = list(
+      'exp_1' = NA,
+      'exp_2' = NA,
+      'exp_3' = NA,
+      'exp_4' = NA,
+      'exp_5' = NA,
+      'exp_6' = NA
+    ),
+
+    exp_r6 = list(
+      'exp_1' = NA,
+      'exp_2' = NA,
+      'exp_3' = NA,
+      'exp_4' = NA,
+      'exp_5' = NA,
+      'exp_6' = NA
+    )
   )
   start_server(id = 'mod_start', main_input = input, main_output = output, main_session = session, module_controler = module_controler)
   about_server(id = 'mod_about', main_output = output)
 
   # shiny::observeEvent(input[['mod_start-add_exp']],{
-  shiny::observe({
-    shiny::req(module_controler$exp_1)
-    exp_type = module_controler$exp_1
-    experiment_server(id = 'mod_exp_1', type = exp_type)
-  })
 
   shiny::observe({
-    shiny::req(module_controler$exp_2)
-    exp_type = module_controler$exp_2
-    experiment_server(id = 'mod_exp_2', type = exp_type)
+    set_1 = names(which(module_controler$slot_taken == TRUE))
+    set_2 = names(which(module_controler$module_loaded == TRUE))
+    slot = base::setdiff(set_1, set_2)
+    if (length(slot) > 0) {
+      slot = slot[1]
+      exp_type = module_controler$exp_types[[slot]]
+      experiment_server(id = paste0(c('mod', slot), collapse = '_'), type = exp_type)
+      module_controler$module_loaded[[slot]] = TRUE
+    }
   })
-
-  shiny::observe({
-    shiny::req(module_controler$exp_3)
-    exp_type = module_controler$exp_3
-    experiment_server(id = 'mod_exp_3', type = exp_type)
-  })
-
-  shiny::observe({
-    shiny::req(module_controler$exp_4)
-    exp_type = module_controler$exp_4
-    experiment_server(id = 'mod_exp_4', type = exp_type)
-  })
-
-  shiny::observe({
-    shiny::req(module_controler$exp_5)
-    exp_type = module_controler$exp_5
-    experiment_server(id = 'mod_exp_5', type = exp_type)
-  })
-
-  shiny::observe({
-    shiny::req(module_controler$exp_6)
-    exp_type = module_controler$exp_6
-    experiment_server(id = 'mod_exp_6', type = exp_type)
-  })
-
-
-
-
 }
 
 #---------------------------------------------------------------------- End ----

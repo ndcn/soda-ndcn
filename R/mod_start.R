@@ -146,21 +146,6 @@ start_server = function(id, main_input, main_output, main_session, module_contro
     id,
     function(input, output, session) {
 
-      exp_slots = shiny::reactiveValues(
-        exp_6 = FALSE,
-        exp_5 = FALSE,
-        exp_4 = FALSE,
-        exp_3 = FALSE,
-        exp_2 = FALSE,
-        exp_1 = FALSE
-      )
-
-      exp_data = shiny::reactiveValues(
-        exp_names_list = NULL,
-        exp_names = NULL
-
-      )
-
       # Create experiments
       shiny::observeEvent(input$add_exp,{
         exp_name = input$exp_name
@@ -170,39 +155,38 @@ start_server = function(id, main_input, main_output, main_session, module_contro
           print('ERROR: please enter a name for the experiment')
           return()
         }
-        if (exp_name %in% names(exp_data$exp_names)) {
+
+        if (exp_name %in% unname(unlist(module_controler$exp_names))) {
           print('ERROR: experiment already exists.')
           return()
         }
 
+        slot  = names(module_controler$slot_taken)[!sapply(module_controler$slot_taken, base::isTRUE)][1]
+        main_output[[slot]] = bs4Dash::renderMenu({
+          bs4Dash::sidebarMenu(
+            bs4Dash::menuItem(text = exp_name,
+                              tabName = slot,
+                              icon = icon(tolower(substr(exp_type, 1, 1))))
+          )
+        })
+        module_controler$slot_taken[[slot]] = TRUE
+        module_controler$exp_names[[slot]] = exp_name
+        module_controler$exp_types[[slot]] = exp_type
+        module_controler$exp_r6[[slot]] = r6_switch(exp_type = exp_type, name = exp_name)
 
-        for (slot in names(exp_slots)) {
-          if (!exp_slots[[slot]]) {
-            main_output[[slot]] = bs4Dash::renderMenu({
-              bs4Dash::sidebarMenu(
-                bs4Dash::menuItem(text = exp_name,
-                                  tabName = slot,
-                                  icon = icon(tolower(substr(exp_type, 1, 1))))
-              )
-            })
-            exp_slots[[slot]] = TRUE
-            exp_data$exp_names[[exp_name]] = slot
-            module_controler[[slot]] = exp_type
-            break
-          }
-        }
-
-        if (length(exp_data$exp_names) >= 6) {
+        if (sum(sapply(module_controler$slot_taken, base::isTRUE)) >= 6) {
           shinyjs::disable("add_exp")
         }
 
         print(paste0('Added ', input$exp_name, ' (', exp_type, ')'))
 
-        exp_data$exp_names_list = c(exp_data$exp_names_list, exp_name)
+        created_modules = unname(unlist(module_controler$exp_names))
+        created_modules = created_modules[!is.na(created_modules)]
         shiny::updateSelectInput(
           inputId = 'del_exp',
-          choices = names(exp_data$exp_names)
+          choices = created_modules
         )
+
         shiny::updateTextInput(
           inputId = 'exp_name',
           value = character(0)
@@ -215,20 +199,26 @@ start_server = function(id, main_input, main_output, main_session, module_contro
 
         for (mod in input$del_exp) {
           print(paste0('Removing ', mod))
-          exp_id = exp_data$exp_names[[mod]]
-          main_output[[exp_id]] = NULL
-          exp_slots[[exp_id]] = FALSE
-          module_controler[[exp_id]] = NULL
+          exp_id = names(which(module_controler$exp_names == mod))[1]
           purge_module_inputs(id = exp_id, input_object = main_input)
-          session$userData[[paste0('mod_', exp_id)]]$test$destroy()
-          exp_data$exp_names = exp_data$exp_names[names(exp_data$exp_names) != mod]
+          events = names(session$userData[[paste0('mod_', exp_id)]])
+          for (e in events) {
+            session$userData[[paste0('mod_', exp_id)]][[e]]$destroy()
+          }
+          main_output[[exp_id]] = NULL
+          module_controler$slot_taken[[exp_id]] = FALSE
+          module_controler$module_loaded[[exp_id]] = FALSE
+          module_controler$exp_types[[exp_id]] = NA
+          module_controler$exp_names[[exp_id]] = NA
+          module_controler$exp_r6[[exp_id]] = NA
         }
 
         shiny::updateSelectInput(
           inputId = 'del_exp',
           selected = character(0),
-          choices = names(exp_data$exp_names)
+          choices = unname(unlist(module_controler$exp_names))
         )
+
         shinyjs::enable('add_exp')
       })
 

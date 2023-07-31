@@ -1,7 +1,7 @@
 #--------------------------------------------------- Transcriptomics server ----
 
 transcriptomics_server = function(id, ns, input, output, session) {
-  output$test_output = shiny::renderUI({
+  output$up_metadata_ui = shiny::renderUI({
     shiny::selectInput(
       inputId = ns('truffles'),
       label = 'Transcriptomics',
