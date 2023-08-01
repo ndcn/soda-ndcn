@@ -3,6 +3,14 @@ library(shinyjs)
 library(bs4Dash)
 library(shinyWidgets)
 
+# Plotting
+library(ggplot2)
+
+# text
+library(stringr)
+
+# Tables
+library(DT)
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
@@ -167,7 +175,9 @@ server = function(input, output, session) {
     if (length(slot) > 0) {
       slot = slot[1]
       exp_type = module_controler$exp_types[[slot]]
-      experiment_server(id = paste0(c('mod', slot), collapse = '_'), type = exp_type)
+      experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                        type = exp_type,
+                        r6 = module_controler$exp_r6[[slot]])
       module_controler$module_loaded[[slot]] = TRUE
     }
   })

@@ -39,18 +39,18 @@ experiment_ui = function(id) {
 
 #-------------------------------------------------------- Experiment server ----
 
-experiment_server = function(id, type) {
+experiment_server = function(id, type, r6) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
       ns = session$ns
 
       if (type == 'Lipidomics') {
-        lipidomics_server(id = id, ns = ns, input = input, output = output, session = session)
+        lipidomics_server(id = id, ns = ns, input = input, output = output, session = session, r6 = r6)
       } else if (type == 'Proteomics') {
-        proteomics_server(id = id, ns = ns, input = input, output = output, session = session)
+        proteomics_server(id = id, ns = ns, input = input, output = output, session = session, r6 = r6)
       } else if (type == 'Transcriptomics') {
-        transcriptomics_server(id = id, ns = ns, input = input, output = output, session = session)
+        transcriptomics_server(id = id, ns = ns, input = input, output = output, session = session, r6 = r6)
       }
     }
   )

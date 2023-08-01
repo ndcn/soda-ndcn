@@ -1,6 +1,6 @@
 #--------------------------------------------------- Transcriptomics server ----
 
-transcriptomics_server = function(id, ns, input, output, session) {
+transcriptomics_server = function(id, ns, input, output, session, r6, head_meta = F, head_data = T) {
   output$up_metadata_ui = shiny::renderUI({
     shiny::selectInput(
       inputId = ns('truffles'),
