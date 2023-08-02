@@ -15,7 +15,17 @@ Lips_exp = R6::R6Class(
       id_col_data = NA,
       type_col = NA,
       group_col = NA,
-      batch_col = NA
+      batch_col = NA,
+
+      idx_blanks = NULL,
+      idx_qcs = NULL,
+      idx_pools = NULL,
+      idx_samples = NULL,
+
+      rownames_blanks = NULL,
+      rownames_qcs = NULL,
+      rownames_pools = NULL,
+      rownames_samples = NULL
     ),
 
     #--------------------------------------------------------------- Tables ----

@@ -11,10 +11,6 @@ experiment_ui = function(id) {
       )
     ),
     shiny::tabPanel(
-      title = "Filter metadata",
-
-    ),
-    shiny::tabPanel(
       title = "Upload data",
       shiny::h4('Placeholder_3')
     ),

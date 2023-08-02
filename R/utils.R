@@ -58,3 +58,11 @@ unique_na_rm = function(vector) {
   vector = unique(vector)
   return(vector)
 }
+
+drop_rows = function(data_table, rows) {
+  return(data_table[!(row.names(data_table) %in% rows),])
+}
+
+keep_rows = function(data_table, rows) {
+  return(data_table[(row.names(data_table) %in% rows),])
+}
