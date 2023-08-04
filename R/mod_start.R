@@ -152,12 +152,12 @@ start_server = function(id, main_input, main_output, main_session, module_contro
         exp_type = input$exp_type
 
         if (exp_name == '') {
-          print('ERROR: please enter a name for the experiment')
+          print_t('ERROR: please enter a name for the experiment')
           return()
         }
 
         if (exp_name %in% unname(unlist(module_controler$exp_names))) {
-          print('ERROR: experiment already exists.')
+          print_t('ERROR: experiment already exists.')
           return()
         }
 
@@ -169,6 +169,8 @@ start_server = function(id, main_input, main_output, main_session, module_contro
                               icon = icon(tolower(substr(exp_type, 1, 1))))
           )
         })
+
+
         module_controler$slot_taken[[slot]] = TRUE
         module_controler$exp_names[[slot]] = exp_name
         module_controler$exp_types[[slot]] = exp_type
@@ -178,7 +180,7 @@ start_server = function(id, main_input, main_output, main_session, module_contro
           shinyjs::disable("add_exp")
         }
 
-        print(paste0('Added ', input$exp_name, ' (', exp_type, ')'))
+        print_t(paste0('Added ', input$exp_name, ' (', exp_type, ')'))
 
         created_modules = unname(unlist(module_controler$exp_names))
         created_modules = created_modules[!is.na(created_modules)]
@@ -198,7 +200,7 @@ start_server = function(id, main_input, main_output, main_session, module_contro
         shiny::req(input$del_exp)
 
         for (mod in input$del_exp) {
-          print(paste0('Removing ', mod))
+          print_t(paste0('Removing ', mod))
           exp_id = names(which(module_controler$exp_names == mod))[1]
           purge_module_inputs(id = exp_id, input_object = main_input)
           events = names(session$userData[[paste0('mod_', exp_id)]])
@@ -221,7 +223,6 @@ start_server = function(id, main_input, main_output, main_session, module_contro
 
         shinyjs::enable('add_exp')
       })
-
     }
   )
 }

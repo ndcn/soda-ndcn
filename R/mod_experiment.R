@@ -12,11 +12,9 @@ experiment_ui = function(id) {
     ),
     shiny::tabPanel(
       title = "Upload data",
-      shiny::h4('Placeholder_3')
-    ),
-    shiny::tabPanel(
-      title = "Filter data",
-      shiny::h4('Placeholder_4')
+      shiny::uiOutput(
+        outputId = ns('up_data_ui')
+      )
     ),
     shiny::tabPanel(
       title = "Visualize data",

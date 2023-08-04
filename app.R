@@ -5,6 +5,7 @@ library(shinyWidgets)
 
 # Plotting
 library(ggplot2)
+library(gridExtra)
 
 # text
 library(stringr)

@@ -53,6 +53,43 @@ update_sample_filters = function(input, session, r6) {
   }
 }
 
+update_lipid_filters = function(input, session, r6, prog_bars = T) {
+  # Update class selection
+  shiny::updateSelectizeInput(
+    session = session,
+    inputId = "class_selection",
+    choices = unique(r6$tables$feature_table$lipid_class),
+    selected = character(0)
+  )
+
+  # Update manual selection
+  shiny::updateSelectizeInput(
+    session = session,
+    inputId = "manual_selection",
+    # choices = remaining_cols,
+    choices = colnames(r6$tables$raw_data),
+    selected = character(0)
+  )
+
+  if (prog_bars) {
+    shinyWidgets::updateProgressBar(
+      session = session,
+      id = "col_count_bar",
+      value = ncol(r6$tables$raw_data),
+      total = ncol(r6$tables$imp_data)
+    )
+
+    shinyWidgets::updateProgressBar(
+      session = session,
+      id = "row_count_bar_data",
+      value = nrow(r6$tables$raw_data),
+      total = nrow(r6$tables$imp_data)
+    )
+  }
+
+
+}
+
 sample_row_selection = function(input, r6) {
   # Initialise selection
   selected_rows = c()
@@ -81,7 +118,9 @@ sample_row_selection = function(input, r6) {
 
 #-------------------------------------------------------- Lipidomics server ----
 
-lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, head_data = T, max_rows = 10, max_cols = 8) {
+lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, max_cols = 8) {
+
+  m = r6$name
 
   #---------------------------------------------- Metadata upload rendering ----
 
@@ -109,18 +148,6 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
           # Table select
           shiny::column(
             width = 3,
-            shinyWidgets::switchInput(
-              inputId = ns("preview_meta"),
-              label = "Display full table",
-              onLabel = "Yes",
-              offLabel = "No",
-              value = head_meta,
-              labelWidth = "120px"
-            )
-          ),
-          # Display preview or full table
-          shiny::column(
-            width = 3,
             shiny::selectInput(
               inputId = ns('select_meta_table'),
               label = NULL,
@@ -128,12 +155,24 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
               selected = 'Imported metadata table',
               width = '100%'
             )
+          ),
+          # Display preview or full table
+          shiny::column(
+            width = 3,
+            shinyWidgets::switchInput(
+              inputId = ns("preview_meta"),
+              label = "Display full table",
+              onLabel = "Yes",
+              offLabel = "No",
+              value = F,
+              labelWidth = "120px"
+            )
           )
         ),
 
         # Table preview box
         bs4Dash::box(
-          id = ns('table_box'),
+          id = ns('table_box_meta'),
           title = 'Table preview (switch table above)',
           width = 12,
           DT::dataTableOutput(ns("metadata_preview_table")),style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
@@ -145,7 +184,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
 
         # Summary box
         bs4Dash::box(
-          id = ns('summary_box'),
+          id = ns('summary_box_meta'),
           title = 'Data summary',
           width = 12,
           shiny::tagList(
@@ -153,7 +192,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
               shiny::column(
                 width = 12,
                 shinyWidgets::progressBar(
-                  id = ns("row_count_bar"),
+                  id = ns("row_count_bar_meta"),
                   title = "Row count",
                   value = 100,
                   total = 100,
@@ -182,7 +221,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
           collapsed  = T,
           maximizable = F,
           headerBorder = T
-        ),
+        )
 
       ),
 
@@ -288,31 +327,45 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
 
             # Action buttons to apply filters, clear filters or reset filtered metadata
             shiny::fluidRow(
-              shiny::actionButton(
-                inputId = ns("selection_drop"),
-                label = "Drop",
-                width = "25%"
+              shiny::column(
+                width = 3,
+                shiny::actionButton(
+                  inputId = ns("selection_drop"),
+                  label = "Drop",
+                  width = "100%"
+                )
               ),
-              shiny::actionButton(
-                inputId = ns("selection_keep"),
-                label = "Keep",
-                width = "25%"
+              shiny::column(
+                width = 3,
+                shiny::actionButton(
+                  inputId = ns("selection_keep"),
+                  label = "Keep",
+                  width = "100%"
+                )
               ),
-              shiny::actionButton(
-                inputId = ns("clear_filters"),
-                label = "Clear filters",
-                width = "25%"
+              shiny::column(
+                width = 3,
+                shiny::actionButton(
+                  inputId = ns("clear_filters"),
+                  label = "Clear filters",
+                  width = "100%"
+                )
               ),
-              shiny::actionButton(
-                inputId = ns("reset_meta"),
-                label = "Reset table",
-                width = "25%"
+              shiny::column(
+                width = 3,
+                shiny::actionButton(
+                  inputId = ns("reset_meta"),
+                  label = "Reset table",
+                  width = "100%"
+                )
               )
             )
           )
         )
       )
     )
+
+
   })
 
   #------------------------------------------------- Metadata upload server ----
@@ -322,11 +375,10 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
     file_path = input$file_meta$datapath
     data_table = soda_read_table(file_path = file_path)
     if (ncol(data_table) > 70) {
-      print('ERROR: uploaded file has more than 70 columns, unlikely to be a metadata file')
+      print_tm(m, 'ERROR: uploaded file has more than 70 columns, unlikely to be a metadata file')
       return()
     }
     r6$tables$imp_meta = data_table
-
     # Preview table
     if (input$preview_meta){
       output$metadata_preview_table = renderDataTable({
@@ -337,12 +389,11 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
         DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
       })
     }
-
-    if (input$table_box$collapsed) {
-      bs4Dash::updateBox(id = 'table_box', action = 'toggle')
+    if (input$table_box_meta$collapsed) {
+      bs4Dash::updateBox(id = 'table_box_meta', action = 'toggle')
     }
-    if (input$summary_box$collapsed) {
-      bs4Dash::updateBox(id = 'summary_box', action = 'toggle')
+    if (input$summary_box_meta$collapsed) {
+      bs4Dash::updateBox(id = 'summary_box_meta', action = 'toggle')
     }
 
     # Update select inputs
@@ -366,7 +417,6 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
       choices = colnames(r6$tables$imp_meta),
       selected = colnames(r6$tables$imp_meta)[4]
     )
-
     shinyjs::disable("file_meta")
   })
 
@@ -383,14 +433,12 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
         DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
       })
     }
-
-
   })
 
   # Get ID
   session$userData[[id]]$id_select_meta = shiny::observeEvent(input$select_id_meta, {
     shiny::req(r6$tables$imp_meta)
-    print('Setting ID column')
+    print_tm(m, 'Setting ID column')
     if (length(r6$tables$imp_meta[,input$select_id_meta]) == length(unique(r6$tables$imp_meta[,input$select_id_meta]))) {
       r6$indices$id_col_meta = input$select_id_meta
       r6$set_raw_meta()
@@ -409,7 +457,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
         selected = 'Raw metadata table'
       )
     } else {
-      print('ERROR: Non-unique IDs in ID column')
+      print_tm(m, 'ERROR: Non-unique IDs in ID column')
       r6$tables$raw_meta = NULL
       shiny::updateSelectInput(
         inputId = 'select_meta_table',
@@ -422,7 +470,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
   # Group col selection
   session$userData[[id]]$select_group_col = shiny::observeEvent(c(input$select_group_col, input$selection_drop, input$selection_keep, input$reset_meta), {
     shiny::req(r6$tables$raw_meta)
-    print('Setting group column')
+    print_tm(m, 'Setting group column')
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
     r6$indices$group_col = input$select_group_col
     groups = unique_na_rm(r6$tables$imp_meta[, input$select_group_col])
@@ -450,41 +498,39 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
   # Batch col selection
   session$userData[[id]]$select_batch_col = shiny::observeEvent(input$select_batch_col, {
     shiny::req(r6$tables$imp_meta)
-    print('Setting batch column')
+    print_tm(m, 'Setting batch column')
     r6$indices$batch_col = input$select_batch_col
   })
 
   # Type col selection
   session$userData[[id]]$select_type_col = shiny::observeEvent(c(input$select_type_col, input$blank_pattern, input$qc_pattern, input$pool_pattern, input$select_id_meta), {
-    shiny::req(r6$tables$imp_meta)
-    print('Setting indices')
-    r6$indices$type_col = input$select_type_col
-
-    type_vector = r6$tables$imp_meta[, input$select_type_col]
-
-    blank_idx = grep(pattern = input$blank_pattern,
-                     x = type_vector,
-                     ignore.case = TRUE)
-    qc_idx = grep(pattern = input$qc_pattern,
-                  x = type_vector,
-                  ignore.case = TRUE)
-    pool_idx = grep(pattern = input$pool_pattern,
+    shiny::req(c(r6$tables$imp_meta, input$blank_pattern, input$qc_pattern, input$pool_pattern))
+    if ((input$select_type_col != "") & (!is.null(input$blank_pattern)) & (!is.null(input$qc_pattern)) & (!is.null(input$pool_pattern))) {
+      r6$indices$type_col = input$select_type_col
+      type_vector = r6$tables$imp_meta[, input$select_type_col]
+      blank_idx = grep(pattern = input$blank_pattern,
+                       x = type_vector,
+                       ignore.case = TRUE)
+      qc_idx = grep(pattern = input$qc_pattern,
                     x = type_vector,
                     ignore.case = TRUE)
+      pool_idx = grep(pattern = input$pool_pattern,
+                      x = type_vector,
+                      ignore.case = TRUE)
 
-    sample_idx = 1:nrow(r6$tables$imp_meta)
-    sample_idx = setdiff(sample_idx, c(blank_idx, qc_idx, pool_idx))
+      sample_idx = 1:nrow(r6$tables$imp_meta)
+      sample_idx = setdiff(sample_idx, c(blank_idx, qc_idx, pool_idx))
 
-    r6$indices$idx_blanks = blank_idx
-    r6$indices$idx_qcs = qc_idx
-    r6$indices$idx_pools = pool_idx
-    r6$indices$idx_samples = sample_idx
+      r6$indices$idx_blanks = blank_idx
+      r6$indices$idx_qcs = qc_idx
+      r6$indices$idx_pools = pool_idx
+      r6$indices$idx_samples = sample_idx
 
-    r6$indices$rownames_blanks = r6$tables$imp_meta[blank_idx, input$select_id_meta]
-    r6$indices$rownames_qcs = r6$tables$imp_meta[qc_idx, input$select_id_meta]
-    r6$indices$rownames_pools = r6$tables$imp_meta[pool_idx, input$select_id_meta]
-    r6$indices$rownames_samples = r6$tables$imp_meta[sample_idx, input$select_id_meta]
-
+      r6$indices$rownames_blanks = r6$tables$imp_meta[blank_idx, input$select_id_meta]
+      r6$indices$rownames_qcs = r6$tables$imp_meta[qc_idx, input$select_id_meta]
+      r6$indices$rownames_pools = r6$tables$imp_meta[pool_idx, input$select_id_meta]
+      r6$indices$rownames_samples = r6$tables$imp_meta[sample_idx, input$select_id_meta]
+    }
   })
 
 
@@ -492,7 +538,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
   # Type col selection
   session$userData[[id]]$select_type_col = shiny::observeEvent(c(input$select_type_col, input$blank_pattern, input$qc_pattern, input$pool_pattern, input$select_id_meta, input$select_meta_table, input$selection_drop, input$selection_keep, input$reset_meta), {
     shiny::req(r6$tables$raw_meta)
-    print('Updating type plot.')
+    print_tm(m, 'Updating type plot.')
 
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
     if (input$select_meta_table == 'Imported metadata table') {
@@ -564,20 +610,20 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
 
   # Clear button
   session$userData[[id]]$clear_filters = shiny::observeEvent(input$clear_filters, {
-    print('Clearing metadata filters')
+    print_tm(m, 'Clearing metadata filters')
     reset_sample_filters(input = input, session = session, r6 = r6)
   })
 
   # Reset button
   session$userData[[id]]$reset_meta = shiny::observeEvent(input$reset_meta, {
-    print('Reseting metadata table')
+    print_tm(m, 'Reseting metadata table')
     r6$set_raw_meta()
     update_sample_filters(input = input, session = session, r6 = r6)
   })
 
   # Drop button
   session$userData[[id]]$selection_drop = shiny::observeEvent(input$selection_drop, {
-    print('Dropping selected samples')
+    print_tm(m, 'Dropping selected samples')
     selected_rows = sample_row_selection(input = input, r6 = r6)
     if (!is.null(selected_rows)){
       r6$tables$raw_meta = drop_rows(data_table = r6$tables$raw_meta,
@@ -589,7 +635,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
 
   # Keep button
   session$userData[[id]]$selection_keep = shiny::observeEvent(input$selection_keep, {
-    print('Keeping selected samples')
+    print_tm(m, 'Keeping selected samples')
     selected_rows = sample_row_selection(input = input, r6 = r6)
     if (!is.null(selected_rows)){
       r6$tables$raw_meta = keep_rows(data_table = r6$tables$raw_meta,
@@ -600,13 +646,597 @@ lipidomics_server = function(id, ns, input, output, session, r6, head_meta = F, 
   })
 
   # Row count progress bar
-  session$userData[[id]]$row_count_bar = shiny::observeEvent(c(input$selection_keep, input$selection_drop, input$reset_meta, input$select_meta_table), {
+  session$userData[[id]]$row_count_bar_meta = shiny::observeEvent(c(input$selection_keep, input$selection_drop, input$reset_meta, input$select_meta_table), {
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
     shinyWidgets::updateProgressBar(
       session = session,
-      id = "row_count_bar",
+      id = "row_count_bar_meta",
       value = nrow(data_table),
       total = nrow(r6$tables$imp_meta)
+    )
+  })
+
+
+  #-------------------------------------------------- Data upload rendering ----
+
+  output$up_data_ui = shiny::renderUI({
+    shiny::fluidRow(
+      # First column with the table input and preview of the raw data
+      shiny::column(
+        width = 8,
+
+        shiny::br(),
+
+
+        shiny::fluidRow(
+          # Data upload
+          shiny::column(
+            width = 6,
+            shiny::fileInput(
+              inputId = ns("file_data"),
+              label = NULL,
+              multiple = F,
+              accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+              width = "100%")
+          ),
+          # Table select
+          shiny::column(
+            width = 3,
+            shiny::selectInput(
+              inputId = ns('select_data_table'),
+              label = NULL,
+              choices = c('Imported data table'),
+              selected = 'Imported data table',
+              width = '100%'
+            )
+          ),
+          # Display preview or full table
+          shiny::column(
+            width = 3,
+            shinyWidgets::switchInput(
+              inputId = ns("preview_data"),
+              label = "Display full table",
+              onLabel = "Yes",
+              offLabel = "No",
+              value = T,
+              labelWidth = "120px"
+            )
+          )
+        ),
+        # Table preview box
+        bs4Dash::box(
+          id = ns('table_box_data'),
+          title = 'Table preview (switch table above)',
+          width = 12,
+          DT::dataTableOutput(ns("data_preview_table")),style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
+          collapsible = T,
+          collapsed  = T,
+          maximizable = T,
+          headerBorder = T
+        ),
+
+        # Summary box
+        bs4Dash::box(
+          id = ns('summary_box_data'),
+          title = 'Data summary',
+          width = 12,
+          shiny::tagList(
+            shiny::fluidRow(
+              shiny::column(
+                width = 6,
+                shinyWidgets::progressBar(
+                  id = ns("col_count_bar"),
+                  title = "Column count",
+                  value = 100,
+                  total = 100,
+                  unit_mark = "%"
+                )
+              ),
+              shiny::column(
+                width = 6,
+                shinyWidgets::progressBar(
+                  id = ns("row_count_bar_data"),
+                  title = "Row count",
+                  value = 100,
+                  total = 100,
+                  unit_mark = "%"
+                )
+              )
+            ),
+            shiny::fluidRow(
+              shiny::plotOutput(
+                outputId = ns('lipid_class_summary'),
+                height = '300px'
+              )
+            )
+          ),
+          collapsible = T,
+          collapsed  = T,
+          maximizable = F,
+          headerBorder = T
+        )
+      ),
+      shiny::column(
+        width = 4,
+        shiny::tags$h3("Select columns"),
+        # Select ID column
+        shiny::selectInput(inputId = ns("select_id_data"), choices = NULL, label = "Sample IDs", multiple = F, width = "100%"),
+
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::fluidRow(
+          shiny::column(
+            width = 4,
+            shiny::h3("Imputation")
+          ),
+          shiny::column(
+            width = 3,
+            shinyWidgets::switchInput(
+              inputId = ns("apply_imputation"),
+              label = "Apply",
+              onLabel = "Y",
+              offLabel = "N",
+              value = F,
+              labelWidth = "80px"
+            )
+          ),
+          shiny::column(
+            width = 5,
+            shinyWidgets::switchInput(
+              inputId = ns("impute_before"),
+              label = "Before filtering",
+              onLabel = "Y",
+              offLabel = "N",
+              value = T,
+              labelWidth = "120px"
+            )
+          )
+        ),
+        shiny::fluidRow(
+          shiny::column(
+            width = 6,
+            shiny::selectizeInput(inputId = ns("na_imputation"),
+                                  choices = c('minimum', 'mean', 'median', 'max'),
+                                  selected = "median",
+                                  label = 'Imputation method',
+                                  multiple = F,
+                                  width = "100%")
+          ),
+          shiny::column(
+            width = 6,
+            shiny::sliderInput(
+              inputId = ns('imputation_min_values'),
+              label = 'Minimum values',
+              min = 0,
+              max = 1,
+              value = 0.6,
+              step = 0.05,
+              width = '100%'
+            )
+          )
+        ),
+
+        # Blank and group filtering
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::fluidRow(
+          shiny::column(
+            width = 8,
+            shiny::h3("Blank & Group filtering")
+          ),
+          shiny::column(
+            width = 4,
+            shinyWidgets::switchInput(
+              inputId = ns("apply_filtering"),
+              label = "Apply",
+              onLabel = "Yes",
+              offLabel = "No",
+              value = T,
+              labelWidth = "80px"
+            )
+          )
+        ),
+
+        shiny::fluidRow(
+          shiny::textInput(inputId = ns("blank_multiplier"), label = 'Blank multiplier', value = 2, width = "100%")
+        ),
+
+        shiny::fluidRow(
+          # Sample threshold
+          shiny::column(
+            width = 6,
+            shiny::sliderInput(inputId = ns("sample_threshold"), label = "Sample threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%")
+          ),
+          # Group threshold
+          shiny::column(
+            width = 6,
+            shiny::sliderInput(inputId = ns("group_threshold"), label = "Group threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%")
+          )
+        ),
+
+        # Normalisation
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::h3("Normalise to column"),
+        shiny::selectizeInput(inputId = ns("normalise_to_col"),
+                              label = NULL,
+                              choices = character(0),
+                              width = "100%"),
+
+        # Manual filtering
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::h3("Manual filtering"),
+        shiny::fluidRow(
+          shiny::column(
+            width = 6,
+            shiny::selectizeInput(inputId = ns("class_selection"), label = "Select classes", choices = NULL, multiple = TRUE, width = "100%")
+          ),
+          shiny::column(
+            width = 6,
+            shiny::selectizeInput(inputId = ns("manual_selection"), label = "Select feature", choices = NULL, multiple = TRUE, width = "100%")
+          )
+        ),
+        shiny::fluidRow(
+          shiny::column(
+            width = 3,
+            shiny::actionButton(inputId = ns("drop_cols"), label =  "Drop", width = "100%")
+          ),
+          shiny::column(
+            width = 3,
+            shiny::actionButton(inputId = ns("keep_cols"), label =  "Keep", width = "100%")
+          ),
+          shiny::column(
+            width = 3,
+            shiny::actionButton(inputId = ns("clear_data_filters"), label =  "Clear filters", width = "100%")
+          ),
+          shiny::column(
+            width = 3,
+            shiny::actionButton(inputId = ns("reset_data_table"), label =  "Reset", width = "100%")
+          )
+        )
+      )
+    )
+  })
+
+  #----------------------------------------------------- Data upload server ----
+
+  # Upload metadata
+  session$userData[[id]]$upload_data = shiny::observeEvent(input$file_data, {
+    file_path = input$file_data$datapath
+    data_table = soda_read_table(file_path = file_path)
+    r6$tables$imp_data = data_table
+    # Preview table
+    if (input$preview_data){
+      output$data_preview_table = renderDataTable({
+        DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
+      })
+    }else{
+      output$data_preview_table = renderDataTable({
+        DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
+      })
+    }
+    if (input$table_box_data$collapsed) {
+      bs4Dash::updateBox(id = 'table_box_data', action = 'toggle')
+    }
+    if (input$summary_box_data$collapsed) {
+      bs4Dash::updateBox(id = 'summary_box_data', action = 'toggle')
+    }
+
+    # Update select inputs
+    shiny::updateSelectInput(
+      inputId = 'select_id_data',
+      choices = colnames(r6$tables$imp_data),
+      selected = colnames(r6$tables$imp_data)[1]
+    )
+
+    # Update normalise to column
+    shiny::updateSelectInput(
+      inputId = 'normalise_to_col',
+      choices = colnames(r6$tables$raw_meta),
+      selected = character(0)
+    )
+
+    shinyjs::disable("file_data")
+  })
+
+  # Preview all / subset switch
+  session$userData[[id]]$preview_data = shiny::observeEvent(c(input$preview_data, input$select_data_table), {
+    shiny::req(r6$tables$imp_data)
+
+    data_table = table_switch(table_name = input$select_data_table, r6 = r6)
+
+    if (input$select_data_table %in% c('Imported data table', 'Raw data table')) {
+
+
+      shinyWidgets::updateProgressBar(
+        session = session,
+        id = "col_count_bar",
+        value = ncol(data_table),
+        total = ncol(r6$tables$imp_data)
+      )
+
+      shinyWidgets::updateProgressBar(
+        session = session,
+        id = "row_count_bar_data",
+        value = nrow(data_table),
+        total = nrow(r6$tables$imp_data)
+      )
+    }
+
+    if (input$preview_data){
+      output$data_preview_table = renderDataTable({
+        DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
+      })
+    }else{
+      output$data_preview_table = renderDataTable({
+        DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
+      })
+    }
+
+
+
+
+
+  })
+
+  # Get ID
+  session$userData[[id]]$id_select_data = shiny::observeEvent(input$select_id_data, {
+    shiny::req(r6$tables$imp_data)
+    print_tm(m, 'Setting ID column')
+    if (length(r6$tables$imp_data[,input$select_id_data]) == length(unique(r6$tables$imp_data[,input$select_id_data]))) {
+      r6$indices$id_col_data = input$select_id_data
+      r6$get_blank_table()
+      r6$set_raw_data(apply_imputation = input$apply_imputation,
+                      impute_before = input$impute_before,
+                      apply_filtering = input$apply_filtering,
+                      imputation_function = input$na_imputation,
+                      val_threshold = as.numeric(input$imputation_min_values),
+                      blank_multiplier = as.numeric(input$blank_multiplier),
+                      sample_threshold = as.numeric(input$sample_threshold),
+                      group_threshold = as.numeric(input$group_threshold),
+                      norm_col = input$normalise_to_col)
+
+
+
+      output$lipid_class_summary = shiny::renderPlot(
+        lipidomics_summary_plot(r6)
+      )
+
+      r6$get_feature_table()
+      r6$derive_data_tables()
+
+      shiny::updateSelectInput(
+        inputId = 'select_data_table',
+        choices = c('Imported data table', 'Raw data table', 'Feature table', 'Blank table', 'Class normalized table', 'Total normalized table', 'Z-scored table', 'Z-scored class normalized table', 'Z-scored total normalized table', 'Class table', 'Class table total normalized', 'Class table z-scored total normalized'),
+        selected = 'Raw data table'
+      )
+
+      # Update class selection
+      shiny::updateSelectizeInput(
+        session = session,
+        inputId = "class_selection",
+        choices = unique(r6$tables$feature_table$lipid_class),
+        selected = character(0)
+      )
+
+      # Update manual selection
+      shiny::updateSelectizeInput(
+        session = session,
+        inputId = "manual_selection",
+        choices = colnames(r6$tables$raw_data),
+        selected = character(0)
+      )
+
+
+    } else {
+      print_tm(m, 'ERROR: Non-unique IDs in ID column')
+      r6$tables$raw_meta = NULL
+      shiny::updateSelectInput(
+        inputId = 'select_meta_table',
+        choices = c('Imported metadata table'),
+        selected = 'Imported metadata table'
+      )
+    }
+  })
+
+  # Feature filters
+  session$userData[[id]]$row_col_data = shiny::observeEvent(
+    c(input$apply_imputation,
+      input$impute_before,
+      input$na_imputation,
+      input$imputation_min_values,
+      input$apply_filtering,
+      input$blank_multiplier,
+      input$sample_threshold,
+      input$group_threshold,
+      input$normalise_to_col,
+      input$reset_data_table,
+      input$selection_drop,
+      input$selection_keep,
+      input$reset_meta), {
+
+        shiny::req(r6$tables$raw_data)
+        print_tm(m, 'Updating data tables')
+        r6$set_raw_data(apply_imputation = input$apply_imputation,
+                        impute_before = input$impute_before,
+                        apply_filtering = input$apply_filtering,
+                        imputation_function = input$na_imputation,
+                        val_threshold = as.numeric(input$imputation_min_values),
+                        blank_multiplier = as.numeric(input$blank_multiplier),
+                        sample_threshold = as.numeric(input$sample_threshold),
+                        group_threshold = as.numeric(input$group_threshold),
+                        norm_col = input$normalise_to_col)
+
+        r6$get_feature_table()
+        r6$derive_data_tables()
+
+        output$lipid_class_summary = shiny::renderPlot(
+          lipidomics_summary_plot(r6)
+        )
+
+
+        # Update class selection
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "class_selection",
+          choices = unique(r6$tables$feature_table$lipid_class),
+          selected = character(0)
+        )
+
+        # Update manual selection
+        shiny::updateSelectizeInput(
+          session = session,
+          inputId = "manual_selection",
+          choices = colnames(r6$tables$raw_data),
+          selected = character(0)
+        )
+
+        data_table = table_switch(table_name = input$select_data_table, r6 = r6)
+
+        if (input$select_data_table %in% c('Imported data table', 'Raw data table')) {
+
+
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "col_count_bar",
+            value = ncol(data_table),
+            total = ncol(r6$tables$imp_data)
+          )
+
+          shinyWidgets::updateProgressBar(
+            session = session,
+            id = "row_count_bar_data",
+            value = nrow(data_table),
+            total = nrow(r6$tables$imp_data)
+          )
+        }
+
+        if (input$preview_data){
+          output$data_preview_table = renderDataTable({
+            DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
+          })
+        }else{
+          output$data_preview_table = renderDataTable({
+            DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
+          })
+        }
+
+      })
+
+  # Drop features
+  session$userData[[id]]$feature_drop = shiny::observeEvent(input$drop_cols,{
+    shiny::req(r6$tables$feature_table)
+    print_tm(m, 'Dropping features')
+    selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table$lipid_class %in% input$class_selection)]
+    selected_species = unique(c(selected_species, input$manual_selection))
+    r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
+    r6$indices$excluded_cols = c(r6$indices$excluded_cols, selected_species)
+
+    r6$get_feature_table()
+    r6$derive_data_tables()
+
+    output$lipid_class_summary = shiny::renderPlot(
+      lipidomics_summary_plot(r6)
+    )
+
+    # Update class selection
+    shiny::updateSelectizeInput(
+      session = session,
+      inputId = "class_selection",
+      choices = unique(r6$tables$feature_table$lipid_class),
+      selected = character(0)
+    )
+
+    # Update manual selection
+    shiny::updateSelectizeInput(
+      session = session,
+      inputId = "manual_selection",
+      choices = colnames(r6$tables$raw_data),
+      selected = character(0)
+    )
+
+    if (input$select_data_table == 'Raw data table') {
+      shinyWidgets::updateProgressBar(
+        session = session,
+        id = "col_count_bar",
+        value = ncol(r6$tables$raw_data),
+        total = ncol(r6$tables$imp_data)
+      )
+      shinyWidgets::updateProgressBar(
+        session = session,
+        id = "row_count_bar_data",
+        value = nrow(r6$tables$raw_data),
+        total = nrow(r6$tables$imp_data)
+      )
+    }
+  })
+
+  # Keep features
+  session$userData[[id]]$keep_cols = shiny::observeEvent(input$keep_cols,{
+    shiny::req(r6$tables$feature_table)
+    print_tm(m, 'Keeping features')
+    selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table$lipid_class %in% input$class_selection)]
+    selected_species = unique(c(selected_species, input$manual_selection))
+    selected_species = colnames(r6$tables$raw_data)[!(colnames(r6$tables$raw_data) %in% selected_species)]
+    r6$indices$excluded_cols = c(r6$indices$excluded_cols, selected_species)
+
+    r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
+
+    r6$get_feature_table()
+    r6$derive_data_tables()
+
+    output$lipid_class_summary = shiny::renderPlot(
+      lipidomics_summary_plot(r6)
+    )
+
+    # Update class selection
+    shiny::updateSelectizeInput(
+      session = session,
+      inputId = "class_selection",
+      choices = unique(r6$tables$feature_table$lipid_class),
+      selected = character(0)
+    )
+
+    # Update manual selection
+    shiny::updateSelectizeInput(
+      session = session,
+      inputId = "manual_selection",
+      choices = colnames(r6$tables$raw_data),
+      selected = character(0)
+    )
+
+    if (input$select_data_table == 'Raw data table') {
+      shinyWidgets::updateProgressBar(
+        session = session,
+        id = "col_count_bar",
+        value = ncol(r6$tables$raw_data),
+        total = ncol(r6$tables$imp_data)
+      )
+      shinyWidgets::updateProgressBar(
+        session = session,
+        id = "row_count_bar_data",
+        value = nrow(r6$tables$raw_data),
+        total = nrow(r6$tables$imp_data)
+      )
+    }
+  })
+
+  # Reset feature filter
+  session$userData[[id]]$reset_data_table = shiny::observeEvent(input$reset_data_table,{
+    r6$indices$excluded_cols = NULL
+  })
+
+  # Reset filters
+  session$userData[[id]]$clear_data_filters = shiny::observeEvent(input$clear_data_filters,{
+    # Reset class selection
+    shiny::updateSelectizeInput(
+      session = session,
+      inputId = "class_selection",
+      selected = character(0)
+    )
+
+    # Reset manual selection
+    shiny::updateSelectizeInput(
+      session = session,
+      inputId = "manual_selection",
+      selected = character(0)
     )
   })
 
