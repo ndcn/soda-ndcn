@@ -44,6 +44,10 @@ Lips_exp = R6::R6Class(
 
       feature_table = NULL,
 
+      # Group summaries
+      summary_species_table = NULL,
+      summary_class_table = NULL,
+
       # Normalised
       class_norm_data = NULL,
       total_norm_data = NULL,
@@ -244,7 +248,20 @@ Lips_exp = R6::R6Class(
                                                                     impute = NA)
     },
 
+    get_group_summary_species = function() {
+      self$tables$summary_species_table = get_group_median_table(data_table = self$tables$raw_data,
+                                                         meta_table = self$tables$raw_meta,
+                                                         group_col = self$indices$group_col)
+    },
+
+    get_group_summary_classes = function() {
+      self$tables$summary_class_table = get_group_median_table(data_table = self$tables$class_table,
+                                                               meta_table = self$tables$raw_meta,
+                                                               group_col = self$indices$group_col)
+    },
+
     derive_data_tables = function() {
+      self$get_feature_table()
       self$normalise_class()
       self$normalise_total()
       self$normalise_z_score()
@@ -253,6 +270,8 @@ Lips_exp = R6::R6Class(
       self$get_class_table()
       self$class_grouping_total_norm()
       self$normalise_class_table_z_score()
+      self$get_group_summary_species()
+      self$get_group_summary_classes()
     }
 
   )

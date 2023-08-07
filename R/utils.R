@@ -26,7 +26,9 @@ table_switch = function(table_name, r6) {
          'Z-scored total normalized table' = r6$tables$z_scored_total_norm_data,
          'Class table' = r6$tables$class_table,
          'Class table total normalized' = r6$tables$class_table_total_norm,
-         'Class table z-scored total normalized' = r6$tables$class_table_z_scored_total_norm
+         'Class table z-scored total normalized' = r6$tables$class_table_z_scored_total_norm,
+         'Species summary table' = r6$tables$summary_species_table,
+         'Class summary table' = r6$tables$summary_class_table
          )
 }
 
@@ -133,6 +135,34 @@ print_tm = function(m, in_print) {
 }
 
 #----------------------------------------------------- Lipidomics functions ----
+
+get_group_median_table = function(data_table,
+                                  meta_table,
+                                  group_col) {
+  unique_groups = unique(meta_table[,group_col])
+  out_table = as.data.frame(matrix(data = NA,
+                                   nrow = length(unique_groups),
+                                   ncol = ncol(data_table)))
+  colnames(out_table) = colnames(data_table)
+  rownames(out_table) = unique_groups
+
+  for (group in unique_groups) {
+    idx = rownames(meta_table)[which(meta_table[,group_col] == group)]
+
+    group_table = data_table[idx,]
+
+    if (length(idx) == 1) {
+      group_values = group_table
+    } else {
+      group_values = apply(group_table,2,median, na.rm = TRUE)
+    }
+
+    # group_values[is.na(group_values)] = 0.0
+    group_values[group_values == 0] = NA
+    out_table[group,] = group_values
+  }
+  return(out_table)
+}
 
 get_lipid_class_table = function(table){
 
@@ -378,10 +408,10 @@ lips_get_del_cols = function(data_table,
 
 #------------------------------------------------------- Plotting functions ----
 
-lipidomics_summary_plot = function(r6) {
+lipidomics_summary_plot = function(r6, data_table) {
   groups = get_lipid_classes(colnames(r6$tables$imp_data)[2:length(colnames(r6$tables$imp_data))], uniques = T)
 
-  plot_table = data.frame(table(base::factor((get_lipid_classes(colnames(r6$tables$raw_data)[2:length(colnames(r6$tables$raw_data))], uniques = F)), levels = groups)))
+  plot_table = data.frame(table(base::factor((get_lipid_classes(colnames(data_table)[2:length(colnames(data_table))], uniques = F)), levels = groups)))
   names(plot_table) = c("class", "raw")
   plot_table$imported = table(base::factor((get_lipid_classes(colnames(r6$tables$imp_data)[2:length(colnames(r6$tables$imp_data))], uniques = F)), levels = groups))
   plot_table$removed = plot_table$imported - plot_table$raw

@@ -118,7 +118,7 @@ sample_row_selection = function(input, r6) {
 
 #-------------------------------------------------------- Lipidomics server ----
 
-lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, max_cols = 8) {
+lipidomics_server = function(id, ns, input, output, session, r6) {
 
   m = r6$name
 
@@ -156,16 +156,13 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
               width = '100%'
             )
           ),
-          # Display preview or full table
+          # Download metadata button
           shiny::column(
             width = 3,
-            shinyWidgets::switchInput(
-              inputId = ns("preview_meta"),
-              label = "Display full table",
-              onLabel = "Yes",
-              offLabel = "No",
-              value = F,
-              labelWidth = "120px"
+            shiny::downloadButton(
+              outputId = ns("download_metatable"),
+              label = "Download",
+              style = "width:100%;"
             )
           )
         ),
@@ -380,15 +377,10 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
     }
     r6$tables$imp_meta = data_table
     # Preview table
-    if (input$preview_meta){
-      output$metadata_preview_table = renderDataTable({
-        DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
-      })
-    }else{
-      output$metadata_preview_table = renderDataTable({
-        DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
-      })
-    }
+    output$metadata_preview_table = renderDataTable({
+      DT::datatable(data_table, options = list(paging = TRUE))
+    })
+
     if (input$table_box_meta$collapsed) {
       bs4Dash::updateBox(id = 'table_box_meta', action = 'toggle')
     }
@@ -421,18 +413,13 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
   })
 
   # Preview all / subset switch
-  session$userData[[id]]$preview_meta = shiny::observeEvent(c(input$preview_meta, input$select_meta_table), {
+  session$userData[[id]]$select_meta_table = shiny::observeEvent(input$select_meta_table, {
     shiny::req(r6$tables$imp_meta)
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
-    if (input$preview_meta){
-      output$metadata_preview_table = renderDataTable({
-        DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
-      })
-    }else{
-      output$metadata_preview_table = renderDataTable({
-        DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
-      })
-    }
+    output$metadata_preview_table = renderDataTable({
+      DT::datatable(data_table, options = list(paging = TRUE))
+    })
+
   })
 
   # Get ID
@@ -656,6 +643,25 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
     )
   })
 
+  # Download meta table
+  dl_meta_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_metatable = shiny::observeEvent(c(input$select_meta_table, input$reset_meta, input$selection_keep, input$selection_drop) , {
+    shiny::req(r6$tables$raw_meta)
+    dl_meta_table$name = timestamped_name(paste0(stringr::str_replace_all(input$select_meta_table, " ", "_"), ".csv"))
+    dl_meta_table$table = table_switch(input$select_meta_table, r6)
+  })
+
+  output$download_metatable = shiny::downloadHandler(
+    filename = shiny::reactive(dl_meta_table$name),
+    content = function(file_name) {
+      write.csv(dl_meta_table$table, file_name, na = "")
+    }
+  )
+
 
   #-------------------------------------------------- Data upload rendering ----
 
@@ -690,16 +696,13 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
               width = '100%'
             )
           ),
-          # Display preview or full table
+          # Download button
           shiny::column(
             width = 3,
-            shinyWidgets::switchInput(
-              inputId = ns("preview_data"),
-              label = "Display full table",
-              onLabel = "Yes",
-              offLabel = "No",
-              value = T,
-              labelWidth = "120px"
+            shiny::downloadButton(
+              outputId = ns("download_datatable"),
+              label = "Download",
+              style = "width:100%;"
             )
           )
         ),
@@ -725,8 +728,8 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
               shiny::column(
                 width = 6,
                 shinyWidgets::progressBar(
-                  id = ns("col_count_bar"),
-                  title = "Column count",
+                  id = ns("row_count_bar_data"),
+                  title = "Row count",
                   value = 100,
                   total = 100,
                   unit_mark = "%"
@@ -735,8 +738,8 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
               shiny::column(
                 width = 6,
                 shinyWidgets::progressBar(
-                  id = ns("row_count_bar_data"),
-                  title = "Row count",
+                  id = ns("col_count_bar"),
+                  title = "Column count",
                   value = 100,
                   total = 100,
                   unit_mark = "%"
@@ -903,15 +906,10 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
     data_table = soda_read_table(file_path = file_path)
     r6$tables$imp_data = data_table
     # Preview table
-    if (input$preview_data){
-      output$data_preview_table = renderDataTable({
-        DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
-      })
-    }else{
-      output$data_preview_table = renderDataTable({
-        DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
-      })
-    }
+    output$data_preview_table = renderDataTable({
+      DT::datatable(data_table, options = list(paging = TRUE))
+    })
+
     if (input$table_box_data$collapsed) {
       bs4Dash::updateBox(id = 'table_box_data', action = 'toggle')
     }
@@ -937,7 +935,7 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
   })
 
   # Preview all / subset switch
-  session$userData[[id]]$preview_data = shiny::observeEvent(c(input$preview_data, input$select_data_table), {
+  session$userData[[id]]$select_data_table = shiny::observeEvent(input$select_data_table, {
     shiny::req(r6$tables$imp_data)
 
     data_table = table_switch(table_name = input$select_data_table, r6 = r6)
@@ -958,21 +956,16 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
         value = nrow(data_table),
         total = nrow(r6$tables$imp_data)
       )
+
+      output$lipid_class_summary = shiny::renderPlot(
+        lipidomics_summary_plot(r6, data_table)
+      )
+
     }
 
-    if (input$preview_data){
-      output$data_preview_table = renderDataTable({
-        DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
-      })
-    }else{
-      output$data_preview_table = renderDataTable({
-        DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
-      })
-    }
-
-
-
-
+    output$data_preview_table = renderDataTable({
+      DT::datatable(data_table, options = list(paging = TRUE))
+    })
 
   })
 
@@ -993,18 +986,11 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
                       group_threshold = as.numeric(input$group_threshold),
                       norm_col = input$normalise_to_col)
 
-
-
-      output$lipid_class_summary = shiny::renderPlot(
-        lipidomics_summary_plot(r6)
-      )
-
-      r6$get_feature_table()
       r6$derive_data_tables()
 
       shiny::updateSelectInput(
         inputId = 'select_data_table',
-        choices = c('Imported data table', 'Raw data table', 'Feature table', 'Blank table', 'Class normalized table', 'Total normalized table', 'Z-scored table', 'Z-scored class normalized table', 'Z-scored total normalized table', 'Class table', 'Class table total normalized', 'Class table z-scored total normalized'),
+        choices = c('Imported data table', 'Raw data table', 'Feature table', 'Blank table', 'Class normalized table', 'Total normalized table', 'Z-scored table', 'Z-scored class normalized table', 'Z-scored total normalized table', 'Class table', 'Class table total normalized', 'Class table z-scored total normalized', 'Species summary table', 'Class summary table'),
         selected = 'Raw data table'
       )
 
@@ -1064,12 +1050,14 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
                         group_threshold = as.numeric(input$group_threshold),
                         norm_col = input$normalise_to_col)
 
-        r6$get_feature_table()
         r6$derive_data_tables()
 
-        output$lipid_class_summary = shiny::renderPlot(
-          lipidomics_summary_plot(r6)
-        )
+        if (input$select_data_table %in% c('Imported data table', 'Raw data table')) {
+          data_table = table_switch(input$select_data_table)
+          output$lipid_class_summary = shiny::renderPlot(
+            lipidomics_summary_plot(r6, data_table)
+          )
+        }
 
 
         # Update class selection
@@ -1107,17 +1095,9 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
             total = nrow(r6$tables$imp_data)
           )
         }
-
-        if (input$preview_data){
-          output$data_preview_table = renderDataTable({
-            DT::datatable(data_table[1:min(max_rows, nrow(data_table)),1:min(max_cols, ncol(data_table))], options = list(paging = FALSE, dom = 't'))
-          })
-        }else{
-          output$data_preview_table = renderDataTable({
-            DT::datatable(data_table, options = list(paging = FALSE, dom = 't'))
-          })
-        }
-
+        output$data_preview_table = renderDataTable({
+          DT::datatable(data_table, options = list(paging = TRUE))
+        })
       })
 
   # Drop features
@@ -1129,12 +1109,14 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
     r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
     r6$indices$excluded_cols = c(r6$indices$excluded_cols, selected_species)
 
-    r6$get_feature_table()
     r6$derive_data_tables()
 
-    output$lipid_class_summary = shiny::renderPlot(
-      lipidomics_summary_plot(r6)
-    )
+    if (input$select_data_table %in% c('Imported data table', 'Raw data table')) {
+      data_table = table_switch(input$select_data_table, r6)
+      output$lipid_class_summary = shiny::renderPlot(
+        lipidomics_summary_plot(r6, data_table)
+      )
+    }
 
     # Update class selection
     shiny::updateSelectizeInput(
@@ -1179,12 +1161,14 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
 
     r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
 
-    r6$get_feature_table()
     r6$derive_data_tables()
 
-    output$lipid_class_summary = shiny::renderPlot(
-      lipidomics_summary_plot(r6)
-    )
+    if (input$select_data_table %in% c('Imported data table', 'Raw data table')) {
+      data_table = table_switch(input$select_data_table, r6)
+      output$lipid_class_summary = shiny::renderPlot(
+        lipidomics_summary_plot(r6, data_table)
+      )
+    }
 
     # Update class selection
     shiny::updateSelectizeInput(
@@ -1239,5 +1223,24 @@ lipidomics_server = function(id, ns, input, output, session, r6, max_rows = 10, 
       selected = character(0)
     )
   })
+
+  # Download data table
+  dl_data_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_datatable = shiny::observeEvent(c(input$select_data_table, input$reset_data_table, input$keep_cols, input$drop_cols, input$reset_meta, input$selection_keep, input$selection_drop) , {
+    shiny::req(r6$tables$raw_data)
+    dl_data_table$name = timestamped_name(paste0(stringr::str_replace_all(input$select_data_table, " ", "_"), ".csv"))
+    dl_data_table$table = table_switch(input$select_data_table, r6)
+  })
+
+  output$download_datatable = shiny::downloadHandler(
+    filename = shiny::reactive(dl_data_table$name),
+    content = function(file_name) {
+      write.csv(dl_data_table$table, file_name, na = "")
+    }
+  )
 
 }
