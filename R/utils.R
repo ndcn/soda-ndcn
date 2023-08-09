@@ -2,11 +2,37 @@
 
 #--------------------------------------------------------- Switch functions ----
 
-r6_switch = function(exp_type, name){
+adjustment_switch = function(selection){
+  switch(EXPR = selection,
+         "None" = "minus_log10_p_value",
+         "Benjamini-Hochberg" = "minus_log10_p_value_bh_adj"
+  )
+}
+
+adjustment_title_switch = function(selection) {
+  switch(EXPR = selection,
+         "minus_log10_p_value" = "-Log10(p-value)",
+         "minus_log10_p_value_bh_adj" = "-Log10(BH(p-value))"
+  )
+}
+
+feature_table_cols_switch = function(col) {
+  switch(EXPR = col,
+         'Lipid class' = 'lipid_class',
+         'Double bonds (chain 1)' = 'unsat_1',
+         'Carbon count (chain 1)' = 'carbons_1',
+         'Double bonds (chain 2)' = 'unsat_2',
+         'Carbon count (chain 2)' = 'carbons_2',
+         'Double bonds (sum)' = 'unsat_sum',
+         'Carbon count (sum)' = 'carbons_sum'
+  )
+}
+
+r6_switch = function(exp_type, name, id, slot){
   switch(EXPR = exp_type,
-         "Lipidomics" = Lips_exp$new(name = name),
-         "Proteomics" = Prot_exp$new(name = name),
-         "Transcriptomics" = Trns_exp$new(name = name)
+         "Lipidomics" = Lips_exp$new(name = name, id = id, slot = slot),
+         "Proteomics" = Prot_exp$new(name = name, id = id, slot = slot),
+         "Transcriptomics" = Trns_exp$new(name = name, id = id, slot = slot)
 
   )
 }
@@ -134,7 +160,105 @@ print_tm = function(m, in_print) {
   print(paste0(get_time(), " ", m, " - ", in_print))
 }
 
+#---------------------------------------------------------------- Plotboxes ----
+# Plotly plotbox
+get_plotly_box = function(id, label, dimensions_obj, session) {
+
+  ns = session$ns
+
+  bs4Dash::box(
+    id = ns(paste0(id, "_plotbox")),
+    title = label,
+    width = dimensions_obj$xbs,
+    height = dimensions_obj$ypx * dimensions_obj$y_box,
+    solidHeader = TRUE,
+    maximizable = TRUE,
+    collapsible = FALSE,
+    status = "gray",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(paste0(id, "_sidebar")),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(paste0(id, "_sidebar_ui"))
+      )
+    ),
+    plotly::plotlyOutput(
+      outputId = ns(paste0(id, "_plot")),
+      width = dimensions_obj$xpx * dimensions_obj$x_plot,
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
+    )
+  )
+}
+
+# Visnet plotbox (for networks)
+get_visnet_box = function(id, label, dimensions_obj, session) {
+
+  ns = session$ns
+
+  bs4Dash::box(
+    id = ns(paste0(id, "_plotbox")),
+    title = label,
+    width = dimensions_obj$xbs,
+    height = dimensions_obj$ypx * dimensions_obj$y_box,
+    solidHeader = TRUE,
+    maximizable = TRUE,
+    collapsible = FALSE,
+    status = "gray",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(paste0(id, "_sidebar")),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(paste0(id, "_sidebar_ui"))
+      )
+    ),
+    visNetwork::visNetworkOutput(outputId = ns(paste0(id, "_plot")),
+                                 width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                 height = dimensions_obj$ypx * dimensions_obj$y_plot
+    )
+  )
+}
+
+# Regular plotbox (static plots)
+get_plot_box = function(id, label, dimensions_obj, session) {
+
+  ns = session$ns
+
+  bs4Dash::box(
+    id = ns(paste0(id, "_plotbox")),
+    title = label,
+    width = dimensions_obj$xbs,
+    height = dimensions_obj$ypx * dimensions_obj$y_box,
+    solidHeader = TRUE,
+    maximizable = TRUE,
+    collapsible = FALSE,
+    status = "gray",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(paste0(id, "_sidebar")),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(paste0(id, "_sidebar_ui"))
+      )
+    ),
+    shiny::plotOutput(
+      outputId = ns(paste0(id, "_plot")),
+      width = dimensions_obj$xpx * dimensions_obj$x_plot,
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
+    )
+  )
+}
+
 #----------------------------------------------------- Lipidomics functions ----
+
+lipidomics_plot_list = function() {
+  plot_list = c("Class distribution" = "select_class_distribution",
+                "Class comparison" = "select_class_comparison",
+                "Volcano plot" = "select_volcano_plot",
+                "Heatmap" = "select_heatmap",
+                "PCA" = "select_pca",
+                "Double bond plot" = "select_double_bond_plot"
+  )
+  return(plot_list)
+}
 
 get_group_median_table = function(data_table,
                                   meta_table,
@@ -191,7 +315,6 @@ normalise_lipid_class = function(lips_table) {
   # Get classes and unique classes for the lipid features
   classes = get_lipid_classes(feature_list = as.character(colnames(lips_table)), uniques = FALSE)
   classes_unique = get_lipid_classes(feature_list = as.character(colnames(lips_table)), uniques = TRUE)
-  # lips_table[is.na(lips_table)] = 0
 
   # For each unique lipid class...
   for (lip_class in classes_unique){
@@ -202,9 +325,7 @@ normalise_lipid_class = function(lips_table) {
       class_row_sums = rowSums(lips_table[, cols], na.rm = T)
     } else {
       class_row_sums = lips_table[, cols]
-      if (is.na(class_row_sums)) {
-        class_row_sums = 0
-      }
+      class_row_sums[is.na(class_row_sums)] = 0
     }
     class_row_sums[class_row_sums == 0] = 1
     lips_table[, cols] = lips_table[, cols] / class_row_sums
@@ -212,14 +333,12 @@ normalise_lipid_class = function(lips_table) {
   return(lips_table)
 }
 
-z_score_normalisation = function(data_table, impute) {
-  # Impute (or not) and scale (z-score) the data
-  if (is.na(impute)) {
-    data_table = scale(data_table)
-  } else {
-    data_table[is.na(data_table)] = impute
-    data_table = scale(data_table)
-  }
+z_score_normalisation = function(data_table) {
+  data_table = t(apply(data_table, 1, function(row) {
+    centered_row = row - mean(row, na.rm = T)
+    scaled_row = centered_row / sd(centered_row, na.rm = T)
+    return(scaled_row)
+  }))
   return(data_table)
 }
 
@@ -398,6 +517,7 @@ lips_get_del_cols = function(data_table,
     above_threshold = above_threshold / length(group_idx) >= group_threshold
     saved_cols = c(saved_cols, names(above_threshold)[above_threshold])
   }
+
   saved_cols = unique(saved_cols)
   saved_cols = sort(saved_cols)
 
@@ -407,6 +527,120 @@ lips_get_del_cols = function(data_table,
 }
 
 #------------------------------------------------------- Plotting functions ----
+
+pca_plot_scores = function(x, y, meta_table, group_col, width, height, colour_list){
+  groups = unique(meta_table[,group_col])
+  fig = plotly::plot_ly(colors = colour_list, width = width, height = height)
+  i = 1
+  for (grp in groups) {
+    idx = rownames(meta_table)[which(meta_table[,group_col] == grp)]
+    fig = fig %>% add_trace(x = x[idx], y = y[idx],
+                            name = grp, color = colour_list[i],
+                            type  = "scatter", mode = "markers",
+                            text = idx,
+                            hoverinfo = "text",
+                            legendgroup=grp)
+    i = i + 1
+  }
+  fig = fig %>% layout(shapes = list(hline(0),
+                                     vline(0),
+                                     circle(x, y)),
+                       legend = list(title=list(text = paste0('<b>', group_col, ': </b>'))))
+  return(fig)
+}
+
+pca_plot_loadings = function(x, y, feature_list, width, height, colour_list){
+  fig = plotly::plot_ly(colors = colour_list, width = width, height = height)
+  fig = fig %>% add_trace(x = x, y = y,
+                          type = "scatter", mode = "text", text = feature_list,
+                          textposition = 'middle right', showlegend = F)
+
+  shape_list = list(
+    hline(0),
+    vline(0)
+  )
+
+
+  for (i in 1:length(feature_list)) {
+    feature = feature_list[i]
+    new_line = list(
+      type = "line",
+      line = list(color = "pink"),
+      xref = "x",
+      yref = "y",
+      x0 = 0,
+      y0 = 0,
+      x1 = x[i],
+      y1 = y[i]
+    )
+    shape_list[[length(shape_list) + 1]] = new_line
+  }
+
+  fig = fig %>% layout(shapes = shape_list)
+
+  return(fig)
+}
+
+hline = function(y = 0, color = "black", dash = NULL) {
+  list(
+    type = "line",
+    x0 = 0,
+    x1 = 1,
+    xref = "paper",
+    y0 = y,
+    y1 = y,
+    line = list(color = color, dash=dash)
+  )
+}
+
+vline <- function(x = 0, color = "black", dash = NULL) {
+  list(
+    type = "line",
+    y0 = 0,
+    y1 = 1,
+    yref = "paper",
+    x0 = x,
+    x1 = x,
+    line = list(color = color, dash=dash)
+  )
+}
+
+#' @title Calculate Hoteling T2
+#'
+#' @description Calculate Hoteling T2 for the scores plot
+#'
+#' @param x numeric vector with x values
+#' @param y numeric vector with y values
+#' @param alpha numeric(1), confidence interval
+#' @param len numeric(1), number of points to create the ellipse
+#'
+#' @return A list is returned to be used in a plotly graph.
+#'
+#' @details This is a helper function which is used to create a confidence (Hotelling T2) interval for a
+#'     PCA score plot.
+#'
+#' @importFrom stats var qf
+#'
+#' @noRd
+#'
+#' @author Damien Olivier
+circle = function(x, y, alpha = 0.95, len = 200){
+  N = length(x)
+  mypi = seq(0, 2 * pi, length = len)
+  r1 = sqrt(stats::var(x) * stats::qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  r2 = sqrt(stats::var(y) * stats::qf(alpha, 2, N - 2) * (2*(N^2 - 1)/(N * (N - 2))))
+  list(
+    type = "circle",
+    xref = "x",
+    x0= -r1,
+    x1 = r1,
+    yref = "y",
+    y0 = -r2,
+    y1 = r2,
+    line = "black",
+    opacity = 0.2
+  )
+}
 
 lipidomics_summary_plot = function(r6, data_table) {
   groups = get_lipid_classes(colnames(r6$tables$imp_data)[2:length(colnames(r6$tables$imp_data))], uniques = T)
@@ -477,6 +711,161 @@ lipidomics_summary_plot = function(r6, data_table) {
     coord_flip()
 
   return(gridExtra::grid.arrange(plot_1, plot_2, ncol=2))
+}
+
+
+
+#--------------------------------------------------------------- Statistics ----
+
+get_pca_data = function(data_table){
+
+  pca_data = pcaMethods::pca(object = data_table,
+                             nPcs = 2,
+                             scale = "none",
+                             cv = "q2",
+                             completeObs = T)
+
+  return(pca_data)
+}
+
+apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, alpha = 0.8) {
+
+  ncol_1 = ncol(data_table)
+  data_table = data_table[,!is.na(colSums(data_table))]
+  ncol_2 = ncol(data_table)
+  if(ncol_2 != ncol_1) {
+    print(paste0("Discriminant analysis : dropped ", ncol_1 - ncol_2, " features with no signal variation."))
+  }
+
+  count = table(group_list)
+  if (any(count < 3)) {
+    dead_groups = names(count)[count < 3]
+    print(paste0("Warning: ", length(dead_groups), " groups with fewer than 3 samples, dropped from analysis."))
+    data_table = data_table[!(group_list %in% dead_groups),]
+    group_list = group_list[!(group_list %in% dead_groups)]
+  }
+
+  if (length(unique(group_list) > 2)) {
+    family = "multinomial"
+  } else {
+    family = "binomial"
+  }
+
+  coef = NULL
+  attempt_count = 1
+  while(is.null(coef)) {
+    print(paste0("Discriminant analysis: attempt ", attempt_count))
+    if (attempt_count == 5) {break}
+    attempt_count = attempt_count + 1
+    base::tryCatch(
+      {
+        coef = glmnet::cv.glmnet(data_table,
+                                 group_list,
+                                 nlambda = nlambda,
+                                 alpha = alpha,
+                                 family = family,
+                                 type.multinomial = "grouped")
+
+      },error=function(e){
+      },finally={}
+    )
+  }
+
+  coef = stats::coef(coef, s = "lambda.min")
+  keep_cols = as.matrix(coef[[1]])
+
+  keep_cols = rownames(keep_cols)[which(keep_cols != 0)]
+  keep_cols = keep_cols[2:length(keep_cols)]
+  data_table = data_table[,keep_cols]
+  return(data_table)
+}
+
+get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, test){
+
+  if (used_function == "median") {
+    av_function = function(x) {return(median(x, na.rm = T))}
+  } else {
+    av_function = function(x) {return(mean(x, na.rm = T))}
+  }
+
+  if (test == "Wilcoxon") {
+    test_function=function(x,y){
+
+      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
+        return(1)
+      } else{
+        return(stats::wilcox.test(x, y)$p.value)
+      }
+    }
+  } else if (test == "t-Test") {
+    test_function=function(x,y){
+
+      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
+        return(1)
+      } else{
+        return(stats::t.test(x, y)$p.value)
+      }
+    }
+
+  }
+
+  # Collect fold change and p-values
+  fold_change = c()
+  p_value = c()
+
+  for (col in colnames(data_table)) {
+
+    # If both groups contain data
+    if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {
+
+      # If at least one of the groups contains only one value
+      if ((length(na.exclude(data_table[idx_group_1, col])) == 1) | (length(na.exclude(data_table[idx_group_2, col])) == 1)) {
+        fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
+        p_value = c(p_value, NA)
+      } else {
+
+        # If there is actual comparable data
+        fold_change = c(fold_change, av_function(data_table[idx_group_2, col]) / av_function(data_table[idx_group_1, col]))
+        p_value = c(p_value, test_function(data_table[idx_group_1, col], data_table[idx_group_2, col]))
+      }
+
+    } else {
+      # If at least one of the groups is full NA, default values
+      p_value = c(p_value, 666)
+      # For fold changes, if it is the denominator
+      if (length(na.exclude(data_table[idx_group_1, col])) == 0) {
+        fold_change = c(fold_change, 777)
+      } else {
+        # If it is the numerator
+        fold_change = c(fold_change, 666)
+      }
+    }
+  }
+
+  # Imputation of Inf for when denominator average is 0
+  fold_change[fold_change == Inf] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+
+  # Imputation of 0 for when numerator average is 0
+  fold_change[fold_change == 0] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+
+  # Imputation of NAs for denominator FC with a value slightly above max FC
+  fold_change[fold_change == 777] = 1.01*max(fold_change[!(fold_change == 777) & !(fold_change == 666) & !(fold_change == Inf)], na.rm = T)
+
+  # Imputation of NAs for nominator FC with a value slightly below min FC
+  fold_change[fold_change == 666] = 0.99*min(fold_change[!(fold_change == 0)], na.rm = T)
+
+  # Imputation of NAs for when both numerators and denominator medians are 0
+  fold_change[is.na(fold_change)] = 1
+
+  # Imputation of NAs for p-values to be the min p-val
+  p_value[p_value == 666] = 0.99*min(p_value, na.rm = T)
+
+  # Adjust p-value
+  p_value_bh_adj = p.adjust(p_value, method = "BH")
+
+  return(list("fold_change" = fold_change,
+              "p_value" = p_value,
+              "p_value_bh_adj" = p_value_bh_adj))
 }
 
 

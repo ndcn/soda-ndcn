@@ -18,7 +18,9 @@ experiment_ui = function(id) {
     ),
     shiny::tabPanel(
       title = "Visualize data",
-      shiny::h4('Placeholder_5')
+      shiny::uiOutput(
+        outputId = ns('visualize_data_ui')
+      )
     ),
     shiny::tabPanel(
       title = "Geneset enrichment",
@@ -33,18 +35,17 @@ experiment_ui = function(id) {
 
 #-------------------------------------------------------- Experiment server ----
 
-experiment_server = function(id, type, r6) {
+experiment_server = function(id, type, module_controler) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
       ns = session$ns
-
       if (type == 'Lipidomics') {
-        lipidomics_server(id = id, ns = ns, input = input, output = output, session = session, r6 = r6)
+        lipidomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
       } else if (type == 'Proteomics') {
-        proteomics_server(id = id, ns = ns, input = input, output = output, session = session, r6 = r6)
+        proteomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
       } else if (type == 'Transcriptomics') {
-        transcriptomics_server(id = id, ns = ns, input = input, output = output, session = session, r6 = r6)
+        transcriptomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
       }
     }
   )

@@ -2,16 +2,27 @@ library(shiny)
 library(shinyjs)
 library(bs4Dash)
 library(shinyWidgets)
+library(shinybrowser)
 
 # Plotting
 library(ggplot2)
 library(gridExtra)
+library(plotly)
 
 # text
 library(stringr)
 
 # Tables
 library(DT)
+
+# Colors
+library(grDevices)
+library(RColorBrewer)
+
+# Statistics
+library(stats)
+library(glmnet)
+library(pcaMethods)
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
@@ -61,7 +72,11 @@ sidebar_ui = function() {
 #--------------------------------------------------------------- Setup body ----
 body_ui = function() {
   bs4Dash::dashboardBody(
+
+    # Detect UI functions
     shinyjs::useShinyjs(),
+    shinybrowser::detect(),
+
     bs4Dash::tabItems(
 
       # Start page
@@ -104,7 +119,6 @@ body_ui = function() {
         tabName = "about",
         about_ui(id = 'mod_about')
       )
-
     )
   )
 }
@@ -162,8 +176,20 @@ server = function(input, output, session) {
       'exp_4' = NA,
       'exp_5' = NA,
       'exp_6' = NA
+    ),
+
+    dims = list(
+      x_box = 0.9,
+      y_box = 0.75,
+      x_plot = 0.8,
+      y_plot = 0.70,
+      x_plot_full = 0.95,
+      y_plot_full = 0.91,
+      xpx_total = NULL,
+      ypx_total = NULL
     )
   )
+
   start_server(id = 'mod_start', main_input = input, main_output = output, main_session = session, module_controler = module_controler)
   about_server(id = 'mod_about', main_output = output)
 
@@ -176,12 +202,14 @@ server = function(input, output, session) {
     if (length(slot) > 0) {
       slot = slot[1]
       exp_type = module_controler$exp_types[[slot]]
+      module_controler$module_loaded[[slot]] = TRUE
       experiment_server(id = paste0(c('mod', slot), collapse = '_'),
                         type = exp_type,
-                        r6 = module_controler$exp_r6[[slot]])
-      module_controler$module_loaded[[slot]] = TRUE
+                        module_controler = module_controler)
+
     }
   })
+
 }
 
 #---------------------------------------------------------------------- End ----

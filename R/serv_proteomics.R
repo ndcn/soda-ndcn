@@ -1,6 +1,6 @@
 #-------------------------------------------------------- Proteomics server ----
 
-proteomics_server = function(id, ns, input, output, session, r6, head_meta = F, head_data = T) {
+proteomics_server = function(id, ns, input, output, session, module_controler) {
   output$up_metadata_ui = shiny::renderUI({
     shiny::selectInput(
       inputId = ns('truffles'),

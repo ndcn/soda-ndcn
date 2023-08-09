@@ -1,6 +1,114 @@
 #----------------------------------------------------- Lipidomics utilities ----
 
-#
+plotbox_switch_ui_lips = function(selection_list){
+  ui_functions = c()
+  for (plot in selection_list) {
+    ui_functions = c(ui_functions, switch(EXPR = plot,
+                                          "select_class_distribution" = class_distribution_ui,
+                                          "select_class_comparison" = class_comparison_ui,
+                                          "select_volcano_plot" = volcano_plot_ui,
+                                          "select_heatmap" = heatmap_ui,
+                                          "select_pca" = pca_ui,
+                                          "select_double_bond_plot" = double_bonds_ui
+    )
+    )
+  }
+  return(ui_functions)
+}
+
+plotbox_switch_server_lips = function(selection_list){
+  server_functions = c()
+  for (plot in selection_list) {
+    server_functions = c(server_functions, switch(EXPR = plot,
+                                                  "select_class_distribution" = class_distribution_server,
+                                                  "select_class_comparison" = class_comparison_server,
+                                                  "select_volcano_plot" = volcano_plot_server,
+                                                  "select_heatmap" = heatmap_server,
+                                                  "select_pca" = pca_server,
+                                                  "select_double_bond_plot" = double_bonds_server
+    )
+    )
+  }
+  return(server_functions)
+}
+
+plot_one_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
+
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+
+plot_two_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+plot_three_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+plot_four_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session),
+        ui_functions[[4]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+
 reset_sample_filters = function(input, session, r6) {
   # Set all checkboxes to False
   shinyWidgets::updateCheckboxGroupButtons(
@@ -118,9 +226,13 @@ sample_row_selection = function(input, r6) {
 
 #-------------------------------------------------------- Lipidomics server ----
 
-lipidomics_server = function(id, ns, input, output, session, r6) {
+lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
+  # Extract some values and update the module controler
+  r6 = module_controler$exp_r6[[stringr::str_replace(id, 'mod_', '')]]
   m = r6$name
+  slot = r6$slot
+  # print(c(r6$name, r6$id, r6$slot))
 
   #---------------------------------------------- Metadata upload rendering ----
 
@@ -1053,7 +1165,7 @@ lipidomics_server = function(id, ns, input, output, session, r6) {
         r6$derive_data_tables()
 
         if (input$select_data_table %in% c('Imported data table', 'Raw data table')) {
-          data_table = table_switch(input$select_data_table)
+          data_table = table_switch(input$select_data_table, r6)
           output$lipid_class_summary = shiny::renderPlot(
             lipidomics_summary_plot(r6, data_table)
           )
@@ -1242,5 +1354,162 @@ lipidomics_server = function(id, ns, input, output, session, r6) {
       write.csv(dl_data_table$table, file_name, na = "")
     }
   )
+
+
+  #----------------------------------------------- Visualize data rendering ----
+
+  output$visualize_data_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::fluidRow(
+        # First column with the table input and preview of the raw data
+        shiny::column(
+          width = 11,
+          shinyWidgets::checkboxGroupButtons(inputId = ns("showPlots"),
+                                             label = NULL,
+                                             status = "default",
+                                             choices = lipidomics_plot_list(),
+                                             checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
+                                             size = "normal",
+                                             justified = TRUE
+          )
+        ),
+        shiny::column(
+          width = 1,
+          shinyWidgets::actionBttn(inputId = ns("clear_plots"),
+                                   label = "Clear",
+                                   style = "material-flat",
+                                   color = "danger",
+                                   block = T,
+                                   icon = icon("x"))
+        )
+      ),
+      shiny::fluidRow(
+        shiny::column(
+          width = 12,
+          shiny::uiOutput(
+            outputId = ns("plotbox_field")
+          )
+        )
+      )
+    )
+  })
+
+  #-------------------------------------------------- Visualize data server ----
+
+  # Initialise dimensions object
+  dimensions_obj = shiny::reactiveValues(
+    x_box = module_controler$dims$x_box,
+    y_box = module_controler$dims$y_box,
+    x_plot = module_controler$dims$x_plot,
+    y_plot = module_controler$dims$y_plot,
+    x_plot_full = module_controler$dims$x_plot_full,
+    y_plot_full = module_controler$dims$y_plot_full,
+    xpx_total = shinybrowser::get_width(),
+    ypx_total = shinybrowser::get_height(),
+    xbs = 12,
+    xpx = shinybrowser::get_width(),
+    ypx = shinybrowser::get_height()
+  )
+
+  color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
+
+  # Plotting events
+  class_distribution_events(r6, dimensions_obj, color_palette, input, output, session)
+  class_comparison_events(r6, dimensions_obj, color_palette, input, output, session)
+  volcano_plot_events(r6, dimensions_obj, color_palette, input, output, session)
+  heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
+  pca_events(r6, dimensions_obj, color_palette, input, output, session)
+  db_plot_events(r6, dimensions_obj, color_palette, input, output, session)
+
+  session$userData[[id]]$showPlots = shiny::observeEvent(input$showPlots,{
+
+    # Update x dimensions in px and bs, and y in px
+    if (length(input$showPlots) < 2) {
+      dimensions_obj$xbs = 12
+      dimensions_obj$xpx = shinybrowser::get_width()
+      dimensions_obj$ypx = shinybrowser::get_height()
+    } else if (length(input$showPlots) == 2) {
+      dimensions_obj$xbs  = 6
+      dimensions_obj$xpx = shinybrowser::get_width()/2
+      dimensions_obj$ypx = shinybrowser::get_height()
+    } else {
+      dimensions_obj$xbs  = 6
+      dimensions_obj$xpx = shinybrowser::get_width()/2
+      dimensions_obj$ypx = shinybrowser::get_height()/2.2
+    }
+
+    # Display plot boxes
+    print_tm(m, paste0("Plot selection: ", paste(input$showPlots, collapse = ", ")))
+    if (length(input$showPlots) == 1) {
+      plot_one_lips(r6 = r6,
+                    dimensions_obj = dimensions_obj,
+                    selection_list = input$showPlots,
+                    input = input,
+                    output = output,
+                    session = session)
+
+    } else if (length(input$showPlots) == 2) {
+      plot_two_lips(r6 = r6,
+               dimensions_obj = dimensions_obj,
+               selection_list = input$showPlots,
+               input = input,
+               output = output,
+               session = session)
+
+    } else if (length(input$showPlots) == 3) {
+      plot_three_lips(r6 = r6,
+                 dimensions_obj = dimensions_obj,
+                 selection_list = input$showPlots,
+                 input = input,
+                 output = output,
+                 session = session)
+
+    } else if (length(input$showPlots) >= 4) {
+      plot_four_lips(r6 = r6,
+                dimensions_obj = dimensions_obj,
+                selection_list = input$showPlots,
+                input = input,
+                output = output,
+                session = session)
+
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "showPlots",
+        disabledChoices = setdiff(unname(lipidomics_plot_list()), input$showPlots)
+      )
+
+    }
+
+
+
+    if ((length(input$showPlots) > 1) & (length(input$showPlots) < 4)) {
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "showPlots",
+        disabledChoices = NULL
+      )
+    } else if (length(input$showPlots) == 1) {
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "showPlots",
+        disabledChoices = input$showPlots
+      )
+    }
+
+  })
+
+
+  session$userData[[id]]$clear_plots = shiny::observeEvent(input$clear_plots, {
+    print_tm(m, "Clearing plots")
+    shinyWidgets::updateCheckboxGroupButtons(
+      session = session,
+      inputId = "showPlots",
+      disabled = FALSE,
+      selected = character(0))
+    output$plotbox_field = shiny::renderUI(
+      NULL
+    )
+  })
+
 
 }
