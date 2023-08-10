@@ -232,7 +232,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   r6 = module_controler$exp_r6[[stringr::str_replace(id, 'mod_', '')]]
   m = r6$name
   slot = r6$slot
-  # print(c(r6$name, r6$id, r6$slot))
 
   #---------------------------------------------- Metadata upload rendering ----
 
@@ -1509,6 +1508,18 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     output$plotbox_field = shiny::renderUI(
       NULL
     )
+  })
+
+  #------------------------------------------- Geneset enrichment rendering ----
+
+  output$geneset_enrichment_ui = shiny::renderUI({
+    shiny::h2('Geneset enrichment unavailable for lipidomics')
+  })
+
+  #------------------------------------------ Over-representation rendering ----
+
+  output$over_representation_ui = shiny::renderUI({
+    shiny::h2('Over-representation analysis unavailable for lipidomics')
   })
 
 

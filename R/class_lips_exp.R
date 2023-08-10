@@ -47,9 +47,8 @@ Lips_exp = R6::R6Class(
         impute = F,
         cluster_samples = F,
         cluster_features = F,
-        map_sample_data = character(0),
-        map_feature_data = character(0),
-        percentile = 95,
+        map_sample_data = NULL,
+        map_feature_data = NULL,
         group_column_da = NULL,
         apply_da = FALSE,
         alpha_da = 0.8,
@@ -189,14 +188,13 @@ Lips_exp = R6::R6Class(
 
     },
 
-    param_heatmap = function(dataset, impute, cluster_samples, cluster_features, map_sample_data, map_feature_data, percentile, group_column_da, apply_da, alpha_da, img_format) {
+    param_heatmap = function(dataset, impute, cluster_samples, cluster_features, map_sample_data, map_feature_data, group_column_da, apply_da, alpha_da, img_format) {
       self$params$heatmap$dataset = dataset
       self$params$heatmap$impute = impute
       self$params$heatmap$cluster_samples = cluster_samples
       self$params$heatmap$cluster_features = cluster_features
       self$params$heatmap$map_sample_data = map_sample_data
       self$params$heatmap$map_feature_data = map_feature_data
-      self$params$heatmap$percentile = percentile
       self$params$heatmap$group_column_da = group_column_da
       self$params$heatmap$apply_da = apply_da
       self$params$heatmap$alpha_da = alpha_da
@@ -464,9 +462,8 @@ Lips_exp = R6::R6Class(
                          impute = F,
                          cluster_samples = F,
                          cluster_features = F,
-                         map_sample_data = character(0),
-                         map_feature_data = character(0),
-                         percentile = 95,
+                         map_sample_data = NULL,
+                         map_feature_data = NULL,
                          group_column_da = self$indices$group_col,
                          apply_da = FALSE,
                          alpha_da = 0.8,
@@ -850,7 +847,6 @@ Lips_exp = R6::R6Class(
                             impute = self$params$heatmap$impute,
                             meta_table = self$tables$raw_meta,
                             meta_table_features = self$tables$feature_table,
-                            percentile = self$params$heatmap$percentile,
                             cluster_rows = self$params$heatmap$cluster_samples,
                             cluster_cols = self$params$heatmap$cluster_features,
                             row_annotations = self$params$heatmap$map_sample_data,
@@ -886,21 +882,14 @@ Lips_exp = R6::R6Class(
         dendrogram_list = "none"
       }
 
-      # Set percentiles
-      percentile = percentile/100
-      alpha = (1 - percentile)
-
-      val_list = c()
-      for (col in colnames(data_table)) {
-        val_list = c(val_list, data_table[,col])
-      }
-
+      val_list = as.vector(data_table)
+      val_list = na.omit(val_list)
       val_list = sort(val_list)
-      zmin = quantile(val_list, alpha/2)
-      zmax = quantile(val_list, 1 - alpha/2)
-      col_lim = round(max(abs(c(zmin, zmax))), 2)
 
-      # Filter out the data using the percentiles
+      zmax = min(c(abs(min(val_list)), max(val_list)))
+      zmin = -zmax
+
+      # Filter out the data
       data_table[data_table > zmax] = zmax
       data_table[data_table < zmin] = zmin
 
@@ -932,7 +921,8 @@ Lips_exp = R6::R6Class(
                                                   mid = "#faf4af",
                                                   high = "red",
                                                   midpoint = 0,
-                                                  limits = c(-col_lim, col_lim)
+                                                  # limits = c(-col_lim, col_lim)
+                                                  limits = c(zmin, zmax)
                                                 ),
                                                 # scale_fill_gradient_fun = ggplot2::scale_fill_gradient(
                                                 #   low = "blue4",

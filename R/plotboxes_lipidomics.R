@@ -518,24 +518,10 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  # if (input$heatmap_apply_da) {
-  #   data_table = table_switch(input$heatmap_dataset, r6)
-  #   data_table = apply_discriminant_analysis(data_table = data_table,
-  #                                            group_list = r6$tables$raw_meta[,input$heatmap_group_col_da],
-  #                                            nlambda = 100,
-  #                                            alpha = input$heatmap_alpha_da)
-  #
-  #   meta_table_features = r6$tables$feature_table[colnames(data_table), ]
-  # } else {
-  #   data_table = table_switch(input$heatmap_dataset, r6)
-  #   meta_table_features = r6$tables$feature_table
-  # }
-
   r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
                   impute = input$heatmap_impute,
                   meta_table = r6$tables$raw_meta,
                   meta_table_features = r6$tables$feature_table,
-                  percentile = input$heatmap_percentile,
                   cluster_rows = input$heatmap_cluster_samples,
                   cluster_cols = input$heatmap_cluster_features,
                   row_annotations = input$heatmap_map_rows,
@@ -641,13 +627,6 @@ heatmap_server = function(r6, output, session) {
           )
         )
       ),
-      shiny::sliderInput(inputId = ns("heatmap_percentile"),
-                         label = "Percentile",
-                         min = 90,
-                         max = 100,
-                         value = r6$params$heatmap$percentile,
-                         step = 1
-      ),
 
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
@@ -718,7 +697,6 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
                      cluster_features = input$heatmap_cluster_features,
                      map_sample_data = input$heatmap_map_rows,
                      map_feature_data = input$heatmap_map_cols,
-                     percentile = input$heatmap_percentile,
                      group_column_da = input$heatmap_group_col_da,
                      apply_da = input$heatmap_apply_da,
                      alpha_da = input$heatmap_alpha_da,

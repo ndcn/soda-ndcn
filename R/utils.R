@@ -334,11 +334,12 @@ normalise_lipid_class = function(lips_table) {
 }
 
 z_score_normalisation = function(data_table) {
-  data_table = t(apply(data_table, 1, function(row) {
-    centered_row = row - mean(row, na.rm = T)
+
+  data_table = apply(data_table, 2, function(col) {
+    centered_row = col - base::mean(col, na.rm = T)
     scaled_row = centered_row / sd(centered_row, na.rm = T)
     return(scaled_row)
-  }))
+  })
   return(data_table)
 }
 

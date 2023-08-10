@@ -24,11 +24,15 @@ experiment_ui = function(id) {
     ),
     shiny::tabPanel(
       title = "Geneset enrichment",
-      shiny::h4('Placeholder_6')
+      shiny::uiOutput(
+        outputId = ns('geneset_enrichment_ui')
+      )
     ),
     shiny::tabPanel(
       title = "Over-representation analysis",
-      shiny::h4('Placeholder_7')
+      shiny::uiOutput(
+        outputId = ns('over_representation_ui')
+      )
     )
   )
 }
