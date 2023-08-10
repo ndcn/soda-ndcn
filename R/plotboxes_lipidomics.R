@@ -77,9 +77,6 @@ class_distribution_server = function(r6, output, session) {
     )
   })
 
-
-  # class_distribution_events(r6, dimensions_obj, color_palette, input, output, session)
-
 }
 
 class_distribution_events = function(r6, dimensions_obj, color_palette, input, output, session) {
@@ -526,11 +523,9 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
                   cluster_cols = input$heatmap_cluster_features,
                   row_annotations = input$heatmap_map_rows,
                   col_annotations = input$heatmap_map_cols,
-
                   apply_da = input$heatmap_apply_da,
                   group_column_da = input$heatmap_group_col_da,
                   alpha_da = input$heatmap_alpha_da,
-
                   width = dimensions_obj$xpx * dimensions_obj$x_plot,
                   height = dimensions_obj$ypx * dimensions_obj$y_plot)
 }

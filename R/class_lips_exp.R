@@ -962,8 +962,6 @@ Lips_exp = R6::R6Class(
                                                  alpha = alpha_da)
       }
 
-      meta_table = self$tables$raw_meta[rownames(data_table),]
-
       ncol_1 = ncol(data_table)
       data_table = data_table[,!is.na(colSums(data_table, na.rm = T))]
       ncol_2 = ncol(data_table)
@@ -981,7 +979,7 @@ Lips_exp = R6::R6Class(
 
       fig[[1]] = pca_plot_scores(x = pca_data@scores[, "PC1"],
                                  y = pca_data@scores[, "PC2"],
-                                 meta_table = meta_table,
+                                 meta_table = self$tables$raw_meta[rownames(data_table),],
                                  group_col = group_column,
                                  width = width,
                                  height = height,

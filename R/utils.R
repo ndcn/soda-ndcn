@@ -261,6 +261,15 @@ lipidomics_plot_list = function() {
   return(plot_list)
 }
 
+proteomics_plot_list = function() {
+  plot_list = c("Volcano plot" = "select_volcano_plot",
+                "Heatmap" = "select_heatmap",
+                "PCA" = "select_pca"
+  )
+  return(plot_list)
+}
+
+
 get_group_median_table = function(data_table,
                                   meta_table,
                                   group_col) {
