@@ -568,7 +568,7 @@ heatmap_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("heatmap_dataset"),
         label = "Select dataset",
-        choices = c('Z-scored table', 'Z-scored class normalized table', 'Z-scored total normalized table'),
+        choices = c('Z-scored table', 'Class table z-scored'),
         selected = r6$params$heatmap$dataset
       ),
 
@@ -702,10 +702,6 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
                      alpha_da = input$heatmap_alpha_da,
                      img_format = input$heatmap_img_format)
 
-
-    heatmap_generate(r6, color_palette, dimensions_obj, input)
-    heatmap_spawn(r6, input$heatmap_img_format, output)
-
     base::tryCatch({
       heatmap_generate(r6, color_palette, dimensions_obj, input)
       heatmap_spawn(r6, input$heatmap_img_format, output)
@@ -805,7 +801,7 @@ pca_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("pca_dataset"),
         label = "Select dataset",
-        choices = c('Z-scored table', 'Z-scored class normalized table', 'Z-scored total normalized table'),
+        choices = c('Z-scored table', 'Class table z-scored'),
         selected = r6$params$pca$dataset
       ),
       shiny::selectInput(

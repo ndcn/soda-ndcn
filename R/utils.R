@@ -51,6 +51,7 @@ table_switch = function(table_name, r6) {
          'Z-scored class normalized table' = r6$tables$z_scored_class_norm_data,
          'Z-scored total normalized table' = r6$tables$z_scored_total_norm_data,
          'Class table' = r6$tables$class_table,
+         'Class table z-scored' = r6$tables$class_table_z_scored,
          'Class table total normalized' = r6$tables$class_table_total_norm,
          'Class table z-scored total normalized' = r6$tables$class_table_z_scored_total_norm,
          'Species summary table' = r6$tables$summary_species_table,

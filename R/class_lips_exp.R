@@ -136,6 +136,7 @@ Lips_exp = R6::R6Class(
 
       # class tables
       class_table= NULL,
+      class_table_z_scored = NULL,
       class_table_total_norm = NULL,
       class_table_z_scored_total_norm = NULL,
 
@@ -402,6 +403,11 @@ Lips_exp = R6::R6Class(
       self$tables$class_table = get_lipid_class_table(self$tables$raw_data)
     },
 
+    # Class table z-scored
+    get_class_table_z_scored = function(){
+      self$tables$class_table_z_scored = z_score_normalisation(data_table = self$tables$class_table)
+    },
+
     # Class table total norm
     class_grouping_total_norm = function(){
       self$tables$class_table_total_norm = get_lipid_class_table(self$tables$total_norm_data)
@@ -434,6 +440,7 @@ Lips_exp = R6::R6Class(
       self$normalise_class_z_score()
       self$normalise_total_z_score()
       self$get_class_table()
+      self$get_class_table_z_scored()
       self$class_grouping_total_norm()
       self$normalise_class_table_z_score()
       self$get_group_summary_species()
