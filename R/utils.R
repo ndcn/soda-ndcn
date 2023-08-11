@@ -89,7 +89,6 @@ proteomics_plot_list = function() {
   return(plot_list)
 }
 
-
 gsea_plot_list = function() {
   plot_list = c("Dot plot" = "select_dot_plot",
                 "Ridge plot" = "select_ridge_plot",
@@ -130,6 +129,13 @@ soda_read_table = function(file_path) {
                              sep = sep,
                              check.names = FALSE)
   }
+  original_count = ncol(data_table)
+  data_table = data_table[,!base::duplicated(colnames(data_table))]
+  final_count = ncol(data_table)
+  if(original_count != final_count) {
+    print(paste0('Removed ', original_count - final_count, ' duplicated columns'))
+  }
+
   return(data_table)
 }
 
