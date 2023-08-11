@@ -98,6 +98,18 @@ gsea_plot_list = function() {
   return(plot_list)
 }
 
+get_mofa_plot_list = function() {
+  plot_list = c("Explained variance" = "select_explained_variance",
+                "Factor plot" = "select_factor_plot",
+                # "Factors plot" = "select_factors_plot",
+                "Feature weights" = "select_feature_weights",
+                "Feature top weights" = "select_feature_top_weights",
+                "MOFA Heatmap" = "select_mofa_heatmap",
+                "Scatterplot" = "select_scatterplot"
+  )
+  return(plot_list)
+}
+
 
 #---------------------------------------------------------- Purge functions ----
 purge_module_inputs = function(id, input_object) {

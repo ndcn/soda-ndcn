@@ -68,6 +68,12 @@ sidebar_ui = function() {
       bs4Dash::sidebarMenuOutput("exp_6"),
 
       bs4Dash::menuItem(
+        text = "MOFA",
+        tabName = "mofa_tab",
+        icon = shiny::icon("m")
+      ),
+
+      bs4Dash::menuItem(
         text = "About",
         tabName = "about",
         icon = shiny::icon("question")
@@ -121,6 +127,11 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "exp_6",
         experiment_ui(id = 'mod_exp_6')
+      ),
+
+      bs4Dash::tabItem(
+        tabName = "mofa_tab",
+        mofa_ui(id = "mofa")
       ),
 
       bs4Dash::tabItem(
@@ -198,11 +209,14 @@ server = function(input, output, session) {
     )
   )
 
+  mofa_data = Mofa_data$new(
+    name = "mofa_1"
+  )
+
   start_server(id = 'mod_start', main_input = input, main_output = output, main_session = session, module_controler = module_controler)
   about_server(id = 'mod_about', main_output = output)
 
-  # shiny::observeEvent(input[['mod_start-add_exp']],{
-
+  # Single omics modules
   shiny::observe({
     set_1 = names(which(module_controler$slot_taken == TRUE))
     set_2 = names(which(module_controler$module_loaded == TRUE))
@@ -217,6 +231,9 @@ server = function(input, output, session) {
 
     }
   })
+
+  # MOFA module
+  mofa_server("mofa", r6 = mofa_data)
 
 }
 
