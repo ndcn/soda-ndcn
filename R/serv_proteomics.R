@@ -1,4 +1,82 @@
 
+plot_one_prot_gsea = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_gsea_plotbox_switch_ui(selection_list = selection_list)
+
+  output$gsea_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_gsea_plotbox_switch_server(selection_list = input$show_plots_gsea)
+
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+
+plot_two_prot_gsea = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_gsea_plotbox_switch_ui(selection_list = selection_list)
+  output$gsea_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_gsea_plotbox_switch_server(selection_list = input$show_plots_gsea)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+plot_three_prot_gsea = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_gsea_plotbox_switch_ui(selection_list = selection_list)
+  output$gsea_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_gsea_plotbox_switch_server(selection_list = input$show_plots_gsea)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+plot_four_prot_gsea = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_gsea_plotbox_switch_ui(selection_list = selection_list)
+  output$gsea_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session),
+        ui_functions[[4]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_gsea_plotbox_switch_server(selection_list = input$show_plots_gsea)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+
 plot_one_prot = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
   ui_functions = prot_plotbox_switch_ui(selection_list = selection_list)
@@ -76,6 +154,9 @@ plot_four_prot = function(r6, dimensions_obj, selection_list, input, output, ses
 }
 
 
+
+# switches
+
 prot_plotbox_switch_ui = function(selection_list){
   ui_functions = c()
   for (plot in selection_list) {
@@ -97,6 +178,33 @@ prot_plotbox_switch_server = function(selection_list){
                                                   "select_heatmap" = prot_heatmap_server,
                                                   "select_volcano_plot" = prot_volcano_plot_server
     )
+    )
+  }
+  return(server_functions)
+}
+
+prot_gsea_plotbox_switch_ui = function(selection_list){
+  ui_functions = c()
+  for (plot in selection_list) {
+    ui_functions = c(ui_functions, switch(EXPR = plot,
+                                          "select_dot_plot" = prot_dot_plot_ui,
+                                          "select_ridge_plot" = prot_ridge_plot_ui,
+                                          "select_cnet_plot" = prot_cnet_plot_ui,
+                                          "select_emap_plot" = prot_emap_plot_ui
+    )
+    )
+  }
+  return(ui_functions)
+}
+
+prot_gsea_plotbox_switch_server = function(selection_list){
+  server_functions = c()
+  for (plot in selection_list) {
+    server_functions = c(server_functions, switch(EXPR = plot,
+                                                  "select_dot_plot" = prot_dot_plot_server,
+                                                  "select_ridge_plot" = prot_ridge_plot_server,
+                                                  "select_cnet_plot" = prot_cnet_plot_server,
+                                                  "select_emap_plot" = prot_emap_plot_server)
     )
   }
   return(server_functions)
@@ -224,7 +332,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
             # Select group column
             shiny::selectInput(inputId = ns("select_group_col"), choices = NULL, label = "Group column", multiple = F, width = "100%"),
-            shiny::span(textOutput(outputId = ns("found_groups")))
 
           ),
           shiny::column(
@@ -469,6 +576,13 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
           axis.text.y = element_text(size = 15)
         )
     )
+
+    shiny::updateSelectInput(
+      inputId = 'gseaprep_group_col',
+      choices = colnames(r6$tables$raw_meta),
+      selected = input$select_group_col
+    )
+
   })
 
   # Batch col selection
@@ -740,13 +854,195 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
           collapsed  = T,
           maximizable = F,
           headerBorder = T
+        ),
+        bs4Dash::box(
+          id = ns('gsea_setup_box'),
+          title = 'Geneset enrichment setup',
+          width = 12,
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::h4('Data preparation'),
+
+              shiny::fluidRow(
+                shiny::column(
+                  width= 6,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_table_select'),
+                    label = 'Select table',
+                    choices = NULL,
+                    width = '100%'
+                  )
+                ),
+                shiny::column(
+                  width= 6,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_adjustment'),
+                    label = 'Adjustment',
+                    choices = c('None', 'Benjamini-Hochberg'),
+                    selected = 'Benjamini-Hochberg'
+                  )
+                )
+              ),
+              shiny::fluidRow(
+                shiny::column(
+                  width = 6,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_group_col'),
+                    label = 'Group column',
+                    choices = NULL,
+                    width = '100%'
+                  )
+                ),
+                shiny::column(
+                  width = 6,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_groups'),
+                    label = 'Select two groups to compare',
+                    choices = NULL,
+                    width = '100%',
+                    multiple = T
+                  )
+                )
+              ),
+
+
+              shiny::fluidRow(
+                shiny::column(
+                  width = 6,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_method'),
+                    label = 'Method',
+                    choices = c('median', 'mean'),
+                    selected = 'median',
+                    width = '100%'
+                  )
+                ),
+                shiny::column(
+                  width = 6,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_test'),
+                    label = 'Test',
+                    choices = c('Wilcoxon', 't-Test'),
+                    selected = 't-Test',
+                    width = '100%'
+                  )
+                )
+              ),
+
+              shinyWidgets::prettySwitch(
+                inputId = ns('gseaprep_apply_cutoff'),
+                label = 'Apply p-value cutoff',
+                value = T,
+                status = 'primary'
+              ),
+              shiny::sliderInput(
+                inputId = ns('gseaprep_pval'),
+                label = 'p-value cutoff',
+                min = 0.01,
+                max = 0.1,
+                value = 0.05,
+                step = 0.01
+              )
+
+            ),
+            shiny::column(
+              width = 6,
+              shiny::h4('GSEA parameters'),
+
+              shiny::fluidRow(
+                shiny::column(
+                  width = 6,
+                  shiny::selectInput(
+                    inputId = ns('gsea_go'),
+                    label = 'GO ontology',
+                    choices = c('ALL', 'BP', 'MF', 'CC'),
+                    selected = 'ALL'
+                  )
+                ),
+                shiny::column(
+                  width = 6,
+                  shiny::selectInput(
+                    inputId = ns('gsea_adjustment'),
+                    label = 'Adjustment',
+                    choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                    selected = 'none'
+                  )
+                )
+              ),
+
+              shiny::fluidRow(
+                shiny::column(
+                  width = 4,
+                  shiny::textInput(
+                    inputId = ns('gsea_min_size'),
+                    label = 'Min. geneset size',
+                    value = 3
+                  )
+                ),
+                shiny::column(
+                  width = 4,
+                  shiny::textInput(
+                    inputId = ns('gsea_max_size'),
+                    label = 'Max. geneset size',
+                    value = 800
+                  )
+                ),
+                shiny::column(
+                  width = 4,
+                  shiny::textInput(
+                    inputId = ns('gsea_showcat'),
+                    label = 'Show category',
+                    value = 200,
+                    width = '100%'
+                  )
+                )
+              ),
+
+              shiny::sliderInput(
+                inputId = ns('gsea_pval'),
+                label = 'p-value cutoff',
+                min = 0.01,
+                max = 0.1,
+                value = 0.05,
+                step = 0.01
+              ),
+              shinyWidgets::actionBttn(
+                inputId = ns('run_gsea'),
+                label = "Run GSEA",
+                style = "material-flat",
+                color = 'success',
+                block = T,
+                icon = icon("check")
+              )
+            )
+          ),
+          collapsible = T,
+          collapsed  = T,
+          maximizable = T,
+          headerBorder = T
         )
       ),
       shiny::column(
         width = 4,
         shiny::tags$h3("Select columns"),
         # Select ID column
-        shiny::selectInput(inputId = ns("select_id_data"), choices = NULL, label = "Sample IDs", multiple = F, width = "100%"),
+        shiny::fluidRow(
+          shiny::column(
+            width = 6,
+            shiny::selectInput(inputId = ns("select_id_data"), choices = NULL, label = "Sample IDs", multiple = F, width = "100%")
+          ),
+          shiny::column(
+            width = 6,
+            shiny::selectInput(
+              inputId = ns('select_feature_type'),
+              label = 'Feature ID type',
+              choices = c('UNIPROT', 'SYMBOL', 'ENTREZID'),
+              selected = 'SYMBOL',
+              multiple = F
+            )
+          )
+        ),
 
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
         shiny::fluidRow(
@@ -972,21 +1268,17 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         selected = 'Raw data table'
       )
 
-      # # Update class selection
-      # shiny::updateSelectizeInput(
-      #   session = session,
-      #   inputId = "class_selection",
-      #   choices = unique(r6$tables$feature_table$lipid_class),
-      #   selected = character(0)
-      # )
-      #
-      # # Update manual selection
-      # shiny::updateSelectizeInput(
-      #   session = session,
-      #   inputId = "manual_selection",
-      #   choices = colnames(r6$tables$raw_data),
-      #   selected = character(0)
-      # )
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_table_select',
+        choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
+        selected = 'Raw data table'
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_group_col',
+        choices = colnames(r6$tables$raw_meta),
+        selected = input$select_group_col
+      )
 
 
     } else {
@@ -998,6 +1290,16 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         selected = 'Imported metadata table'
       )
     }
+  })
+
+  # GSEA groups
+  session$userData[[id]]$gsea_groups = shiny::observeEvent(input$gseaprep_group_col,{
+    shiny::req(input$gseaprep_group_col)
+    shiny::updateSelectInput(
+      inputId = 'gseaprep_groups',
+      choices = unique(r6$tables$raw_meta[,input$gseaprep_group_col]),
+      selected = unique(r6$tables$raw_meta[,input$gseaprep_group_col])[c(1,2)]
+    )
   })
 
   # Feature filters
@@ -1300,6 +1602,11 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                     input = input,
                     output = output,
                     session = session)
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "showPlots",
+        disabledChoices = input$showPlots
+      )
 
     } else if (length(input$showPlots) == 2) {
       plot_two_prot(r6 = r6,
@@ -1341,12 +1648,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         inputId = "showPlots",
         disabledChoices = NULL
       )
-    } else if (length(input$showPlots) == 1) {
-      shinyWidgets::updateCheckboxGroupButtons(
-        session = session,
-        inputId = "showPlots",
-        disabledChoices = input$showPlots
-      )
     }
 
   })
@@ -1368,8 +1669,188 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   #------------------------------------------- Geneset enrichment rendering ----
 
   output$geneset_enrichment_ui = shiny::renderUI({
-    shiny::h2('Geneset enrichment coming soon')
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 11,
+          shinyWidgets::checkboxGroupButtons(inputId = ns("show_plots_gsea"),
+                                             label = NULL,
+                                             status = "default",
+                                             choices = gsea_plot_list(),
+                                             checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
+                                             size = "normal",
+                                             justified = TRUE)
+        ),
+        shiny::column(
+          width = 1,
+          shinyWidgets::actionBttn(inputId = ns("clear_plots_gsea"),
+                                   label = "Clear",
+                                   style = "material-flat",
+                                   color = "danger",
+                                   block = T,
+                                   icon = icon("x"))
+        )
+      ),
+      shiny::uiOutput(
+        outputId = ns("gsea_plotbox_field")
+      )
+    )
   })
+
+  #---------------------------------------------- Geneset enrichment server ----
+
+  session$userData[[id]]$select_feature_type = shiny::observeEvent(input$select_feature_type, {
+    print_tm(m, paste0('GSEA: feature ID type set to ', input$select_feature_type))
+    r6$indices$feature_id_type = input$select_feature_type
+  })
+
+
+  session$userData[[id]]$run_gsea = shiny::observeEvent(input$run_gsea, {
+    shiny::req(length(input$gseaprep_groups) == 2)
+    print_tm(m, "GSEA started")
+    shinyjs::disable("run_gsea")
+    r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
+                     group_col = input$gseaprep_group_col,
+                     group_1 = input$gseaprep_groups[1],
+                     group_2 = input$gseaprep_groups[2],
+                     used_function = input$gseaprep_method,
+                     test = input$gseaprep_test,
+                     p_value_cutoff_prep = input$gseaprep_pval)
+
+    r6$get_gsea_object(ont = input$gsea_go,
+                       minGSSize = as.numeric(input$gsea_min_size),
+                       maxGSSize = as.numeric(input$gsea_max_size),
+                       p_value_cutoff = input$gsea_pval,
+                       verbose = TRUE,
+                       OrgDb = "org.Hs.eg.db",
+                       pAdjustMethod = input$gsea_adjustment,
+                       termsim_showcat = as.numeric(input$gsea_showcat))
+    print_tm(m, "GSEA finished")
+    shinyjs::enable("run_gsea")
+  })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  # Initialise dimensions object
+  dimensions_obj_gsea = shiny::reactiveValues(
+    x_box = module_controler$dims$x_box,
+    y_box = module_controler$dims$y_box,
+    x_plot = module_controler$dims$x_plot,
+    y_plot = module_controler$dims$y_plot,
+    x_plot_full = module_controler$dims$x_plot_full,
+    y_plot_full = module_controler$dims$y_plot_full,
+    xpx_total = shinybrowser::get_width(),
+    ypx_total = shinybrowser::get_height(),
+    xbs = 12,
+    xpx = shinybrowser::get_width(),
+    ypx = shinybrowser::get_height()
+  )
+
+  # Plot selection
+  prot_dot_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  prot_ridge_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  prot_cnet_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  prot_emap_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+
+  # Plot selection
+  session$userData[[id]]$show_plots_gsea = shiny::observeEvent(input$show_plots_gsea, {
+    shiny::req(r6$tables$gsea_object)
+
+    # Update x dimensions in px and bs, and y in px
+    if (length(input$show_plots_gsea) < 2) {
+      dimensions_obj_gsea$xbs = 12
+      dimensions_obj_gsea$xpx = shinybrowser::get_width()
+      dimensions_obj_gsea$ypx = shinybrowser::get_height()
+    } else if (length(input$show_plots_gsea) == 2) {
+      dimensions_obj_gsea$xbs  = 6
+      dimensions_obj_gsea$xpx = shinybrowser::get_width()/2
+      dimensions_obj_gsea$ypx = shinybrowser::get_height()
+    } else {
+      dimensions_obj_gsea$xbs  = 6
+      dimensions_obj_gsea$xpx = shinybrowser::get_width()/2
+      dimensions_obj_gsea$ypx = shinybrowser::get_height()/2.2
+    }
+
+    # Plots selected: 1 to 4
+    print_tm(m, paste0("Plot selection: ", paste(input$show_plots_gsea, collapse = ", ")))
+    if (length(input$show_plots_gsea) == 1) {
+      plot_one_prot_gsea(r6 = r6,
+                         dimensions_obj = dimensions_obj_gsea,
+                         selection_list = input$show_plots_gsea,
+                         input = input,
+                         output = output,
+                         session = session)
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_gsea",
+        disabledChoices = input$show_plots_gsea
+      )
+
+    } else if (length(input$show_plots_gsea) == 2) {
+      plot_two_prot_gsea(r6 = r6,
+                         dimensions_obj = dimensions_obj_gsea,
+                         selection_list = input$show_plots_gsea,
+                         input = input,
+                         output = output,
+                         session = session)
+
+    } else if (length(input$show_plots_gsea) == 3) {
+      plot_three_prot_gsea(r6 = r6,
+                           dimensions_obj = dimensions_obj_gsea,
+                           selection_list = input$show_plots_gsea,
+                           input = input,
+                           output = output,
+                           session = session)
+
+    } else if (length(input$show_plots_gsea) >= 4) {
+      plot_four_prot_gsea(r6 = r6,
+                          dimensions_obj = dimensions_obj_gsea,
+                          selection_list = input$show_plots_gsea,
+                          input = input,
+                          output = output,
+                          session = session)
+
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_gsea",
+        disabledChoices = setdiff(unname(gsea_plot_list()), input$show_plots_gsea)
+      )
+
+    }
+    if ((length(input$show_plots_gsea) > 1) & (length(input$show_plots_gsea) < 4)) {
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_gsea",
+        disabledChoices = NULL
+      )
+    }
+  })
+
+
+  session$userData[[id]]$clear_plots_gsea = shiny::observeEvent(input$clear_plots_gsea, {
+    print_tm(m, "Clearing plots")
+    shinyWidgets::updateCheckboxGroupButtons(
+      session = session,
+      inputId = "show_plots_gsea",
+      disabled = FALSE,
+      selected = character(0))
+    output$gsea_plotbox_field = shiny::renderUI(
+      NULL
+    )
+  })
+
+
 
   #------------------------------------------ Over-representation rendering ----
 

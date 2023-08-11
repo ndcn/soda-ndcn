@@ -55,7 +55,8 @@ table_switch = function(table_name, r6) {
          'Class table total normalized' = r6$tables$class_table_total_norm,
          'Class table z-scored total normalized' = r6$tables$class_table_z_scored_total_norm,
          'Species summary table' = r6$tables$summary_species_table,
-         'Class summary table' = r6$tables$summary_class_table
+         'Class summary table' = r6$tables$summary_class_table,
+         'GSEA prot list' = r6$tables$prot_list
          )
 }
 
@@ -67,6 +68,37 @@ method_switch = function(method) {
          'maximum' = base::max
   )
 }
+
+#--------------------------------------------------------------- Plot lists ----
+lipidomics_plot_list = function() {
+  plot_list = c("Class distribution" = "select_class_distribution",
+                "Class comparison" = "select_class_comparison",
+                "Volcano plot" = "select_volcano_plot",
+                "Heatmap" = "select_heatmap",
+                "PCA" = "select_pca",
+                "Double bond plot" = "select_double_bond_plot"
+  )
+  return(plot_list)
+}
+
+proteomics_plot_list = function() {
+  plot_list = c("Volcano plot" = "select_volcano_plot",
+                "Heatmap" = "select_heatmap",
+                "PCA" = "select_pca"
+  )
+  return(plot_list)
+}
+
+
+gsea_plot_list = function() {
+  plot_list = c("Dot plot" = "select_dot_plot",
+                "Ridge plot" = "select_ridge_plot",
+                "CNET plot" = "select_cnet_plot",
+                "eMap plot" = "select_emap_plot"
+  )
+  return(plot_list)
+}
+
 
 #---------------------------------------------------------- Purge functions ----
 purge_module_inputs = function(id, input_object) {
@@ -249,26 +281,6 @@ get_plot_box = function(id, label, dimensions_obj, session) {
 }
 
 #----------------------------------------------------- Lipidomics functions ----
-
-lipidomics_plot_list = function() {
-  plot_list = c("Class distribution" = "select_class_distribution",
-                "Class comparison" = "select_class_comparison",
-                "Volcano plot" = "select_volcano_plot",
-                "Heatmap" = "select_heatmap",
-                "PCA" = "select_pca",
-                "Double bond plot" = "select_double_bond_plot"
-  )
-  return(plot_list)
-}
-
-proteomics_plot_list = function() {
-  plot_list = c("Volcano plot" = "select_volcano_plot",
-                "Heatmap" = "select_heatmap",
-                "PCA" = "select_pca"
-  )
-  return(plot_list)
-}
-
 
 get_group_median_table = function(data_table,
                                   meta_table,

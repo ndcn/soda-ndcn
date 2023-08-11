@@ -24,6 +24,14 @@ library(stats)
 library(glmnet)
 library(pcaMethods)
 
+# Omics
+library(org.Hs.eg.db)
+library(clusterProfiler)
+library(enrichplot)
+library(ggridges)
+library(MOFA2)
+library(basilisk)
+
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
 

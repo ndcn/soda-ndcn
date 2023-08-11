@@ -677,16 +677,17 @@ prot_dot_plot_events = function(r6, dimensions_obj, color_palette, input, output
 
     # Update parameters
     print_tm(r6$name, "Dot plot: Updating params...")
-    r6$params$dot_plot$showCategory = as.numeric(input$dot_plot_showcat)
-    r6$params$dot_plot$mode = input$dot_plot_mode
-    r6$params$dot_plot$img_format = input$dot_plot_img_format
+
+    r6$param_dot_plot(showCategory = as.numeric(input$dot_plot_showcat),
+                      mode = input$dot_plot_mode,
+                      img_format = input$dot_plot_img_format)
 
     # Produce the plot
     base::tryCatch({
-      prot_dot_plot_generate(r6, colour_list, dimensions_obj, input)
+      prot_dot_plot_generate(r6, color_palette, dimensions_obj, input)
       prot_dot_plot_spawn(r6, input$dot_plot_img_format, output)
     },error=function(e){
-      print_tm(r6$name, 'Dot plot: error, missing data.')
+      print_tm(r6$name, 'Dot plot: ERROR')
     },finally={}
     )
   })
@@ -786,13 +787,14 @@ prot_cnet_plot_events = function(r6, dimensions_obj, color_palette, input, outpu
 
     # Update parameters
     print_tm(r6$name, "CNET plot: Updating params...")
-    r6$params$cnet_plot$showCategory = as.numeric(input$cnet_plot_showcat)
+
+    r6$param_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat))
 
     base::tryCatch({
-      prot_cnet_plot_generate(r6, colour_list, dimensions_obj, input)
+      prot_cnet_plot_generate(r6, color_palette, dimensions_obj, input)
       prot_cnet_plot_spawn(r6, output)
     },error=function(e){
-      print_tm(r6$name, 'CNET plot: error, missing data.')
+      print_tm(r6$name, 'CNET plot: ERROR.')
     },finally={}
     )
 
@@ -901,8 +903,9 @@ prot_ridge_plot_events = function(r6, dimensions_obj, color_palette, input, outp
 
     # Update parameters
     print_tm(r6$name, "Ridge plot: Updating params...")
-    r6$params$ridge_plot$showCategory = as.numeric(input$ridge_plot_showcat)
-    r6$params$ridge_plot$img_format = input$ridge_plot_img_format
+
+    r6$param_ridge_plot(showCategory = as.numeric(input$ridge_plot_showcat),
+                        img_format = input$ridge_plot_img_format)
 
     base::tryCatch({
       prot_ridge_plot_generate(r6, colour_list, dimensions_obj, input)
@@ -999,7 +1002,8 @@ prot_emap_plot_events = function(r6, dimensions_obj, color_palette, input, outpu
 
     # Update parameters
     print_tm(r6$name, "eMap plot: Updating params...")
-    r6$params$emap_plot$showCategory = as.numeric(input$emap_plot_showcat)
+
+    r6$param_emap_plot(showCategory = as.numeric(input$emap_plot_showcat))
 
     base::tryCatch({
       prot_emap_plot_generate(r6, colour_list, dimensions_obj, input)
