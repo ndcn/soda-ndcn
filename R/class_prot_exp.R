@@ -11,6 +11,7 @@ Prot_exp = R6::R6Class(
     name = NA,
     id = NA,
     slot = NA,
+    type = 'Proteomics',
 
     #----------------------------------------------------------- Parameters ----
     params = list(

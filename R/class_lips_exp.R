@@ -11,6 +11,7 @@ Lips_exp = R6::R6Class(
     name = NA,
     id = NA,
     slot = NA,
+    type = 'Lipidomics',
 
     #----------------------------------------------------------- Parameters ----
     params = list(

@@ -94,6 +94,54 @@ mofa_ui = function(id) {
       title = "Setup",
       shiny::fluidRow(
         shiny::column(
+          width=12,
+
+          # Modules box
+          bs4Dash::box(
+            id = ns('module_box'),
+            title = 'Available data',
+            width = 12,
+            shiny::tagList(
+              shiny::fluidRow(
+                shiny::uiOutput(
+                  outputId = ns('exp_1_data')
+                )
+              ),
+              shiny::fluidRow(
+                shiny::uiOutput(
+                  outputId = ns('exp_2_data')
+                )
+              ),
+              shiny::fluidRow(
+                shiny::uiOutput(
+                  outputId = ns('exp_3_data')
+                )
+              ),
+              shiny::fluidRow(
+                shiny::uiOutput(
+                  outputId = ns('exp_4_data')
+                )
+              ),
+              shiny::fluidRow(
+                shiny::uiOutput(
+                  outputId = ns('exp_5_data')
+                )
+              ),
+              shiny::fluidRow(
+                shiny::uiOutput(
+                  outputId = ns('exp_6_data')
+                ),
+              )
+            ),
+            collapsible = T,
+            collapsed  = F,
+            maximizable = F,
+            headerBorder = T
+          )
+        )
+      ),
+      shiny::fluidRow(
+        shiny::column(
           width = 4,
           shiny::h3("Data options"),
 
@@ -258,11 +306,54 @@ mofa_ui = function(id) {
 
 
 #-------------------------------------------------------------- MOFA server ----
-mofa_server = function(id, r6) {
+mofa_server = function(id, r6, module_controler) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
       ns = session$ns
+
+      shiny::observe({
+        if (!is.null(module_controler$exp_r6$exp_1)) {
+          output$exp_1_data = shiny::renderUI({
+            shiny::fluidRow(
+              shiny::checkboxInput(
+                inputId = ns('select_exp_1'),
+                label = NULL
+              ),
+              shiny::p(module_controler$exp_r6$exp_1$name),
+              shiny::p(module_controler$exp_r6$exp_1$type)
+            )
+          })
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_2)) {
+          output$exp_2_data = shiny::renderUI({
+            shiny::fluidRow(
+              shiny::checkboxInput(
+                inputId = ns('select_exp_2'),
+                label = NULL
+              ),
+              shiny::p(module_controler$exp_r6$exp_2$name),
+              shiny::p(module_controler$exp_r6$exp_2$type)
+            )
+          })
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_3)) {
+          output$exp_3_data = shiny::renderUI({
+            shiny::fluidRow(
+              shiny::checkboxInput(
+                inputId = ns('select_exp_3'),
+                label = NULL
+              ),
+              shiny::p(module_controler$exp_r6$exp_3$name),
+              shiny::p(module_controler$exp_r6$exp_3$type)
+            )
+          })
+        }
+
+      })
+
       #
       # ## Create a dimensions object to store browser dimensions
       # dimensions_obj = shiny::reactiveValues()

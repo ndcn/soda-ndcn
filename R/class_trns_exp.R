@@ -11,6 +11,7 @@ Trns_exp = R6::R6Class(
     name = NA,
     id = NA,
     slot = NA,
+    type = 'Transcriptomics',
 
     #----------------------------------------------------------- Parameters ----
     params = list(

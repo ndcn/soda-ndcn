@@ -171,30 +171,30 @@ server = function(input, output, session) {
     ),
 
     exp_types = list(
-      'exp_1' = NA,
-      'exp_2' = NA,
-      'exp_3' = NA,
-      'exp_4' = NA,
-      'exp_5' = NA,
-      'exp_6' = NA
+      'exp_1' = NULL,
+      'exp_2' = NULL,
+      'exp_3' = NULL,
+      'exp_4' = NULL,
+      'exp_5' = NULL,
+      'exp_6' = NULL
     ),
 
     exp_names = list(
-      'exp_1' = NA,
-      'exp_2' = NA,
-      'exp_3' = NA,
-      'exp_4' = NA,
-      'exp_5' = NA,
-      'exp_6' = NA
+      'exp_1' = NULL,
+      'exp_2' = NULL,
+      'exp_3' = NULL,
+      'exp_4' = NULL,
+      'exp_5' = NULL,
+      'exp_6' = NULL
     ),
 
     exp_r6 = list(
-      'exp_1' = NA,
-      'exp_2' = NA,
-      'exp_3' = NA,
-      'exp_4' = NA,
-      'exp_5' = NA,
-      'exp_6' = NA
+      'exp_1' = NULL,
+      'exp_2' = NULL,
+      'exp_3' = NULL,
+      'exp_4' = NULL,
+      'exp_5' = NULL,
+      'exp_6' = NULL
     ),
 
     dims = list(
@@ -233,7 +233,7 @@ server = function(input, output, session) {
   })
 
   # MOFA module
-  mofa_server("mofa", r6 = mofa_data)
+  mofa_server("mofa", r6 = mofa_data, module_controler = module_controler)
 
 }
 
