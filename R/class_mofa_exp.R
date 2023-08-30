@@ -109,32 +109,6 @@ Mofa_data = R6::R6Class(
     ),
 
     #-------------------------------------------------------------- Methods ----
-
-    add_metadata_table = function(metadata, id_col) {
-      rownames(metadata) = metadata[,id_col]
-      metadata[,id_col] = NULL
-      self$tables$metadata = metadata
-    },
-
-    add_omics = function(name, omics_table, id_col) {
-      meta_samples = rownames(self$tables$metadata)
-      rownames(omics_table) = omics_table[,id_col]
-      omics_table[,id_col] = NULL
-      omics_table = omics_table[, !base::duplicated(colnames(omics_table))]
-      omics_table = omics_table[which(rownames(omics_table) %in% meta_samples),]
-      omics_table = remove_empty_cols(omics_table)
-      omics_table = as.matrix(t(omics_table))
-      self$tables$omics_tables[[name]] = omics_table
-    },
-
-    reset_all = function(){
-      self$tables$metadata = NULL
-      self$tables$omics_tables = list()
-      views = NULL
-      factor_list = NULL
-      sample_metadata = NULL
-    },
-
     create_mofa_object = function(matrix_list = self$tables$omics_tables,
                                   groups = NULL) {
       if (!is.null(groups )) {

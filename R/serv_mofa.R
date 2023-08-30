@@ -102,6 +102,9 @@ mofa_ui = function(id) {
             title = 'Available data',
             width = 12,
             shiny::tagList(
+              # shiny::fluidRow(
+              #   DTOutput("module_table")
+              # ),
               shiny::fluidRow(
                 shiny::uiOutput(
                   outputId = ns('exp_1_data')
@@ -312,6 +315,21 @@ mofa_server = function(id, r6, module_controler) {
     function(input, output, session) {
       ns = session$ns
 
+      # # Initialise dimensions object
+      # dimensions_obj = shiny::reactiveValues(
+      #   x_box = module_controler$dims$x_box,
+      #   y_box = module_controler$dims$y_box,
+      #   x_plot = module_controler$dims$x_plot,
+      #   y_plot = module_controler$dims$y_plot,
+      #   x_plot_full = module_controler$dims$x_plot_full,
+      #   y_plot_full = module_controler$dims$y_plot_full,
+      #   xpx_total = shinybrowser::get_width(),
+      #   ypx_total = shinybrowser::get_height(),
+      #   xbs = 12,
+      #   xpx = shinybrowser::get_width(),
+      #   ypx = shinybrowser::get_height()
+      # )
+
       shiny::observe({
         if (!is.null(module_controler$exp_r6$exp_1)) {
           output$exp_1_data = shiny::renderUI({
@@ -320,8 +338,9 @@ mofa_server = function(id, r6, module_controler) {
                 inputId = ns('select_exp_1'),
                 label = NULL
               ),
-              shiny::p(module_controler$exp_r6$exp_1$name),
-              shiny::p(module_controler$exp_r6$exp_1$type)
+              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_1$name)),
+              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_1$type)),
+              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_1$tables$raw_data))))
             )
           })
         }
@@ -333,8 +352,9 @@ mofa_server = function(id, r6, module_controler) {
                 inputId = ns('select_exp_2'),
                 label = NULL
               ),
-              shiny::p(module_controler$exp_r6$exp_2$name),
-              shiny::p(module_controler$exp_r6$exp_2$type)
+              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_2$name)),
+              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_2$type)),
+              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_2$tables$raw_data))))
             )
           })
         }
@@ -346,32 +366,174 @@ mofa_server = function(id, r6, module_controler) {
                 inputId = ns('select_exp_3'),
                 label = NULL
               ),
-              shiny::p(module_controler$exp_r6$exp_3$name),
-              shiny::p(module_controler$exp_r6$exp_3$type)
+              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_3$name)),
+              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_3$type)),
+              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_3$tables$raw_data))))
+            )
+          })
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_4)) {
+          output$exp_4_data = shiny::renderUI({
+            shiny::fluidRow(
+              shiny::checkboxInput(
+                inputId = ns('select_exp_4'),
+                label = NULL
+              ),
+              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_4$name)),
+              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_4$type)),
+              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_4$tables$raw_data))))
+            )
+          })
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_5)) {
+          output$exp_5_data = shiny::renderUI({
+            shiny::fluidRow(
+              shiny::checkboxInput(
+                inputId = ns('select_exp_5'),
+                label = NULL
+              ),
+              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_5$name)),
+              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_5$type)),
+              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_5$tables$raw_data))))
+            )
+          })
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_6)) {
+          output$exp_6_data = shiny::renderUI({
+            shiny::fluidRow(
+              shiny::checkboxInput(
+                inputId = ns('select_exp_6'),
+                label = NULL
+              ),
+              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_6$name)),
+              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_6$type)),
+              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_6$tables$raw_data))))
             )
           })
         }
 
       })
 
-      #
-      # ## Create a dimensions object to store browser dimensions
-      # dimensions_obj = shiny::reactiveValues()
-      #
-      # # Constant values
-      # dimensions_obj$x_box = 0.9
-      # dimensions_obj$y_box = 0.8
-      # dimensions_obj$x_plot = 0.8
-      # dimensions_obj$y_plot = 0.75
-      # dimensions_obj$x_plot_full = 0.95
-      # dimensions_obj$y_plot_full = 0.91
-      #
-      # shiny::observe({
-      #   dimensions_obj$xpx_total = shinybrowser::get_width()
-      #   dimensions_obj$ypx_total = shinybrowser::get_height()
-      # })
-      #
-      #
+      # Start MOFA
+      shiny::observeEvent(input$run_mofa, {
+
+        # Disable button while running
+        shinyjs::disable("run_mofa")
+
+        r6$tables$metadata = NULL
+        r6$tables$omics_tables = list()
+
+        if (!is.null(module_controler$exp_r6$exp_1)) {
+          if (input$select_exp_1) {
+            print('selected exp 1')
+            r6$tables$omics_tables$exp_1 = t(module_controler$exp_r6$exp_1$tables$raw_data)
+            if (is.null(r6$tables$metadata)) {
+              r6$tables$metadata = t(module_controler$exp_r6$exp_1$tables$raw_meta)
+            }
+          }
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_2)) {
+          if (input$select_exp_2) {
+            print('selected exp 2')
+            r6$tables$omics_tables$exp_2 = t(module_controler$exp_r6$exp_2$tables$raw_data)
+            if (is.null(r6$tables$metadata)) {
+              r6$tables$metadata = t(module_controler$exp_r6$exp_2$tables$raw_meta)
+            }
+          }
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_3)) {
+          if (input$select_exp_3) {
+            print('selected exp 3')
+            r6$tables$omics_tables$exp_3 = t(module_controler$exp_r6$exp_3$tables$raw_data)
+            if (is.null(r6$tables$metadata)) {
+              r6$tables$metadata = t(module_controler$exp_r6$exp_3$tables$raw_meta)
+            }
+          }
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_4)) {
+          if (input$select_exp_4) {
+            print('selected exp 4')
+            r6$tables$omics_tables$exp_4 = t(module_controler$exp_r6$exp_4$tables$raw_data)
+            if (is.null(r6$tables$metadata)) {
+              r6$tables$metadata = t(module_controler$exp_r6$exp_4$tables$raw_meta)
+            }
+          }
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_5)) {
+          if (input$select_exp_5) {
+            print('selected exp 5')
+            r6$tables$omics_tables$exp_5 = t(module_controler$exp_r6$exp_5$tables$raw_data)
+            if (is.null(r6$tables$metadata)) {
+              r6$tables$metadata = t(module_controler$exp_r6$exp_5$tables$raw_meta)
+            }
+          }
+        }
+
+        if (!is.null(module_controler$exp_r6$exp_6)) {
+          if (input$select_exp_6) {
+            print('selected exp 6')
+            r6$tables$omics_tables$exp_6 = t(module_controler$exp_r6$exp_6$tables$raw_data)
+            if (is.null(r6$tables$metadata)) {
+              r6$tables$metadata = t(module_controler$exp_r6$exp_6$tables$raw_meta)
+            }
+          }
+        }
+
+        print(names(r6$tables$omics_tables))
+
+        r6$create_mofa_object()
+
+
+
+
+        # print(names(module_controler$exp_r6))
+        # for (exp in names(module_controler$exp_r6)) {
+        #   print(exp)
+        #   print(is.null(module_controler$exp_r6[[exp]]$raw_data))
+        #   if (!is.null(module_controler$exp_r6[[exp]]$raw_data)) {
+        #     print(nrow(module_controler$exp_r6[[exp]]$raw_data))
+        #   }
+        # }
+
+
+        print_t("MOFA: training model...")
+        r6$prepare_mofa(scale_views = F,
+                        scale_groups = F,
+                        center_groups = T,
+                        likelihoods = 'gaussian',
+                        num_factors = 6,
+                        spikeslab_factors = F,
+                        spikeslab_weights = F,
+                        ard_factors = F,
+                        ard_weights = T,
+                        maxiter = 1000,
+                        convergence_mode = 'fast',
+                        startELBO = 1,
+                        freqELBO = 5,
+                        stochastic = F,
+                        weight_views = F)
+        r6$train_model(mofa_object = r6$mofa_objects$pretrained,
+                       outfile = base::file.path("./models", timestamped_name("model.hdf5")),
+                       save_data = T)
+        # r6$add_metadata_to_mofa()
+
+
+
+
+        print_t("MOFA: model ready.")
+
+        # Enable button
+        shinyjs::enable("run_mofa")
+      })
+
+
       # # Reactive values
       # shiny::observeEvent(input$showPlots,{
       #
@@ -398,92 +560,7 @@ mofa_server = function(id, r6, module_controler) {
       # })
       #
       #
-      # # Data upload
-      # meta_table_input = reactive({
-      #   validate(need(input$file_meta, message = FALSE))
-      #   sep = find_delim(path = input$file_meta$datapath)
-      #   read.csv(input$file_meta$datapath,
-      #            header = T,
-      #            sep = sep,
-      #            check.names = FALSE)
-      # })
-      #
-      # data_table_input = reactive({
-      #   validate(need(input$file_data, message = FALSE))
-      #   sep = find_delim(path = input$file_data$datapath)
-      #   read.csv(input$file_data$datapath,
-      #            header = T,
-      #            sep = sep,
-      #            check.names = FALSE)
-      # })
-      #
-      # # Update fields and display tables
-      # shiny::observe({
-      #   shiny::req(meta_table_input())
-      #   shiny::updateSelectInput(
-      #     session = session,
-      #     inputId = "select_meta_id",
-      #     choices = colnames(meta_table_input()),
-      #     selected = colnames(meta_table_input())[1]
-      #   )
-      #   output$meta_table = renderDataTable({
-      #     DT::datatable(meta_table_input()[1:min(nrow(meta_table_input()), max_rows), 1:min(ncol(meta_table_input()), max_cols)], options = list(paging = FALSE))
-      #   })
-      # })
-      #
-      # shiny::observe({
-      #   shiny::req(data_table_input())
-      #   shiny::updateSelectInput(
-      #     session = session,
-      #     inputId = "select_data_id",
-      #     choices = colnames(data_table_input()),
-      #     selected = colnames(data_table_input())[1]
-      #   )
-      #   output$data_table = renderDataTable({
-      #     DT::datatable(data_table_input()[1:min(nrow(data_table_input()), max_rows), 1:min(ncol(data_table_input()), max_cols)], options = list(paging = FALSE))
-      #   })
-      # })
-      #
-      # # Add metadata table
-      # shiny::observeEvent(input$add_metatable, {
-      #   shiny::req(meta_table_input())
-      #   r6$add_metadata_table(metadata = meta_table_input(),
-      #                         id_col = input$select_meta_id)
-      #   print_time('MOFA: Added metadata.')
-      # })
-      #
-      # # Add omics tables
-      # shiny::observeEvent(input$add_datatable, {
-      #   shiny::req(c(data_table_input(), input$omics_name))
-      #   if (!is.null(r6$tables$metadata)) {
-      #     r6$add_omics(name = input$omics_name,
-      #                  omics_table = data_table_input(),
-      #                  id_col = input$select_data_id)
-      #
-      #     shiny::updateTextInput(
-      #       session = session,
-      #       inputId = 'select_data_id',
-      #       value = character(0)
-      #     )
-      #
-      #     shiny::updateTextInput(
-      #       session = session,
-      #       inputId = 'omics_name',
-      #       value = character(0)
-      #     )
-      #     output$data_table = renderDataTable({
-      #       NULL
-      #     })
-      #     print_time(paste0('MOFA: Added omics data: ', input$omics_name))
-      #   }
-      #
-      # })
-      #
-      # # Create the mofa object
-      # shiny::observeEvent(input$combine_data, {
-      #   print_time("MOFA: experiment loaded.")
-      #   r6$create_mofa_object()
-      # })
+
       # # Reset everything
       # shiny::observeEvent(input$reset_all, {
       #   print_time("MOFA: resetting experiment.")
@@ -509,38 +586,6 @@ mofa_server = function(id, r6, module_controler) {
       #
       #
       #
-      # # Start MOFA+
-      # shiny::observeEvent(input$run_mofa, {
-      #
-      #   # Disable button while running
-      #   shinyjs::disable("run_mofa")
-      #
-      #   print_time("MOFA: training model...")
-      #   r6$prepare_mofa(scale_views = input$data_scale_views,
-      #                   scale_groups = input$data_scale_groups,
-      #                   center_groups = input$data_center_groups,
-      #                   likelihoods = input$model_likelihoods,
-      #                   num_factors = as.numeric(input$model_num_factors),
-      #                   spikeslab_factors = input$model_spikeslab_factors,
-      #                   spikeslab_weights = input$model_spikeslab_weights,
-      #                   ard_factors = input$model_ard_factors,
-      #                   ard_weights = input$model_ard_weights,
-      #                   maxiter = as.numeric(input$training_iterations),
-      #                   convergence_mode = input$training_convergence_mode,
-      #                   startELBO = as.numeric(input$training_start_elbo),
-      #                   freqELBO = as.numeric(input$training_freq_elbo),
-      #                   stochastic = input$training_stochastic,
-      #                   weight_views = input$training_weight_views)
-      #   r6$train_model(mofa_object = r6$mofa_objects$pretrained,
-      #                  outfile = base::file.path("./models", timestamped_name("model.hdf5")),
-      #                  save_data = T)
-      #   r6$add_metadata_to_mofa()
-      #
-      #   print_time("MOFA: model ready.")
-      #
-      #   # Enable button
-      #   shinyjs::enable("run_mofa")
-      # })
       #
       #
       #

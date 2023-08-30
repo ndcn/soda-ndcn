@@ -854,7 +854,9 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
   fold_change = c()
   p_value = c()
 
-  for (col in colnames(data_table)) {
+  sorted_cols = sort(colnames(data_table))
+
+  for (col in sorted_cols) {
 
     # If both groups contain data
     if (length(na.exclude(data_table[idx_group_1, col])) > 0 & length(na.exclude(data_table[idx_group_2, col])) > 0) {

@@ -8,6 +8,7 @@ library(shinybrowser)
 library(ggplot2)
 library(gridExtra)
 library(plotly)
+library(visNetwork)
 
 # text
 library(stringr)
