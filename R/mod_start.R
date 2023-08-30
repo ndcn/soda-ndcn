@@ -168,7 +168,7 @@ start_server = function(id, main_input, main_output, main_session, module_contro
                               tabName = slot,
                               icon = icon(tolower(substr(exp_type, 1, 1))))
           )
-        })
+        }, env = parent.frame())
 
         module_controler$slot_taken[[slot]] = TRUE
         module_controler$exp_names[[slot]] = exp_name
