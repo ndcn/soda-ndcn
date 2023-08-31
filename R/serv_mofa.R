@@ -1,85 +1,119 @@
-# mofa_plot_one = function(r6, dimensions_obj, selection_list, input, output, session) {
-#   ns = session$ns
-#   ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-#
-#   output$plotbox_field = shiny::renderUI({
-#     shiny::fluidRow(
-#       shiny::tagList(
-#         ui_functions[[1]](dimensions_obj, session)
-#       )
-#     )
-#   })
-#
-#   plot_servers = mofa_plotbox_switch_server(selection_list = input$showPlots)
-#   for (server_function in plot_servers) {
-#     server_function(r6, output, session)
-#   }
-# }
-#
-#
-# mofa_plot_two = function(r6, dimensions_obj, selection_list, input, output, session) {
-#   ns = session$ns
-#   ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-#   output$plotbox_field = shiny::renderUI({
-#     shiny::fluidRow(
-#       shiny::tagList(
-#         ui_functions[[1]](dimensions_obj, session),
-#         ui_functions[[2]](dimensions_obj, session)
-#       )
-#     )
-#   })
-#
-#   plot_servers = mofa_plotbox_switch_server(selection_list = input$showPlots)
-#   for (server_function in plot_servers) {
-#     server_function(r6, output, session)
-#   }
-# }
-#
-# mofa_plot_three = function(r6, dimensions_obj, selection_list, input, output, session) {
-#   ns = session$ns
-#   ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-#   output$plotbox_field = shiny::renderUI({
-#     shiny::fluidRow(
-#       shiny::tagList(
-#         ui_functions[[1]](dimensions_obj, session),
-#         ui_functions[[2]](dimensions_obj, session),
-#         ui_functions[[3]](dimensions_obj, session)
-#       )
-#     )
-#   })
-#
-#   plot_servers = mofa_plotbox_switch_server(selection_list = input$showPlots)
-#   for (server_function in plot_servers) {
-#     server_function(r6, output, session)
-#   }
-# }
-#
-# mofa_plot_four = function(r6, dimensions_obj, selection_list, input, output, session) {
-#   ns = session$ns
-#   ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-#   output$plotbox_field = shiny::renderUI({
-#     shiny::fluidRow(
-#       shiny::tagList(
-#         ui_functions[[1]](dimensions_obj, session),
-#         ui_functions[[2]](dimensions_obj, session),
-#         ui_functions[[3]](dimensions_obj, session),
-#         ui_functions[[4]](dimensions_obj, session)
-#       )
-#     )
-#   })
-#
-#   plot_servers = mofa_plotbox_switch_server(selection_list = input$showPlots)
-#   for (server_function in plot_servers) {
-#     server_function(r6, output, session)
-#   }
-# }
-#
-#
-#
-#
-#
-#
-#
+#----------------------------------------------------------- MOFA utilities ----
+
+mofa_plotbox_switch_ui = function(selection_list){
+  ui_functions = c()
+  for (plot in selection_list) {
+    ui_functions = c(ui_functions, switch(EXPR = plot,
+                                          "select_explained_variance" = explained_variance_ui,
+                                          "select_factor_plot" = factor_plot_ui,
+                                          "select_factors_plot" = factors_plot_ui,
+                                          "select_feature_weights" = feature_weights_ui,
+                                          "select_feature_top_weights" = feature_top_weights_ui,
+                                          "select_mofa_heatmap" = mofa_heatmap_ui,
+                                          "select_scatterplot" = scatterplot_ui)
+    )
+  }
+  return(ui_functions)
+}
+
+mofa_plotbox_switch_server = function(selection_list){
+  server_functions = c()
+  for (plot in selection_list) {
+    server_functions = c(server_functions, switch(EXPR = plot,
+                                                  "select_explained_variance" = explained_variance_server,
+                                                  "select_factor_plot" = factor_plot_server,
+                                                  "select_factors_plot" = factors_plot_server,
+                                                  "select_feature_weights" = feature_weights_server,
+                                                  "select_feature_top_weights" = feature_top_weights_server,
+                                                  "select_mofa_heatmap" = mofa_heatmap_server,
+                                                  "select_scatterplot" = scatterplot_server)
+    )
+  }
+  return(server_functions)
+}
+
+mofa_plot_one = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
+
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+
+mofa_plot_two = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+mofa_plot_three = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+mofa_plot_four = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
+  output$plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session),
+        ui_functions[[4]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+
+
+
+
+
+
 
 
 
@@ -283,7 +317,7 @@ mofa_ui = function(id) {
       shiny::fluidRow(
         shiny::column(
           width = 11,
-          shinyWidgets::checkboxGroupButtons(inputId = ns("showPlots"),
+          shinyWidgets::checkboxGroupButtons(inputId = ns("show_plots_mofa"),
                                              label = NULL,
                                              status = "default",
                                              choices = get_mofa_plot_list(),
@@ -294,9 +328,11 @@ mofa_ui = function(id) {
         shiny::column(
           width = 1,
           shinyWidgets::actionBttn(inputId = ns("clear_plots"),
-                                   label = "Clear plots",
-                                   style = "stretch",
-                                   color = "danger")
+                                   label = "Clear",
+                                   style = "material-flat",
+                                   color = "danger",
+                                   block = T,
+                                   icon = icon("x"))
         )
       ),
       shiny::uiOutput(
@@ -315,21 +351,7 @@ mofa_server = function(id, r6, module_controler) {
     function(input, output, session) {
       ns = session$ns
 
-      # # Initialise dimensions object
-      # dimensions_obj = shiny::reactiveValues(
-      #   x_box = module_controler$dims$x_box,
-      #   y_box = module_controler$dims$y_box,
-      #   x_plot = module_controler$dims$x_plot,
-      #   y_plot = module_controler$dims$y_plot,
-      #   x_plot_full = module_controler$dims$x_plot_full,
-      #   y_plot_full = module_controler$dims$y_plot_full,
-      #   xpx_total = shinybrowser::get_width(),
-      #   ypx_total = shinybrowser::get_height(),
-      #   xbs = 12,
-      #   xpx = shinybrowser::get_width(),
-      #   ypx = shinybrowser::get_height()
-      # )
-
+      # Omics modules loaded
       shiny::observe({
         if (!is.null(module_controler$exp_r6$exp_1)) {
           output$exp_1_data = shiny::renderUI({
@@ -418,7 +440,7 @@ mofa_server = function(id, r6, module_controler) {
       })
 
       # Start MOFA
-      shiny::observeEvent(input$run_mofa, {
+      session$userData[[id]]$run_mofa = shiny::observeEvent(input$run_mofa, {
 
         # Disable button while running
         shinyjs::disable("run_mofa")
@@ -490,19 +512,6 @@ mofa_server = function(id, r6, module_controler) {
 
         r6$create_mofa_object()
 
-
-
-
-        # print(names(module_controler$exp_r6))
-        # for (exp in names(module_controler$exp_r6)) {
-        #   print(exp)
-        #   print(is.null(module_controler$exp_r6[[exp]]$raw_data))
-        #   if (!is.null(module_controler$exp_r6[[exp]]$raw_data)) {
-        #     print(nrow(module_controler$exp_r6[[exp]]$raw_data))
-        #   }
-        # }
-
-
         print_t("MOFA: training model...")
         r6$prepare_mofa(scale_views = F,
                         scale_groups = F,
@@ -522,7 +531,7 @@ mofa_server = function(id, r6, module_controler) {
         r6$train_model(mofa_object = r6$mofa_objects$pretrained,
                        outfile = base::file.path("./models", timestamped_name("model.hdf5")),
                        save_data = T)
-        # r6$add_metadata_to_mofa()
+        r6$add_metadata_to_mofa()
 
 
 
@@ -535,24 +544,24 @@ mofa_server = function(id, r6, module_controler) {
 
 
       # # Reactive values
-      # shiny::observeEvent(input$showPlots,{
+      # shiny::observeEvent(input$show_plots_mofa,{
       #
       #   # x (width) in BS (Bootstrap) values
-      #   if (length(input$showPlots) < 2) {
+      #   if (length(input$show_plots_mofa) < 2) {
       #     dimensions_obj$xbs = 12
       #   } else {
       #     dimensions_obj$xbs = 6
       #   }
       #
       #   # x (width) in pixels
-      #   if (length(input$showPlots) < 2) {
+      #   if (length(input$show_plots_mofa) < 2) {
       #     dimensions_obj$xpx = shinybrowser::get_width()
       #   } else {
       #     dimensions_obj$xpx = shinybrowser::get_width()/2
       #   }
       #
       #   # y (height) in pixels
-      #   if (length(input$showPlots) < 3) {
+      #   if (length(input$show_plots_mofa) < 3) {
       #     dimensions_obj$ypx = shinybrowser::get_height()
       #   } else {
       #     dimensions_obj$ypx = shinybrowser::get_height()/2.1
@@ -575,13 +584,14 @@ mofa_server = function(id, r6, module_controler) {
       #
       #
       #
+      color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
       # # Plotting events
-      # explained_variance_events(r6, dimensions_obj, r6_settings, input, output, session)
-      # factor_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
-      # feature_weights_events(r6, dimensions_obj, r6_settings, input, output, session)
-      # feature_top_weights_events(r6, dimensions_obj, r6_settings, input, output, session)
-      # mofa_heatmap_events(r6, dimensions_obj, r6_settings, input, output, session)
-      # scatterplot_events(r6, dimensions_obj, r6_settings, input, output, session)
+      explained_variance_events(r6, dimensions_obj, color_palette, input, output, session)
+      factor_plot_events(r6, dimensions_obj, color_palette, input, output, session)
+      feature_weights_events(r6, dimensions_obj, color_palette, input, output, session)
+      feature_top_weights_events(r6, dimensions_obj, color_palette, input, output, session)
+      mofa_heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
+      scatterplot_events(r6, dimensions_obj, r6_settings, input, output, session)
       #
       #
       #
@@ -590,76 +600,127 @@ mofa_server = function(id, r6, module_controler) {
       #
       #
       # #----------------------------------------------------------- Plotting ----
-      # # Plot selection
-      # shiny::observeEvent(input$showPlots, {
-      #
-      #   # Plots selected: 1 to 4
-      #   print_time(paste0("Plot selection: ", paste(input$showPlots, collapse = ", ")))
-      #   if (length(input$showPlots) == 1) {
-      #     mofa_plot_one(r6 = r6,
-      #                   dimensions_obj = dimensions_obj,
-      #                   selection_list = input$showPlots,
-      #                   input = input,
-      #                   output = output,
-      #                   session = session)
-      #
-      #   } else if (length(input$showPlots) == 2) {
-      #     mofa_plot_two(r6 = r6,
-      #                   dimensions_obj = dimensions_obj,
-      #                   selection_list = input$showPlots,
-      #                   input = input,
-      #                   output = output,
-      #                   session = session)
-      #
-      #   } else if (length(input$showPlots) == 3) {
-      #     mofa_plot_three(r6 = r6,
-      #                     dimensions_obj = dimensions_obj,
-      #                     selection_list = input$showPlots,
-      #                     input = input,
-      #                     output = output,
-      #                     session = session)
-      #
-      #   } else if (length(input$showPlots) >= 4) {
-      #     mofa_plot_four(r6 = r6,
-      #                    dimensions_obj = dimensions_obj,
-      #                    selection_list = input$showPlots,
-      #                    input = input,
-      #                    output = output,
-      #                    session = session)
-      #
-      #     shinyWidgets::updateCheckboxGroupButtons(
-      #       session = session,
-      #       inputId = "showPlots",
-      #       disabledChoices = setdiff(unname(get_mofa_plot_list()), input$showPlots)
-      #     )
-      #
-      #   }
-      #   if (between(length(input$showPlots), 2, 3)) {
-      #     shinyWidgets::updateCheckboxGroupButtons(
-      #       session = session,
-      #       inputId = "showPlots",
-      #       disabledChoices = NULL
-      #     )
-      #   } else if (length(input$showPlots) == 1) {
-      #     shinyWidgets::updateCheckboxGroupButtons(
-      #       session = session,
-      #       inputId = "showPlots",
-      #       disabledChoices = input$showPlots
-      #     )
-      #   }
-      # })
-      #
-      # shiny::observeEvent(input$clear_plots, {
-      #   print_time("Clearing plots")
-      #   shinyWidgets::updateCheckboxGroupButtons(
-      #     session = session,
-      #     inputId = "showPlots",
-      #     disabled = FALSE,
-      #     selected = character(0))
-      #   output$plotbox_field = shiny::renderUI(
-      #     NULL
+
+      # Initialise dimensions object
+      dimensions_obj = shiny::reactiveValues()
+      # shiny::observe({
+      #   dimensions_obj = shiny::reactiveValues(
+      #     x_box = module_controler$dims$x_box,
+      #     y_box = module_controler$dims$y_box,
+      #     x_plot = module_controler$dims$x_plot,
+      #     y_plot = module_controler$dims$y_plot,
+      #     x_plot_full = module_controler$dims$x_plot_full,
+      #     y_plot_full = module_controler$dims$y_plot_full,
+      #     xpx_total = shinybrowser::get_width(),
+      #     ypx_total = shinybrowser::get_height(),
+      #     xbs = 12,
+      #     xpx = shinybrowser::get_width(),
+      #     ypx = shinybrowser::get_height()
       #   )
       # })
+
+      # Plot selection
+      session$userData[[id]]$show_plots_mofa = shiny::observeEvent(input$show_plots_mofa, {
+
+        dimensions_obj = shiny::reactiveValues(
+          x_box = module_controler$dims$x_box,
+          y_box = module_controler$dims$y_box,
+          x_plot = module_controler$dims$x_plot,
+          y_plot = module_controler$dims$y_plot,
+          x_plot_full = module_controler$dims$x_plot_full,
+          y_plot_full = module_controler$dims$y_plot_full,
+          xpx_total = shinybrowser::get_width(),
+          ypx_total = shinybrowser::get_height(),
+          xbs = 12,
+          xpx = shinybrowser::get_width(),
+          ypx = shinybrowser::get_height()
+        )
+
+        # Update x dimensions in px and bs, and y in px
+        if (length(input$show_plots_mofa) < 2) {
+          dimensions_obj$xbs = 12
+          dimensions_obj$xpx = shinybrowser::get_width()
+          dimensions_obj$ypx = shinybrowser::get_height()
+        } else if (length(input$show_plots_mofa) == 2) {
+          dimensions_obj$xbs  = 6
+          dimensions_obj$xpx = shinybrowser::get_width()/2
+          dimensions_obj$ypx = shinybrowser::get_height()
+        } else {
+          dimensions_obj$xbs  = 6
+          dimensions_obj$xpx = shinybrowser::get_width()/2
+          dimensions_obj$ypx = shinybrowser::get_height()/2.2
+        }
+
+        # Plots selected: 1 to 4
+        print_t(paste0("MOFA plot selection: ", paste(input$show_plots_mofa, collapse = ", ")))
+        if (length(input$show_plots_mofa) == 1) {
+          mofa_plot_one(r6 = r6,
+                        dimensions_obj = dimensions_obj,
+                        selection_list = input$show_plots_mofa,
+                        input = input,
+                        output = output,
+                        session = session)
+
+        } else if (length(input$show_plots_mofa) == 2) {
+          mofa_plot_two(r6 = r6,
+                        dimensions_obj = dimensions_obj,
+                        selection_list = input$show_plots_mofa,
+                        input = input,
+                        output = output,
+                        session = session)
+
+        } else if (length(input$show_plots_mofa) == 3) {
+          mofa_plot_three(r6 = r6,
+                          dimensions_obj = dimensions_obj,
+                          selection_list = input$show_plots_mofa,
+                          input = input,
+                          output = output,
+                          session = session)
+
+        } else if (length(input$show_plots_mofa) >= 4) {
+          mofa_plot_four(r6 = r6,
+                         dimensions_obj = dimensions_obj,
+                         selection_list = input$show_plots_mofa,
+                         input = input,
+                         output = output,
+                         session = session)
+
+          shinyWidgets::updateCheckboxGroupButtons(
+            session = session,
+            inputId = "show_plots_mofa",
+            disabledChoices = setdiff(unname(get_mofa_plot_list()), input$show_plots_mofa)
+          )
+
+        }
+
+
+
+        if ((length(input$show_plots_mofa) > 1) & (length(input$show_plots_mofa) < 4)) {
+          shinyWidgets::updateCheckboxGroupButtons(
+            session = session,
+            inputId = "show_plots_mofa",
+            disabledChoices = NULL
+          )
+        } else if (length(input$show_plots_mofa) == 1) {
+          shinyWidgets::updateCheckboxGroupButtons(
+            session = session,
+            inputId = "show_plots_mofa",
+            disabledChoices = input$show_plots_mofa
+          )
+        }
+      })
+
+      session$userData[[id]]$clear_plots = shiny::observeEvent(input$clear_plots, {
+        print_t("Clearing plots")
+        shinyWidgets::updateCheckboxGroupButtons(
+          session = session,
+          inputId = "show_plots_mofa",
+          disabled = FALSE,
+          selected = character(0))
+        output$plotbox_field = shiny::renderUI(
+          NULL
+        )
+      })
 
     }
   )

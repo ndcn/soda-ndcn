@@ -207,7 +207,7 @@ Mofa_data = R6::R6Class(
                            save_data = FALSE) {
       model = MOFA2::run_mofa(object = mofa_object,
                               outfile = outfile,
-                              use_basilisk = T,
+                              use_basilisk = F,
                               save_data = save_data)
 
       factor_list = MOFA2::get_factors(model)
@@ -225,7 +225,7 @@ Mofa_data = R6::R6Class(
     },
 
     add_metadata_to_mofa = function(model = self$mofa_objects$model,
-                            metadata = self$tables$metadata) {
+                            metadata = data.frame(t(self$tables$metadata))) {
 
       metadata['sample'] = rownames(metadata)
       MOFA2::samples_metadata(model) = metadata
