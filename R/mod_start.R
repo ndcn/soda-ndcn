@@ -149,7 +149,8 @@ start_server = function(id, main_input, main_output, main_session, module_contro
       # Create experiments
       shiny::observeEvent(input$add_exp,{
         exp_name = input$exp_name
-        exp_type = input$exp_type
+
+
 
         if (exp_name == '') {
           print_t('ERROR: please enter a name for the experiment')
@@ -162,13 +163,16 @@ start_server = function(id, main_input, main_output, main_session, module_contro
         }
 
         slot  = names(module_controler$slot_taken)[!sapply(module_controler$slot_taken, base::isTRUE)][1]
+        # print('################## EXP TYPE:')
+        # print(exp_type)
+        exp_type = input$exp_type
         main_output[[slot]] = bs4Dash::renderMenu({
           bs4Dash::sidebarMenu(
             bs4Dash::menuItem(text = exp_name,
                               tabName = slot,
                               icon = icon(tolower(substr(exp_type, 1, 1))))
           )
-        }, env = parent.frame())
+        })
 
         module_controler$slot_taken[[slot]] = TRUE
         module_controler$exp_names[[slot]] = exp_name

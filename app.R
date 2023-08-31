@@ -9,12 +9,14 @@ library(ggplot2)
 library(gridExtra)
 library(plotly)
 library(visNetwork)
+library(heatmaply)
 
 # text
 library(stringr)
 
 # Tables
 library(DT)
+library(readxl)
 
 # Colors
 library(grDevices)
