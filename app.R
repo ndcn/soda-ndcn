@@ -10,6 +10,7 @@ library(gridExtra)
 library(plotly)
 library(visNetwork)
 library(heatmaply)
+library(ggpubr)
 
 # text
 library(stringr)
@@ -35,7 +36,7 @@ library(ggridges)
 library(MOFA2)
 library(basilisk)
 
-# reticulate::use_condaenv(condaenv = 'mofa_1')
+reticulate::use_condaenv(condaenv = 'mofa_1')
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
@@ -233,7 +234,36 @@ server = function(input, output, session) {
       experiment_server(id = paste0(c('mod', slot), collapse = '_'),
                         type = exp_type,
                         module_controler = module_controler)
+    }
+  })
 
+  # Example datasets
+  shiny::observeEvent(input[['mod_start-add_lipidomics_ex']],{
+    print('Loading example lipidomics')
+
+    for (slot in names(module_controler$slot_taken)){
+      if (!module_controler$slot_taken[[slot]]) {
+        print(paste0('Using slot ', slot))
+
+        module_controler$module_loaded[[slot]] = T
+        module_controler$slot_taken[[slot]] = T
+        module_controler$exp_types = 'Lipidomics'
+        module_controler$exp_names = 'lips_example'
+        module_controler$exp_r6 = Lips_exp$new(name = 'lips_example', id = paste0(c('mod', slot), collapse = '_'), slot = slot)
+
+        output[[slot]] = bs4Dash::renderMenu({
+          bs4Dash::sidebarMenu(
+            bs4Dash::menuItem(text = 'lips_example',
+                              tabName = slot,
+                              icon = icon('l'))
+          )
+        })
+        experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                          type = 'Lipidomics',
+                          module_controler = module_controler)
+
+        break
+      }
     }
   })
 

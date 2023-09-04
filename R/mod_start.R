@@ -17,6 +17,7 @@ start_ui = function(id){
             shiny::textInput(
               inputId = ns('exp_name'),
               label = 'Exp. name',
+              placeholder = 'lips_1',
               width = '100%'
             ),
             shiny::selectInput(
@@ -150,21 +151,26 @@ start_server = function(id, main_input, main_output, main_session, module_contro
       shiny::observeEvent(input$add_exp,{
         exp_name = input$exp_name
 
-
-
-        if (exp_name == '') {
-          print_t('ERROR: please enter a name for the experiment')
-          return()
-        }
-
         if (exp_name %in% unname(unlist(module_controler$exp_names))) {
           print_t('ERROR: experiment already exists.')
           return()
         }
 
+        if (exp_name == '') {
+          exp_name = experiment_switch(input$exp_type)
+          counter = 1
+          while (paste0(exp_name, '_', counter) %in% unname(unlist(module_controler$exp_names))) {
+            counter = counter + 1
+          }
+          exp_name = paste0(exp_name, '_', counter)
+        }
+
+        if (!grepl("^[a-zA-Z0-9_]+$", exp_name)) {
+          print_t('ERROR: only alphanumeric and underscores accepted')
+          return()
+        }
+
         slot  = names(module_controler$slot_taken)[!sapply(module_controler$slot_taken, base::isTRUE)][1]
-        # print('################## EXP TYPE:')
-        # print(exp_type)
         exp_type = input$exp_type
         main_output[[slot]] = bs4Dash::renderMenu({
           bs4Dash::sidebarMenu(
@@ -226,6 +232,32 @@ start_server = function(id, main_input, main_output, main_session, module_contro
 
         shinyjs::enable('add_exp')
       })
+
+      # Switch experiment
+
+      shiny::observeEvent(input$exp_type,{
+        if (input$exp_type == 'Proteomics') {
+          shiny::updateTextInput(
+            inputId = 'exp_name',
+            value = character(0),
+            placeholder = 'prot_1'
+          )
+        } else if (input$exp_type == 'Transcriptomics') {
+          shiny::updateTextInput(
+            inputId = 'exp_name',
+            value = character(0),
+            placeholder = 'trns_1'
+          )
+        } else if (input$exp_type == 'Lipidomics') {
+          shiny::updateTextInput(
+            inputId = 'exp_name',
+            value = character(0),
+            placeholder = 'lips_1'
+          )
+        }
+
+      })
+
     }
   )
 }

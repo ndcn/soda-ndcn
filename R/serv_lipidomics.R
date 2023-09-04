@@ -232,7 +232,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   r6 = module_controler$exp_r6[[stringr::str_replace(id, 'mod_', '')]]
   m = r6$name
   slot = r6$slot
-
   #---------------------------------------------- Metadata upload rendering ----
 
   output$up_metadata_ui = shiny::renderUI({
@@ -477,11 +476,11 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   #------------------------------------------------- Metadata upload server ----
-
   # Upload metadata
   session$userData[[id]]$upload_meta = shiny::observeEvent(input$file_meta, {
     file_path = input$file_meta$datapath
     data_table = soda_read_table(file_path = file_path)
+
     if (ncol(data_table) > 70) {
       print_tm(m, 'ERROR: uploaded file has more than 70 columns, unlikely to be a metadata file')
       return()
@@ -690,6 +689,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Update the rows to filter once a metadata value is selected
   session$userData[[id]]$exclusion_meta_val = shiny::observeEvent(c(input$exclusion_meta_val),{
+    print('here')
     if (!is.null(input$exclusion_meta_val)) {
       bool_vector = c()
       for (value in input$exclusion_meta_val) {
@@ -775,7 +775,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
 
   #-------------------------------------------------- Data upload rendering ----
-
   output$up_data_ui = shiny::renderUI({
     shiny::fluidRow(
       # First column with the table input and preview of the raw data
@@ -1010,7 +1009,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   #----------------------------------------------------- Data upload server ----
-
   # Upload metadata
   session$userData[[id]]$upload_data = shiny::observeEvent(input$file_data, {
     file_path = input$file_data$datapath
@@ -1356,7 +1354,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
 
   #----------------------------------------------- Visualize data rendering ----
-
   output$visualize_data_ui = shiny::renderUI({
     shiny::tagList(
       shiny::fluidRow(
@@ -1394,7 +1391,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   #-------------------------------------------------- Visualize data server ----
-
   # Initialise dimensions object
   dimensions_obj = shiny::reactiveValues(
     x_box = module_controler$dims$x_box,
@@ -1411,7 +1407,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   )
 
   color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
-
   # Plotting events
   class_distribution_events(r6, dimensions_obj, color_palette, input, output, session)
   class_comparison_events(r6, dimensions_obj, color_palette, input, output, session)
@@ -1419,7 +1414,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
   pca_events(r6, dimensions_obj, color_palette, input, output, session)
   db_plot_events(r6, dimensions_obj, color_palette, input, output, session)
-
   session$userData[[id]]$showPlots = shiny::observeEvent(input$showPlots,{
 
     # Update x dimensions in px and bs, and y in px
@@ -1479,8 +1473,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
     }
 
-
-
     if ((length(input$showPlots) > 1) & (length(input$showPlots) < 4)) {
       shinyWidgets::updateCheckboxGroupButtons(
         session = session,
@@ -1497,7 +1489,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
   })
 
-
   session$userData[[id]]$clear_plots = shiny::observeEvent(input$clear_plots, {
     print_tm(m, "Clearing plots")
     shinyWidgets::updateCheckboxGroupButtons(
@@ -1511,13 +1502,11 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   #------------------------------------------- Geneset enrichment rendering ----
-
   output$geneset_enrichment_ui = shiny::renderUI({
     shiny::h2('Geneset enrichment unavailable for lipidomics')
   })
 
   #------------------------------------------ Over-representation rendering ----
-
   output$over_representation_ui = shiny::renderUI({
     shiny::h2('Over-representation analysis unavailable for lipidomics')
   })

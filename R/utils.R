@@ -2,6 +2,14 @@
 
 #--------------------------------------------------------- Switch functions ----
 
+experiment_switch = function(selection) {
+  switch(EXPR = selection,
+         'Lipidomics' = 'lips',
+         'Proteomics' = 'prot',
+         'Transcriptomics' = 'trns'
+  )
+}
+
 adjustment_switch = function(selection){
   switch(EXPR = selection,
          "None" = "minus_log10_p_value",

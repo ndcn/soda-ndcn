@@ -84,7 +84,7 @@ class_distribution_events = function(r6, dimensions_obj, color_palette, input, o
 
 
   # Generate the plot
-  session$userData[[r6$id]]$class_distribution = shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol, input$class_distribution_img_format), {
+  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol, input$class_distribution_img_format), {
     print_tm(r6$name, "Class distribution: Updating params...")
 
     r6$param_class_distribution(dataset = input$class_distribution_dataset,
@@ -112,7 +112,7 @@ class_distribution_events = function(r6, dimensions_obj, color_palette, input, o
   class_distribution_proxy = plotly::plotlyProxy(outputId = "class_distribution_plot",
                                                  session = session)
 
-  session$userData[[r6$id]]$class_distribution_proxy = shiny::observeEvent(input$class_distribution_plotbox,{
+  shiny::observeEvent(input$class_distribution_plotbox,{
     if (input$class_distribution_plotbox$maximized) {
       plotly::plotlyProxyInvoke(p = class_distribution_proxy,
                                 method = "relayout",
@@ -152,7 +152,6 @@ class_comparison_generate = function(r6, colour_list, dimensions_obj, input) {
                            width = width,
                            height = height)
 }
-
 class_comparison_spawn = function(r6, format, output) {
   print_tm(r6$name, "Class comparison: spawning plot.")
   output$class_comparison_plot = plotly::renderPlotly({
@@ -164,10 +163,6 @@ class_comparison_spawn = function(r6, format, output) {
                                                                           scale= 1))
   })
 }
-
-
-
-
 class_comparison_ui = function(dimensions_obj, session) {
 
   get_plotly_box(id = "class_comparison",
@@ -176,8 +171,6 @@ class_comparison_ui = function(dimensions_obj, session) {
                  session = session)
 
 }
-
-
 class_comparison_server = function(r6, output, session) {
 
   ns = session$ns
