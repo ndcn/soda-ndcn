@@ -920,3 +920,187 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 }
 
 
+
+#--------------------------------------------------------- Example datasets ----
+example_lipidomics = function(name, id = NA, slot = NA) {
+  lips_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/lipidomics.csv')
+  meta_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/lipidomics_metadata.csv')
+
+  r6 = Lips_exp$new(name = name, id = id, slot = slot, preloaded = T)
+
+  r6$tables$imp_meta = meta_data
+  r6$tables$imp_data = lips_data
+
+  r6$indices$id_col_meta = 'ID'
+  r6$indices$id_col_data = 'ID'
+
+  r6$indices$group_col = 'Group_type'
+  r6$indices$batch_col = 'Batch'
+  r6$set_raw_meta()
+
+  type_vector = r6$tables$imp_meta[, 'Sample_type']
+  blank_idx = grep(pattern = 'blank',
+                   x = type_vector,
+                   ignore.case = TRUE)
+  qc_idx = grep(pattern = 'Quality',
+                x = type_vector,
+                ignore.case = TRUE)
+  pool_idx = grep(pattern = 'Pool',
+                  x = type_vector,
+                  ignore.case = TRUE)
+
+  sample_idx = 1:nrow(r6$tables$imp_meta)
+  sample_idx = setdiff(sample_idx, c(blank_idx, qc_idx, pool_idx))
+
+  r6$indices$idx_blanks = blank_idx
+  r6$indices$idx_qcs = qc_idx
+  r6$indices$idx_pools = pool_idx
+  r6$indices$idx_samples = sample_idx
+
+  r6$indices$rownames_blanks = r6$tables$imp_meta[blank_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_qcs = r6$tables$imp_meta[qc_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_pools = r6$tables$imp_meta[pool_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_samples = r6$tables$imp_meta[sample_idx, r6$indices$id_col_meta]
+
+  r6$tables$raw_meta = r6$tables$raw_meta[r6$indices$rownames_samples,]
+
+  r6$get_blank_table()
+
+  r6$set_raw_data(apply_imputation = F,
+                  impute_before = F,
+                  apply_filtering = T,
+                  imputation_function = 'minimum',
+                  val_threshold = 0.6,
+                  blank_multiplier = 2,
+                  sample_threshold = 0.8,
+                  group_threshold = 0.8,
+                  norm_col = '')
+
+  r6$derive_data_tables()
+
+  return(r6)
+}
+
+example_proteomics = function(name = 'prot_example', id = NA, slot = NA) {
+  prot_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/proteomics_2.tsv')
+  meta_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/metadata.csv')
+
+  r6 = Prot_exp$new(name = name, id = id, slot = slot, preloaded = T)
+
+  r6$tables$imp_meta = meta_data
+  r6$tables$imp_data = prot_data
+
+  r6$indices$id_col_meta = 'ID'
+  r6$indices$id_col_data = 'ID'
+
+  r6$indices$group_col = 'Group_type'
+  r6$indices$batch_col = 'Batch'
+  r6$set_raw_meta()
+
+  type_vector = r6$tables$imp_meta[, 'Sample_type']
+  blank_idx = grep(pattern = 'blank',
+                   x = type_vector,
+                   ignore.case = TRUE)
+  qc_idx = grep(pattern = 'QC',
+                x = type_vector,
+                ignore.case = TRUE)
+  pool_idx = grep(pattern = 'Pool',
+                  x = type_vector,
+                  ignore.case = TRUE)
+
+  sample_idx = 1:nrow(r6$tables$imp_meta)
+  sample_idx = setdiff(sample_idx, c(blank_idx, qc_idx, pool_idx))
+
+  r6$indices$idx_blanks = blank_idx
+  r6$indices$idx_qcs = qc_idx
+  r6$indices$idx_pools = pool_idx
+  r6$indices$idx_samples = sample_idx
+
+  r6$indices$rownames_blanks = r6$tables$imp_meta[blank_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_qcs = r6$tables$imp_meta[qc_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_pools = r6$tables$imp_meta[pool_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_samples = r6$tables$imp_meta[sample_idx, r6$indices$id_col_meta]
+
+  r6$tables$raw_meta = r6$tables$raw_meta[r6$indices$rownames_samples,]
+
+  r6$get_blank_table()
+
+  r6$set_raw_data(apply_imputation = F,
+                      impute_before = F,
+                      apply_filtering = F,
+                      imputation_function = 'minimum',
+                      val_threshold = 0.6,
+                      blank_multiplier = 2,
+                      sample_threshold = 0.8,
+                      group_threshold = 0.8,
+                      norm_col = '')
+
+  r6$derive_data_tables()
+
+  r6$get_prot_list()
+  r6$get_gsea_object()
+
+  return(r6)
+}
+
+example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA) {
+  trns_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/transcriptomics_2_genename_test.tsv')
+  meta_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/metadata.csv')
+
+  r6 = Trns_exp$new(name = name, id = id, slot = slot, preloaded = T)
+
+  r6$tables$imp_meta = meta_data
+  r6$tables$imp_data = trns_data
+
+  r6$indices$id_col_meta = 'ID'
+  r6$indices$id_col_data = 'ID'
+
+  r6$indices$group_col = 'Group_type'
+  r6$indices$batch_col = 'Batch'
+  r6$set_raw_meta()
+
+  type_vector = r6$tables$imp_meta[, 'Sample_type']
+  blank_idx = grep(pattern = 'blank',
+                   x = type_vector,
+                   ignore.case = TRUE)
+  qc_idx = grep(pattern = 'QC',
+                x = type_vector,
+                ignore.case = TRUE)
+  pool_idx = grep(pattern = 'Pool',
+                  x = type_vector,
+                  ignore.case = TRUE)
+
+  sample_idx = 1:nrow(r6$tables$imp_meta)
+  sample_idx = setdiff(sample_idx, c(blank_idx, qc_idx, pool_idx))
+
+  r6$indices$idx_blanks = blank_idx
+  r6$indices$idx_qcs = qc_idx
+  r6$indices$idx_pools = pool_idx
+  r6$indices$idx_samples = sample_idx
+
+  r6$indices$rownames_blanks = r6$tables$imp_meta[blank_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_qcs = r6$tables$imp_meta[qc_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_pools = r6$tables$imp_meta[pool_idx, r6$indices$id_col_meta]
+  r6$indices$rownames_samples = r6$tables$imp_meta[sample_idx, r6$indices$id_col_meta]
+
+  r6$tables$raw_meta = r6$tables$raw_meta[r6$indices$rownames_samples,]
+
+  r6$get_blank_table()
+
+  r6$set_raw_data(apply_imputation = F,
+                  impute_before = F,
+                  apply_filtering = F,
+                  imputation_function = 'minimum',
+                  val_threshold = 0.6,
+                  blank_multiplier = 2,
+                  sample_threshold = 0.8,
+                  group_threshold = 0.8,
+                  norm_col = '')
+
+  r6$derive_data_tables()
+
+  r6$get_prot_list()
+  r6$get_gsea_object()
+
+  return(r6)
+}

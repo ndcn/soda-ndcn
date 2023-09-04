@@ -511,6 +511,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Preview all / subset switch
   session$userData[[id]]$select_meta_table = shiny::observeEvent(input$select_meta_table, {
     shiny::req(r6$tables$imp_meta)
+    if (r6$preloaded_data) {return()}
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
     output$metadata_preview_table = renderDataTable({
       DT::datatable(data_table, options = list(paging = TRUE))
@@ -521,6 +522,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Get ID
   session$userData[[id]]$id_select_meta = shiny::observeEvent(input$select_id_meta, {
     shiny::req(r6$tables$imp_meta)
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Setting ID column')
     if (length(r6$tables$imp_meta[,input$select_id_meta]) == length(unique(r6$tables$imp_meta[,input$select_id_meta]))) {
       r6$indices$id_col_meta = input$select_id_meta
@@ -553,6 +555,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Group col selection
   session$userData[[id]]$select_group_col = shiny::observeEvent(c(input$select_group_col, input$selection_drop, input$selection_keep, input$reset_meta), {
     shiny::req(r6$tables$raw_meta)
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Setting group column')
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
     r6$indices$group_col = input$select_group_col
@@ -588,6 +591,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Batch col selection
   session$userData[[id]]$select_batch_col = shiny::observeEvent(input$select_batch_col, {
     shiny::req(r6$tables$imp_meta)
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Setting batch column')
     r6$indices$batch_col = input$select_batch_col
   })
@@ -595,6 +599,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Type col selection
   session$userData[[id]]$select_type_col = shiny::observeEvent(c(input$select_type_col, input$blank_pattern, input$qc_pattern, input$pool_pattern, input$select_id_meta), {
     shiny::req(c(r6$tables$imp_meta, input$blank_pattern, input$qc_pattern, input$pool_pattern))
+    if (r6$preloaded_data) {return()}
     if ((input$select_type_col != "") & (!is.null(input$blank_pattern)) & (!is.null(input$qc_pattern)) & (!is.null(input$pool_pattern))) {
       r6$indices$type_col = input$select_type_col
       type_vector = r6$tables$imp_meta[, input$select_type_col]
@@ -628,6 +633,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Type col selection
   session$userData[[id]]$select_type_col = shiny::observeEvent(c(input$select_type_col, input$blank_pattern, input$qc_pattern, input$pool_pattern, input$select_id_meta, input$select_meta_table, input$selection_drop, input$selection_keep, input$reset_meta), {
     shiny::req(r6$tables$raw_meta)
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Updating type plot.')
 
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
@@ -671,6 +677,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Update the metadata value once a metadata column is selected
   session$userData[[id]]$exclusion_meta_col = shiny::observeEvent(c(input$exclusion_meta_col),{
+    if (r6$preloaded_data) {return()}
     shiny::updateSelectInput(
       session = session,
       inputId = "exclusion_meta_val",
@@ -682,6 +689,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Update the rows to filter once a metadata value is selected
   session$userData[[id]]$exclusion_meta_val = shiny::observeEvent(c(input$exclusion_meta_val),{
+    if (r6$preloaded_data) {return()}
     if (!is.null(input$exclusion_meta_val)) {
       bool_vector = c()
       for (value in input$exclusion_meta_val) {
@@ -700,12 +708,14 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Clear button
   session$userData[[id]]$clear_filters = shiny::observeEvent(input$clear_filters, {
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Clearing metadata filters')
     reset_sample_filters(input = input, session = session, r6 = r6)
   })
 
   # Reset button
   session$userData[[id]]$reset_meta = shiny::observeEvent(input$reset_meta, {
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Reseting metadata table')
     r6$set_raw_meta()
     update_sample_filters(input = input, session = session, r6 = r6)
@@ -713,6 +723,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Drop button
   session$userData[[id]]$selection_drop = shiny::observeEvent(input$selection_drop, {
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Dropping selected samples')
     selected_rows = sample_row_selection(input = input, r6 = r6)
     if (!is.null(selected_rows)){
@@ -725,6 +736,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Keep button
   session$userData[[id]]$selection_keep = shiny::observeEvent(input$selection_keep, {
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Keeping selected samples')
     selected_rows = sample_row_selection(input = input, r6 = r6)
     if (!is.null(selected_rows)){
@@ -737,6 +749,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Row count progress bar
   session$userData[[id]]$row_count_bar_meta = shiny::observeEvent(c(input$selection_keep, input$selection_drop, input$reset_meta, input$select_meta_table), {
+    if (r6$preloaded_data) {return()}
     data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
     shinyWidgets::updateProgressBar(
       session = session,
@@ -754,6 +767,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   session$userData[[id]]$download_metatable = shiny::observeEvent(c(input$select_meta_table, input$reset_meta, input$selection_keep, input$selection_drop) , {
     shiny::req(r6$tables$raw_meta)
+    if (r6$preloaded_data) {return()}
     dl_meta_table$name = timestamped_name(paste0(stringr::str_replace_all(input$select_meta_table, " ", "_"), ".csv"))
     dl_meta_table$table = table_switch(input$select_meta_table, r6)
   })
@@ -1246,6 +1260,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Get ID
   session$userData[[id]]$id_select_data = shiny::observeEvent(input$select_id_data, {
     shiny::req(r6$tables$imp_data)
+    if (r6$preloaded_data) {return()}
     print_tm(m, 'Setting ID column')
     if (length(r6$tables$imp_data[,input$select_id_data]) == length(unique(r6$tables$imp_data[,input$select_id_data]))) {
       r6$indices$id_col_data = input$select_id_data
@@ -1319,6 +1334,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       input$reset_meta), {
 
         shiny::req(r6$tables$raw_data)
+        if (r6$preloaded_data) {return()}
         print_tm(m, 'Updating data tables')
         r6$set_raw_data(apply_imputation = input$apply_imputation,
                         impute_before = input$impute_before,
@@ -1700,6 +1716,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   #---------------------------------------------- Geneset enrichment server ----
 
   session$userData[[id]]$select_feature_type = shiny::observeEvent(input$select_feature_type, {
+    if (r6$preloaded_data) {return()}
     print_tm(m, paste0('GSEA: feature ID type set to ', input$select_feature_type))
     r6$indices$feature_id_type = input$select_feature_type
   })
@@ -1728,18 +1745,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     print_tm(m, "GSEA finished")
     shinyjs::enable("run_gsea")
   })
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   # Initialise dimensions object

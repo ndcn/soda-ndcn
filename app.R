@@ -237,20 +237,21 @@ server = function(input, output, session) {
     }
   })
 
+  # MOFA module
+  mofa_server("mofa", r6 = mofa_data, module_controler = module_controler)
+
   # Example datasets
   shiny::observeEvent(input[['mod_start-add_lipidomics_ex']],{
     print('Loading example lipidomics')
-
     for (slot in names(module_controler$slot_taken)){
       if (!module_controler$slot_taken[[slot]]) {
-        print(paste0('Using slot ', slot))
-
         module_controler$module_loaded[[slot]] = T
         module_controler$slot_taken[[slot]] = T
-        module_controler$exp_types = 'Lipidomics'
-        module_controler$exp_names = 'lips_example'
-        module_controler$exp_r6 = Lips_exp$new(name = 'lips_example', id = paste0(c('mod', slot), collapse = '_'), slot = slot)
-
+        module_controler$exp_types[[slot]] = 'Lipidomics'
+        module_controler$exp_names[[slot]] = 'lips_example'
+        module_controler$exp_r6[[slot]] = example_lipidomics(name = 'lips_example',
+                                                             id = paste0(c('mod', slot), collapse = '_'),
+                                                             slot = slot)
         output[[slot]] = bs4Dash::renderMenu({
           bs4Dash::sidebarMenu(
             bs4Dash::menuItem(text = 'lips_example',
@@ -261,14 +262,62 @@ server = function(input, output, session) {
         experiment_server(id = paste0(c('mod', slot), collapse = '_'),
                           type = 'Lipidomics',
                           module_controler = module_controler)
-
         break
       }
     }
   })
 
-  # MOFA module
-  mofa_server("mofa", r6 = mofa_data, module_controler = module_controler)
+  shiny::observeEvent(input[['mod_start-add_proteomics_ex']],{
+    print('Loading example proteomics')
+    for (slot in names(module_controler$slot_taken)){
+      if (!module_controler$slot_taken[[slot]]) {
+        module_controler$module_loaded[[slot]] = T
+        module_controler$slot_taken[[slot]] = T
+        module_controler$exp_types[[slot]] = 'Proteomics'
+        module_controler$exp_names[[slot]] = 'prot_example'
+        module_controler$exp_r6[[slot]] = example_proteomics(name = 'prot_example',
+                                                             id = paste0(c('mod', slot), collapse = '_'),
+                                                             slot = slot)
+        output[[slot]] = bs4Dash::renderMenu({
+          bs4Dash::sidebarMenu(
+            bs4Dash::menuItem(text = 'prot_example',
+                              tabName = slot,
+                              icon = icon('p'))
+          )
+        })
+        experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                          type = 'Proteomics',
+                          module_controler = module_controler)
+        break
+      }
+    }
+  })
+
+  shiny::observeEvent(input[['mod_start-add_transcriptomics_ex']],{
+    print('Loading example transcriptomics')
+    for (slot in names(module_controler$slot_taken)){
+      if (!module_controler$slot_taken[[slot]]) {
+        module_controler$module_loaded[[slot]] = T
+        module_controler$slot_taken[[slot]] = T
+        module_controler$exp_types[[slot]] = 'Transcriptomics'
+        module_controler$exp_names[[slot]] = 'trns_example'
+        module_controler$exp_r6[[slot]] = example_transcriptomics(name = 'trns_example',
+                                                                  id = paste0(c('mod', slot), collapse = '_'),
+                                                                  slot = slot)
+        output[[slot]] = bs4Dash::renderMenu({
+          bs4Dash::sidebarMenu(
+            bs4Dash::menuItem(text = 'trns_example',
+                              tabName = slot,
+                              icon = icon('t'))
+          )
+        })
+        experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                          type = 'Transcriptomics',
+                          module_controler = module_controler)
+        break
+      }
+    }
+  })
 
 }
 

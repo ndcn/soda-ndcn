@@ -2,16 +2,18 @@
 Prot_exp = R6::R6Class(
   "Prot_exp",
   public = list(
-    initialize = function(name, id = NA, slot = NA){
+    initialize = function(name, id = NA, slot = NA, preloaded = F){
       self$name = name
       self$id = id
       self$slot = slot
+      self$preloaded_data = preloaded
     },
     #--------------------------------------------------------------- Global ----
     name = NA,
     id = NA,
     slot = NA,
     type = 'Proteomics',
+    preloaded_data = F,
 
     #----------------------------------------------------------- Parameters ----
     params = list(
