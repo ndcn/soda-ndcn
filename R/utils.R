@@ -923,8 +923,8 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 
 #--------------------------------------------------------- Example datasets ----
 example_lipidomics = function(name, id = NA, slot = NA) {
-  lips_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/lipidomics.csv')
-  meta_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/lipidomics_metadata.csv')
+  lips_data = soda_read_table('./examples/multiomics/lipidomics.csv')
+  meta_data = soda_read_table('./examples/multiomics/lipidomics_metadata.csv')
 
   r6 = Lips_exp$new(name = name, id = id, slot = slot, preloaded = T)
 
@@ -982,8 +982,8 @@ example_lipidomics = function(name, id = NA, slot = NA) {
 }
 
 example_proteomics = function(name = 'prot_example', id = NA, slot = NA) {
-  prot_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/proteomics_2.tsv')
-  meta_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/metadata.csv')
+  prot_data = soda_read_table('./examples/multiomics/proteomics_2.tsv')
+  meta_data = soda_read_table('./examples/multiomics/metadata.csv')
 
   r6 = Prot_exp$new(name = name, id = id, slot = slot, preloaded = T)
 
@@ -1044,8 +1044,8 @@ example_proteomics = function(name = 'prot_example', id = NA, slot = NA) {
 }
 
 example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA) {
-  trns_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/transcriptomics_2_genename_test.tsv')
-  meta_data = soda_read_table('D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_2/metadata.csv')
+  trns_data = soda_read_table('./examples/multiomics/transcriptomics_2_genename_test.tsv')
+  meta_data = soda_read_table('./examples/multiomics/metadata.csv')
 
   r6 = Trns_exp$new(name = name, id = id, slot = slot, preloaded = T)
 
