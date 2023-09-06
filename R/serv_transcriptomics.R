@@ -1517,12 +1517,13 @@ transcriptomics_server = function(id, ns, input, output, session, module_control
                      group_1 = input$gseaprep_groups[1],
                      group_2 = input$gseaprep_groups[2],
                      used_function = input$gseaprep_method,
-                     test = input$gseaprep_test,
-                     p_value_cutoff_prep = input$gseaprep_pval)
+                     test = input$gseaprep_test
+                     )
 
     r6$get_gsea_object(ont = input$gsea_go,
                        minGSSize = as.numeric(input$gsea_min_size),
                        maxGSSize = as.numeric(input$gsea_max_size),
+                       p_value_cutoff_prep = input$gseaprep_pval,
                        p_value_cutoff = input$gsea_pval,
                        verbose = TRUE,
                        OrgDb = "org.Hs.eg.db",
