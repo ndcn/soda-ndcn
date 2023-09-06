@@ -546,8 +546,8 @@ Trns_exp = R6::R6Class(
                              group_1 = self$params$gsea$groups[1],
                              group_2 = self$params$gsea$groups[2],
                              used_function = self$params$gsea$used_function,
-                             test = self$params$gsea$test,
-                             p_value_cutoff_prep = self$params$gsea$p_value_cutoff_prep) {
+                             test = self$params$gsea$test
+    ) {
 
       # Get the rownames for each group
       idx_group_1 = rownames(meta_table)[meta_table[, group_col] == group_1]
@@ -571,24 +571,14 @@ Trns_exp = R6::R6Class(
       }
 
       # Prepare the protein list with log2 fold changes
-      stat_vals = get_fc_and_pval(data_table = data_table,
+      prot_list = get_fc_and_pval(data_table = data_table,
                                   idx_group_1 = idx_group_1,
                                   idx_group_2 = idx_group_2,
                                   used_function = used_function,
                                   test = test)
 
-      stat_vals = as.data.frame(stat_vals, row.names = colnames(data_table))
-
-      if (!is.na(p_value_cutoff_prep)) {
-        stat_vals = stat_vals[stat_vals$p_value <= p_value_cutoff_prep,]
-      }
-
-      prot_list = log2(stat_vals$fold_change)
-      names(prot_list) = rownames(stat_vals)
-
-      # NA omit and sort
-      prot_list = na.omit(prot_list)
-      prot_list = sort(prot_list, decreasing = TRUE)
+      prot_list = as.data.frame(prot_list, row.names = colnames(data_table))
+      prot_list$log2_fold_change = log2(prot_list$fold_change)
       self$tables$prot_list = prot_list
     },
 
@@ -599,12 +589,25 @@ Trns_exp = R6::R6Class(
                                ont = self$params$gsea$ont,
                                minGSSize = self$params$gsea$minGSSize,
                                maxGSSize = self$params$gsea$maxGSSize,
+                               p_value_cutoff_prep = self$params$gsea$p_value_cutoff_prep,
                                p_value_cutoff = self$params$gsea$p_value_cutoff,
                                verbose = self$params$gsea$verbose,
                                OrgDb = self$params$gsea$OrgDb,
                                pAdjustMethod = self$params$gsea$pAdjustMethod,
                                termsim_method = self$params$gsea$termsim_method,
                                termsim_showcat = self$params$gsea$termsim_showcat) {
+
+      if (!is.na(p_value_cutoff_prep)) {
+        prot_list = prot_list[prot_list$p_value <= p_value_cutoff_prep,]
+      }
+
+      prot_names = rownames(prot_list)
+      prot_list = prot_list$log2_fold_change
+      names(prot_list) = prot_names
+
+      # NA omit and sort
+      prot_list = na.omit(prot_list)
+      prot_list = sort(prot_list, decreasing = TRUE)
 
       gsea = clusterProfiler::gseGO(geneList=prot_list,
                                     ont = ont,

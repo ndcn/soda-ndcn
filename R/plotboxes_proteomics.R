@@ -549,17 +549,13 @@ prot_pca_events = function(r6, dimensions_obj, color_palette, input, output, ses
                  alpha_da = input$pca_alpha_da,
                  img_format = input$pca_img_format)
 
-
-    prot_pca_generate(r6, color_palette, dimensions_obj, input)
-    prot_pca_spawn(r6, input$pca_img_format, output)
-
-    # base::tryCatch({
-    #   prot_pca_generate(r6, color_palette, dimensions_obj, input)
-    #   prot_pca_spawn(r6, input$pca_img_format, output)
-    # },error=function(e){
-    #   print_tm(r6$name, 'PCA: error, missing data.')
-    # },finally={}
-    # )
+    base::tryCatch({
+      prot_pca_generate(r6, color_palette, dimensions_obj, input)
+      prot_pca_spawn(r6, input$pca_img_format, output)
+    },error=function(e){
+      print_tm(r6$name, 'PCA: error, missing data.')
+    },finally={}
+    )
 
   })
 

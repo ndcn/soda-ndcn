@@ -139,15 +139,23 @@ find_delim = function(path) {
   return(names(which.max(sep)))
 }
 
-soda_read_table = function(file_path) {
+soda_read_table = function(file_path, sep = NA) {
   if (stringr::str_sub(file_path, -5, -1) == ".xlsx") {
     data_table = as.data.frame(readxl::read_xlsx(file_path))
   } else {
-    sep = find_delim(path = file_path)
-    data_table = read.csv(file_path,
-                             header = T,
-                             sep = sep,
-                             check.names = FALSE)
+    if (is.na(sep)) {
+      sep = find_delim(path = file_path)
+      data_table = read.csv(file_path,
+                            header = T,
+                            sep = sep,
+                            check.names = FALSE)
+    } else {
+      data_table = read.csv(file_path,
+                            header = T,
+                            sep = sep,
+                            check.names = FALSE)
+    }
+
   }
   original_count = ncol(data_table)
   data_table = data_table[,!base::duplicated(colnames(data_table))]
