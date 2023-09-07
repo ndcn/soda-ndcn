@@ -914,9 +914,12 @@ Lips_exp = R6::R6Class(
       meta_table_features = meta_table_features[c(colnames(data_table)),]
 
       if (!is.null(col_annotations)) {
+        new_cols = c()
+        for (i in 1:length(col_annotations)) {
+          new_cols = c(new_cols, feature_table_cols_switch(col_annotations[i]))
+        }
         # Convert annotations to their column names in the feature metadata table
-        col_annotations = feature_table_cols_switch(col_annotations)
-        col_annotations = meta_table_features[, col_annotations]
+        col_annotations = meta_table_features[, new_cols]
       }
 
       if (impute) {
