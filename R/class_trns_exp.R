@@ -1,4 +1,4 @@
-#----------------------------------------- Transcriptomics experiment class ----
+#---------------------------------------------- Transcriptomics experiment class ----
 Trns_exp = R6::R6Class(
   "Trns_exp",
   public = list(
@@ -70,6 +70,16 @@ Trns_exp = R6::R6Class(
         pAdjustMethod = NULL,
         termsim_method = NULL,
         termsim_showcat = NULL
+      ),
+
+      # Over representation analysis parameters self$params$overrepresentation
+      overrepresentation = list(
+        prep_pval_cutoff = 0.05,
+        pval_cutoff = 0.05,
+        fc_threshold = 2,
+        keyType = 'SYMBOL',
+        ont = "ALL",
+        qval_cutoff = 0.10
       ),
 
       # Dot plot parameters self$params$dot_plot
@@ -150,9 +160,10 @@ Trns_exp = R6::R6Class(
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
 
-      # GSEA
+      # GSEA & over representation
       prot_list = NULL,
-      gsea_object = NULL
+      gsea_object = NULL,
+      go_enrich = NULL
 
 
     ),
@@ -243,6 +254,17 @@ Trns_exp = R6::R6Class(
       self$params$gsea$pAdjustMethod = pAdjustMethod
       self$params$gsea$termsim_method = termsim_method
       self$params$gsea$termsim_showcat = termsim_showcat
+    },
+
+    param_overrepresentation = function(prep_pval_cutoff, pval_cutoff, fc_threshold,
+                                        keyType, ont, qval_cutoff) {
+      self$params$overrepresentation$prep_pval_cutoff
+      self$params$overrepresentation$pval_cutoff
+      self$params$overrepresentation$fc_threshold
+      self$params$overrepresentation$keyType
+      self$params$overrepresentation$ont
+      self$params$overrepresentation$qval_cutoff
+
     },
 
     param_dot_plot = function(showCategory, mode, img_format) {
@@ -469,6 +491,13 @@ Trns_exp = R6::R6Class(
                       termsim_method = 'JC',
                       termsim_showcat = 200)
 
+      self$param_overrepresentation(prep_pval_cutoff = 0.05,
+                                    pval_cutoff = 0.05,
+                                    fc_threshold = 2,
+                                    keyType = 'SYMBOL',
+                                    ont = "ALL",
+                                    qval_cutoff = 0.10)
+
       self$param_dot_plot(showCategory = 10,
                           mode = "Both",
                           img_format = "png")
@@ -537,7 +566,7 @@ Trns_exp = R6::R6Class(
       self$tables$volcano_table = volcano_table
     },
 
-    #--------------------------------------------------------- GSEA methods ----
+    #---------------------------------------------------- GSEA & OR methods ----
 
     # GSEA table
     get_prot_list = function(data_table = self$table_switch_local(self$params$gsea$data_table),
@@ -622,6 +651,42 @@ Trns_exp = R6::R6Class(
       gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
       self$tables$gsea_object = gsea
 
+    },
+
+    over_representation_analysis = function(prep_pval_cutoff = self$params$overrepresentation$prep_pval_cutoff,
+                                            pval_cutoff = self$params$overrepresentation$pval_cutoff,
+                                            fc_threshold = self$params$overrepresentation$fc_threshold,
+                                            keyType = self$params$overrepresentation$keyType,
+                                            ont = self$params$overrepresentation$ont,
+                                            qval_cutoff = self$params$overrepresentation$qval_cutoff) {
+      prot_list = self$tables$prot_list
+
+
+      # Get universe (all features)
+      universe = prot_list$log2_fold_change
+      names(universe) = rownames(prot_list)
+      universe = na.omit(universe)
+      universe = sort(universe, decreasing = TRUE)
+      universe = names(universe)
+
+      # Get significant features
+      features = base::subset(prot_list, p_value_bh_adj < prep_pval_cutoff)
+      feature_names = rownames(features)
+      features = features$log2_fold_change
+      names(features) = feature_names
+      features = na.omit(features)
+      features = names(features)[abs(features) > fc_threshold]
+
+      go_enrich = clusterProfiler::enrichGO(gene = features,
+                                            universe = universe,
+                                            OrgDb = 'org.Hs.eg.db',
+                                            keyType = keyType,
+                                            readable = T,
+                                            ont = ont,
+                                            pvalueCutoff = pval_cutoff,
+                                            qvalueCutoff = qval_cutoff)
+
+      self$tables$go_enrich = go_enrich
     },
 
     #----------------------------------------------------- Plotting methods ----
@@ -1334,5 +1399,7 @@ Trns_exp = R6::R6Class(
       self$plots$emapplot = visNetwork::visIgraph(g)
     }
     #------------------------------------------------------------------ END ----
+
+
   )
 )

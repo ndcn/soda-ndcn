@@ -871,163 +871,253 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         ),
         bs4Dash::box(
           id = ns('gsea_setup_box'),
-          title = 'Geneset enrichment setup',
+          title = 'Geneset enrichment and Over representation analysis',
           width = 12,
-          shiny::fluidRow(
-            shiny::column(
-              width = 6,
-              shiny::h4('Data preparation'),
-
-              shiny::fluidRow(
-                shiny::column(
-                  width= 6,
-                  shiny::selectInput(
-                    inputId = ns('gseaprep_table_select'),
-                    label = 'Select table',
-                    choices = NULL,
-                    width = '100%'
-                  )
-                ),
-                shiny::column(
-                  width= 6,
-                  shiny::selectInput(
-                    inputId = ns('gseaprep_adjustment'),
-                    label = 'Adjustment',
-                    choices = c('None', 'Benjamini-Hochberg'),
-                    selected = 'Benjamini-Hochberg'
-                  )
-                )
-              ),
-              shiny::fluidRow(
-                shiny::column(
-                  width = 6,
-                  shiny::selectInput(
-                    inputId = ns('gseaprep_group_col'),
-                    label = 'Group column',
-                    choices = NULL,
-                    width = '100%'
-                  )
-                ),
-                shiny::column(
-                  width = 6,
-                  shiny::selectInput(
-                    inputId = ns('gseaprep_groups'),
-                    label = 'Select two groups to compare',
-                    choices = NULL,
-                    width = '100%',
-                    multiple = T
-                  )
-                )
-              ),
-
-
-              shiny::fluidRow(
-                shiny::column(
-                  width = 6,
-                  shiny::selectInput(
-                    inputId = ns('gseaprep_method'),
-                    label = 'Method',
-                    choices = c('median', 'mean'),
-                    selected = 'median',
-                    width = '100%'
-                  )
-                ),
-                shiny::column(
-                  width = 6,
-                  shiny::selectInput(
-                    inputId = ns('gseaprep_test'),
-                    label = 'Test',
-                    choices = c('Wilcoxon', 't-Test'),
-                    selected = 't-Test',
-                    width = '100%'
-                  )
-                )
-              ),
-
-              shinyWidgets::prettySwitch(
-                inputId = ns('gseaprep_apply_cutoff'),
-                label = 'Apply p-value cutoff',
-                value = T,
-                status = 'primary'
-              ),
-              shiny::sliderInput(
-                inputId = ns('gseaprep_pval'),
-                label = 'p-value cutoff',
-                min = 0.01,
-                max = 0.1,
-                value = 0.05,
-                step = 0.01
+          shiny::tagList(
+            shiny::fluidRow(
+              shiny::column(
+                width = 12,
+                shiny::h4('Data preparation'),
               )
-
             ),
-            shiny::column(
-              width = 6,
-              shiny::h4('GSEA parameters'),
-
-              shiny::fluidRow(
-                shiny::column(
-                  width = 6,
-                  shiny::selectInput(
-                    inputId = ns('gsea_go'),
-                    label = 'GO ontology',
-                    choices = c('ALL', 'BP', 'MF', 'CC'),
-                    selected = 'ALL'
-                  )
-                ),
-                shiny::column(
-                  width = 6,
-                  shiny::selectInput(
-                    inputId = ns('gsea_adjustment'),
-                    label = 'Adjustment',
-                    choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                    selected = 'none'
-                  )
+            shiny::fluidRow(
+              shiny::column(
+                width= 4,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_table_select'),
+                  label = 'Select table',
+                  choices = NULL,
+                  width = '100%'
                 )
               ),
-
-              shiny::fluidRow(
-                shiny::column(
-                  width = 4,
-                  shiny::textInput(
-                    inputId = ns('gsea_min_size'),
-                    label = 'Min. geneset size',
-                    value = 3
-                  )
-                ),
-                shiny::column(
-                  width = 4,
-                  shiny::textInput(
-                    inputId = ns('gsea_max_size'),
-                    label = 'Max. geneset size',
-                    value = 800
-                  )
-                ),
-                shiny::column(
-                  width = 4,
-                  shiny::textInput(
-                    inputId = ns('gsea_showcat'),
-                    label = 'Show category',
-                    value = 200,
-                    width = '100%'
-                  )
+              shiny::column(
+                width= 4,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_group_col'),
+                  label = 'Group column',
+                  choices = NULL,
+                  width = '100%'
                 )
               ),
-
-              shiny::sliderInput(
-                inputId = ns('gsea_pval'),
-                label = 'p-value cutoff',
-                min = 0.01,
-                max = 0.1,
-                value = 0.05,
-                step = 0.01
+              shiny::column(
+                width = 4,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_groups'),
+                  label = 'Select two groups to compare',
+                  choices = NULL,
+                  width = '100%',
+                  multiple = T
+                )
+              )
+            ),
+            shiny::fluidRow(
+              shiny::column(
+                width = 4,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_test'),
+                  label = 'Test',
+                  choices = c('Wilcoxon', 't-Test'),
+                  selected = 't-Test',
+                  width = '100%'
+                )
               ),
-              shinyWidgets::actionBttn(
-                inputId = ns('run_gsea'),
-                label = "Run GSEA",
-                style = "material-flat",
-                color = 'success',
-                block = T,
-                icon = icon("check")
+              shiny::column(
+                width = 4,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_method'),
+                  label = 'Method',
+                  choices = c('median', 'mean'),
+                  selected = 'median',
+                  width = '100%'
+                )
+              ),
+              shiny::column(
+                width = 4,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_adjustment'),
+                  label = 'Adjustment',
+                  choices = c('None', 'Benjamini-Hochberg'),
+                  selected = 'Benjamini-Hochberg'
+                )
+              )
+            ),
+            shiny::fluidRow(
+              shiny::column(
+                width = 12,
+                shiny::sliderInput(
+                  inputId = ns('gseaprep_pval'),
+                  label = 'p-value cutoff',
+                  min = 0.01,
+                  max = 0.9,
+                  value = 0.05,
+                  step = 0.01,
+                  width = '100%'
+                ),
+                shiny::hr(style = "border-top: 1px solid #7d7d7d;")
+              )
+            ),
+            shiny::fluidRow(
+              shiny::column(
+                width = 6,
+                shiny::h4('Geneset enrichment analysis'),
+
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 6,
+                    shiny::selectInput(
+                      inputId = ns('gsea_go'),
+                      label = 'GO ontology',
+                      choices = c('ALL', 'BP', 'MF', 'CC'),
+                      selected = 'ALL'
+                    )
+                  ),
+                  shiny::column(
+                    width = 6,
+                    shiny::selectInput(
+                      inputId = ns('gsea_adjustment'),
+                      label = 'Adjustment',
+                      choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                      selected = 'none'
+                    )
+                  )
+                ),
+
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 4,
+                    shiny::textInput(
+                      inputId = ns('gsea_min_size'),
+                      label = 'Min. geneset size',
+                      value = 3
+                    )
+                  ),
+                  shiny::column(
+                    width = 4,
+                    shiny::textInput(
+                      inputId = ns('gsea_max_size'),
+                      label = 'Max. geneset size',
+                      value = 800
+                    )
+                  ),
+                  shiny::column(
+                    width = 4,
+                    shiny::textInput(
+                      inputId = ns('gsea_showcat'),
+                      label = 'Show category',
+                      value = 200,
+                      width = '100%'
+                    )
+                  )
+                ),
+
+                shiny::sliderInput(
+                  inputId = ns('gsea_pval'),
+                  label = 'p-value cutoff',
+                  min = 0.01,
+                  max = 0.9,
+                  value = 0.05,
+                  step = 0.01
+                ),
+                shinyWidgets::actionBttn(
+                  inputId = ns('run_gsea'),
+                  label = "Run GSEA",
+                  style = "material-flat",
+                  color = 'success',
+                  block = T,
+                  icon = icon("play")
+                )
+              ),
+              shiny::column(
+                width = 6,
+                shiny::h4('Over representation analysis'),
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 6,
+                    shiny::selectInput(
+                      inputId = ns('or_go_ont'),
+                      label = 'GO ontology',
+                      choices = c('ALL', 'BP', 'MF', 'CC'),
+                      selected = 'ALL',
+                      width = '100%'
+                    )
+                  ),
+                  shiny::column(
+                    width = 6,
+                    shiny::selectInput(
+                      inputId = ns('or_pval_adjustment'),
+                      label = 'Adjustment',
+                      choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                      selected = "none",
+                      width = '100%'
+                    )
+                  )
+                ),
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 4,
+                    shiny::textInput(
+                      inputId = ns('or_min_gssize'),
+                      label = 'Min. geneset size',
+                      value = 10,
+                      width = '100%'
+                    )
+                  ),
+                  shiny::column(
+                    width = 4,
+                    shiny::textInput(
+                      inputId = ns('or_max_gssize'),
+                      label = 'Max. geneset size',
+                      value = 500,
+                      width = '100%'
+                    )
+                  ),
+                  shiny::column(
+                    width = 4,
+                    shiny::textInput(
+                      inputId = ns('or_fc_threshold'),
+                      label = 'FC cutoff',
+                      value = 2,
+                      width = '100%'
+                    )
+                  )
+                ),
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 6,
+                    shiny::sliderInput(
+                      inputId = ns('or_pval_cutoff'),
+                      label = 'p-value cutoff',
+                      min = 0.01,
+                      max = 0.9,
+                      value = 0.05,
+                      step = 0.01,
+                      width = '100%'
+                    )
+                  ),
+                  shiny::column(
+                    width = 6,
+                    shiny::sliderInput(
+                      inputId = ns('or_qval_cutoff'),
+                      label = 'q-value cutoff',
+                      min = 0.01,
+                      max = 0.9,
+                      value = 0.05,
+                      step = 0.01,
+                      width = '100%'
+                    )
+                  )
+
+                ),
+                shiny::fluidRow(
+                  shinyWidgets::actionBttn(
+                    inputId = ns('run_or'),
+                    label = "Run OR",
+                    style = "material-flat",
+                    color = 'success',
+                    block = T,
+                    icon = icon("play")
+                  )
+                )
               )
             )
           ),
@@ -1744,6 +1834,30 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                        termsim_showcat = as.numeric(input$gsea_showcat))
     print_tm(m, "GSEA finished")
     shinyjs::enable("run_gsea")
+  })
+
+  session$userData[[id]]$run_or = shiny::observeEvent(input$run_or, {
+    shiny::req(length(input$gseaprep_groups) == 2)
+    print_tm(m, "OR started")
+    shinyjs::disable("run_or")
+    r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
+                     group_col = input$gseaprep_group_col,
+                     group_1 = input$gseaprep_groups[1],
+                     group_2 = input$gseaprep_groups[2],
+                     used_function = input$gseaprep_method,
+                     test = input$gseaprep_test)
+
+    r6$over_representation_analysis(prep_pval_cutoff = input$gseaprep_pval,
+                                    pval_cutoff = input$or_pval_cutoff,
+                                    pAdjustMethod = input$or_pval_adjustment,
+                                    fc_threshold = as.numeric(input$or_fc_threshold),
+                                    ont = input$or_go_ont,
+                                    qval_cutoff = input$or_qval_cutoff,
+                                    minGSSize = as.numeric(input$or_min_gssize),
+                                    maxGSSize = as.numeric(input$or_max_gssize))
+    print_tm(m, "OR finished")
+    shinyjs::enable("run_or")
+
   })
 
 

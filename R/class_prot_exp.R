@@ -72,6 +72,18 @@ Prot_exp = R6::R6Class(
         termsim_showcat = NULL
       ),
 
+      # Over representation analysis parameters self$params$overrepresentation
+      overrepresentation = list(
+        prep_pval_cutoff = 0.05,
+        pval_cutoff = 0.05,
+        pAdjustMethod = "none",
+        fc_threshold = 2,
+        ont = "ALL",
+        qval_cutoff = 0.10,
+        minGSSize = 10,
+        maxGSSize = 500
+      ),
+
       # Dot plot parameters self$params$dot_plot
       dot_plot = list(
         showCategory = 10,
@@ -150,9 +162,10 @@ Prot_exp = R6::R6Class(
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
 
-      # GSEA
+      # GSEA & over representation
       prot_list = NULL,
-      gsea_object = NULL
+      gsea_object = NULL,
+      go_enrich = NULL
 
 
     ),
@@ -243,6 +256,19 @@ Prot_exp = R6::R6Class(
       self$params$gsea$pAdjustMethod = pAdjustMethod
       self$params$gsea$termsim_method = termsim_method
       self$params$gsea$termsim_showcat = termsim_showcat
+    },
+
+    param_overrepresentation = function(prep_pval_cutoff, pval_cutoff, fc_threshold,
+                                        pAdjustMethod, ont, qval_cutoff, minGSSize, maxGSSize) {
+      self$params$overrepresentation$prep_pval_cutoff = prep_pval_cutoff
+      self$params$overrepresentation$pval_cutoff = pval_cutoff
+      self$params$overrepresentation$pAdjustMethod = pAdjustMethod
+      self$params$overrepresentation$fc_threshold = fc_threshold
+      self$params$overrepresentation$ont = ont
+      self$params$overrepresentation$qval_cutoff = qval_cutoff
+      self$params$overrepresentation$minGSSize = minGSSize
+      self$params$overrepresentation$maxGSSize = maxGSSize
+
     },
 
     param_dot_plot = function(showCategory, mode, img_format) {
@@ -469,6 +495,15 @@ Prot_exp = R6::R6Class(
                       termsim_method = 'JC',
                       termsim_showcat = 200)
 
+      self$param_overrepresentation(prep_pval_cutoff = 0.05,
+                                    pval_cutoff = 0.05,
+                                    pAdjustMethod = "none",
+                                    fc_threshold = 2,
+                                    ont = "ALL",
+                                    qval_cutoff = 0.10,
+                                    minGSSize = 10,
+                                    maxGSSize = 500)
+
       self$param_dot_plot(showCategory = 10,
                           mode = "Both",
                           img_format = "png")
@@ -537,7 +572,7 @@ Prot_exp = R6::R6Class(
       self$tables$volcano_table = volcano_table
     },
 
-    #--------------------------------------------------------- GSEA methods ----
+    #---------------------------------------------------- GSEA & OR methods ----
 
     # GSEA table
     get_prot_list = function(data_table = self$table_switch_local(self$params$gsea$data_table),
@@ -622,6 +657,48 @@ Prot_exp = R6::R6Class(
       gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
       self$tables$gsea_object = gsea
 
+    },
+
+    over_representation_analysis = function(prep_pval_cutoff = self$params$overrepresentation$prep_pval_cutoff,
+                                            pval_cutoff = self$params$overrepresentation$pval_cutoff,
+                                            pAdjustMethod = self$params$overrepresentation$pAdjustMethod,
+                                            fc_threshold = self$params$overrepresentation$fc_threshold,
+                                            keyType = self$indices$feature_id_type,
+                                            ont = self$params$overrepresentation$ont,
+                                            qval_cutoff = self$params$overrepresentation$qval_cutoff,
+                                            minGSSize = self$params$overrepresentation$minGSSize,
+                                            maxGSSize  = self$params$overrepresentation$maxGSSize) {
+      prot_list = self$tables$prot_list
+
+
+      # Get universe (all features)
+      universe = prot_list$log2_fold_change
+      names(universe) = rownames(prot_list)
+      universe = na.omit(universe)
+      universe = sort(universe, decreasing = TRUE)
+      universe = names(universe)
+
+      # Get significant features
+      features = base::subset(prot_list, p_value_bh_adj < prep_pval_cutoff)
+      feature_names = rownames(features)
+      features = features$log2_fold_change
+      names(features) = feature_names
+      features = na.omit(features)
+      features = names(features)[abs(features) > fc_threshold]
+
+      go_enrich = clusterProfiler::enrichGO(gene = features,
+                                            universe = universe,
+                                            OrgDb = 'org.Hs.eg.db',
+                                            keyType = keyType,
+                                            readable = T,
+                                            ont = ont,
+                                            pvalueCutoff = pval_cutoff,
+                                            pAdjustMethod = pAdjustMethod,
+                                            qvalueCutoff = qval_cutoff,
+                                            minGSSize = minGSSize,
+                                            maxGSSize  = maxGSSize)
+
+      self$tables$go_enrich = go_enrich
     },
 
     #----------------------------------------------------- Plotting methods ----

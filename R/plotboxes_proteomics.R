@@ -597,8 +597,6 @@ prot_pca_events = function(r6, dimensions_obj, color_palette, input, output, ses
 }
 
 #------------------------------------------------------------- gsea dotplot ----
-
-
 prot_dot_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 
   if (input$dot_plot_plotbox$maximized){
@@ -726,8 +724,6 @@ prot_dot_plot_events = function(r6, dimensions_obj, color_palette, input, output
 }
 
 #----------------------------------------------------------- gsea cnet plot ----
-
-
 prot_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 
   print_tm(r6$name, "CNET plot: generating plot.")
@@ -831,8 +827,6 @@ prot_cnet_plot_events = function(r6, dimensions_obj, color_palette, input, outpu
 }
 
 #----------------------------------------------------------- gsea Ridge plot ----
-
-
 prot_ridge_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 
   if (input$ridge_plot_plotbox$maximized){
@@ -951,8 +945,6 @@ prot_ridge_plot_events = function(r6, dimensions_obj, color_palette, input, outp
 }
 
 #----------------------------------------------------------- gsea eMap plot ----
-
-
 prot_emap_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   print_tm(r6$name, "eMap plot: generating plot.")
   r6$plot_emap_plot(showCategory = as.numeric(input$emap_plot_showcat))
