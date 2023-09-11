@@ -105,6 +105,18 @@ Prot_exp = R6::R6Class(
       # eMap plot parameters self$params$emap_plot
       emap_plot = list(
         showCategory = 30
+      ),
+
+      # Over representation dot plot parameters self$params$or_dot_plot
+      or_dot_plot = list(
+        showCategory = 10,
+        img_format = "png"
+      ),
+
+      or_barplot = list(
+        x="Count",
+        color='p.adjust',
+        showCategory = 10
       )
 
 
@@ -199,7 +211,15 @@ Prot_exp = R6::R6Class(
     plots = list(
       volcano_plot = NULL,
       heatmap = NULL,
-      pca_plot = NULL
+      pca_plot = NULL,
+      dotplot = NULL,
+      ridgeplot = NULL,
+      emapplot = NULL,
+      cnetplot = NULL,
+      or_dotplot = NULL,
+      or_emapplot = NULL,
+      or_cnetplot = NULL,
+      or_barplot = NULL
     ),
 
     #---------------------------------------------------- Parameter methods ----
@@ -1019,8 +1039,111 @@ Prot_exp = R6::R6Class(
       self$plots$dotplot = fig
     },
 
+    plot_or_dot_plot = function(object = self$tables$go_enrich,
+                             x = "GeneRatio",
+                             color = "p.adjust",
+                             showCategory = self$params$or_dot_plot$showCategory,
+                             size = NULL,
+                             split = NULL,
+                             orderBy="x",
+                             width = NULL,
+                             height = NULL){
+
+      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
+      if (x == "geneRatio" || x == "GeneRatio") {
+        x <- "GeneRatio"
+        if (is.null(size))
+          size <- "Count"
+      } else if (x == "count" || x == "Count") {
+        x <- "Count"
+        if (is.null(size))
+          size <- "GeneRatio"
+      } else if (is(x, "formula")) {
+        x <- as.character(x)[2]
+        if (is.null(size))
+          size <- "Count"
+      } else {
+        ## message("invalid x, setting to 'GeneRatio' by default")
+        ## x <- "GeneRatio"
+        ## size <- "Count"
+        if (is.null(size))
+          size  <- "Count"
+      }
+
+      if (inherits(object, c("enrichResultList", "gseaResultList"))) {
+        ldf <- lapply(object, fortify, showCategory=showCategory, split=split)
+        df <- dplyr::bind_rows(ldf, .id="category")
+        df$category <- factor(df$category, levels=names(object))
+      } else {
+        df <- fortify(object, showCategory = showCategory, split=split)
+        ## already parsed in fortify
+        ## df$GeneRatio <- parse_ratio(df$GeneRatio)
+      }
+
+      if (orderBy !=  'x' && !orderBy %in% colnames(df)) {
+        message('wrong orderBy parameter; set to default `orderBy = "x"`')
+        orderBy <- "x"
+      }
+
+      if (orderBy == "x") {
+        df <- dplyr::mutate(df, x = eval(parse(text=x)))
+      }
+
+
+      df$hover = paste0(
+        paste0(df[,"Description"], "\n"),
+        paste0("GeneRatio:", as.character(round(df[,"x"],2)), "\n"),
+        paste0(size, ": ", as.character(df[,size]), "\n"),
+        paste0(colorBy, ": ", as.character(round(df[,colorBy],5)), "\n"),
+        df$.sign
+      )
+
+      df[,"Description"] = as.character(df[,"Description"])
+
+
+
+      fig = plotly::plot_ly(data = df,
+                            x = df$GeneRatio,
+                            y = df[,"Description"],
+                            size = df[,size],
+                            type = "scatter",
+                            mode = "markers",
+                            marker = list(color = df[,colorBy],
+                                          sizemode ='diameter',
+                                          opacity = 0.5,
+                                          sizeref=1,
+                                          colorscale = 'RdBu',
+                                          colorbar=list(
+                                            title=colorBy
+                                          ),
+                                          line = list(width = 0),
+                                          cmax = max(df[, colorBy]),
+                                          cmin = min(df[, colorBy])
+                            ),
+                            text = df$hover,
+                            hoverinfo = "text",
+                            width = width,
+                            height = height
+      )
+      fig = fig %>% layout(
+        legend= list(itemsizing='constant'),
+        title = mode,
+        xaxis = list(title = 'GeneRatio'),
+        yaxis = list(title =  NA,
+                     categoryorder = "array",
+                     categoryarray = base::rev(df[,"Description"]))
+      )
+
+      print_tm(self$name, "Dot plot completed")
+      self$plots$or_dotplot = fig
+
+    },
+
     plot_cnet_plot = function(x = self$tables$gsea_object,
-                              showCategory = self$params$dot_plot$showCategory) {
+                              showCategory = self$params$cnet_plot$showCategory,
+                              context = "gsea") {
+
+      print_tm(self$name, "CNET plot initiated")
 
       if (is.na(showCategory)) {
         base::warning("Invalid showCategory, setting to 3 by default")
@@ -1063,7 +1186,12 @@ Prot_exp = R6::R6Class(
       edge_table$to = target_nodes
       edge_table$width = rep(1, nrow(edge_table))
 
-      self$plots$cnetplot = visNetwork::visNetwork(node_table, edge_table)
+      if (context == "gsea") {
+        self$plots$cnetplot = visNetwork::visNetwork(node_table, edge_table)
+      } else if (context == "or") {
+        self$plots$or_cnetplot = visNetwork::visNetwork(node_table, edge_table)
+      }
+      print_tm(self$name, "CNET plot finished")
     },
 
     plot_ridge_plot = function(x = self$tables$gsea_object,
@@ -1218,7 +1346,8 @@ Prot_exp = R6::R6Class(
     },
 
     plot_emap_plot = function(x = self$tables$gsea_object,
-                              showCategory = self$params$dot_plot$showCategory) {
+                              showCategory = self$params$emap_plot$showCategory,
+                              context = "gsea") {
 
       print_tm(self$name, "Emapplot initiated")
 
@@ -1270,9 +1399,12 @@ Prot_exp = R6::R6Class(
         label_format = 30
       )
 
-
-
+      x = enrichplot::pairwise_termsim(x= x,
+                                       method = 'JC',
+                                       semData = NULL,
+                                       showCategory = showCategory)
       enrichplot:::has_pairsim(x)
+
       label_size_category <- 5
       label_group <- 3
 
@@ -1408,7 +1540,42 @@ Prot_exp = R6::R6Class(
       igraph::V(g)$size = igraph::V(g)$size/3
 
       print_tm(self$name, "Emapplot finished")
-      self$plots$emapplot = visNetwork::visIgraph(g)
+
+      if (context == "gsea") {
+        self$plots$emapplot = visNetwork::visIgraph(g)
+      } else if (context == "or") {
+        self$plots$or_emapplot = visNetwork::visIgraph(g)
+      }
+
+    },
+
+    plot_or_barplot = function(object = self$tables$go_enrich,
+                          x = self$params$or_barplot$x,
+                          color = self$params$or_barplot$color,
+                          showCategory = self$params$or_barplot$showCategory) {
+
+      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
+      if (x == "geneRatio" || x == "GeneRatio") {
+        x <- "GeneRatio"
+      } else if (x == "count" || x == "Count") {
+        x <- "Count"
+      }
+
+      df <- fortify(object, showCategory=showCategory, by=x)
+
+      fig = plotly::plot_ly(df,
+                            x = ~Count,
+                            y = df$Description,
+                            type = 'bar',
+                            orientation = 'h',
+                            marker = list(
+                              colorscale = list(c(0,1), c("red", "blue")),
+                              colorbar = list(title = "p.adjust"),
+                              color = ~p.adjust)) %>%
+        layout(xaxis = list(title = 'Count')
+        )
+
+      self$plots$or_barplot = fig
     }
     #------------------------------------------------------------------ END ----
 

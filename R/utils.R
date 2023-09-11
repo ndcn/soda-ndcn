@@ -931,8 +931,8 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 
 #--------------------------------------------------------- Example datasets ----
 example_lipidomics = function(name, id = NA, slot = NA) {
-  lips_data = soda_read_table('./examples/multiomics/lipidomics.csv')
-  meta_data = soda_read_table('./examples/multiomics/lipidomics_metadata.csv')
+  lips_data = soda_read_table('./examples/multiomics/lips_data.csv')
+  meta_data = soda_read_table('./examples/multiomics/lips_meta.csv')
 
   r6 = Lips_exp$new(name = name, id = id, slot = slot, preloaded = T)
 
