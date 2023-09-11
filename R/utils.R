@@ -990,7 +990,8 @@ example_lipidomics = function(name, id = NA, slot = NA) {
 }
 
 example_proteomics = function(name = 'prot_example', id = NA, slot = NA) {
-  prot_data = soda_read_table('./examples/multiomics/proteomics_2.tsv')
+  prot_data = soda_read_table('./examples/multiomics/proteomics_2.tsv',
+                              sep = '\t')
   meta_data = soda_read_table('./examples/multiomics/metadata.csv')
 
   r6 = Prot_exp$new(name = name, id = id, slot = slot, preloaded = T)
@@ -1045,14 +1046,15 @@ example_proteomics = function(name = 'prot_example', id = NA, slot = NA) {
 
   r6$derive_data_tables()
 
-  r6$get_prot_list()
-  r6$get_gsea_object()
+  # r6$get_prot_list()
+  # r6$get_gsea_object()
 
   return(r6)
 }
 
 example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA) {
-  trns_data = soda_read_table('./examples/multiomics/transcriptomics_2_genename_test.tsv')
+  trns_data = soda_read_table('./examples/multiomics/transcriptomics_2_genename_test.tsv',
+                              sep = '\t')
   meta_data = soda_read_table('./examples/multiomics/metadata.csv')
 
   r6 = Trns_exp$new(name = name, id = id, slot = slot, preloaded = T)
@@ -1107,8 +1109,8 @@ example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA) {
 
   r6$derive_data_tables()
 
-  r6$get_prot_list()
-  r6$get_gsea_object()
+  # r6$get_prot_list()
+  # r6$get_gsea_object()
 
   return(r6)
 }

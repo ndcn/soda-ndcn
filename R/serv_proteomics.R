@@ -1855,6 +1855,15 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                                     qval_cutoff = input$or_qval_cutoff,
                                     minGSSize = as.numeric(input$or_min_gssize),
                                     maxGSSize = as.numeric(input$or_max_gssize))
+
+    results = nrow(r6$tables$go_enrich@result)
+    if (results == 0) {
+      print_tm(m, 'WARNING: no over-representation, change parameters')
+    } else {
+      print_tm(m, paste0('Over-representation successful: ', results, ' terms'))
+    }
+
+
     print_tm(m, "OR finished")
     shinyjs::enable("run_or")
 

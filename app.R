@@ -261,7 +261,7 @@ server = function(input, output, session) {
       return()
     }
     print('Loading example lipidomics')
-
+    shinyjs::disable('mod_start-add_lipidomics_ex')
     for (slot in names(module_controler$slot_taken)){
       if (!module_controler$slot_taken[[slot]]) {
         module_controler$module_loaded[[slot]] = T
@@ -293,6 +293,8 @@ server = function(input, output, session) {
     }
     print('Loading example proteomics')
 
+    shinyjs::disable('mod_start-add_proteomics_ex')
+
     for (slot in names(module_controler$slot_taken)){
       if (!module_controler$slot_taken[[slot]]) {
         module_controler$module_loaded[[slot]] = T
@@ -323,6 +325,9 @@ server = function(input, output, session) {
       return()
     }
     print('Loading example transcriptomics')
+
+    shinyjs::disable('mod_start-add_transcriptomics_ex')
+
     for (slot in names(module_controler$slot_taken)){
       if (!module_controler$slot_taken[[slot]]) {
         module_controler$module_loaded[[slot]] = T
