@@ -106,6 +106,15 @@ gsea_plot_list = function() {
   return(plot_list)
 }
 
+or_plot_list = function() {
+  plot_list = c("Dot plot" = "select_dot_plot",
+                "Bar plot" = "select_bar_plot",
+                "CNET plot" = "select_cnet_plot",
+                "eMap plot" = "select_emap_plot"
+  )
+  return(plot_list)
+}
+
 get_mofa_plot_list = function() {
   plot_list = c("Explained variance" = "select_explained_variance",
                 "Factor plot" = "select_factor_plot",

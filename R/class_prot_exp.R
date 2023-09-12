@@ -113,10 +113,22 @@ Prot_exp = R6::R6Class(
         img_format = "png"
       ),
 
-      or_barplot = list(
-        x="Count",
-        color='p.adjust',
-        showCategory = 10
+      # Over representation bar plot parameters self$params$or_bar_plot
+      or_bar_plot = list(
+        x = 'Count',
+        color = 'p.adjust',
+        showCategory = 10,
+        img_format = "png"
+      ),
+
+      # Over representation CNET plot parameters self$params$or_cnet_plot
+      or_cnet_plot = list(
+        showCategory = 3
+      ),
+
+      # Over representation eMap plot parameters self$params$or_emap_plot
+      or_emap_plot = list(
+        showCategory = 30
       )
 
 
@@ -308,6 +320,26 @@ Prot_exp = R6::R6Class(
 
     param_emap_plot = function(showCategory) {
       self$params$emap_plot$showCategory = showCategory
+    },
+
+    param_or_dot_plot = function(showCategory, img_format) {
+      self$params$or_dot_plot$showCategory = showCategory
+      self$params$or_dot_plot$img_format = img_format
+    },
+
+    param_or_bar_plot = function(x, color, showCategory, img_format) {
+      self$params$or_bar_plot$x = x
+      self$params$or_bar_plot$color = color
+      self$params$or_bar_plot$showCategory = showCategory
+      self$params$or_bar_plot$img_format = img_format
+    },
+
+    param_or_cnet_plot = function(showCategory) {
+      self$params$or_cnet_plot$showCategory = showCategory
+    },
+
+    param_or_emap_plot = function(showCategory) {
+      self$params$or_emap_plot$showCategory = showCategory
     },
 
 
@@ -1143,12 +1175,7 @@ Prot_exp = R6::R6Class(
                               showCategory = self$params$cnet_plot$showCategory,
                               context = "gsea") {
 
-      print_tm(self$name, "CNET plot initiated")
-
-      if (is.na(showCategory)) {
-        base::warning("Invalid showCategory, setting to 3 by default")
-        showCategory = 3
-      }
+      # print_tm(self$name, "CNET plot initiated")
 
       geneSets <- enrichplot:::extract_geneSets(x, showCategory)
 
@@ -1549,10 +1576,12 @@ Prot_exp = R6::R6Class(
 
     },
 
-    plot_or_barplot = function(object = self$tables$go_enrich,
-                          x = self$params$or_barplot$x,
-                          color = self$params$or_barplot$color,
-                          showCategory = self$params$or_barplot$showCategory) {
+    plot_or_bar_plot = function(object = self$tables$go_enrich,
+                          x = self$params$or_bar_plot$x,
+                          color = self$params$or_bar_plot$color,
+                          showCategory = self$params$or_bar_plot$showCategory,
+                          width = NULL,
+                          height = NULL) {
 
       colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
       if (x == "geneRatio" || x == "GeneRatio") {
@@ -1571,10 +1600,11 @@ Prot_exp = R6::R6Class(
                             marker = list(
                               colorscale = list(c(0,1), c("red", "blue")),
                               colorbar = list(title = "p.adjust"),
-                              color = ~p.adjust)) %>%
+                              color = ~p.adjust),
+                            width = width,
+                            height = height) %>%
         layout(xaxis = list(title = 'Count')
         )
-
       self$plots$or_barplot = fig
     }
     #------------------------------------------------------------------ END ----

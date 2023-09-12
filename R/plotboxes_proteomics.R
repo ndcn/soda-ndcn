@@ -1038,3 +1038,472 @@ prot_emap_plot_events = function(r6, dimensions_obj, color_palette, input, outpu
 
 }
 
+
+
+##################################################
+
+#------------------------------------------------------------- or dotplot ----
+prot_or_dot_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+
+  if (input$or_dot_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  print_tm(r6$name, "Dot plot: generating plot.")
+  r6$plot_or_dot_plot(showCategory = as.numeric(input$or_dot_plot_showcat),
+                   width = width,
+                   height = height)
+}
+
+prot_or_dot_plot_spawn = function(r6, format, output) {
+  print_tm(r6$name, "Dot plot: spawning plot.")
+
+  output$or_dot_plot_plot = plotly::renderPlotly({
+    r6$plots$or_dotplot
+    plotly::config(r6$plots$or_dotplot, toImageButtonOptions = list(format= format,
+                                                                 filename= timestamped_name('dotplot'),
+                                                                 height= NULL,
+                                                                 width= NULL,
+                                                                 scale= 1))
+  })
+}
+
+prot_or_dot_plot_ui = function(dimensions_obj, session) {
+
+  get_plotly_box(id = "or_dot_plot",
+                 label = "Dot plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+}
+
+
+prot_or_dot_plot_server = function(r6, output, session) {
+
+  ns = session$ns
+
+  print_tm(r6$name, "Dot plot: START.")
+
+  output$or_dot_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::textInput(
+        inputId = ns("or_dot_plot_showcat"),
+        label = "Show category",
+        value = r6$params$or_dot_plot$showCategory
+      ),
+      shiny::selectInput(
+        inputId = ns("or_dot_plot_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$or_dot_plot$img_format,
+        width = "100%"),
+    )
+  })
+}
+
+prot_or_dot_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  shiny::observeEvent(c(input$or_dot_plot_showcat, input$or_dot_plot_img_format),{
+
+    # Update parameters
+    print_tm(r6$name, "Dot plot: Updating params...")
+
+    r6$param_or_dot_plot(showCategory = as.numeric(input$or_dot_plot_showcat),
+                         img_format = input$or_dot_plot_img_format)
+
+    # Produce the plot
+    base::tryCatch({
+      prot_or_dot_plot_generate(r6, color_palette, dimensions_obj, input)
+      prot_or_dot_plot_spawn(r6, input$dot_plot_img_format, output)
+    },error=function(e){
+      print_tm(r6$name, 'Dot plot: ERROR')
+    },finally={}
+    )
+  })
+
+  #
+  #   # Download associated tables
+  #   output$download_pca_scores_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_scores_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_scores_table, file_name)
+  #     }
+  #   )
+  #   output$download_pca_loadings_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_loadings_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_loadings_table, file_name)
+  #     }
+  #   )
+  #
+  # Expanded boxes
+  or_dot_plot_proxy = plotly::plotlyProxy(outputId = "or_dot_plot_plot",
+                                       session = session)
+
+  shiny::observeEvent(input$or_dot_plot_plotbox,{
+    if (input$or_dot_plot_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = or_dot_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = or_dot_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+
+}
+
+#-------------------------------------------------------------- or bar plot ----
+prot_or_bar_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+
+  if (input$or_bar_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  print_tm(r6$name, "Bar plot: generating plot.")
+  r6$plot_or_bar_plot(x = input$or_bar_plot_x,
+                      color = input$or_bar_plot_color,
+                      showCategory = as.numeric(input$or_bar_plot_showcat),
+                      width = width,
+                      height = height)
+}
+
+prot_or_bar_plot_spawn = function(r6, format, output) {
+  print_tm(r6$name, "Bar plot: spawning plot.")
+
+  output$or_bar_plot_plot = plotly::renderPlotly({
+    r6$plots$or_barplot
+    plotly::config(r6$plots$or_barplot, toImageButtonOptions = list(format= format,
+                                                                    filename= timestamped_name('barplot'),
+                                                                    height= NULL,
+                                                                    width= NULL,
+                                                                    scale= 1))
+  })
+}
+
+prot_or_bar_plot_ui = function(dimensions_obj, session) {
+
+  get_plotly_box(id = "or_bar_plot",
+                 label = "Bar plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+}
+
+
+prot_or_bar_plot_server = function(r6, output, session) {
+
+  ns = session$ns
+
+  print_tm(r6$name, "Bar plot: START.")
+
+  output$or_bar_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::textInput(
+        inputId = ns("or_bar_plot_showcat"),
+        label = "Show category",
+        value = r6$params$or_bar_plot$showCategory
+      ),
+      shiny::selectInput(
+        inputId = ns('or_bar_plot_x'),
+        label = "X-axis",
+        choices = c('Count'),
+        selected = r6$params$or_bar_plot$x,
+        width = '100%'
+      ),
+      shiny::selectInput(
+        inputId = ns('or_bar_plot_color'),
+        label = "Color",
+        choices = c('p.adjust'),
+        selected = r6$params$or_bar_plot$color,
+        width = '100%'
+      ),
+      shiny::selectInput(
+        inputId = ns("or_bar_plot_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$or_bar_plot$img_format,
+        width = "100%"),
+    )
+  })
+}
+
+prot_or_bar_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  shiny::observeEvent(c(input$or_bar_plot_x, input$or_bar_plot_color, input$or_bar_plot_showcat, input$or_bar_plot_img_format),{
+
+    # Update parameters
+    print_tm(r6$name, "Bar plot: Updating params...")
+
+    r6$param_or_bar_plot(x = input$or_bar_plot_x,
+                         color = input$or_bar_plot_color,
+                         showCategory = input$or_bar_plot_showcat,
+                         img_format = input$or_bar_plot_img_format)
+
+    # Produce the plot
+    base::tryCatch({
+      prot_or_bar_plot_generate(r6, color_palette, dimensions_obj, input)
+      prot_or_bar_plot_spawn(r6, input$dot_plot_img_format, output)
+    },error=function(e){
+      print_tm(r6$name, 'Bar plot: ERROR')
+    },finally={}
+    )
+  })
+
+  #
+  #   # Download associated tables
+  #   output$download_pca_scores_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_scores_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_scores_table, file_name)
+  #     }
+  #   )
+  #   output$download_pca_loadings_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_loadings_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_loadings_table, file_name)
+  #     }
+  #   )
+  #
+  # Expanded boxes
+  or_bar_plot_proxy = plotly::plotlyProxy(outputId = "or_bar_plot_plot",
+                                          session = session)
+
+  shiny::observeEvent(input$or_bar_plot_plotbox,{
+    if (input$or_bar_plot_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = or_bar_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = or_bar_plot_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+
+}
+
+#----------------------------------------------------------- or cnet plot ----
+prot_or_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+
+  print_tm(r6$name, "CNET plot: generating plot.")
+
+  if (input$or_cnet_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$plot_cnet_plot(x = r6$tables$go_enrich,
+                    showCategory = as.numeric(input$or_cnet_plot_showcat),
+                    context = "or")
+}
+
+prot_or_cnet_plot_spawn = function(r6, output) {
+  print_tm(r6$name, "CNET plot: spawning plot.")
+
+  output$or_cnet_plot_plot = visNetwork::renderVisNetwork(
+    expr = r6$plots$or_cnetplot,
+  )
+}
+
+prot_or_cnet_plot_ui = function(dimensions_obj, session) {
+
+  get_visnet_box(id = "or_cnet_plot",
+                 label = "CNET plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+}
+
+
+prot_or_cnet_plot_server = function(r6, output, session) {
+
+  ns = session$ns
+
+  print_tm(r6$name, "Cnet plot: START.")
+
+  output$or_cnet_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::textInput(
+        inputId = ns("or_cnet_plot_showcat"),
+        label = "Show category",
+        value = r6$params$or_cnet_plot$showCategory
+      )
+    )
+  })
+}
+
+prot_or_cnet_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  shiny::observeEvent(input$or_cnet_plot_showcat,{
+
+    # Update parameters
+    print_tm(r6$name, "CNET plot: Updating params...")
+
+    r6$param_or_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat))
+
+    base::tryCatch({
+      prot_or_cnet_plot_generate(r6, color_palette, dimensions_obj, input)
+      prot_or_cnet_plot_spawn(r6, output)
+    },error=function(e){
+      print_tm(r6$name, 'CNET plot: ERROR.')
+    },finally={}
+    )
+
+  })
+
+  #
+  #   # Download associated tables
+  #   output$download_pca_scores_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_scores_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_scores_table, file_name)
+  #     }
+  #   )
+  #   output$download_pca_loadings_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_loadings_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_loadings_table, file_name)
+  #     }
+  #   )
+  #
+  # Expanded boxes
+
+  or_cnet_plot_proxy = visNetwork::visNetworkProxy(shinyId = "or_cnet_plot_plot",
+                                                session = session)
+
+  shiny::observeEvent(input$or_cnet_plot_plotbox,{
+    if (input$or_cnet_plot_plotbox$maximized) {
+      visNetwork::visOptions(graph = or_cnet_plot_proxy,
+                             width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                             height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full)
+    } else {
+      visNetwork::visOptions(graph = or_cnet_plot_proxy,
+                             width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                             height = dimensions_obj$ypx * dimensions_obj$y_plot)
+    }
+  })
+
+}
+
+#----------------------------------------------------------- or eMap plot ----
+prot_or_emap_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+
+  if (input$or_emap_plot_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  print_tm(r6$name, "eMap plot: generating plot.")
+  r6$plot_emap_plot(x = r6$tables$go_enrich,
+                    showCategory = as.numeric(input$or_emap_plot_showcat),
+                    context = "or")
+}
+
+prot_or_emap_plot_spawn = function(r6, output) {
+  print_tm(r6$name, "eMap plot: spawning plot.")
+
+  output$or_emap_plot_plot = visNetwork::renderVisNetwork(
+    expr = r6$plots$or_emapplot,
+  )
+}
+
+prot_or_emap_plot_ui = function(dimensions_obj, session) {
+
+  get_visnet_box(id = "or_emap_plot",
+                 label = "eMap plot",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+}
+
+
+prot_or_emap_plot_server = function(r6, output, session) {
+
+  ns = session$ns
+
+  print_tm(r6$name, "eMap plot: START.")
+
+  output$or_emap_plot_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::textInput(
+        inputId = ns("or_emap_plot_showcat"),
+        label = "Show category",
+        value = r6$params$or_emap_plot$showCategory
+      )
+    )
+  })
+}
+
+prot_or_emap_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  shiny::observeEvent(input$or_emap_plot_showcat,{
+
+    # Update parameters
+    print_tm(r6$name, "eMap plot: Updating params...")
+
+    r6$param_or_emap_plot(showCategory = as.numeric(input$or_emap_plot_showcat))
+
+    base::tryCatch({
+      prot_or_emap_plot_generate(r6, colour_list, dimensions_obj, input)
+      prot_or_emap_plot_spawn(r6, output)
+    },error=function(e){
+      print_tm(r6$name, 'eMap plot: error, missing data.')
+    },finally={}
+    )
+  })
+
+  #
+  #   # Download associated tables
+  #   output$download_pca_scores_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_scores_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_scores_table, file_name)
+  #     }
+  #   )
+  #   output$download_pca_loadings_table = shiny::downloadHandler(
+  #     filename = function(){timestamped_name("pca_loadings_table.csv")},
+  #     content = function(file_name){
+  #       write.csv(r6$tables$pca_loadings_table, file_name)
+  #     }
+  #   )
+  #
+  # Expanded boxes
+
+  or_emap_plot_proxy = visNetwork::visNetworkProxy(shinyId = "or_emap_plot_plot",
+                                                session = session)
+
+  shiny::observeEvent(input$or_emap_plot_plotbox,{
+    if (input$or_emap_plot_plotbox$maximized) {
+      visNetwork::visOptions(graph = or_emap_plot_proxy,
+                             width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                             height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full)
+    } else {
+      visNetwork::visOptions(graph = or_emap_plot_proxy,
+                             width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                             height = dimensions_obj$ypx * dimensions_obj$y_plot)
+    }
+  })
+
+}
+
+

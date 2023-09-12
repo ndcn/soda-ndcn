@@ -1,3 +1,80 @@
+plot_one_prot_or = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_or_plotbox_switch_ui(selection_list = selection_list)
+
+  output$or_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_or_plotbox_switch_server(selection_list = input$show_plots_or)
+
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+
+plot_two_prot_or = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_or_plotbox_switch_ui(selection_list = selection_list)
+  output$or_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_or_plotbox_switch_server(selection_list = input$show_plots_or)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+plot_three_prot_or = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_or_plotbox_switch_ui(selection_list = selection_list)
+  output$or_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_or_plotbox_switch_server(selection_list = input$show_plots_or)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
+plot_four_prot_or = function(r6, dimensions_obj, selection_list, input, output, session) {
+  ns = session$ns
+  ui_functions = prot_or_plotbox_switch_ui(selection_list = selection_list)
+  output$or_plotbox_field = shiny::renderUI({
+    shiny::fluidRow(
+      shiny::tagList(
+        ui_functions[[1]](dimensions_obj, session),
+        ui_functions[[2]](dimensions_obj, session),
+        ui_functions[[3]](dimensions_obj, session),
+        ui_functions[[4]](dimensions_obj, session)
+      )
+    )
+  })
+
+  plot_servers = prot_or_plotbox_switch_server(selection_list = input$show_plots_or)
+  for (server_function in plot_servers) {
+    server_function(r6, output, session)
+  }
+}
+
 
 plot_one_prot_gsea = function(r6, dimensions_obj, selection_list, input, output, session) {
   ns = session$ns
@@ -75,6 +152,7 @@ plot_four_prot_gsea = function(r6, dimensions_obj, selection_list, input, output
     server_function(r6, output, session)
   }
 }
+
 
 
 plot_one_prot = function(r6, dimensions_obj, selection_list, input, output, session) {
@@ -205,6 +283,34 @@ prot_gsea_plotbox_switch_server = function(selection_list){
                                                   "select_ridge_plot" = prot_ridge_plot_server,
                                                   "select_cnet_plot" = prot_cnet_plot_server,
                                                   "select_emap_plot" = prot_emap_plot_server)
+    )
+  }
+  return(server_functions)
+}
+
+
+prot_or_plotbox_switch_ui = function(selection_list){
+  ui_functions = c()
+  for (plot in selection_list) {
+    ui_functions = c(ui_functions, switch(EXPR = plot,
+                                          "select_dot_plot" = prot_or_dot_plot_ui,
+                                          "select_bar_plot" = prot_or_bar_plot_ui,
+                                          "select_cnet_plot" = prot_or_cnet_plot_ui,
+                                          "select_emap_plot" = prot_or_emap_plot_ui
+    )
+    )
+  }
+  return(ui_functions)
+}
+
+prot_or_plotbox_switch_server = function(selection_list){
+  server_functions = c()
+  for (plot in selection_list) {
+    server_functions = c(server_functions, switch(EXPR = plot,
+                                                  "select_dot_plot" = prot_or_dot_plot_server,
+                                                  "select_bar_plot" = prot_or_bar_plot_server,
+                                                  "select_cnet_plot" = prot_or_cnet_plot_server,
+                                                  "select_emap_plot" = prot_or_emap_plot_server)
     )
   }
   return(server_functions)
@@ -1983,7 +2089,142 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   #------------------------------------------ Over-representation rendering ----
 
   output$over_representation_ui = shiny::renderUI({
-    shiny::h2('Over-representation analysis coming soon')
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 11,
+          shinyWidgets::checkboxGroupButtons(inputId = ns("show_plots_or"),
+                                             label = NULL,
+                                             status = "default",
+                                             choices = or_plot_list(),
+                                             checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
+                                             size = "normal",
+                                             justified = TRUE)
+        ),
+        shiny::column(
+          width = 1,
+          shinyWidgets::actionBttn(inputId = ns("clear_plots_or"),
+                                   label = "Clear",
+                                   style = "material-flat",
+                                   color = "danger",
+                                   block = T,
+                                   icon = icon("x"))
+        )
+      ),
+      shiny::uiOutput(
+        outputId = ns("or_plotbox_field")
+      )
+    )
+  })
+
+  #--------------------------------------------- Over-representation server ----
+
+  # Initialise dimensions object
+  dimensions_obj_or = shiny::reactiveValues(
+    x_box = module_controler$dims$x_box,
+    y_box = module_controler$dims$y_box,
+    x_plot = module_controler$dims$x_plot,
+    y_plot = module_controler$dims$y_plot,
+    x_plot_full = module_controler$dims$x_plot_full,
+    y_plot_full = module_controler$dims$y_plot_full,
+    xpx_total = shinybrowser::get_width(),
+    ypx_total = shinybrowser::get_height(),
+    xbs = 12,
+    xpx = shinybrowser::get_width(),
+    ypx = shinybrowser::get_height()
+  )
+
+  # Plot selection
+  prot_or_dot_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  prot_or_bar_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  prot_or_cnet_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  prot_or_emap_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+
+  # Plot selection
+  session$userData[[id]]$show_plots_or = shiny::observeEvent(input$show_plots_or, {
+    shiny::req(r6$tables$go_enrich)
+
+    # Update x dimensions in px and bs, and y in px
+    if (length(input$show_plots_or) < 2) {
+      dimensions_obj_or$xbs = 12
+      dimensions_obj_or$xpx = shinybrowser::get_width()
+      dimensions_obj_or$ypx = shinybrowser::get_height()
+    } else if (length(input$show_plots_or) == 2) {
+      dimensions_obj_or$xbs  = 6
+      dimensions_obj_or$xpx = shinybrowser::get_width()/2
+      dimensions_obj_or$ypx = shinybrowser::get_height()
+    } else {
+      dimensions_obj_or$xbs  = 6
+      dimensions_obj_or$xpx = shinybrowser::get_width()/2
+      dimensions_obj_or$ypx = shinybrowser::get_height()/2.2
+    }
+
+    # Plots selected: 1 to 4
+    print_tm(m, paste0("Plot selection: ", paste(input$show_plots_or, collapse = ", ")))
+    if (length(input$show_plots_or) == 1) {
+      plot_one_prot_or(r6 = r6,
+                       dimensions_obj = dimensions_obj_or,
+                       selection_list = input$show_plots_or,
+                       input = input,
+                       output = output,
+                       session = session)
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_or",
+        disabledChoices = input$show_plots_or
+      )
+
+    } else if (length(input$show_plots_or) == 2) {
+      plot_two_prot_or(r6 = r6,
+                       dimensions_obj = dimensions_obj_or,
+                       selection_list = input$show_plots_or,
+                       input = input,
+                       output = output,
+                       session = session)
+
+    } else if (length(input$show_plots_or) == 3) {
+      plot_three_prot_or(r6 = r6,
+                         dimensions_obj = dimensions_obj_or,
+                         selection_list = input$show_plots_or,
+                         input = input,
+                         output = output,
+                         session = session)
+
+    } else if (length(input$show_plots_or) >= 4) {
+      plot_four_prot_or(r6 = r6,
+                        dimensions_obj = dimensions_obj_or,
+                        selection_list = input$show_plots_or,
+                        input = input,
+                        output = output,
+                        session = session)
+
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_or",
+        disabledChoices = setdiff(unname(or_plot_list()), input$show_plots_or)
+      )
+
+    }
+    if ((length(input$show_plots_or) > 1) & (length(input$show_plots_or) < 4)) {
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_or",
+        disabledChoices = NULL
+      )
+    }
+  })
+
+
+  session$userData[[id]]$clear_plots_or = shiny::observeEvent(input$clear_plots_or, {
+    print_tm(m, "Clearing plots")
+    shinyWidgets::updateCheckboxGroupButtons(
+      session = session,
+      inputId = "show_plots_or",
+      disabled = FALSE,
+      selected = character(0))
+    output$or_plotbox_field = shiny::renderUI(
+      NULL
+    )
   })
 
 
