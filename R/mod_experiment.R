@@ -49,7 +49,7 @@ experiment_server = function(id, type, module_controler) {
       } else if (type == 'Proteomics') {
         proteomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
       } else if (type == 'Transcriptomics') {
-        transcriptomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
+        proteomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
       }
     }
   )

@@ -738,6 +738,10 @@ Prot_exp = R6::R6Class(
       features = na.omit(features)
       features = names(features)[abs(features) > fc_threshold]
 
+      if (length(features) == 0) {
+        return()
+      }
+
       go_enrich = clusterProfiler::enrichGO(gene = features,
                                             universe = universe,
                                             OrgDb = 'org.Hs.eg.db',
