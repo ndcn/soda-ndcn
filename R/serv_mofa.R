@@ -117,7 +117,7 @@ mofa_plot_four = function(r6, dimensions_obj, selection_list, input, output, ses
 
 
 
-#----------------------------------------------------------------- MOFA+ UI ----
+#------------------------------------------------------------------ MOFA UI ----
 mofa_ui = function(id) {
   ns = shiny::NS(id)
   bs4Dash::tabsetPanel(
@@ -451,7 +451,7 @@ mofa_server = function(id, r6, module_controler) {
         if (!is.null(module_controler$exp_r6$exp_1)) {
           if (input$select_exp_1) {
             print('selected exp 1')
-            r6$tables$omics_tables$exp_1 = t(module_controler$exp_r6$exp_1$tables$raw_data)
+            r6$tables$omics_tables[[module_controler$exp_r6$exp_1$name]] = t(module_controler$exp_r6$exp_1$tables$raw_data)
             if (is.null(r6$tables$metadata)) {
               r6$tables$metadata = t(module_controler$exp_r6$exp_1$tables$raw_meta)
             }
@@ -461,7 +461,7 @@ mofa_server = function(id, r6, module_controler) {
         if (!is.null(module_controler$exp_r6$exp_2)) {
           if (input$select_exp_2) {
             print('selected exp 2')
-            r6$tables$omics_tables$exp_2 = t(module_controler$exp_r6$exp_2$tables$raw_data)
+            r6$tables$omics_tables[[module_controler$exp_r6$exp_2$name]] = t(module_controler$exp_r6$exp_2$tables$raw_data)
             if (is.null(r6$tables$metadata)) {
               r6$tables$metadata = t(module_controler$exp_r6$exp_2$tables$raw_meta)
             }
@@ -471,7 +471,7 @@ mofa_server = function(id, r6, module_controler) {
         if (!is.null(module_controler$exp_r6$exp_3)) {
           if (input$select_exp_3) {
             print('selected exp 3')
-            r6$tables$omics_tables$exp_3 = t(module_controler$exp_r6$exp_3$tables$raw_data)
+            r6$tables$omics_tables[[module_controler$exp_r6$exp_3$name]] = t(module_controler$exp_r6$exp_3$tables$raw_data)
             if (is.null(r6$tables$metadata)) {
               r6$tables$metadata = t(module_controler$exp_r6$exp_3$tables$raw_meta)
             }
@@ -481,7 +481,7 @@ mofa_server = function(id, r6, module_controler) {
         if (!is.null(module_controler$exp_r6$exp_4)) {
           if (input$select_exp_4) {
             print('selected exp 4')
-            r6$tables$omics_tables$exp_4 = t(module_controler$exp_r6$exp_4$tables$raw_data)
+            r6$tables$omics_tables[[module_controler$exp_r6$exp_4$name]] = t(module_controler$exp_r6$exp_4$tables$raw_data)
             if (is.null(r6$tables$metadata)) {
               r6$tables$metadata = t(module_controler$exp_r6$exp_4$tables$raw_meta)
             }
@@ -491,7 +491,7 @@ mofa_server = function(id, r6, module_controler) {
         if (!is.null(module_controler$exp_r6$exp_5)) {
           if (input$select_exp_5) {
             print('selected exp 5')
-            r6$tables$omics_tables$exp_5 = t(module_controler$exp_r6$exp_5$tables$raw_data)
+            r6$tables$omics_tables[[module_controler$exp_r6$exp_5$name]] = t(module_controler$exp_r6$exp_5$tables$raw_data)
             if (is.null(r6$tables$metadata)) {
               r6$tables$metadata = t(module_controler$exp_r6$exp_5$tables$raw_meta)
             }
@@ -501,7 +501,7 @@ mofa_server = function(id, r6, module_controler) {
         if (!is.null(module_controler$exp_r6$exp_6)) {
           if (input$select_exp_6) {
             print('selected exp 6')
-            r6$tables$omics_tables$exp_6 = t(module_controler$exp_r6$exp_6$tables$raw_data)
+            r6$tables$omics_tables[[module_controler$exp_r6$exp_6$name]] = t(module_controler$exp_r6$exp_6$tables$raw_data)
             if (is.null(r6$tables$metadata)) {
               r6$tables$metadata = t(module_controler$exp_r6$exp_6$tables$raw_meta)
             }

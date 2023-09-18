@@ -207,7 +207,7 @@ Mofa_data = R6::R6Class(
                            save_data = FALSE) {
       model = MOFA2::run_mofa(object = mofa_object,
                               outfile = outfile,
-                              use_basilisk = T,
+                              use_basilisk = F,
                               save_data = save_data)
 
       factor_list = MOFA2::get_factors(model)

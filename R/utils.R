@@ -127,6 +127,17 @@ get_mofa_plot_list = function() {
   return(plot_list)
 }
 
+get_snf_plot_list = function() {
+  plot_list = c("Clusters heatmap 1 " = "select_clusters_heatmap_1",
+                "Clusters heatmap 2 " = "select_clusters_heatmap_2",
+                'Similarity network 1' = 'select_similarity_network_1',
+                'Similarity network 2' = 'select_similarity_network_2',
+                "Fusion heatmap" = "select_fusion_heatmap",
+                'Similarity network fusion' = 'select_similarity_network_fusion'
+  )
+  return(plot_list)
+}
+
 
 #---------------------------------------------------------- Purge functions ----
 purge_module_inputs = function(id, input_object) {
@@ -177,6 +188,15 @@ soda_read_table = function(file_path, sep = NA) {
 }
 
 #-------------------------------------------------------- General utilities ----
+
+is_coercible_to_numeric = function(vector) {
+  numeric_values = suppressWarnings(as.numeric(vector))
+  if (any(is.na(numeric_values))) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
 
 unique_na_rm = function(vector) {
   vector = vector[!is.na(vector)]
@@ -265,6 +285,36 @@ get_plotly_box = function(id, label, dimensions_obj, session) {
     )
   )
 }
+
+# NetworkD3 plotbox
+get_networkd3_box = function(id, label, dimensions_obj, session) {
+
+  ns = session$ns
+
+  bs4Dash::box(
+    id = ns(paste0(id, "_plotbox")),
+    title = label,
+    width = dimensions_obj$xbs,
+    height = dimensions_obj$ypx * dimensions_obj$y_box,
+    solidHeader = TRUE,
+    maximizable = TRUE,
+    collapsible = FALSE,
+    status = "gray",
+    sidebar = bs4Dash::boxSidebar(
+      id = ns(paste0(id, "_sidebar")),
+      width = 40,
+      shiny::uiOutput(
+        outputId = ns(paste0(id, "_sidebar_ui"))
+      )
+    ),
+    networkD3::simpleNetworkOutput(
+      outputId = ns(paste0(id, "_plot")),
+      width = dimensions_obj$xpx * dimensions_obj$x_plot,
+      height = dimensions_obj$ypx * dimensions_obj$y_plot
+    )
+  )
+}
+
 
 # Visnet plotbox (for networks)
 get_visnet_box = function(id, label, dimensions_obj, session) {
@@ -940,8 +990,8 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 
 #--------------------------------------------------------- Example datasets ----
 example_lipidomics = function(name, id = NA, slot = NA) {
-  lips_data = soda_read_table('./examples/multiomics/lips_data.csv')
-  meta_data = soda_read_table('./examples/multiomics/lips_meta.csv')
+  lips_data = soda_read_table('./examples/multiomics/lipidomics.csv')
+  meta_data = soda_read_table('./examples/multiomics/lipidomics_metadata.csv')
 
   r6 = Lips_exp$new(name = name, id = id, slot = slot, preloaded = T)
 
