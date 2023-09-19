@@ -6,7 +6,7 @@ mofa_plotbox_switch_ui = function(selection_list){
     ui_functions = c(ui_functions, switch(EXPR = plot,
                                           "select_explained_variance" = explained_variance_ui,
                                           "select_factor_plot" = factor_plot_ui,
-                                          "select_factors_plot" = factors_plot_ui,
+                                          "select_combined_factors" = combined_factors_ui,
                                           "select_feature_weights" = feature_weights_ui,
                                           "select_feature_top_weights" = feature_top_weights_ui,
                                           "select_mofa_heatmap" = mofa_heatmap_ui,
@@ -22,7 +22,7 @@ mofa_plotbox_switch_server = function(selection_list){
     server_functions = c(server_functions, switch(EXPR = plot,
                                                   "select_explained_variance" = explained_variance_server,
                                                   "select_factor_plot" = factor_plot_server,
-                                                  "select_factors_plot" = factors_plot_server,
+                                                  "select_combined_factors" = combined_factors_server,
                                                   "select_feature_weights" = feature_weights_server,
                                                   "select_feature_top_weights" = feature_top_weights_server,
                                                   "select_mofa_heatmap" = mofa_heatmap_server,
@@ -584,14 +584,7 @@ mofa_server = function(id, r6, module_controler) {
       #
       #
       #
-      color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
-      # # Plotting events
-      explained_variance_events(r6, dimensions_obj, color_palette, input, output, session)
-      factor_plot_events(r6, dimensions_obj, color_palette, input, output, session)
-      feature_weights_events(r6, dimensions_obj, color_palette, input, output, session)
-      feature_top_weights_events(r6, dimensions_obj, color_palette, input, output, session)
-      mofa_heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
-      scatterplot_events(r6, dimensions_obj, r6_settings, input, output, session)
+
       #
       #
       #
@@ -603,38 +596,33 @@ mofa_server = function(id, r6, module_controler) {
 
       # Initialise dimensions object
       dimensions_obj = shiny::reactiveValues()
-      # shiny::observe({
-      #   dimensions_obj = shiny::reactiveValues(
-      #     x_box = module_controler$dims$x_box,
-      #     y_box = module_controler$dims$y_box,
-      #     x_plot = module_controler$dims$x_plot,
-      #     y_plot = module_controler$dims$y_plot,
-      #     x_plot_full = module_controler$dims$x_plot_full,
-      #     y_plot_full = module_controler$dims$y_plot_full,
-      #     xpx_total = shinybrowser::get_width(),
-      #     ypx_total = shinybrowser::get_height(),
-      #     xbs = 12,
-      #     xpx = shinybrowser::get_width(),
-      #     ypx = shinybrowser::get_height()
-      #   )
-      # })
+      shiny::observe({
+        dimensions_obj$x_box = module_controler$dims$x_box
+        dimensions_obj$y_box = module_controler$dims$y_box
+        dimensions_obj$x_plot = module_controler$dims$x_plot
+        dimensions_obj$y_plot = module_controler$dims$y_plot
+        dimensions_obj$x_plot_full = module_controler$dims$x_plot_full
+        dimensions_obj$y_plot_full = module_controler$dims$y_plot_full
+        dimensions_obj$xpx_total = shinybrowser::get_width()
+        dimensions_obj$ypx_total = shinybrowser::get_height()
+        dimensions_obj$xbs = 12
+        dimensions_obj$xpx = shinybrowser::get_width()
+        dimensions_obj$ypx = shinybrowser::get_height()
+      })
+
+      color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
+      # # Plotting events
+      explained_variance_events(r6, dimensions_obj, color_palette, input, output, session)
+      factor_plot_events(r6, dimensions_obj, color_palette, input, output, session)
+      combined_factors_events(r6, dimensions_obj, color_palette, input, output, session)
+      feature_weights_events(r6, dimensions_obj, color_palette, input, output, session)
+      feature_top_weights_events(r6, dimensions_obj, color_palette, input, output, session)
+      mofa_heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
+      scatterplot_events(r6, dimensions_obj, r6_settings, input, output, session)
+
 
       # Plot selection
       session$userData[[id]]$show_plots_mofa = shiny::observeEvent(input$show_plots_mofa, {
-
-        dimensions_obj = shiny::reactiveValues(
-          x_box = module_controler$dims$x_box,
-          y_box = module_controler$dims$y_box,
-          x_plot = module_controler$dims$x_plot,
-          y_plot = module_controler$dims$y_plot,
-          x_plot_full = module_controler$dims$x_plot_full,
-          y_plot_full = module_controler$dims$y_plot_full,
-          xpx_total = shinybrowser::get_width(),
-          ypx_total = shinybrowser::get_height(),
-          xbs = 12,
-          xpx = shinybrowser::get_width(),
-          ypx = shinybrowser::get_height()
-        )
 
         # Update x dimensions in px and bs, and y in px
         if (length(input$show_plots_mofa) < 2) {

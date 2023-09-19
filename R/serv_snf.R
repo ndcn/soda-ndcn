@@ -399,6 +399,27 @@ snf_server = function(id, r6, module_controler) {
         shinyjs::enable("run_snf")
       })
 
+
+
+      # #----------------------------------------------------------- Plotting ----
+
+      # Initialise dimensions object
+      dimensions_obj = shiny::reactiveValues()
+      shiny::observe({
+        dimensions_obj$x_box = module_controler$dims$x_box
+        dimensions_obj$y_box = module_controler$dims$y_box
+        dimensions_obj$x_plot = module_controler$dims$x_plot
+        dimensions_obj$y_plot = module_controler$dims$y_plot
+        dimensions_obj$x_plot_full = module_controler$dims$x_plot_full
+        dimensions_obj$y_plot_full = module_controler$dims$y_plot_full
+        dimensions_obj$xpx_total = shinybrowser::get_width()
+        dimensions_obj$ypx_total = shinybrowser::get_height()
+        dimensions_obj$xbs = 12
+        dimensions_obj$xpx = shinybrowser::get_width()
+        dimensions_obj$ypx = shinybrowser::get_height()
+      })
+
+
       color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
       # # Plotting events
       clusters_heatmap_1_events(r6, dimensions_obj, color_palette, input, output, session)
@@ -409,42 +430,8 @@ snf_server = function(id, r6, module_controler) {
       similarity_network_fusion_events(r6, dimensions_obj, color_palette, input, output, session)
 
 
-      # #----------------------------------------------------------- Plotting ----
-
-      # Initialise dimensions object
-      dimensions_obj = shiny::reactiveValues()
-      # shiny::observe({
-      #   dimensions_obj = shiny::reactiveValues(
-      #     x_box = module_controler$dims$x_box,
-      #     y_box = module_controler$dims$y_box,
-      #     x_plot = module_controler$dims$x_plot,
-      #     y_plot = module_controler$dims$y_plot,
-      #     x_plot_full = module_controler$dims$x_plot_full,
-      #     y_plot_full = module_controler$dims$y_plot_full,
-      #     xpx_total = shinybrowser::get_width(),
-      #     ypx_total = shinybrowser::get_height(),
-      #     xbs = 12,
-      #     xpx = shinybrowser::get_width(),
-      #     ypx = shinybrowser::get_height()
-      #   )
-      # })
-
       # Plot selection
       session$userData[[id]]$show_plots_snf = shiny::observeEvent(input$show_plots_snf, {
-
-        dimensions_obj = shiny::reactiveValues(
-          x_box = module_controler$dims$x_box,
-          y_box = module_controler$dims$y_box,
-          x_plot = module_controler$dims$x_plot,
-          y_plot = module_controler$dims$y_plot,
-          x_plot_full = module_controler$dims$x_plot_full,
-          y_plot_full = module_controler$dims$y_plot_full,
-          xpx_total = shinybrowser::get_width(),
-          ypx_total = shinybrowser::get_height(),
-          xbs = 12,
-          xpx = shinybrowser::get_width(),
-          ypx = shinybrowser::get_height()
-        )
 
         # Update x dimensions in px and bs, and y in px
         if (length(input$show_plots_snf) < 2) {

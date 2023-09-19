@@ -40,12 +40,14 @@ library(MOFA2)
 library(basilisk)
 
 
-reticulate::use_condaenv(condaenv = 'mofa_1')
+# reticulate::use_condaenv(condaenv = 'mofa_1')
 
 # New
 library(SNFtool)
 library(networkD3)
 library(igraph)
+library(reshape2)
+library(dplyr)
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
