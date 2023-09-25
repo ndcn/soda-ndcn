@@ -513,21 +513,21 @@ mofa_server = function(id, r6, module_controler) {
         r6$create_mofa_object()
 
         print_t("MOFA: training model...")
-        r6$prepare_mofa(scale_views = F,
-                        scale_groups = F,
-                        center_groups = T,
-                        likelihoods = 'gaussian',
-                        num_factors = 6,
-                        spikeslab_factors = F,
-                        spikeslab_weights = F,
-                        ard_factors = F,
-                        ard_weights = T,
-                        maxiter = 1000,
-                        convergence_mode = 'fast',
-                        startELBO = 1,
-                        freqELBO = 5,
-                        stochastic = F,
-                        weight_views = F)
+        r6$prepare_mofa(scale_views = input$data_scale_views,
+                        scale_groups = input$data_scale_groups,
+                        center_groups = input$data_center_groups,
+                        likelihoods = input$model_likelihoods,
+                        num_factors = as.numeric(input$model_num_factors),
+                        spikeslab_factors = input$model_spikeslab_factors,
+                        spikeslab_weights = input$model_spikeslab_weights,
+                        ard_factors = input$model_ard_factors,
+                        ard_weights = input$model_ard_weights,
+                        maxiter = as.numeric(input$training_iterations),
+                        convergence_mode = input$training_convergence_mode,
+                        startELBO = as.numeric(input$training_start_elbo),
+                        freqELBO = as.numeric(input$training_freq_elbo),
+                        stochastic = input$training_stochastic,
+                        weight_views = input$training_weight_views)
         r6$train_model(mofa_object = r6$mofa_objects$pretrained,
                        outfile = base::file.path("./models", timestamped_name("model.hdf5")),
                        save_data = T)
@@ -542,56 +542,6 @@ mofa_server = function(id, r6, module_controler) {
         shinyjs::enable("run_mofa")
       })
 
-
-      # # Reactive values
-      # shiny::observeEvent(input$show_plots_mofa,{
-      #
-      #   # x (width) in BS (Bootstrap) values
-      #   if (length(input$show_plots_mofa) < 2) {
-      #     dimensions_obj$xbs = 12
-      #   } else {
-      #     dimensions_obj$xbs = 6
-      #   }
-      #
-      #   # x (width) in pixels
-      #   if (length(input$show_plots_mofa) < 2) {
-      #     dimensions_obj$xpx = shinybrowser::get_width()
-      #   } else {
-      #     dimensions_obj$xpx = shinybrowser::get_width()/2
-      #   }
-      #
-      #   # y (height) in pixels
-      #   if (length(input$show_plots_mofa) < 3) {
-      #     dimensions_obj$ypx = shinybrowser::get_height()
-      #   } else {
-      #     dimensions_obj$ypx = shinybrowser::get_height()/2.1
-      #   }
-      # })
-      #
-      #
-
-      # # Reset everything
-      # shiny::observeEvent(input$reset_all, {
-      #   print_time("MOFA: resetting experiment.")
-      #   r6$reset_all()
-      # })
-      #
-      # # Load example data
-      # shiny::observeEvent(input$use_artificial_data, {
-      #   print_time("MOFA: Loading example data...")
-      #   r6$get_example_data()
-      # })
-      #
-      #
-      #
-
-      #
-      #
-      #
-      #
-      #
-      #
-      #
       # #----------------------------------------------------------- Plotting ----
 
       # Initialise dimensions object

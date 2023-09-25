@@ -48,6 +48,7 @@ library(networkD3)
 library(igraph)
 library(reshape2)
 library(dplyr)
+library(ggupset)
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
