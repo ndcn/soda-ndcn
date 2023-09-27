@@ -631,12 +631,23 @@ Mofa_data = R6::R6Class(
       factor = as.numeric(factor)
       view = as.numeric(view)
       features = as.numeric(features)
-      if (min_value == "") {
-        min_value = NULL
+
+      if (!is.null(min_value)){
+        if (min_value == "") {
+          min_value = NULL
+        } else {
+          min_value = as.numeric(min_value)
+        }
       }
-      if (max_value == "") {
-        max_value = NULL
+
+      if (!is.null(max_value)){
+        if (max_value == "") {
+          max_value = NULL
+        } else {
+          max_value = as.numeric(max_value)
+        }
       }
+
 
       groups = "all"
       cluster_rows = FALSE

@@ -190,6 +190,8 @@ server = function(input, output, session) {
     )
   )
 
+  options(shiny.maxRequestSize=300*1024^2)
+
   module_controler = shiny::reactiveValues(
 
     slot_taken = list(

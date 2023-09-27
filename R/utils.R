@@ -160,6 +160,13 @@ find_delim = function(path) {
 }
 
 soda_read_table = function(file_path, sep = NA) {
+
+  if (is.na(sep)) {
+    if (stringr::str_sub(file_path, -4, -1) == ".tsv") {
+      sep = '\t'
+    }
+  }
+
   if (stringr::str_sub(file_path, -5, -1) == ".xlsx") {
     data_table = as.data.frame(readxl::read_xlsx(file_path))
   } else {
@@ -1048,10 +1055,9 @@ example_lipidomics = function(name, id = NA, slot = NA) {
   return(r6)
 }
 
-example_proteomics = function(name = 'prot_example', id = NA, slot = NA) {
-  prot_data = soda_read_table('./examples/multiomics/proteomics_2.tsv',
-                              sep = '\t')
-  meta_data = soda_read_table('./examples/multiomics/metadata.csv')
+example_proteomics = function(name = 'prot_example', id = NA, slot = NA, data = './examples/multiomics/proteomics_2.tsv', meta = './examples/multiomics/metadata.csv') {
+  prot_data = soda_read_table(data)
+  meta_data = soda_read_table(meta)
 
   r6 = Prot_exp$new(name = name, id = id, slot = slot, preloaded = T)
 
@@ -1111,10 +1117,9 @@ example_proteomics = function(name = 'prot_example', id = NA, slot = NA) {
   return(r6)
 }
 
-example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA) {
-  trns_data = soda_read_table('./examples/multiomics/transcriptomics_2_genename_test.tsv',
-                              sep = '\t')
-  meta_data = soda_read_table('./examples/multiomics/metadata.csv')
+example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA, data = './examples/multiomics/transcriptomics_2_genename_test.tsv', meta = './examples/multiomics/metadata.csv') {
+  trns_data = soda_read_table(data)
+  meta_data = soda_read_table(meta)
 
   r6 = Trns_exp$new(name = name, id = id, slot = slot, preloaded = T)
 
