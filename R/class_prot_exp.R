@@ -1201,7 +1201,8 @@ Prot_exp = R6::R6Class(
       node_table$label = all_nodes
       node_table$color = c(rep("#FFD800", length(main_nodes)),
                            rep("#20D9D6", length(secondary_nodes)))
-      node_table$shape = rep("circle", nrow(node_table))
+
+      node_table$shape = rep("dot", nrow(node_table))
 
 
 
@@ -1233,8 +1234,8 @@ Prot_exp = R6::R6Class(
                                core_enrichment = TRUE,
                                orderBy = "NES",
                                decreasing = FALSE,
-                               width,
-                               height) {
+                               width = NULL,
+                               height = NULL) {
 
       print_tm(self$name, "Ridgeplot initiated")
 
@@ -1290,7 +1291,6 @@ Prot_exp = R6::R6Class(
       names(col_values) = seq(1, length(col_values), by = 1)
       col_pvals = sort(unique(gs2val.df[,"p.adjust"]))
 
-
       p = plotly::plot_ly(width = width,
                           height = height)
       incr = 0
@@ -1310,6 +1310,17 @@ Prot_exp = R6::R6Class(
         tmp_table$text = paste0(trace, ":\n", "Count: ", tmp_table$Freq, "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1,2))
 
         tmp_table$Freq = tmp_table$Freq / max(tmp_table$Freq) + incr
+
+
+        # if ((tmp_table$Freq[nrow(tmp_table)] - incr) > 0) {
+        #   tmp_table = base::rbind(tmp_table, c(tmp_table$Var1[tmp_table] +0.5, incr, paste0(trace, ":\n", "Count: ", "0", "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1[1] -1,2))))
+        # }
+        # if ((tmp_table$Freq[1] - incr) > 0) {
+        #   tmp_table = rbind(c(tmp_table$Var1[1] -0.5, incr, paste0(trace, ":\n", "Count: ", "0", "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1[1] -1,2))),
+        #                     tmp_table)
+        # }
+
+
 
         p = add_trace(p,
                       line = list(
@@ -1373,7 +1384,8 @@ Prot_exp = R6::R6Class(
                    zeroline = FALSE,
                    gridcolor = "rgb(255,255,255)",
                    gridwidth = 1
-                 ))
+                 ),
+                 xaxis = list(title = "Log2(fold change)"))
 
       self$plots$ridgeplot = p
     },
