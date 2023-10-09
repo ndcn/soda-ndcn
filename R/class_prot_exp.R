@@ -861,15 +861,17 @@ Prot_exp = R6::R6Class(
       # Annotations
       if (!is.null(row_annotations)) {
         if (length(row_annotations) > 1) {
-          row_annotations = meta_table[, row_annotations]
+          row_annotations = meta_table[rownames(data_table), row_annotations]
           colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
         } else {
           row_names = row_annotations
-          row_annotations = as.data.frame(meta_table[, row_annotations],
-                                          row.names = rownames(meta_table))
+          row_annotations = as.data.frame(meta_table[rownames(data_table), row_annotations],
+                                          row.names = rownames(data_table))
+
           colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
         }
       }
+
 
       if (impute) {
         print_tm(self$name, 'Imputing NAs')

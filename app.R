@@ -39,7 +39,16 @@ library(ggridges)
 library(MOFA2)
 library(basilisk)
 
+
 # reticulate::use_condaenv(condaenv = 'mofa_1')
+
+# New
+library(SNFtool)
+library(networkD3)
+library(igraph)
+library(reshape2)
+library(dplyr)
+library(ggupset)
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
@@ -80,6 +89,12 @@ sidebar_ui = function() {
         text = "MOFA",
         tabName = "mofa_tab",
         icon = shiny::icon("m")
+      ),
+
+      bs4Dash::menuItem(
+        text = "SNF",
+        tabName = "snf_tab",
+        icon = shiny::icon("s")
       ),
 
       bs4Dash::menuItem(
@@ -144,6 +159,11 @@ body_ui = function() {
       ),
 
       bs4Dash::tabItem(
+        tabName = "snf_tab",
+        snf_ui(id = "snf")
+      ),
+
+      bs4Dash::tabItem(
         tabName = "about",
         about_ui(id = 'mod_about')
       )
@@ -169,6 +189,8 @@ server = function(input, output, session) {
       admin = c(FALSE, FALSE))
     )
   )
+
+  options(shiny.maxRequestSize=300*1024^2)
 
   module_controler = shiny::reactiveValues(
 
@@ -233,6 +255,10 @@ server = function(input, output, session) {
     name = "mofa_1"
   )
 
+  snf_data = Snf_data$new(
+    name = "snf_1"
+  )
+
   start_server(id = 'mod_start', main_input = input, main_output = output, main_session = session, module_controler = module_controler)
   about_server(id = 'mod_about', main_output = output)
 
@@ -253,6 +279,9 @@ server = function(input, output, session) {
 
   # MOFA module
   mofa_server("mofa", r6 = mofa_data, module_controler = module_controler)
+
+  # SNF module
+  snf_server("snf", r6 = snf_data, module_controler = module_controler)
 
   # Example datasets
   shiny::observeEvent(input[['mod_start-add_lipidomics_ex']],{
