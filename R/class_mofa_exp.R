@@ -76,6 +76,8 @@ Mofa_data = R6::R6Class(
         imputed = FALSE,
         denoise = FALSE,
         cluster_cols = TRUE,
+        cluster_rows = TRUE,
+        row_annotations = NULL,
         max_value = NULL,
         min_value = NULL,
         img_format = 'png'
@@ -108,13 +110,15 @@ Mofa_data = R6::R6Class(
     },
 
     param_mofa_heatmap = function(factor, view, features, imputed, denoise, cluster_cols,
-                                  max_value, min_value, img_format) {
+                                  cluster_rows, row_annotations, max_value, min_value, img_format) {
       self$params$mofa_heatmap$factor = factor
       self$params$mofa_heatmap$view = view
       self$params$mofa_heatmap$features = features
       self$params$mofa_heatmap$imputed = imputed
       self$params$mofa_heatmap$denoise = denoise
       self$params$mofa_heatmap$cluster_cols = cluster_cols
+      self$params$mofa_heatmap$cluster_rows = cluster_rows
+      self$params$mofa_heatmap$row_annotations = row_annotations
       self$params$mofa_heatmap$max_value = max_value
       self$params$mofa_heatmap$min_value = min_value
       self$params$mofa_heatmap$img_format = img_format
@@ -616,12 +620,15 @@ Mofa_data = R6::R6Class(
 
     # MOFA Heatmap
     plot_mofa_heatmap = function(model = self$mofa_objects$model,
+                                 meta_table = t(self$tables$metadata),
                                  factor = 1,
                                  view = 1,
                                  features = 50,
                                  imputed = FALSE,
                                  denoise = FALSE,
                                  cluster_cols = TRUE,
+                                 cluster_rows = TRUE,
+                                 row_annotations = NULL,
                                  max_value = NULL,
                                  min_value = NULL,
                                  width = NULL,
@@ -650,7 +657,7 @@ Mofa_data = R6::R6Class(
 
 
       groups = "all"
-      cluster_rows = FALSE
+
       groups <- MOFA2:::.check_and_get_groups(model, groups)
       factor <- MOFA2:::.check_and_get_factors(model, factor)
       view <- MOFA2:::.check_and_get_views(model, view)
@@ -703,6 +710,21 @@ Mofa_data = R6::R6Class(
         data[data <= min_value] = min_value
       }
 
+
+      # Annotations
+      if (!is.null(row_annotations)) {
+        if (length(row_annotations) > 1) {
+          row_annotations = meta_table[, row_annotations]
+          colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
+        } else {
+          row_names = row_annotations
+          row_annotations = as.data.frame(meta_table[, row_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+
       # Set the clustering
       if (cluster_rows & cluster_cols) {
         dendrogram_list = "both"
@@ -719,12 +741,13 @@ Mofa_data = R6::R6Class(
                                    low = "blue",
                                    mid = "#faf4af",
                                    high = "red",
-                                   midpoint = max(data)/2,
-                                   limits = c(min(data), max(data))
+                                   midpoint = max(data, na.rm = T)/2,
+                                   limits = c(min(data, na.rm = T), max(data, na.rm = T))
                                  ),
                                  width = width,
                                  height = height,
-                                 limits = c(min(data), max(data)),
+                                 limits = c(min(data, na.rm = T), max(data, na.rm = T)),
+                                 col_side_colors = row_annotations,
                                  dendrogram = dendrogram_list)
 
       self$plots$mofa_heatmap = plot

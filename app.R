@@ -14,6 +14,8 @@ library(visNetwork)
 library(heatmaply)
 library(ggpubr)
 library(ggupset)
+library(networkD3)
+library(igraph)
 
 # text
 library(stringr)
@@ -38,17 +40,15 @@ library(enrichplot)
 library(ggridges)
 library(MOFA2)
 library(basilisk)
+library(SNFtool)
 
+# General
+library(reshape2)
+library(dplyr)
 
 # reticulate::use_condaenv(condaenv = 'mofa_1')
 
-# New
-library(SNFtool)
-library(networkD3)
-library(igraph)
-library(reshape2)
-library(dplyr)
-library(ggupset)
+
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {

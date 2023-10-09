@@ -671,6 +671,8 @@ mofa_heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
                        imputed = r6$params$mofa_heatmap$imputed,
                        denoise = r6$params$mofa_heatmap$denoise,
                        cluster_cols = r6$params$mofa_heatmap$cluster_cols,
+                       cluster_rows = r6$params$mofa_heatmap$cluster_rows,
+                       row_annotations = r6$params$mofa_heatmap$row_annotations,
                        max_value = r6$params$mofa_heatmap$max_value,
                        min_value = r6$params$mofa_heatmap$min_value,
                        width = width,
@@ -750,6 +752,20 @@ mofa_heatmap_server = function(r6, output, session) {
         fill = TRUE,
         status = "primary"
       ),
+      shinyWidgets::prettySwitch(
+        inputId = ns("mofa_heatmap_cluster_rows"),
+        label = 'Cluster rows',
+        value = r6$params$mofa_heatmap$cluster_rows,
+        fill = TRUE,
+        status = "primary"
+      ),
+      shiny::selectizeInput(
+        inputId = ns("mofa_heatmap_map_rows"),
+        label = "Map sample data",
+        multiple = TRUE,
+        choices = colnames(t(r6$tables$metadata)),
+        selected = r6$params$mofa_heatmap$row_annotations
+      ),
       shiny::textInput(
         inputId = ns('mofa_heatmap_max_value'),
         label = 'Max value',
@@ -782,7 +798,7 @@ mofa_heatmap_server = function(r6, output, session) {
 mofa_heatmap_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
   # Generate the plot
-  shiny::observeEvent(c(input$mofa_heatmap_factor, input$mofa_heatmap_view, input$mofa_heatmap_features, input$mofa_heatmap_imputed, input$mofa_heatmap_denoise, input$mofa_heatmap_cluster_cols, input$mofa_heatmap_max_value, input$mofa_heatmap_min_value, input$mofa_heatmap_img_format), {
+  shiny::observeEvent(c(input$mofa_heatmap_factor, input$mofa_heatmap_view, input$mofa_heatmap_features, input$mofa_heatmap_imputed, input$mofa_heatmap_denoise, input$mofa_heatmap_cluster_cols, input$mofa_heatmap_cluster_rows, input$mofa_heatmap_map_rows, input$mofa_heatmap_max_value, input$mofa_heatmap_min_value, input$mofa_heatmap_img_format), {
     print_tm(r6$name, "Mofa heatmap: Updating params...")
 
     r6$param_mofa_heatmap(factor = input$mofa_heatmap_factor,
@@ -791,6 +807,8 @@ mofa_heatmap_events = function(r6, dimensions_obj, color_palette, input, output,
                           imputed = input$mofa_heatmap_imputed,
                           denoise = input$mofa_heatmap_denoise,
                           cluster_cols = input$mofa_heatmap_cluster_cols,
+                          cluster_rows = input$mofa_heatmap_cluster_rows,
+                          row_annotations = input$mofa_heatmap_map_rows,
                           max_value = input$mofa_heatmap_max_value,
                           min_value = input$mofa_heatmap_min_value,
                           img_format = input$mofa_heatmap_img_format)
