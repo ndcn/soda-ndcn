@@ -988,7 +988,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
             ),
             shiny::fluidRow(
               shiny::column(
-                width= 4,
+                width= 3,
                 shiny::selectInput(
                   inputId = ns('gseaprep_table_select'),
                   label = 'Select table',
@@ -997,7 +997,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                 )
               ),
               shiny::column(
-                width= 4,
+                width= 3,
                 shiny::selectInput(
                   inputId = ns('gseaprep_group_col'),
                   label = 'Group column',
@@ -1006,62 +1006,62 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                 )
               ),
               shiny::column(
-                width = 4,
+                width = 3,
                 shiny::selectInput(
                   inputId = ns('gseaprep_groups'),
-                  label = 'Select two groups to compare',
+                  label = 'Select two groups',
                   choices = NULL,
                   width = '100%',
                   multiple = T
                 )
-              )
-            ),
-            shiny::fluidRow(
-              shiny::column(
-                width = 4,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_test'),
-                  label = 'Test',
-                  choices = c('Wilcoxon', 't-Test'),
-                  selected = 't-Test',
-                  width = '100%'
-                )
               ),
               shiny::column(
-                width = 4,
+                width = 3,
                 shiny::selectInput(
                   inputId = ns('gseaprep_method'),
-                  label = 'Method',
+                  label = 'FC method',
                   choices = c('median', 'mean'),
-                  selected = 'median',
+                  selected = 'mean',
                   width = '100%'
-                )
-              ),
-              shiny::column(
-                width = 4,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_adjustment'),
-                  label = 'Adjustment',
-                  choices = c('None', 'Benjamini-Hochberg'),
-                  selected = 'Benjamini-Hochberg'
                 )
               )
             ),
-            shiny::fluidRow(
-              shiny::column(
-                width = 12,
-                shiny::sliderInput(
-                  inputId = ns('gseaprep_pval'),
-                  label = 'p-value cutoff',
-                  min = 0.01,
-                  max = 0.9,
-                  value = 0.05,
-                  step = 0.01,
-                  width = '100%'
-                ),
-                shiny::hr(style = "border-top: 1px solid #7d7d7d;")
-              )
-            ),
+            # shiny::fluidRow(
+            #   shiny::column(
+            #     width = 6,
+            #     shiny::selectInput(
+            #       inputId = ns('gseaprep_test'),
+            #       label = 'Test',
+            #       choices = c('Wilcoxon', 't-Test'),
+            #       selected = 't-Test',
+            #       width = '100%'
+            #     )
+            #   ),
+            #   shiny::column(
+            #     width = 6,
+            #     shiny::selectInput(
+            #       inputId = ns('gseaprep_adjustment'),
+            #       label = 'Adjustment',
+            #       choices = c('None', 'Benjamini-Hochberg'),
+            #       selected = 'Benjamini-Hochberg'
+            #     )
+            #   )
+            # ),
+            # shiny::fluidRow(
+            #   shiny::column(
+            #     width = 12,
+            #     shiny::sliderInput(
+            #       inputId = ns('gseaprep_pval'),
+            #       label = 'p-value cutoff',
+            #       min = 0.01,
+            #       max = 0.9,
+            #       value = 0.05,
+            #       step = 0.01,
+            #       width = '100%'
+            #     ),
+            #     shiny::hr(style = "border-top: 1px solid #7d7d7d;")
+            #   )
+            # ),
             shiny::fluidRow(
               shiny::column(
                 width = 6,
@@ -1932,7 +1932,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     r6$get_gsea_object(ont = input$gsea_go,
                        minGSSize = as.numeric(input$gsea_min_size),
                        maxGSSize = as.numeric(input$gsea_max_size),
-                       p_value_cutoff_prep = input$gseaprep_pval,
                        p_value_cutoff = input$gsea_pval,
                        verbose = TRUE,
                        OrgDb = "org.Hs.eg.db",
@@ -1953,8 +1952,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                      used_function = input$gseaprep_method,
                      test = input$gseaprep_test)
 
-    r6$over_representation_analysis(prep_pval_cutoff = input$gseaprep_pval,
-                                    pval_cutoff = input$or_pval_cutoff,
+    r6$over_representation_analysis(pval_cutoff = input$or_pval_cutoff,
                                     pAdjustMethod = input$or_pval_adjustment,
                                     fc_threshold = as.numeric(input$or_fc_threshold),
                                     ont = input$or_go_ont,

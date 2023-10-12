@@ -351,7 +351,7 @@ volcano_plot_server = function(r6, output, session) {
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_function"),
-        label = "Select function",
+        label = "FC function",
         choices = c("median", "mean"),
         selected = r6$params$volcano_plot$selected_function,
         multiple = FALSE
@@ -1086,7 +1086,7 @@ double_bonds_server = function(r6, output, session) {
       ),
       shiny::selectizeInput(
         inputId = ns("double_bonds_function"),
-        label = "Select function",
+        label = "FC function",
         choices = c("median", "mean"),
         selected = r6$params$db_plot$selected_function,
         multiple = FALSE
