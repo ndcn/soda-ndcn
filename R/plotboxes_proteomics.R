@@ -488,7 +488,7 @@ prot_pca_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("pca_dataset"),
         label = "Select dataset",
-        choices = c('Z-scored table'),
+        choices = c('Z-scored table', 'Z-scored total normalized table'),
         selected = r6$params$pca$dataset
       ),
       shiny::selectInput(
