@@ -24,7 +24,7 @@ Prot_exp = R6::R6Class(
         adjustment = "Benjamini-Hochberg",
         group_col = NULL,
         groups = NULL,
-        selected_function = "median",
+        selected_function = "mean",
         selected_test = "t-Test",
         img_format = "png"
       ),
@@ -507,7 +507,7 @@ Prot_exp = R6::R6Class(
                               adjustment = 'Benjamini-Hochberg',
                               group_col = self$indices$group_col,
                               groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
-                              selected_function = 'median',
+                              selected_function = 'mean',
                               selected_test = 't-Test',
                               img_format = 'png')
 
@@ -579,47 +579,44 @@ Prot_exp = R6::R6Class(
                                  group_1 = self$params$volcano_plot$groups[1],
                                  group_2 = self$params$volcano_plot$groups[2]) {
 
-      volcano_table = data.frame(matrix(data = NA, nrow = ncol(data_table), ncol = 0))
-      rownames(volcano_table) = colnames(data_table)
 
-      # Get the rownames for each group
-      idx_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_1]
-      idx_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_2]
 
-      # Get all row names from both groups
-      idx_all = c(idx_group_1, idx_group_2)
-      idx_all = sort(unique(idx_all))
+      rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_1]
+      rownames_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_2]
+      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
 
       # Filter data to keep only the two groups
-      data_table = data_table[idx_all,]
+      data_table = data_table[all_rownames,]
+
+      # Get the indices for each group
+      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
+      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
+
 
       # Remove empty columns
       dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
       dead_features = setdiff(dead_features, colnames(data_table))
 
-      if (length(dead_features) > 0) {
-        dead_features = which(rownames(volcano_table) %in% dead_features)
-        volcano_table = volcano_table[-dead_features,]
-      }
+      volcano_table = data.frame(matrix(data = NA, nrow = ncol(data_table), ncol = 0))
+      rownames(volcano_table) = colnames(data_table)
 
       # Collect fold change and p-values
-      stat_vals = get_fc_and_pval(data_table, idx_group_1, idx_group_2, used_function, test)
-      fold_change = stat_vals$fold_change
-      p_value = stat_vals$p_value
-      p_value_bh_adj = stat_vals$p_value_bh_adj
+      volcano_table$fold_change = get_fold_changes(data_table = data_table,
+                                                   idx_group_1 = idx_group_1,
+                                                   idx_group_2 = idx_group_2,
+                                                   used_function = used_function)
 
 
-      volcano_table$fold_change = fold_change
-      volcano_table$p_value = p_value
-      volcano_table$minus_log10_p_value = -log10(p_value)
-      volcano_table$log2_fold_change = log2(fold_change)
-      volcano_table$minus_log10_p_value_bh_adj = -log10(p_value_bh_adj)
+      volcano_table$p_val = get_p_val(data_table = data_table,
+                                      idx_group_1 = idx_group_1,
+                                      idx_group_2 = idx_group_2,
+                                      used_function = test)
+      volcano_table$q_val_bh = stats::p.adjust(volcano_table$p_val, method = "BH")
 
-      # Drop NA p-values
-      if (length(which(is.na(volcano_table[,'p_value']))) > 0) {
-        volcano_table = volcano_table[-which(is.na(volcano_table[,'p_value'])),]
-      }
+      volcano_table$minus_log10_p_value = -log10(volcano_table$p_val)
+      volcano_table$log2_fold_change = log2(volcano_table$fold_change)
+      volcano_table$minus_log10_p_value_bh_adj = -log10(volcano_table$q_val_bh)
 
       self$tables$volcano_table = volcano_table
     },
@@ -634,37 +631,38 @@ Prot_exp = R6::R6Class(
                              group_2 = self$params$gsea$groups[2],
                              used_function = self$params$gsea$used_function,
                              test = self$params$gsea$test
-                             ) {
+    ) {
 
-      # Get the rownames for each group
-      idx_group_1 = rownames(meta_table)[meta_table[, group_col] == group_1]
-      idx_group_2 = rownames(meta_table)[meta_table[, group_col] == group_2]
 
-      # Get all row names from both groups
-      idx_all = c(idx_group_1, idx_group_2)
-      idx_all = unique(idx_all)
+
+
+
+      rownames_group_1 = rownames(meta_table)[meta_table[, group_col] == group_1]
+      rownames_group_2 = rownames(meta_table)[meta_table[, group_col] == group_2]
+      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
 
       # Filter data to keep only the two groups
-      data_table = data_table[idx_all,]
+      data_table = data_table[all_rownames,]
+
+      # Get the indices for each group
+      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
+      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
+
 
       # Remove empty columns
-      dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
-      dead_features = setdiff(dead_features, colnames(data_table))
-      dead_features = which(rownames(data_table) %in% dead_features)
 
-      if (length(dead_features) > 0) {
-        data_table = data_table[,-dead_features]
-      }
 
-      # Prepare the protein list with log2 fold changes
-      prot_list = get_fc_and_pval(data_table = data_table,
-                                  idx_group_1 = idx_group_1,
-                                  idx_group_2 = idx_group_2,
-                                  used_function = used_function,
-                                  test = test)
+      prot_list = data.frame(row.names = colnames(data_table))
 
-      prot_list = as.data.frame(prot_list, row.names = colnames(data_table))
+
+      # Collect fold change and p-values
+      prot_list$fold_change = get_fold_changes(data_table = data_table,
+                                               idx_group_1 = idx_group_1,
+                                               idx_group_2 = idx_group_2,
+                                               used_function = used_function)
+
+
       prot_list$log2_fold_change = log2(prot_list$fold_change)
       self$tables$prot_list = prot_list
     },
@@ -676,17 +674,12 @@ Prot_exp = R6::R6Class(
                                ont = self$params$gsea$ont,
                                minGSSize = self$params$gsea$minGSSize,
                                maxGSSize = self$params$gsea$maxGSSize,
-                               p_value_cutoff_prep = self$params$gsea$p_value_cutoff_prep,
                                p_value_cutoff = self$params$gsea$p_value_cutoff,
                                verbose = self$params$gsea$verbose,
                                OrgDb = self$params$gsea$OrgDb,
                                pAdjustMethod = self$params$gsea$pAdjustMethod,
                                termsim_method = self$params$gsea$termsim_method,
                                termsim_showcat = self$params$gsea$termsim_showcat) {
-
-      if (!is.na(p_value_cutoff_prep)) {
-        prot_list = prot_list[prot_list$p_value <= p_value_cutoff_prep,]
-      }
 
       prot_names = rownames(prot_list)
       prot_list = prot_list$log2_fold_change
@@ -711,7 +704,7 @@ Prot_exp = R6::R6Class(
 
     },
 
-    over_representation_analysis = function(prep_pval_cutoff = self$params$overrepresentation$prep_pval_cutoff,
+    over_representation_analysis = function(prot_list = self$tables$prot_list,
                                             pval_cutoff = self$params$overrepresentation$pval_cutoff,
                                             pAdjustMethod = self$params$overrepresentation$pAdjustMethod,
                                             fc_threshold = self$params$overrepresentation$fc_threshold,
@@ -720,7 +713,6 @@ Prot_exp = R6::R6Class(
                                             qval_cutoff = self$params$overrepresentation$qval_cutoff,
                                             minGSSize = self$params$overrepresentation$minGSSize,
                                             maxGSSize  = self$params$overrepresentation$maxGSSize) {
-      prot_list = self$tables$prot_list
 
 
       # Get universe (all features)
@@ -731,12 +723,14 @@ Prot_exp = R6::R6Class(
       universe = names(universe)
 
       # Get significant features
-      features = base::subset(prot_list, p_value_bh_adj < prep_pval_cutoff)
-      feature_names = rownames(features)
-      features = features$log2_fold_change
-      names(features) = feature_names
+      # features = base::subset(prot_list, p_value_bh_adj < prep_pval_cutoff)
+      # feature_names = rownames(features)
+      features = prot_list$log2_fold_change
+      names(features) = rownames(prot_list)
       features = na.omit(features)
-      features = names(features)[abs(features) > fc_threshold]
+      features = features[abs(features) > base::log2(fc_threshold)]
+      features = sort(features, decreasing = TRUE)
+      features = names(features)
 
       if (length(features) == 0) {
         return()
@@ -1078,14 +1072,14 @@ Prot_exp = R6::R6Class(
     },
 
     plot_or_dot_plot = function(object = self$tables$go_enrich,
-                             x = "GeneRatio",
-                             color = "p.adjust",
-                             showCategory = self$params$or_dot_plot$showCategory,
-                             size = NULL,
-                             split = NULL,
-                             orderBy="x",
-                             width = NULL,
-                             height = NULL){
+                                x = "GeneRatio",
+                                color = "p.adjust",
+                                showCategory = self$params$or_dot_plot$showCategory,
+                                size = NULL,
+                                split = NULL,
+                                orderBy="x",
+                                width = NULL,
+                                height = NULL){
 
       colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
       if (x == "geneRatio" || x == "GeneRatio") {
@@ -1595,11 +1589,11 @@ Prot_exp = R6::R6Class(
     },
 
     plot_or_bar_plot = function(object = self$tables$go_enrich,
-                          x = self$params$or_bar_plot$x,
-                          color = self$params$or_bar_plot$color,
-                          showCategory = self$params$or_bar_plot$showCategory,
-                          width = NULL,
-                          height = NULL) {
+                                x = self$params$or_bar_plot$x,
+                                color = self$params$or_bar_plot$color,
+                                showCategory = self$params$or_bar_plot$showCategory,
+                                width = NULL,
+                                height = NULL) {
 
       colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
       if (x == "geneRatio" || x == "GeneRatio") {
@@ -1626,7 +1620,7 @@ Prot_exp = R6::R6Class(
       self$plots$or_barplot = fig
     }
     #------------------------------------------------------------------ END ----
-
-
   )
 )
+
+

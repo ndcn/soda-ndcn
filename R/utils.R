@@ -903,6 +903,91 @@ apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, al
   return(data_table)
 }
 
+
+get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function) {
+
+  if (used_function == "median") {
+    av_function = function(x) {return(median(x, na.rm = T))}
+  } else {
+    av_function = function(x) {return(mean(x, na.rm = T))}
+  }
+
+
+  fold_changes = apply(data_table, 2, function(column) {
+    mean_group1 = base::mean(column[idx_group_1], na.rm = T)
+    mean_group2 = base::mean(column[idx_group_2], na.rm = T)
+
+    # Impute NA means with 0
+    if (is.na(mean_group1)) mean_group1 = 0
+    if (is.na(mean_group2)) mean_group2 = 0
+
+    fold_change = mean_group2 / mean_group1
+
+    return(fold_change)
+  })
+
+
+  if (length(which(fold_changes == Inf)) > 0) {
+    fold_changes[which(fold_changes == Inf)] = max(fold_changes[which(fold_changes != Inf)]) * 1.01
+  }
+
+  if (length(which(fold_changes == 0)) > 0) {
+    fold_changes[which(fold_changes == 0)] = min(fold_changes[which(fold_changes > 0)]) * 0.99
+  }
+
+
+
+  return(fold_changes)
+
+}
+
+get_p_val = function(data_table, idx_group_1, idx_group_2, used_function) {
+
+  if (used_function == "Wilcoxon") {
+    test_function=function(x,y){
+
+      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
+        return(1)
+      } else{
+        return(stats::wilcox.test(x, y)$p.value)
+      }
+    }
+  } else if (used_function == "t-Test") {
+    test_function=function(x,y){
+
+      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
+        return(1)
+      } else{
+        return(stats::t.test(x, y)$p.value)
+      }
+    }
+
+  }
+
+  p_values = apply(data_table, 2, function(column) {
+    group1 = column[idx_group_1]
+    group2 = column[idx_group_2]
+
+    # Check if there are enough non-NA values to conduct a t-test
+    if (sum(!is.na(group1)) < 2 || sum(!is.na(group2)) < 2) {
+      return(NA)  # Return NA if not enough data
+    }
+
+    test_result = test_function(group1, group2)  # Assuming equal variance
+    return(test_result)
+  })
+
+
+  if (length(which(is.na(p_values))) > 0 ){
+    p_values[which(is.na(p_values))] = min(p_values, na.rm = T) * 0.99
+  }
+
+
+  return(p_values)
+}
+
+
+
 get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, test){
 
   if (used_function == "median") {

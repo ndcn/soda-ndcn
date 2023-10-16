@@ -741,7 +741,7 @@ Mofa_data = R6::R6Class(
                                    low = "blue",
                                    mid = "#faf4af",
                                    high = "red",
-                                   midpoint = max(data, na.rm = T)/2,
+                                   midpoint = ((max(data, na.rm = T) - min(data, na.rm = T))/2) + min(data, na.rm = T),
                                    limits = c(min(data, na.rm = T), max(data, na.rm = T))
                                  ),
                                  width = width,
