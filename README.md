@@ -4,6 +4,8 @@
 
 SODA, the Simple Omics Data Analysis tool, is a comprehensive online platform designed for the intuitive and in-depth analysis of both single and multi-omics experiments. Central to its design philosophy are modularity, interactivity, and an emphasis on user-driven exploration. Upon uploading their omics datasets, users can delve into a suite of single omics modules that offer capabilities ranging from data visualization to gene set enrichment and over-representation analysis. Each module is equipped with highly interactive plots, ensuring an optimized data exploration experience. For integrated insights from multi-omics experiments, SODA incorporates the acclaimed MOFA (Multi-Omics Factor Analysis) and SNF (Similarity Network Fusion) methodologies, presenting results through equally interactive visualizations. A standout feature of SODA is its modular architecture, which not only ensures current robustness in analysis but also paves the way for future expansions
 
+![SODA Overview](./man/figures/soda_graphical_abstract.png)
+
 ## Features
 
 - **Modular Design**: Dive into an array of single omics modules offering capabilities from data visualization to gene set enrichment.
@@ -21,20 +23,14 @@ You can access SODA online or download it for local usage:
 
 ## Installation
 
-1. Clone the repository:
+Clone the repository:
    ```bash
-   git clone [GITHUB]
-   ```
-   *(Replace '[GITHUB]' with the actual link to your repository.)*
-2. Navigate to the directory and follow setup instructions:
-   ```bash
-   cd SODA
-   ./setup.sh
+   git clone https://github.com/ndcn/soda-ndcn.git
    ```
 
 ## Documentation
 
-Detailed documentation can be found in ./man.
+Detailed documentation can be found in ./man (coming soon).
 
 ## Demo & Examples
 
