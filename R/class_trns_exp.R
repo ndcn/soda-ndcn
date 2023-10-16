@@ -507,7 +507,7 @@ Trns_exp = R6::R6Class(
                               adjustment = 'Benjamini-Hochberg',
                               group_col = self$indices$group_col,
                               groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
-                              selected_function = 'median',
+                              selected_function = 'mean',
                               selected_test = 't-Test',
                               img_format = 'png')
 
