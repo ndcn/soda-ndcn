@@ -1083,7 +1083,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                       inputId = ns('gsea_adjustment'),
                       label = 'Adjustment',
                       choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                      selected = 'none'
+                      selected = 'BH'
                     )
                   )
                 ),
@@ -1153,7 +1153,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                       inputId = ns('or_pval_adjustment'),
                       label = 'Adjustment',
                       choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                      selected = "none",
+                      selected = "BH",
                       width = '100%'
                     )
                   )
@@ -1217,7 +1217,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                 shiny::fluidRow(
                   shinyWidgets::actionBttn(
                     inputId = ns('run_or'),
-                    label = "Run OR",
+                    label = "Run ORA",
                     style = "material-flat",
                     color = 'success',
                     block = T,

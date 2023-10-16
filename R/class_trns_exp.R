@@ -76,7 +76,7 @@ Trns_exp = R6::R6Class(
       overrepresentation = list(
         prep_pval_cutoff = 0.05,
         pval_cutoff = 0.05,
-        pAdjustMethod = "none",
+        pAdjustMethod = "BH",
         fc_threshold = 2,
         ont = "ALL",
         qval_cutoff = 0.10,
@@ -543,13 +543,13 @@ Trns_exp = R6::R6Class(
                       p_value_cutoff = 0.05,
                       verbose = TRUE,
                       OrgDb = "org.Hs.eg.db",
-                      pAdjustMethod = 'none',
+                      pAdjustMethod = 'BH',
                       termsim_method = 'JC',
                       termsim_showcat = 200)
 
       self$param_overrepresentation(prep_pval_cutoff = 0.05,
                                     pval_cutoff = 0.05,
-                                    pAdjustMethod = "none",
+                                    pAdjustMethod = "BH",
                                     fc_threshold = 2,
                                     ont = "ALL",
                                     qval_cutoff = 0.10,
@@ -1175,9 +1175,9 @@ Trns_exp = R6::R6Class(
                               showCategory = self$params$cnet_plot$showCategory,
                               context = "gsea") {
 
-      # print_tm(self$name, "CNET plot initiated")
+      prot_list = self$tables$prot_list
 
-      geneSets <- enrichplot:::extract_geneSets(x, showCategory)
+      geneSets = enrichplot:::extract_geneSets(x, showCategory)
 
       main_nodes = names(geneSets)
 
@@ -1187,17 +1187,27 @@ Trns_exp = R6::R6Class(
       }
       secondary_nodes = sort(unique(secondary_nodes))
 
+
+
       all_nodes = c(main_nodes, secondary_nodes)
 
       node_table = data.frame(matrix(nrow = length(all_nodes), ncol = 1))
       colnames(node_table) = c("id")
       node_table$id = all_nodes
       node_table$label = all_nodes
-      node_table$color = c(rep("#FFD800", length(main_nodes)),
-                           rep("#20D9D6", length(secondary_nodes)))
-
       node_table$shape = rep("dot", nrow(node_table))
 
+      feature_values = prot_list[all_nodes,]
+      rownames(feature_values) = rownames(node_table)
+
+      node_table = base::cbind(node_table, feature_values)
+
+      normalized_values = scales::rescale(feature_values$log2_fold_change, to = c(0, 1))
+
+      color_gradient = grDevices::colorRampPalette(c("blue", "white", "red"))
+      hex_colors = color_gradient(100)[round(normalized_values * 99) + 1]
+      hex_colors[which(is.na(hex_colors))] = "#FFD800"
+      node_table$color = hex_colors
 
 
 
