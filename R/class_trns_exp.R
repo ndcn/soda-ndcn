@@ -99,7 +99,8 @@ Trns_exp = R6::R6Class(
 
       # CNET plot parameters self$params$cnet_plot
       cnet_plot = list(
-        showCategory = 3
+        showCategory = 3,
+        enable_physics = TRUE
       ),
 
       # eMap plot parameters self$params$emap_plot
@@ -130,7 +131,8 @@ Trns_exp = R6::R6Class(
 
       # Over representation CNET plot parameters self$params$or_cnet_plot
       or_cnet_plot = list(
-        showCategory = 3
+        showCategory = 3,
+        enable_physics = TRUE
       ),
 
       # Over representation eMap plot parameters self$params$or_emap_plot
@@ -329,8 +331,9 @@ Trns_exp = R6::R6Class(
       self$params$ridge_plot$img_format = img_format
     },
 
-    param_cnet_plot = function(showCategory) {
+    param_cnet_plot = function(showCategory, enable_physics) {
       self$params$cnet_plot$showCategory = showCategory
+      self$params$cnet_plot$enable_physics = enable_physics
     },
 
     param_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
@@ -356,8 +359,9 @@ Trns_exp = R6::R6Class(
       self$params$or_bar_plot$img_format = img_format
     },
 
-    param_or_cnet_plot = function(showCategory) {
+    param_or_cnet_plot = function(showCategory, enable_physics) {
       self$params$or_cnet_plot$showCategory = showCategory
+      self$params$or_cnet_plot$enable_physics = enable_physics
     },
 
     param_or_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
@@ -591,8 +595,6 @@ Trns_exp = R6::R6Class(
 
       self$param_ridge_plot(showCategory = 30,
                             img_format = "png")
-
-      self$param_cnet_plot(showCategory = 3)
 
     },
 
@@ -1200,7 +1202,10 @@ Trns_exp = R6::R6Class(
 
     plot_cnet_plot = function(x = self$tables$gsea_object,
                               showCategory = self$params$cnet_plot$showCategory,
+                              enable_physics = self$params$cnet_plot$enable_physics,
                               context = "gsea") {
+
+      showCategory = as.numeric(showCategory)
 
       prot_list = self$tables$prot_list
 
@@ -1251,12 +1256,15 @@ Trns_exp = R6::R6Class(
       edge_table$to = target_nodes
       edge_table$width = rep(1, nrow(edge_table))
 
+      plot = visNetwork::visNetwork(node_table, edge_table)
+      plot = visNetwork::visPhysics(plot, enabled = enable_physics)
+
+
       if (context == "gsea") {
-        self$plots$cnetplot = visNetwork::visNetwork(node_table, edge_table)
+        self$plots$cnetplot = plot
       } else if (context == "or") {
-        self$plots$or_cnetplot = visNetwork::visNetwork(node_table, edge_table)
+        self$plots$or_cnetplot = plot
       }
-      print_tm(self$name, "CNET plot finished")
     },
 
     plot_ridge_plot = function(x = self$tables$gsea_object,

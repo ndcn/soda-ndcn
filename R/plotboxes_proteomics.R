@@ -736,7 +736,8 @@ prot_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$plot_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat))
+  r6$plot_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat),
+                    enable_physics = input$cnet_plot_enable_physics)
 }
 
 prot_cnet_plot_spawn = function(r6, output) {
@@ -768,6 +769,13 @@ prot_cnet_plot_server = function(r6, output, session) {
         inputId = ns("cnet_plot_showcat"),
         label = "Show category",
         value = r6$params$cnet_plot$showCategory
+      ),
+      shinyWidgets::prettySwitch(
+        inputId = ns("cnet_plot_enable_physics"),
+        label = 'Enable physics',
+        value = r6$params$cnet_plot$enable_physics,
+        fill = TRUE,
+        status = "primary"
       )
     )
   })
@@ -775,12 +783,13 @@ prot_cnet_plot_server = function(r6, output, session) {
 
 prot_cnet_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(input$cnet_plot_showcat,{
+  shiny::observeEvent(c(input$cnet_plot_showcat, input$cnet_plot_enable_physics),{
 
     # Update parameters
     print_tm(r6$name, "CNET plot: Updating params...")
 
-    r6$param_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat))
+    r6$param_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat),
+                       enable_physics = input$cnet_plot_enable_physics)
 
     base::tryCatch({
       prot_cnet_plot_generate(r6, color_palette, dimensions_obj, input)
@@ -1067,17 +1076,13 @@ prot_emap_plot_events = function(r6, dimensions_obj, color_palette, input, outpu
                             node_magnifier = input$prot_emap_plot_node_magnifier,
                             enable_physics = input$prot_emap_plot_enable_physics)
 
-    prot_emap_plot_generate(r6, color_palette, dimensions_obj, input)
-    prot_emap_plot_spawn(r6, output)
-
-
-    # base::tryCatch({
-    #   prot_emap_plot_generate(r6, color_palette, dimensions_obj, input)
-    #   prot_emap_plot_spawn(r6, output)
-    # },error=function(e){
-    #   print_tm(r6$name, 'eMap plot: ERROR.')
-    # },finally={}
-    # )
+    base::tryCatch({
+      prot_emap_plot_generate(r6, color_palette, dimensions_obj, input)
+      prot_emap_plot_spawn(r6, output)
+    },error=function(e){
+      print_tm(r6$name, 'eMap plot: ERROR.')
+    },finally={}
+    )
   })
 
   # # Download associated table
@@ -1109,104 +1114,6 @@ prot_emap_plot_events = function(r6, dimensions_obj, color_palette, input, outpu
   # })
 }
 
-
-#----------------------------------------------------------- gsea eMap plot ----
-# prot_emap_plot_generate = function(r6, colour_list, dimensions_obj, input) {
-#   print_tm(r6$name, "eMap plot: generating plot.")
-#   r6$plot_emap_plot(showCategory = as.numeric(input$emap_plot_showcat))
-# }
-#
-# prot_emap_plot_spawn = function(r6, output) {
-#   print_tm(r6$name, "eMap plot: spawning plot.")
-#
-#   output$emap_plot_plot = visNetwork::renderVisNetwork(
-#     expr = r6$plots$emapplot,
-#   )
-# }
-#
-# prot_emap_plot_ui = function(dimensions_obj, session) {
-#
-#   get_visnet_box(id = "emap_plot",
-#                  label = "eMap plot",
-#                  dimensions_obj = dimensions_obj,
-#                  session = session)
-# }
-#
-#
-# prot_emap_plot_server = function(r6, output, session) {
-#
-#   ns = session$ns
-#
-#   print_tm(r6$name, "eMap plot: START.")
-#
-#   output$emap_plot_sidebar_ui = shiny::renderUI({
-#     shiny::tagList(
-#       shiny::textInput(
-#         inputId = ns("emap_plot_showcat"),
-#         label = "Show category",
-#         value = r6$params$emap_plot$showCategory
-#       )
-#     )
-#   })
-# }
-#
-# prot_emap_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
-#
-#   shiny::observeEvent(input$emap_plot_showcat,{
-#
-#     # Update parameters
-#     print_tm(r6$name, "eMap plot: Updating params...")
-#
-#     r6$param_emap_plot(showCategory = as.numeric(input$emap_plot_showcat))
-#
-#     base::tryCatch({
-#       prot_emap_plot_generate(r6, colour_list, dimensions_obj, input)
-#       prot_emap_plot_spawn(r6, output)
-#     },error=function(e){
-#       print_tm(r6$name, 'eMap plot: error, missing data.')
-#     },finally={}
-#     )
-#   })
-#
-#   #
-#   #   # Download associated tables
-#   #   output$download_pca_scores_table = shiny::downloadHandler(
-#   #     filename = function(){timestamped_name("pca_scores_table.csv")},
-#   #     content = function(file_name){
-#   #       write.csv(r6$tables$pca_scores_table, file_name)
-#   #     }
-#   #   )
-#   #   output$download_pca_loadings_table = shiny::downloadHandler(
-#   #     filename = function(){timestamped_name("pca_loadings_table.csv")},
-#   #     content = function(file_name){
-#   #       write.csv(r6$tables$pca_loadings_table, file_name)
-#   #     }
-#   #   )
-#   #
-#   # Expanded boxes
-#
-#   emap_plot_proxy = visNetwork::visNetworkProxy(shinyId = "emap_plot_plot",
-#                                                 session = session)
-#
-#   shiny::observeEvent(input$emap_plot_plotbox,{
-#     if (input$emap_plot_plotbox$maximized) {
-#       print("max")
-#       visNetwork::visOptions(graph = emap_plot_proxy,
-#                              width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
-#                              height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full)
-#     } else {
-#       print("min")
-#       visNetwork::visOptions(graph = emap_plot_proxy,
-#                              width = dimensions_obj$xpx * dimensions_obj$x_plot,
-#                              height = dimensions_obj$ypx * dimensions_obj$y_plot)
-#     }
-#   })
-#
-# }
-
-
-
-##################################################
 
 #------------------------------------------------------------- or dotplot ----
 prot_or_dot_plot_generate = function(r6, colour_list, dimensions_obj, input) {
@@ -1479,6 +1386,7 @@ prot_or_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 
   r6$plot_cnet_plot(x = r6$tables$go_enrich,
                     showCategory = as.numeric(input$or_cnet_plot_showcat),
+                    enable_physics = input$or_cnet_plot_enable_physics,
                     context = "or")
 }
 
@@ -1511,6 +1419,13 @@ prot_or_cnet_plot_server = function(r6, output, session) {
         inputId = ns("or_cnet_plot_showcat"),
         label = "Show category",
         value = r6$params$or_cnet_plot$showCategory
+      ),
+      shinyWidgets::prettySwitch(
+        inputId = ns("or_cnet_plot_enable_physics"),
+        label = 'Enable physics',
+        value = r6$params$or_cnet_plot$enable_physics,
+        fill = TRUE,
+        status = "primary"
       )
     )
   })
@@ -1518,12 +1433,13 @@ prot_or_cnet_plot_server = function(r6, output, session) {
 
 prot_or_cnet_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(input$or_cnet_plot_showcat,{
+  shiny::observeEvent(c(input$or_cnet_plot_showcat, input$or_cnet_plot_enable_physics),{
 
     # Update parameters
     print_tm(r6$name, "CNET plot: Updating params...")
 
-    r6$param_or_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat))
+    r6$param_or_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat),
+                          enable_physics = input$or_cnet_plot_enable_physics)
 
     base::tryCatch({
       prot_or_cnet_plot_generate(r6, color_palette, dimensions_obj, input)
@@ -1693,17 +1609,13 @@ prot_or_emap_plot_events = function(r6, dimensions_obj, color_palette, input, ou
                        node_magnifier = input$prot_or_emap_plot_node_magnifier,
                        enable_physics = input$prot_or_emap_plot_enable_physics)
 
-    prot_or_emap_plot_generate(r6, color_palette, dimensions_obj, input)
-    prot_or_emap_plot_spawn(r6, output)
-
-
-    # base::tryCatch({
-    #   prot_emap_plot_generate(r6, color_palette, dimensions_obj, input)
-    #   prot_emap_plot_spawn(r6, output)
-    # },error=function(e){
-    #   print_tm(r6$name, 'eMap plot: ERROR.')
-    # },finally={}
-    # )
+    base::tryCatch({
+      prot_emap_plot_generate(r6, color_palette, dimensions_obj, input)
+      prot_emap_plot_spawn(r6, output)
+    },error=function(e){
+      print_tm(r6$name, 'eMap plot: ERROR.')
+    },finally={}
+    )
   })
 
   # # Download associated table
@@ -1737,108 +1649,5 @@ prot_or_emap_plot_events = function(r6, dimensions_obj, color_palette, input, ou
 
 
 
-
-#----------------------------------------------------------- or eMap plot ----
-# prot_or_emap_plot_generate = function(r6, colour_list, dimensions_obj, input) {
-#
-#   if (input$or_emap_plot_plotbox$maximized){
-#     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-#     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-#   } else {
-#     width = dimensions_obj$xpx * dimensions_obj$x_plot
-#     height = dimensions_obj$ypx * dimensions_obj$y_plot
-#   }
-#
-#   print_tm(r6$name, "eMap plot: generating plot.")
-#   r6$plot_emap_plot(x = r6$tables$go_enrich,
-#                     showCategory = as.numeric(input$or_emap_plot_showcat),
-#                     context = "or")
-# }
-#
-# prot_or_emap_plot_spawn = function(r6, output) {
-#   print_tm(r6$name, "eMap plot: spawning plot.")
-#
-#   output$or_emap_plot_plot = visNetwork::renderVisNetwork(
-#     expr = r6$plots$or_emapplot,
-#   )
-# }
-#
-# prot_or_emap_plot_ui = function(dimensions_obj, session) {
-#
-#   get_visnet_box(id = "or_emap_plot",
-#                  label = "eMap plot",
-#                  dimensions_obj = dimensions_obj,
-#                  session = session)
-# }
-#
-#
-# prot_or_emap_plot_server = function(r6, output, session) {
-#
-#   ns = session$ns
-#
-#   print_tm(r6$name, "eMap plot: START.")
-#
-#   output$or_emap_plot_sidebar_ui = shiny::renderUI({
-#     shiny::tagList(
-#       shiny::textInput(
-#         inputId = ns("or_emap_plot_showcat"),
-#         label = "Show category",
-#         value = r6$params$or_emap_plot$showCategory
-#       )
-#     )
-#   })
-# }
-#
-# prot_or_emap_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
-#
-#   shiny::observeEvent(input$or_emap_plot_showcat,{
-#
-#     # Update parameters
-#     print_tm(r6$name, "eMap plot: Updating params...")
-#
-#     r6$param_or_emap_plot(showCategory = as.numeric(input$or_emap_plot_showcat))
-#
-#     base::tryCatch({
-#       prot_or_emap_plot_generate(r6, colour_list, dimensions_obj, input)
-#       prot_or_emap_plot_spawn(r6, output)
-#     },error=function(e){
-#       print_tm(r6$name, 'eMap plot: error, missing data.')
-#     },finally={}
-#     )
-#   })
-#
-#   #
-#   #   # Download associated tables
-#   #   output$download_pca_scores_table = shiny::downloadHandler(
-#   #     filename = function(){timestamped_name("pca_scores_table.csv")},
-#   #     content = function(file_name){
-#   #       write.csv(r6$tables$pca_scores_table, file_name)
-#   #     }
-#   #   )
-#   #   output$download_pca_loadings_table = shiny::downloadHandler(
-#   #     filename = function(){timestamped_name("pca_loadings_table.csv")},
-#   #     content = function(file_name){
-#   #       write.csv(r6$tables$pca_loadings_table, file_name)
-#   #     }
-#   #   )
-#   #
-#   # Expanded boxes
-#
-#   or_emap_plot_proxy = visNetwork::visNetworkProxy(shinyId = "or_emap_plot_plot",
-#                                                 session = session)
-#
-#   shiny::observeEvent(input$or_emap_plot_plotbox,{
-#     if (input$or_emap_plot_plotbox$maximized) {
-#       visNetwork::visOptions(graph = or_emap_plot_proxy,
-#                              width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
-#                              height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full)
-#     } else {
-#       visNetwork::visOptions(graph = or_emap_plot_proxy,
-#                              width = dimensions_obj$xpx * dimensions_obj$x_plot,
-#                              height = dimensions_obj$ypx * dimensions_obj$y_plot)
-#     }
-#   })
-#
-# }
 
 
