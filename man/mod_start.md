@@ -17,5 +17,5 @@ The Start Module serves as the central hub for managing your experiment modules.
 ### 3. Using Example Data:
 - Pre-configured example datasets for Lipidomics, Proteomics, and Transcriptomics are available for convenience. By selecting any of these datasets, the system will automatically create the corresponding modules, making them immediately accessible through the sidebar.
 
-![Start module](./man/figures/mod_start.png)
+![Start module](./figures/mod_start.png)
 
