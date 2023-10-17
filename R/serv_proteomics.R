@@ -1482,7 +1482,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       shiny::updateSelectInput(
         inputId = 'gseaprep_table_select',
         choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
-        selected = 'Raw data table'
+        selected = 'Total normalized table'
       )
 
       shiny::updateSelectInput(

@@ -1438,14 +1438,24 @@ Trns_exp = R6::R6Class(
       edge_magnifier = as.numeric(edge_magnifier)
       node_magnifier = as.numeric(node_magnifier)
 
-      # Adding data
+      # Adding data based on GSEA or ORA
+      if (context == 'gsea') {
+        total_count = x@result$setSize
+        count = lapply(x@result$core_enrichment, function(x) {
+          elements = unlist(strsplit(x, "/"))
+          length(elements)
+        })
+        count = unlist(count)
+        x@result$Count = count
+        x@result$total_count = total_count
+        x@result$gene_ratio = round(count/total_count, 2)
+      } else if (context == 'or') {
+        total_count = base::strsplit(x@result$GeneRatio, '/')
+        total_count = as.numeric(sapply(total_count, "[[", 2))
+        x@result$total_count = total_count
+        x@result$gene_ratio = round(x@result$Count / x@result$total_count, 2)
+      }
 
-      print(x)
-      print(x@result$GeneRatio)
-      total_count = base::strsplit(x@result$GeneRatio, '/')
-      total_count = as.numeric(sapply(total_count, "[[", 2))
-      x@result$total_count = total_count
-      x@result$gene_ratio = round(x@result$Count / x@result$total_count, 2)
 
       # Calculate similarities
       x = enrichplot::pairwise_termsim(x= x,
@@ -1464,7 +1474,9 @@ Trns_exp = R6::R6Class(
 
       # Extract data from the igraph object
       edge_table = igraph::as_data_frame(g, what = "edges")
-      edge_table$color = "gray"
+      if (length(edge_table) > 0) {
+        edge_table$color = "gray"
+      }
       node_table = igraph::as_data_frame(g, what = "vertices")
       node_table = cbind(node_table$name, node_table)
       colnames(node_table) = c("id", "label", "size", "color_values")
