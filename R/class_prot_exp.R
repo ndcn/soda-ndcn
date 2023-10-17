@@ -76,7 +76,7 @@ Prot_exp = R6::R6Class(
       overrepresentation = list(
         prep_pval_cutoff = 0.05,
         pval_cutoff = 0.05,
-        pAdjustMethod = "none",
+        pAdjustMethod = "BH",
         fc_threshold = 2,
         ont = "ALL",
         qval_cutoff = 0.10,
@@ -104,7 +104,14 @@ Prot_exp = R6::R6Class(
 
       # eMap plot parameters self$params$emap_plot
       emap_plot = list(
-        showCategory = 30
+        showCategory = 20,
+        color = "p.adjust" ,
+        size = "Count",
+        score_threshold = 0.2,
+        similarity_score = 'JC',
+        edge_magnifier = 1,
+        node_magnifier = 0.1,
+        enable_physics = FALSE
       ),
 
       # Over representation dot plot parameters self$params$or_dot_plot
@@ -128,7 +135,14 @@ Prot_exp = R6::R6Class(
 
       # Over representation eMap plot parameters self$params$or_emap_plot
       or_emap_plot = list(
-        showCategory = 30
+        showCategory = 20,
+        color = "p.adjust" ,
+        size = "Count",
+        score_threshold = 0.2,
+        similarity_score = 'JC',
+        edge_magnifier = 1,
+        node_magnifier = 0.1,
+        enable_physics = FALSE
       )
 
 
@@ -186,6 +200,7 @@ Prot_exp = R6::R6Class(
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
 
+
       # GSEA & over representation
       prot_list = NULL,
       gsea_object = NULL,
@@ -226,7 +241,7 @@ Prot_exp = R6::R6Class(
       pca_plot = NULL,
       dotplot = NULL,
       ridgeplot = NULL,
-      emapplot = NULL,
+      emap_plot = NULL,
       cnetplot = NULL,
       or_dotplot = NULL,
       or_emapplot = NULL,
@@ -318,8 +333,15 @@ Prot_exp = R6::R6Class(
       self$params$cnet_plot$showCategory = showCategory
     },
 
-    param_emap_plot = function(showCategory) {
+    param_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
       self$params$emap_plot$showCategory = showCategory
+      self$params$emap_plot$color = color
+      self$params$emap_plot$size = size
+      self$params$emap_plot$score_threshold = score_threshold
+      self$params$emap_plot$similarity_score = similarity_score
+      self$params$emap_plot$edge_magnifier = edge_magnifier
+      self$params$emap_plot$node_magnifier = node_magnifier
+      self$params$emap_plot$enable_physics = enable_physics
     },
 
     param_or_dot_plot = function(showCategory, img_format) {
@@ -338,8 +360,15 @@ Prot_exp = R6::R6Class(
       self$params$or_cnet_plot$showCategory = showCategory
     },
 
-    param_or_emap_plot = function(showCategory) {
+    param_or_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
       self$params$or_emap_plot$showCategory = showCategory
+      self$params$or_emap_plot$color = color
+      self$params$or_emap_plot$size = size
+      self$params$or_emap_plot$score_threshold = score_threshold
+      self$params$or_emap_plot$similarity_score = similarity_score
+      self$params$or_emap_plot$edge_magnifier = edge_magnifier
+      self$params$or_emap_plot$node_magnifier = node_magnifier
+      self$params$or_emap_plot$enable_physics = enable_physics
     },
 
 
@@ -543,13 +572,13 @@ Prot_exp = R6::R6Class(
                       p_value_cutoff = 0.05,
                       verbose = TRUE,
                       OrgDb = "org.Hs.eg.db",
-                      pAdjustMethod = 'none',
+                      pAdjustMethod = 'BH',
                       termsim_method = 'JC',
                       termsim_showcat = 200)
 
       self$param_overrepresentation(prep_pval_cutoff = 0.05,
                                     pval_cutoff = 0.05,
-                                    pAdjustMethod = "none",
+                                    pAdjustMethod = "BH",
                                     fc_threshold = 2,
                                     ont = "ALL",
                                     qval_cutoff = 0.10,
@@ -564,8 +593,6 @@ Prot_exp = R6::R6Class(
                             img_format = "png")
 
       self$param_cnet_plot(showCategory = 3)
-
-      self$param_emap_plot(showCategory = 30)
 
     },
 
@@ -1175,9 +1202,9 @@ Prot_exp = R6::R6Class(
                               showCategory = self$params$cnet_plot$showCategory,
                               context = "gsea") {
 
-      # print_tm(self$name, "CNET plot initiated")
+      prot_list = self$tables$prot_list
 
-      geneSets <- enrichplot:::extract_geneSets(x, showCategory)
+      geneSets = enrichplot:::extract_geneSets(x, showCategory)
 
       main_nodes = names(geneSets)
 
@@ -1187,17 +1214,27 @@ Prot_exp = R6::R6Class(
       }
       secondary_nodes = sort(unique(secondary_nodes))
 
+
+
       all_nodes = c(main_nodes, secondary_nodes)
 
       node_table = data.frame(matrix(nrow = length(all_nodes), ncol = 1))
       colnames(node_table) = c("id")
       node_table$id = all_nodes
       node_table$label = all_nodes
-      node_table$color = c(rep("#FFD800", length(main_nodes)),
-                           rep("#20D9D6", length(secondary_nodes)))
-
       node_table$shape = rep("dot", nrow(node_table))
 
+      feature_values = prot_list[all_nodes,]
+      rownames(feature_values) = rownames(node_table)
+
+      node_table = base::cbind(node_table, feature_values)
+
+      normalized_values = scales::rescale(feature_values$log2_fold_change, to = c(0, 1))
+
+      color_gradient = grDevices::colorRampPalette(c("blue", "white", "red"))
+      hex_colors = color_gradient(100)[round(normalized_values * 99) + 1]
+      hex_colors[which(is.na(hex_colors))] = "#FFD800"
+      node_table$color = hex_colors
 
 
 
@@ -1385,207 +1422,85 @@ Prot_exp = R6::R6Class(
     },
 
     plot_emap_plot = function(x = self$tables$gsea_object,
-                              showCategory = self$params$emap_plot$showCategory,
+                              showCategory = 20,
+                              color = "p.adjust",
+                              size = "Count",
+                              score_threshold = 0.2,
+                              similarity_score = 'JC',
+                              edge_magnifier = 1,
+                              node_magnifier = 5,
+                              enable_physics = FALSE,
                               context = "gsea") {
 
-      print_tm(self$name, "Emapplot initiated")
+      # Format data
+      showCategory = as.numeric(showCategory)
+      score_threshold = as.numeric(score_threshold)
+      edge_magnifier = as.numeric(edge_magnifier)
+      node_magnifier = as.numeric(node_magnifier)
 
-      layout = NULL                    # removed
-      coords = NULL                   # removed
-      color = "p.adjust"
-      min_edge = 0.2              # removed
-      cex_label_category  = 1       # removed
-      cex_category = 1              # removed
-      cex_line = 1                  # removed
-      shadowtext = TRUE
-      label_style = "shadowtext"              # removed
-      repel = FALSE                     # removed
-      node_label  = "category"
-      with_edge = TRUE                 # removed
-      group_category = FALSE            # removed
-      group_legend = FALSE              # removed
-      cex_label_group = 1           # removed
-      nWords = 4                   # removed
-      label_format = 30              # removed
-      clusterFunction = stats::kmeans           # removed
-      nCluster = NULL                 # removed
-      layout.params = list(
-        layout = NULL,
-        coords = NULL
-      )
+      # Adding data based on GSEA or ORA
+      if (context == 'gsea') {
+        total_count = x@result$setSize
+        count = lapply(x@result$core_enrichment, function(x) {
+          elements = unlist(strsplit(x, "/"))
+          length(elements)
+        })
+        count = unlist(count)
+        x@result$Count = count
+        x@result$total_count = total_count
+        x@result$gene_ratio = round(count/total_count, 2)
+      } else if (context == 'or') {
+        total_count = base::strsplit(x@result$GeneRatio, '/')
+        total_count = as.numeric(sapply(total_count, "[[", 2))
+        x@result$total_count = total_count
+        x@result$gene_ratio = round(x@result$Count / x@result$total_count, 2)
+      }
 
-      edge.params = list(
-        show = TRUE,
-        min = 0.2
-      )
-      cex.params = list(
-        category_node = 1,
-        category_label = 1,
-        line = 1
-      )
-      hilight.params = list(
-        category = NULL,
-        alpha_hilight = 1,
-        alpha_no_hilight = 0.3
-      )
-      cluster.params = list(
-        cluster = FALSE,
-        method = stats::kmeans,
-        n = NULL,
-        legend = FALSE,
-        label_style = "shadowtext",
-        label_words_n = 4,
-        label_format = 30
-      )
 
+      # Calculate similarities
       x = enrichplot::pairwise_termsim(x= x,
-                                       method = 'JC',
+                                       method = similarity_score,
                                        semData = NULL,
                                        showCategory = showCategory)
-      enrichplot:::has_pairsim(x)
 
-      label_size_category <- 5
-      label_group <- 3
-
-      # change parameter name
-      ##############################################################
-      params_df <- as.data.frame(rbind(
-        c("layout", "layout.params", "layout"),
-        c("coords", "layout.params", "coords"),
-
-        c("with_edge", "edge.params", "show"),
-        c("min_edge", "edge.params", "min"),
-
-        c("cex_category", "cex.params", "category_node"),
-        c("cex_label_category", "cex.params", "category_label"),
-        c("cex_line", "cex.params", "line"),
-
-        c("group_category", "cluster.params", "cluster"),
-        c("clusterFunction", "cluster.params", "method"),
-        c("nCluster", "cluster.params", "n"),
-        c("group_legend", "cluster.params", "legend"),
-        c("label_style", "cluster.params", "label_style"),
-        c("nWords", "cluster.params", "label_words_n"),
-        c("label_format", "cluster.params", "label_format"))
-      )
-      colnames(params_df) <- c("original", "listname", "present")
-      rownames(params_df) <- params_df$original
+      # Get the igraph object
+      g = enrichplot:::get_igraph(x=x,
+                                  nCategory=showCategory,
+                                  color=color,
+                                  cex_line=edge_magnifier,
+                                  min_edge=score_threshold)
 
 
-      default.layout.params <- list(
-        layout = NULL,
-        coords = NULL
-      )
 
-      default.edge.params <- list(
-        show = TRUE,
-        min = 0.2
-      )
-
-      default.cex.params <- list(
-        category_node = 1,
-        category_label = 1,
-        line = 1
-      )
-
-      default.cluster.params <- list(
-        cluster = FALSE,
-        method = stats::kmeans,
-        n = NULL,
-        legend = FALSE,
-        label_style = "shadowtext",
-        label_words_n = 4,
-        label_format = 30
-      )
-
-      default.hilight.params <- list(
-        category = NULL,
-        alpha_hilight = 1,
-        alpha_no_hilight = 0.3
-      )
-      layout.params <- modifyList(default.layout.params, layout.params)
-      edge.params <- modifyList(default.edge.params, edge.params)
-      cex.params <- modifyList(default.cex.params, cex.params)
-      cluster.params <- modifyList(default.cluster.params, cluster.params)
-      hilight.params <- modifyList(default.hilight.params, hilight.params)
-      params_list <- list(x = x,
-                          showCategory = showCategory,
-                          layout = layout,
-                          coords = coords,
-                          color = color,
-                          min_edge = min_edge,
-                          cex_label_category = cex_label_category,
-                          cex_category = cex_category,
-                          cex_line = cex_line,
-                          shadowtext = shadowtext,
-                          label_style = label_style,
-                          repel = repel,
-                          node_label  = node_label,
-                          with_edge = with_edge,
-                          group_category = group_category,
-                          group_legend = group_legend,
-                          cex_label_group = cex_label_group,
-                          nWords = nWords,
-                          label_format = label_format,
-                          clusterFunction = clusterFunction,
-                          nCluster = nCluster,
-                          layout.params = layout.params,
-                          edge.params = edge.params,
-                          cex.params = cex.params,
-                          hilight.params = hilight.params,
-                          cluster.params = cluster.params
-      )
-      # get all parameters value
-      args <- as.list(match.call())
-      removed_params <- intersect(params_df$original, names(args))
-      if (length(removed_params) > 0) {
-        for (i in removed_params) {
-          params_list[[params_df[i, 2]]][[params_df[i, 3]]] <- get(i)
-          warn <- get_param_change_message(i, params_df)
-          warning(warn)
-        }
+      # Extract data from the igraph object
+      edge_table = igraph::as_data_frame(g, what = "edges")
+      if (length(edge_table) > 0) {
+        edge_table$color = "gray"
       }
+      node_table = igraph::as_data_frame(g, what = "vertices")
+      node_table = cbind(node_table$name, node_table)
+      colnames(node_table) = c("id", "label", "size", "color_values")
+      node_table$size = x@result[[size]][1:showCategory]
+      node_table$shape = "dot"
+      rownames(node_table) = 1:nrow(node_table)
+      node_table$size = node_table$size * node_magnifier
 
-      layout.params <- params_list[["layout.params"]]
-      edge.params <- params_list[["edge.params"]]
-      cex.params <- params_list[["cex.params"]]
-      cluster.params <- params_list[["cluster.params"]]
-      hilight.params <- params_list[["hilight.params"]]
+      # Setting the color gradient
+      normalized_values = scales::rescale(node_table$color_values , to = c(0, 1))
+      color_gradient = grDevices::colorRampPalette(c("red", "white", "blue"))
+      hex_colors = color_gradient(100)[round(normalized_values * 99) + 1]
+      node_table$color = hex_colors
 
-      layout <- layout.params[["layout"]]
-      coords <- layout.params[["coords"]]
-      with_edge <- edge.params[["show"]]
-      min_edge <- edge.params[["min"]]
-      cex_category <- cex.params[["category_node"]]
-      cex_label_category <- cex.params[["category_label"]]
-      cex_line <- cex.params[["line"]]
-      group_category <- cluster.params[["cluster"]]
-      clusterFunction <- cluster.params[["method"]]
-      nCluster <- cluster.params[["n"]]
-      group_legend <- cluster.params[["legend"]]
-      label_style <- cluster.params[["label_style"]]
-      nWords <- cluster.params[["label_words_n"]]
-      label_format <- cluster.params[["label_format"]]
-      hilight_category <- hilight.params[["category"]]
-      alpha_hilight <- hilight.params[["alpha_hilight"]]
-      alpha_nohilight <- hilight.params[["alpha_no_hilight"]]
+      # Produce the network object
+      plot = visNetwork::visNetwork(node_table, edge_table)
+      plot = visNetwork::visPhysics(plot, enabled = enable_physics)
 
-      n <- enrichplot:::update_n(x, showCategory)
-      y <- as.data.frame(x)
-      ## get graph.data.frame() object
-      g <- enrichplot:::get_igraph(x=x, nCategory=n, color=color, cex_line=cex_line,
-                                   min_edge=min_edge)
-
-      igraph::V(g)$size = igraph::V(g)$size/3
-
-      print_tm(self$name, "Emapplot finished")
-
+      ### Store the network object
       if (context == "gsea") {
-        self$plots$emapplot = visNetwork::visIgraph(g)
+        self$plots$emap_plot = plot
       } else if (context == "or") {
-        self$plots$or_emapplot = visNetwork::visIgraph(g)
+        self$plots$or_emap_plot = plot
       }
-
     },
 
     plot_or_bar_plot = function(object = self$tables$go_enrich,
@@ -1622,5 +1537,3 @@ Prot_exp = R6::R6Class(
     #------------------------------------------------------------------ END ----
   )
 )
-
-

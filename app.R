@@ -46,6 +46,8 @@ library(SNFtool)
 library(reshape2)
 library(dplyr)
 
+# New
+library(scales)
 # reticulate::use_condaenv(condaenv = 'mofa_1')
 
 

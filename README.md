@@ -8,11 +8,12 @@ SODA, the Simple Omics Data Analysis tool, is a comprehensive online platform de
 
 ## Features
 
-- **Modular Design**: Dive into an array of single omics modules offering capabilities from data visualization to gene set enrichment.
-- **Highly Interactive Plots**: Enhance your data exploration experience with our interactive visualizations.
-- **Multi-Omics Analysis**: Integrated MOFA (Multi-Omics Factor Analysis) and SNF (Similarity Network Fusion) methodologies for deeper insights.
-- **Future-Proof**: Built with an architecture that not only provides robust analysis today but also welcomes future expansions.
+- **Single omics**: SODA is as much single omics as it is multi-omics! Import, curate, filter, impute and process your single omics data to ultimately visualize results.
 - **Support for Multiple Omics Types**: Currently supports lipidomics, proteomics, transcriptomics, and genomics data.
+- **Modular Design**: Upload each single omics experiment into its dedicated module. This allows for independent analysis of multiple single omics experiments. Furthermore, SODA's modular nature encourages user contributions by making it easier to add functionalities.
+- **Interactive Plots**: Each plot in SODA is made interactable to enhance data exploration and stimulate investigations across modules.
+- **Multi-Omics Analysis**: Integrated MOFA (Multi-Omics Factor Analysis) and SNF (Similarity Network Fusion) modules can combine multiple single omics modules, offering deeper insights into the underlying drivers of variations across omics types.
+
 
 ## Getting Started
 
