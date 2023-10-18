@@ -246,7 +246,7 @@ Prot_exp = R6::R6Class(
       emap_plot = NULL,
       cnetplot = NULL,
       or_dotplot = NULL,
-      or_emapplot = NULL,
+      or_emap_plot = NULL,
       or_cnetplot = NULL,
       or_barplot = NULL
     ),
