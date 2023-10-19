@@ -1026,42 +1026,42 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                 )
               )
             ),
-            # shiny::fluidRow(
-            #   shiny::column(
-            #     width = 6,
-            #     shiny::selectInput(
-            #       inputId = ns('gseaprep_test'),
-            #       label = 'Test',
-            #       choices = c('Wilcoxon', 't-Test'),
-            #       selected = 't-Test',
-            #       width = '100%'
-            #     )
-            #   ),
-            #   shiny::column(
-            #     width = 6,
-            #     shiny::selectInput(
-            #       inputId = ns('gseaprep_adjustment'),
-            #       label = 'Adjustment',
-            #       choices = c('None', 'Benjamini-Hochberg'),
-            #       selected = 'Benjamini-Hochberg'
-            #     )
-            #   )
-            # ),
-            # shiny::fluidRow(
-            #   shiny::column(
-            #     width = 12,
-            #     shiny::sliderInput(
-            #       inputId = ns('gseaprep_pval'),
-            #       label = 'p-value cutoff',
-            #       min = 0.01,
-            #       max = 0.9,
-            #       value = 0.05,
-            #       step = 0.01,
-            #       width = '100%'
-            #     ),
-            #     shiny::hr(style = "border-top: 1px solid #7d7d7d;")
-            #   )
-            # ),
+            shiny::fluidRow(
+              shiny::column(
+                width = 6,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_test'),
+                  label = 'Test',
+                  choices = c('Wilcoxon', 't-Test'),
+                  selected = 't-Test',
+                  width = '100%'
+                )
+              ),
+              shiny::column(
+                width = 6,
+                shiny::selectInput(
+                  inputId = ns('gseaprep_adjustment'),
+                  label = 'Adjustment',
+                  choices = c('None', 'Benjamini-Hochberg'),
+                  selected = 'Benjamini-Hochberg'
+                )
+              )
+            ),
+            shiny::fluidRow(
+              shiny::column(
+                width = 12,
+                shiny::sliderInput(
+                  inputId = ns('gseaprep_pval'),
+                  label = 'p-value cutoff (Features, only for ORA)',
+                  min = 0.01,
+                  max = 0.9,
+                  value = 0.05,
+                  step = 0.01,
+                  width = '100%'
+                ),
+                shiny::hr(style = "border-top: 1px solid #7d7d7d;")
+              )
+            ),
             shiny::fluidRow(
               shiny::column(
                 width = 6,
@@ -1118,7 +1118,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
                 shiny::sliderInput(
                   inputId = ns('gsea_pval'),
-                  label = 'p-value cutoff',
+                  label = 'p-value cutoff (GO terms)',
                   min = 0.01,
                   max = 0.9,
                   value = 0.05,
@@ -1192,7 +1192,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                     width = 6,
                     shiny::sliderInput(
                       inputId = ns('or_pval_cutoff'),
-                      label = 'p-value cutoff',
+                      label = 'p-value cutoff (GO terms)',
                       min = 0.01,
                       max = 0.9,
                       value = 0.05,
@@ -1204,7 +1204,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                     width = 6,
                     shiny::sliderInput(
                       inputId = ns('or_qval_cutoff'),
-                      label = 'q-value cutoff',
+                      label = 'q-value cutoff (GO terms)',
                       min = 0.01,
                       max = 0.9,
                       value = 0.05,
@@ -1927,7 +1927,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                      group_1 = input$gseaprep_groups[1],
                      group_2 = input$gseaprep_groups[2],
                      used_function = input$gseaprep_method,
-                     test = input$gseaprep_test)
+                     test = input$gseaprep_test,
+                     context = 'gsea')
 
     r6$get_gsea_object(ont = input$gsea_go,
                        minGSSize = as.numeric(input$gsea_min_size),
@@ -1950,9 +1951,14 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                      group_1 = input$gseaprep_groups[1],
                      group_2 = input$gseaprep_groups[2],
                      used_function = input$gseaprep_method,
-                     test = input$gseaprep_test)
+                     test = input$gseaprep_test,
+                     context = 'ora')
 
-    r6$over_representation_analysis(pval_cutoff = input$or_pval_cutoff,
+
+
+    r6$over_representation_analysis(pval_cutoff_features = input$gseaprep_pval,
+                                    padjust_features = input$gseaprep_adjustment,
+                                    pval_cutoff = input$or_pval_cutoff,
                                     pAdjustMethod = input$or_pval_adjustment,
                                     fc_threshold = as.numeric(input$or_fc_threshold),
                                     ont = input$or_go_ont,
@@ -1960,7 +1966,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                                     minGSSize = as.numeric(input$or_min_gssize),
                                     maxGSSize = as.numeric(input$or_max_gssize))
 
-    if (!is.null(r6$tables$go_enric)) {
+    if (!is.null(r6$tables$go_enrich)) {
       results = nrow(r6$tables$go_enrich@result)
       if (results == 0) {
         print_tm(m, 'WARNING: no over-representation, change parameters')

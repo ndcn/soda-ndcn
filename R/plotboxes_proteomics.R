@@ -737,7 +737,8 @@ prot_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   }
 
   r6$plot_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat),
-                    enable_physics = input$cnet_plot_enable_physics)
+                    enable_physics = input$cnet_plot_enable_physics,
+                    context = "gsea")
 }
 
 prot_cnet_plot_spawn = function(r6, output) {
@@ -1387,7 +1388,7 @@ prot_or_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
   r6$plot_cnet_plot(x = r6$tables$go_enrich,
                     showCategory = as.numeric(input$or_cnet_plot_showcat),
                     enable_physics = input$or_cnet_plot_enable_physics,
-                    context = "or")
+                    context = "ora")
 }
 
 prot_or_cnet_plot_spawn = function(r6, output) {
