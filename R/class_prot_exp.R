@@ -780,7 +780,7 @@ Prot_exp = R6::R6Class(
       } else {
         features = prot_list[prot_list$p_val <= pval_cutoff_features,]
       }
-      features = features[features$fold_change > fc_threshold,]
+      features = features[abs(features$log2_fold_change) >= log2(fc_threshold),]
       features = rownames(features)
 
 
