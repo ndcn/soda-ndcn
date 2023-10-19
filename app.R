@@ -103,6 +103,24 @@ sidebar_ui = function() {
         text = "About",
         tabName = "about",
         icon = shiny::icon("question")
+      ),
+
+      bs4Dash::menuItem(
+        text = "Help",
+        tabName = "help",
+        icon = shiny::icon("question"),
+        bs4Dash::menuSubItem(
+          text = 'Start',
+          tabName = 'help_start',
+        ),
+        bs4Dash::menuSubItem(
+          text = 'Single omics',
+          tabName = 'help_single_omics',
+        ),
+        bs4Dash::menuSubItem(
+          text = 'Multi-omics',
+          tabName = 'help_multi_omics',
+        )
       )
     )
   )
@@ -168,7 +186,23 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "about",
         about_ui(id = 'mod_about')
+      ),
+
+      bs4Dash::tabItem(
+        tabName = "help_start",
+        help_start_ui(id = 'mod_help_start')
+      ),
+
+      bs4Dash::tabItem(
+        tabName = "help_single_omics",
+        help_single_omics_ui(id = 'mod_help_single_omics')
       )
+
+
+
+
+
+
     )
   )
 }
@@ -263,6 +297,9 @@ server = function(input, output, session) {
 
   start_server(id = 'mod_start', main_input = input, main_output = output, main_session = session, module_controler = module_controler)
   about_server(id = 'mod_about', main_output = output)
+  help_start_server(id = 'mod_help_start', main_output = output)
+  help_single_omics_server(id = 'mod_help_single_omics', main_output = output)
+
 
   # Single omics modules
   shiny::observe({

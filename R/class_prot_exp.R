@@ -74,12 +74,13 @@ Prot_exp = R6::R6Class(
 
       # Over representation analysis parameters self$params$overrepresentation
       overrepresentation = list(
-        prep_pval_cutoff = 0.05,
+        pval_cutoff_features = 0.05,
+        padjust_features = "Benjamini-Hochberg",
         pval_cutoff = 0.05,
         pAdjustMethod = "BH",
         fc_threshold = 2,
         ont = "ALL",
-        qval_cutoff = 0.10,
+        qval_cutoff = 0.05,
         minGSSize = 10,
         maxGSSize = 500
       ),
@@ -204,7 +205,8 @@ Prot_exp = R6::R6Class(
 
 
       # GSEA & over representation
-      prot_list = NULL,
+      gsea_prot_list = NULL,
+      ora_prot_list = NULL,
       gsea_object = NULL,
       go_enrich = NULL
 
@@ -232,7 +234,8 @@ Prot_exp = R6::R6Class(
              'Class table z-scored total normalized' = self$tables$class_table_z_scored_total_norm,
              'Species summary table' = self$tables$summary_species_table,
              'Class summary table' = self$tables$summary_class_table,
-             'GSEA prot list' = self$tables$prot_list
+             'GSEA prot list' = self$tables$gsea_prot_list,
+             'ORA prot list' = self$tables$ora_prot_list
       )
     },
 
@@ -246,7 +249,7 @@ Prot_exp = R6::R6Class(
       emap_plot = NULL,
       cnetplot = NULL,
       or_dotplot = NULL,
-      or_emapplot = NULL,
+      or_emap_plot = NULL,
       or_cnetplot = NULL,
       or_barplot = NULL
     ),
@@ -307,9 +310,10 @@ Prot_exp = R6::R6Class(
       self$params$gsea$termsim_showcat = termsim_showcat
     },
 
-    param_overrepresentation = function(prep_pval_cutoff, pval_cutoff, fc_threshold,
+    param_overrepresentation = function(pval_cutoff_features, padjust_features, pval_cutoff, fc_threshold,
                                         pAdjustMethod, ont, qval_cutoff, minGSSize, maxGSSize) {
-      self$params$overrepresentation$prep_pval_cutoff = prep_pval_cutoff
+      self$params$overrepresentation$pval_cutoff_features = pval_cutoff_features
+      self$params$overrepresentation$padjust_features = padjust_features
       self$params$overrepresentation$pval_cutoff = pval_cutoff
       self$params$overrepresentation$pAdjustMethod = pAdjustMethod
       self$params$overrepresentation$fc_threshold = fc_threshold
@@ -580,12 +584,13 @@ Prot_exp = R6::R6Class(
                       termsim_method = 'JC',
                       termsim_showcat = 200)
 
-      self$param_overrepresentation(prep_pval_cutoff = 0.05,
+      self$param_overrepresentation(pval_cutoff_features = 0.05,
+                                    padjust_features = 'Benjamini-Hochberg',
                                     pval_cutoff = 0.05,
                                     pAdjustMethod = "BH",
                                     fc_threshold = 2,
                                     ont = "ALL",
-                                    qval_cutoff = 0.10,
+                                    qval_cutoff = 0.05,
                                     minGSSize = 10,
                                     maxGSSize = 500)
 
@@ -659,7 +664,8 @@ Prot_exp = R6::R6Class(
                              group_1 = self$params$gsea$groups[1],
                              group_2 = self$params$gsea$groups[2],
                              used_function = self$params$gsea$used_function,
-                             test = self$params$gsea$test
+                             test = self$params$gsea$test,
+                             context = 'gsea'
     ) {
 
 
@@ -685,7 +691,7 @@ Prot_exp = R6::R6Class(
       prot_list = data.frame(row.names = colnames(data_table))
 
 
-      # Collect fold change and p-values
+      # Collect fold changes
       prot_list$fold_change = get_fold_changes(data_table = data_table,
                                                idx_group_1 = idx_group_1,
                                                idx_group_2 = idx_group_2,
@@ -693,7 +699,22 @@ Prot_exp = R6::R6Class(
 
 
       prot_list$log2_fold_change = log2(prot_list$fold_change)
-      self$tables$prot_list = prot_list
+
+      # Collect p-values
+      prot_list$p_val = get_p_val(data_table = data_table,
+                                  idx_group_1 = idx_group_1,
+                                  idx_group_2 = idx_group_2,
+                                  used_function = test)
+
+      prot_list$minus_log10_p_value = -log10(prot_list$p_val)
+      prot_list$p_val_bh = stats::p.adjust(prot_list$p_val, method = "BH")
+      prot_list$minus_log10_p_value_bh_adj = -log10(prot_list$p_val_bh)
+
+      if (context == 'gsea') {
+        self$tables$gsea_prot_list = prot_list
+      } else if (context == 'ora') {
+        self$tables$ora_prot_list = prot_list
+      }
     },
 
 
@@ -733,7 +754,9 @@ Prot_exp = R6::R6Class(
 
     },
 
-    over_representation_analysis = function(prot_list = self$tables$prot_list,
+    over_representation_analysis = function(prot_list = self$tables$ora_prot_list,
+                                            pval_cutoff_features = self$params$overrepresentation$pval_cutoff_features,
+                                            padjust_features = self$params$overrepresentation$padjust_features,
                                             pval_cutoff = self$params$overrepresentation$pval_cutoff,
                                             pAdjustMethod = self$params$overrepresentation$pAdjustMethod,
                                             fc_threshold = self$params$overrepresentation$fc_threshold,
@@ -752,14 +775,14 @@ Prot_exp = R6::R6Class(
       universe = names(universe)
 
       # Get significant features
-      # features = base::subset(prot_list, p_value_bh_adj < prep_pval_cutoff)
-      # feature_names = rownames(features)
-      features = prot_list$log2_fold_change
-      names(features) = rownames(prot_list)
-      features = na.omit(features)
-      features = features[abs(features) > base::log2(fc_threshold)]
-      features = sort(features, decreasing = TRUE)
-      features = names(features)
+      if (padjust_features == "Benjamini-Hochberg") {
+        features = prot_list[prot_list$p_val_bh <= pval_cutoff_features,]
+      } else {
+        features = prot_list[prot_list$p_val <= pval_cutoff_features,]
+      }
+      features = features[features$fold_change > fc_threshold,]
+      features = rownames(features)
+
 
       if (length(features) == 0) {
         return()
@@ -1207,7 +1230,12 @@ Prot_exp = R6::R6Class(
 
       showCategory = as.numeric(showCategory)
 
-      prot_list = self$tables$prot_list
+      if (context == 'gsea') {
+        prot_list = self$tables$gsea_prot_list
+      } else if (context == 'ora') {
+        prot_list = self$tables$ora_prot_list
+      }
+
 
       geneSets = enrichplot:::extract_geneSets(x, showCategory)
 
@@ -1262,7 +1290,7 @@ Prot_exp = R6::R6Class(
 
       if (context == "gsea") {
         self$plots$cnetplot = plot
-      } else if (context == "or") {
+      } else if (context == "ora") {
         self$plots$or_cnetplot = plot
       }
     },
@@ -1545,3 +1573,4 @@ Prot_exp = R6::R6Class(
     #------------------------------------------------------------------ END ----
   )
 )
+
