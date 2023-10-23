@@ -2,39 +2,44 @@
 
 experiment_ui = function(id) {
   ns = shiny::NS(id)
-  bs4Dash::tabsetPanel(
-    type = "tabs",
-    shiny::tabPanel(
-      title = "Upload metadata",
-      shiny::uiOutput(
-        outputId = ns('up_metadata_ui')
-      )
-    ),
-    shiny::tabPanel(
-      title = "Upload data",
-      shiny::uiOutput(
-        outputId = ns('up_data_ui')
-      )
-    ),
-    shiny::tabPanel(
-      title = "Visualize data",
-      shiny::uiOutput(
-        outputId = ns('visualize_data_ui')
-      )
-    ),
-    shiny::tabPanel(
-      title = "Geneset enrichment",
-      shiny::uiOutput(
-        outputId = ns('geneset_enrichment_ui')
-      )
-    ),
-    shiny::tabPanel(
-      title = "Over-representation analysis",
-      shiny::uiOutput(
-        outputId = ns('over_representation_ui')
-      )
-    )
+
+  shiny::uiOutput(
+    outputId = ns('omics_ui')
   )
+
+  # bs4Dash::tabsetPanel(
+  #   type = "tabs",
+  #   shiny::tabPanel(
+  #     title = "Upload metadata",
+  #     shiny::uiOutput(
+  #       outputId = ns('up_metadata_ui')
+  #     )
+  #   ),
+  #   shiny::tabPanel(
+  #     title = "Upload data",
+  #     shiny::uiOutput(
+  #       outputId = ns('up_data_ui')
+  #     )
+  #   ),
+  #   shiny::tabPanel(
+  #     title = "Visualize data",
+  #     shiny::uiOutput(
+  #       outputId = ns('visualize_data_ui')
+  #     )
+  #   ),
+  #   shiny::tabPanel(
+  #     title = "Geneset enrichment",
+  #     shiny::uiOutput(
+  #       outputId = ns('geneset_enrichment_ui')
+  #     )
+  #   ),
+  #   shiny::tabPanel(
+  #     title = "Over-representation analysis",
+  #     shiny::uiOutput(
+  #       outputId = ns('over_representation_ui')
+  #     )
+  #   )
+  # )
 }
 
 #-------------------------------------------------------- Experiment server ----

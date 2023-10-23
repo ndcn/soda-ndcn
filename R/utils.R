@@ -926,14 +926,21 @@ get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function)
     return(fold_change)
   })
 
-
+  # Impute infinite (x/0)
   if (length(which(fold_changes == Inf)) > 0) {
     fold_changes[which(fold_changes == Inf)] = max(fold_changes[which(fold_changes != Inf)]) * 1.01
   }
 
+  # Impute zeros (0/x)
   if (length(which(fold_changes == 0)) > 0) {
     fold_changes[which(fold_changes == 0)] = min(fold_changes[which(fold_changes > 0)]) * 0.99
   }
+
+  # Impute NaNs (0/0)
+  if (length(which(is.nan(fold_changes)) > 0)) {
+    fold_changes[which(is.nan(fold_changes))] = 1
+  }
+
 
 
 

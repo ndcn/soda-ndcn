@@ -234,6 +234,34 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   slot = r6$slot
   #---------------------------------------------- Metadata upload rendering ----
 
+  # Render skeleton UI
+  output$omics_ui = shiny::renderUI({
+    bs4Dash::tabsetPanel(
+      type = "tabs",
+      shiny::tabPanel(
+        title = "Upload metadata",
+        shiny::uiOutput(
+          outputId = ns('up_metadata_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Upload data",
+        shiny::uiOutput(
+          outputId = ns('up_data_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Visualize data",
+        shiny::uiOutput(
+          outputId = ns('visualize_data_ui')
+        )
+      )
+    )
+  })
+
+
+
+
   output$up_metadata_ui = shiny::renderUI({
     shiny::fluidRow(
 
@@ -1510,16 +1538,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     output$plotbox_field = shiny::renderUI(
       NULL
     )
-  })
-
-  #------------------------------------------- Geneset enrichment rendering ----
-  output$geneset_enrichment_ui = shiny::renderUI({
-    shiny::h2('Geneset enrichment unavailable for lipidomics')
-  })
-
-  #------------------------------------------ Over-representation rendering ----
-  output$over_representation_ui = shiny::renderUI({
-    shiny::h2('Over-representation analysis unavailable for lipidomics')
   })
 
 
