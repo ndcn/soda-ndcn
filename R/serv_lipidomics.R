@@ -1136,7 +1136,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
       shiny::updateSelectInput(
         inputId = 'select_data_table',
-        choices = c('Imported data table', 'Raw data table', 'Feature table', 'Blank table', 'Class normalized table', 'Total normalized table', 'Z-scored table', 'Z-scored class normalized table', 'Z-scored total normalized table', 'Class table', 'Class table total normalized', 'Class table z-scored total normalized', 'Species summary table', 'Class summary table'),
+        choices = c('Imported data table', 'Raw data table', 'Imported feature table' ,'Feature table', 'Blank table', 'Class normalized table', 'Total normalized table', 'Z-scored table', 'Z-scored class normalized table', 'Z-scored total normalized table', 'Class table', 'Class table total normalized', 'Class table z-scored total normalized', 'Species summary table', 'Class summary table'),
         selected = 'Raw data table'
       )
 

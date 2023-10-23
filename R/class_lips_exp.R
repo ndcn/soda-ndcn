@@ -122,6 +122,7 @@ Lips_exp = R6::R6Class(
 
       blank_table = NULL,
 
+      imp_feature_table = NULL,
       feature_table = NULL,
 
       # Group summaries
@@ -364,8 +365,15 @@ Lips_exp = R6::R6Class(
       }
     },
 
-    get_feature_table = function() {
-      self$tables$feature_table = get_feature_metadata(data_table = self$tables$raw_data)
+    get_feature_table = function(context = 'feature_table') {
+      if (context == 'feature_table') {
+        feature_table = get_feature_metadata(data_table = self$tables$raw_data)
+      } else if (context == 'imp_feature_table') {
+        data_table = self$tables$imp_data
+        data_table = data_table[,2:ncol(data_table)]
+        feature_table = get_feature_metadata(data_table = data_table)
+      }
+      self$tables[[context]] = feature_table
     },
 
     get_blank_table = function() {
@@ -435,8 +443,8 @@ Lips_exp = R6::R6Class(
 
     derive_data_tables = function() {
       # Derive tables
-
-      self$get_feature_table()
+      self$get_feature_table(context = 'imp_feature_table')
+      self$get_feature_table(context = 'feature_table')
       self$normalise_class()
       self$normalise_total()
       self$normalise_z_score()

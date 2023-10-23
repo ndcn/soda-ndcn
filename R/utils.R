@@ -51,6 +51,7 @@ table_switch = function(table_name, r6) {
          'Raw metadata table' = r6$tables$raw_meta,
          'Imported data table' = r6$tables$imp_data,
          'Raw data table' = r6$tables$raw_data,
+         'Imported feature table' = r6$tables$imp_feature_table,
          'Feature table' = r6$tables$feature_table,
          'Blank table' = r6$tables$blank_table,
          'Class normalized table' = r6$tables$class_norm_data,
