@@ -642,9 +642,17 @@ Lips_exp = R6::R6Class(
                                        group_1 = self$params$db_plot$selected_groups[1],
                                        group_2 = self$params$db_plot$selected_groups[2]) {
 
-      # Get the rownames for each group
-      idx_group_1 = which(meta_table[, group_col] == group_1)
-      idx_group_2 = which(meta_table[, group_col] == group_2)
+
+      rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_1]
+      rownames_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_2]
+      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
+
+      # Filter data to keep only the two groups
+      data_table = data_table[all_rownames,]
+
+      # Get the indices for each group
+      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
+      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
 
       # Get all row names from both groups
       idx_all = c(idx_group_1, idx_group_2)
