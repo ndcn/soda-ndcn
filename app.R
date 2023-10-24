@@ -198,11 +198,6 @@ body_ui = function() {
         help_single_omics_ui(id = 'mod_help_single_omics')
       )
 
-
-
-
-
-
     )
   )
 }

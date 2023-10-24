@@ -122,8 +122,12 @@ Lips_exp = R6::R6Class(
 
       blank_table = NULL,
 
+      #Feature tables
       imp_feature_table = NULL,
       feature_table = NULL,
+
+      # External feature tables
+      external_feature_tables = list(),
 
       # Group summaries
       summary_species_table = NULL,
@@ -365,15 +369,21 @@ Lips_exp = R6::R6Class(
       }
     },
 
-    get_feature_table = function(context = 'feature_table') {
-      if (context == 'feature_table') {
-        feature_table = get_feature_metadata(data_table = self$tables$raw_data)
-      } else if (context == 'imp_feature_table') {
-        data_table = self$tables$imp_data
-        data_table = data_table[,2:ncol(data_table)]
-        feature_table = get_feature_metadata(data_table = data_table)
+    get_feature_table = function() {
+      data_table = self$tables$imp_data
+      data_table = data_table[,2:ncol(data_table)]
+      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table)
+    },
+
+    update_feature_table = function() {
+      feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),]
+      ext_names = names(self$tables$external_feature_tables)
+      for (name in ext_names) {
+        feature_table = augment_feature_table(feature_table = feature_table,
+                                              external_table_name = name,
+                                              external_feature_table = self$tables$external_feature_tables[[name]])
       }
-      self$tables[[context]] = feature_table
+      self$tables$feature_table = feature_table
     },
 
     get_blank_table = function() {
@@ -381,6 +391,17 @@ Lips_exp = R6::R6Class(
       rownames(blank_table) = blank_table[,self$indices$id_col_data]
       blank_table[,self$indices$id_col_data] = NULL
       self$tables$blank_table = as.matrix(blank_table)
+    },
+
+    add_feature_table = function(name, feature_file) {
+      ext_feature_table = soda_read_table(feature_file)
+      rownames(ext_feature_table) = ext_feature_table[,1]
+      ext_feature_table[,1] = NULL
+      self$tables$external_feature_tables[[name]] = ext_feature_table
+    },
+
+    del_feature_table = function(name) {
+      self$tables$external_feature_tables[[name]] = NULL
     },
 
 
@@ -443,8 +464,8 @@ Lips_exp = R6::R6Class(
 
     derive_data_tables = function() {
       # Derive tables
-      self$get_feature_table(context = 'imp_feature_table')
-      self$get_feature_table(context = 'feature_table')
+      self$get_feature_table()
+      self$update_feature_table()
       self$normalise_class()
       self$normalise_total()
       self$normalise_z_score()

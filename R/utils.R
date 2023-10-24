@@ -195,6 +195,17 @@ soda_read_table = function(file_path, sep = NA) {
   return(data_table)
 }
 
+augment_feature_table = function(feature_table, external_table_name, external_feature_table) {
+  feature_table$merge_on = rownames(feature_table)
+  external_feature_table$merge_on = rownames(external_feature_table)
+
+  feature_table = base::merge(feature_table, external_feature_table, by = 'merge_on', all.x = TRUE, suffixes = c('', paste0('_', external_table_name)))
+
+  rownames(feature_table) = feature_table$merge_on
+  feature_table$merge_on = NULL
+  return(feature_table)
+}
+
 #-------------------------------------------------------- General utilities ----
 
 is_coercible_to_numeric = function(vector) {

@@ -1038,7 +1038,50 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
             width = 3,
             shiny::actionButton(inputId = ns("reset_data_table"), label =  "Reset", width = "100%")
           )
+        ),
+
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+
+        # Manage feature table
+        bs4Dash::box(
+          id = ns('feature_table_box'),
+          title = 'Manage feature table',
+          width = 12,
+          shiny::tagList(
+            shiny::fluidRow(
+              shiny::column(
+                width = 6,
+                shiny::h5('Add feature table'),
+                shiny::textInput(
+                  inputId = ns('feat_name_add'),
+                  label = 'Displayed name',
+                  width = '100%',
+                  placeholder = 'feat_1'
+                  ),
+                shiny::fileInput(
+                  inputId = ns("feat_add"),
+                  label = NULL,
+                  multiple = F,
+                  accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                  width = "100%"
+                  )
+              ),
+              shiny::column(
+                width = 6,
+                shiny::h5('Remove feature table'),
+                shiny::selectInput(inputId = ns('feat_name_del'),
+                                   label = 'Table name',
+                                   choices = names(r6$tables$external_feature_tables),
+                                   selected = NULL,
+                                   width = '100%'),
+                shiny::actionButton(inputId = ns('feat_del'),
+                                    label = 'Remove',
+                                    width = '100%')
+              )
+            )
+          )
         )
+
       )
     )
   })
@@ -1368,6 +1411,39 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       session = session,
       inputId = "manual_selection",
       selected = character(0)
+    )
+  })
+
+  # Manage Feature tables
+  session$userData[[id]]$feat_add = shiny::observeEvent(input$feat_add, {
+    if (input$feat_name_add == "") {
+      counter = 1
+      name = paste0("feat_", counter)
+      while (name %in% names(r6$tables$external_feature_tables)) {
+        counter = counter + 1
+        name = paste0("feat_", counter)
+      }
+    }else {
+      name = input$feat_name_add
+    }
+    r6$add_feature_table(name = name,
+                         feature_file = input$feat_add$datapath)
+
+    shiny::updateSelectInput(
+      inputId = 'feat_name_del',
+      choices = names(r6$tables$external_feature_tables)
+    )
+    r6$derive_data_tables()
+    # print(colnames(r6$tables$feature_table))
+    # print(names(r6$tables$external_feature_tables))
+  })
+
+  session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {
+    r6$tables$external_feature_tables[[input$feat_name_del]] = NULL
+    r6$derive_data_tables()
+    shiny::updateSelectInput(
+      inputId = 'feat_name_del',
+      choices = names(r6$tables$external_feature_tables)
     )
   })
 
