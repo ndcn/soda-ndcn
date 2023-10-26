@@ -61,6 +61,7 @@ Lips_exp = R6::R6Class(
       # PCA parameters self$params$pca$
       pca = list(
         dataset = 'Z-scored total normalized table',
+        feature_metadata = character(0),
         group_column = NULL,
         apply_da = FALSE,
         alpha_da = 0.8,
