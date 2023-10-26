@@ -1476,6 +1476,11 @@ Trns_exp = R6::R6Class(
       edge_magnifier = as.numeric(edge_magnifier)
       node_magnifier = as.numeric(node_magnifier)
 
+      # check if showCategory appropriate
+      if (showCategory > nrow(x@result)) {
+        showCategory = nrow(x@result)
+      }
+
       # Adding data based on GSEA or ORA
       if (context == 'gsea') {
         total_count = x@result$setSize
