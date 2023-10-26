@@ -749,7 +749,9 @@ Trns_exp = R6::R6Class(
                                     OrgDb = OrgDb,
                                     pAdjustMethod = pAdjustMethod)
 
-      gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
+      if (nrow(gsea@result) > 0) {
+        gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
+      }
       self$tables$gsea_object = gsea
 
     },
@@ -1573,3 +1575,4 @@ Trns_exp = R6::R6Class(
     #------------------------------------------------------------------ END ----
   )
 )
+

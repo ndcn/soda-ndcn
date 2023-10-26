@@ -61,6 +61,7 @@ Lips_exp = R6::R6Class(
       # PCA parameters self$params$pca$
       pca = list(
         dataset = 'Z-scored total normalized table',
+        feature_metadata = character(0),
         group_column = NULL,
         apply_da = FALSE,
         alpha_da = 0.8,
@@ -122,7 +123,12 @@ Lips_exp = R6::R6Class(
 
       blank_table = NULL,
 
+      #Feature tables
+      imp_feature_table = NULL,
       feature_table = NULL,
+
+      # External feature tables
+      external_feature_tables = list(),
 
       # Group summaries
       summary_species_table = NULL,
@@ -365,7 +371,20 @@ Lips_exp = R6::R6Class(
     },
 
     get_feature_table = function() {
-      self$tables$feature_table = get_feature_metadata(data_table = self$tables$raw_data)
+      data_table = self$tables$imp_data
+      data_table = data_table[,2:ncol(data_table)]
+      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table)
+    },
+
+    update_feature_table = function() {
+      feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),]
+      ext_names = names(self$tables$external_feature_tables)
+      for (name in ext_names) {
+        feature_table = augment_feature_table(feature_table = feature_table,
+                                              external_table_name = name,
+                                              external_feature_table = self$tables$external_feature_tables[[name]])
+      }
+      self$tables$feature_table = feature_table
     },
 
     get_blank_table = function() {
@@ -373,6 +392,17 @@ Lips_exp = R6::R6Class(
       rownames(blank_table) = blank_table[,self$indices$id_col_data]
       blank_table[,self$indices$id_col_data] = NULL
       self$tables$blank_table = as.matrix(blank_table)
+    },
+
+    add_feature_table = function(name, feature_file) {
+      ext_feature_table = soda_read_table(feature_file)
+      rownames(ext_feature_table) = ext_feature_table[,1]
+      ext_feature_table[,1] = NULL
+      self$tables$external_feature_tables[[name]] = ext_feature_table
+    },
+
+    del_feature_table = function(name) {
+      self$tables$external_feature_tables[[name]] = NULL
     },
 
 
@@ -435,8 +465,8 @@ Lips_exp = R6::R6Class(
 
     derive_data_tables = function() {
       # Derive tables
-
       self$get_feature_table()
+      self$update_feature_table()
       self$normalise_class()
       self$normalise_total()
       self$normalise_z_score()
@@ -613,9 +643,17 @@ Lips_exp = R6::R6Class(
                                        group_1 = self$params$db_plot$selected_groups[1],
                                        group_2 = self$params$db_plot$selected_groups[2]) {
 
-      # Get the rownames for each group
-      idx_group_1 = which(meta_table[, group_col] == group_1)
-      idx_group_2 = which(meta_table[, group_col] == group_2)
+
+      rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_1]
+      rownames_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_2]
+      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
+
+      # Filter data to keep only the two groups
+      data_table = data_table[all_rownames,]
+
+      # Get the indices for each group
+      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
+      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
 
       # Get all row names from both groups
       idx_all = c(idx_group_1, idx_group_2)

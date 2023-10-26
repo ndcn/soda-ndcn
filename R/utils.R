@@ -51,6 +51,7 @@ table_switch = function(table_name, r6) {
          'Raw metadata table' = r6$tables$raw_meta,
          'Imported data table' = r6$tables$imp_data,
          'Raw data table' = r6$tables$raw_data,
+         'Imported feature table' = r6$tables$imp_feature_table,
          'Feature table' = r6$tables$feature_table,
          'Blank table' = r6$tables$blank_table,
          'Class normalized table' = r6$tables$class_norm_data,
@@ -192,6 +193,17 @@ soda_read_table = function(file_path, sep = NA) {
   }
 
   return(data_table)
+}
+
+augment_feature_table = function(feature_table, external_table_name, external_feature_table) {
+  feature_table$merge_on = rownames(feature_table)
+  external_feature_table$merge_on = rownames(external_feature_table)
+
+  feature_table = base::merge(feature_table, external_feature_table, by = 'merge_on', all.x = TRUE, suffixes = c('', paste0('_', external_table_name)))
+
+  rownames(feature_table) = feature_table$merge_on
+  feature_table$merge_on = NULL
+  return(feature_table)
 }
 
 #-------------------------------------------------------- General utilities ----
@@ -926,14 +938,21 @@ get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function)
     return(fold_change)
   })
 
-
+  # Impute infinite (x/0)
   if (length(which(fold_changes == Inf)) > 0) {
     fold_changes[which(fold_changes == Inf)] = max(fold_changes[which(fold_changes != Inf)]) * 1.01
   }
 
+  # Impute zeros (0/x)
   if (length(which(fold_changes == 0)) > 0) {
     fold_changes[which(fold_changes == 0)] = min(fold_changes[which(fold_changes > 0)]) * 0.99
   }
+
+  # Impute NaNs (0/0)
+  if (length(which(is.nan(fold_changes)) > 0)) {
+    fold_changes[which(is.nan(fold_changes))] = 1
+  }
+
 
 
 

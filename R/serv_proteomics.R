@@ -326,6 +326,43 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   m = r6$name
   slot = r6$slot
 
+  # Render skeleton UI
+  output$omics_ui = shiny::renderUI({
+    bs4Dash::tabsetPanel(
+      type = "tabs",
+      shiny::tabPanel(
+        title = "Upload metadata",
+        shiny::uiOutput(
+          outputId = ns('up_metadata_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Upload data",
+        shiny::uiOutput(
+          outputId = ns('up_data_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Visualize data",
+        shiny::uiOutput(
+          outputId = ns('visualize_data_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Geneset enrichment",
+        shiny::uiOutput(
+          outputId = ns('geneset_enrichment_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Over-representation analysis",
+        shiny::uiOutput(
+          outputId = ns('over_representation_ui')
+        )
+      )
+    )
+  })
+
   #---------------------------------------------- Metadata upload rendering ----
 
   output$up_metadata_ui = shiny::renderUI({
@@ -1922,23 +1959,36 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     shiny::req(length(input$gseaprep_groups) == 2)
     print_tm(m, "GSEA started")
     shinyjs::disable("run_gsea")
-    r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
-                     group_col = input$gseaprep_group_col,
-                     group_1 = input$gseaprep_groups[1],
-                     group_2 = input$gseaprep_groups[2],
-                     used_function = input$gseaprep_method,
-                     test = input$gseaprep_test,
-                     context = 'gsea')
 
-    r6$get_gsea_object(ont = input$gsea_go,
-                       minGSSize = as.numeric(input$gsea_min_size),
-                       maxGSSize = as.numeric(input$gsea_max_size),
-                       p_value_cutoff = input$gsea_pval,
-                       verbose = TRUE,
-                       OrgDb = "org.Hs.eg.db",
-                       pAdjustMethod = input$gsea_adjustment,
-                       termsim_showcat = as.numeric(input$gsea_showcat))
-    print_tm(m, "GSEA finished")
+    base::tryCatch({
+      r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
+                       group_col = input$gseaprep_group_col,
+                       group_1 = input$gseaprep_groups[1],
+                       group_2 = input$gseaprep_groups[2],
+                       used_function = input$gseaprep_method,
+                       test = input$gseaprep_test,
+                       context = 'gsea')
+
+      r6$get_gsea_object(ont = input$gsea_go,
+                         minGSSize = as.numeric(input$gsea_min_size),
+                         maxGSSize = as.numeric(input$gsea_max_size),
+                         p_value_cutoff = input$gsea_pval,
+                         verbose = TRUE,
+                         OrgDb = "org.Hs.eg.db",
+                         pAdjustMethod = input$gsea_adjustment,
+                         termsim_showcat = as.numeric(input$gsea_showcat))
+
+
+      if (nrow(r6$tables$gsea_object@result) == 0) {
+        print_tm(m, "GSEA failed: no term enriched under specific pvalueCutoff")
+      } else {
+        print_tm(m, "GSEA finished")
+      }
+    },error=function(e){
+      print_tm(r6$name, 'GSEA failed.')
+    },finally={}
+    )
+
     shinyjs::enable("run_gsea")
   })
 
@@ -1969,7 +2019,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     if (!is.null(r6$tables$go_enrich)) {
       results = nrow(r6$tables$go_enrich@result)
       if (results == 0) {
-        print_tm(m, 'WARNING: no over-representation, change parameters')
+        print_tm(m, 'WARNING: no over-representation under selected parameters')
       } else {
         print_tm(m, paste0('Over-representation successful: ', results, ' terms'))
       }

@@ -799,6 +799,13 @@ pca_server = function(r6, output, session) {
         selected = r6$params$pca$group_column
       ),
 
+      shiny::selectInput(
+        inputId = ns('pca_feature_meta'),
+        label = 'Feature meta',
+        choices = colnames(r6$tables$feature_table),
+        selected = r6$params$pca$feature_metadata
+      ),
+
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::column(
@@ -1165,16 +1172,13 @@ db_plot_events = function(r6, dimensions_obj, color_palette, input, output, sess
     r6$params$db_plot$img_format = input$double_bonds_plot_img_format
 
 
-    double_bonds_generate_single(r6, color_palette, dimensions_obj, input)
-    double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
-
-    # base::tryCatch({
-    #   double_bonds_generate_single(r6, color_palette, dimensions_obj, input)
-    #   double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
-    # },error=function(e){
-    #   print_tm(r6$name, 'Double bonds plot: error, missing data.')
-    # },finally={}
-    # )
+    base::tryCatch({
+      double_bonds_generate_single(r6, color_palette, dimensions_obj, input)
+      double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
+    },error=function(e){
+      print_tm(r6$name, 'Double bonds plot: error, missing data.')
+    },finally={}
+    )
 
   })
 
@@ -1195,8 +1199,15 @@ db_plot_events = function(r6, dimensions_obj, color_palette, input, output, sess
     r6$params$db_plot$img_format = input$double_bonds_plot_img_format
 
 
-    double_bonds_generate_double(r6, colour_list, dimensions_obj, input, session)
-    double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
+    base::tryCatch({
+      double_bonds_generate_double(r6, colour_list, dimensions_obj, input, session)
+      double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
+    },error=function(e){
+      print_tm(r6$name, 'Double bonds plot: error, missing data.')
+    },finally={}
+    )
+
+
 
   })
 
