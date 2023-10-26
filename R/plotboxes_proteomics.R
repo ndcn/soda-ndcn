@@ -1610,16 +1610,13 @@ prot_or_emap_plot_events = function(r6, dimensions_obj, color_palette, input, ou
                        node_magnifier = input$prot_or_emap_plot_node_magnifier,
                        enable_physics = input$prot_or_emap_plot_enable_physics)
 
-    prot_or_emap_plot_generate(r6, color_palette, dimensions_obj, input)
-    prot_or_emap_plot_spawn(r6, output)
-
-    # base::tryCatch({
-    #   prot_emap_plot_generate(r6, color_palette, dimensions_obj, input)
-    #   prot_emap_plot_spawn(r6, output)
-    # },error=function(e){
-    #   print_tm(r6$name, 'eMap plot: ERROR.')
-    # },finally={}
-    # )
+    base::tryCatch({
+      prot_or_emap_plot_generate(r6, color_palette, dimensions_obj, input)
+      prot_or_emap_plot_spawn(r6, output)
+    },error=function(e){
+      print_tm(r6$name, 'eMap plot: ERROR.')
+    },finally={}
+    )
   })
 
   # # Download associated table
