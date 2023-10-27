@@ -32,6 +32,7 @@ library(RColorBrewer)
 library(stats)
 library(glmnet)
 library(pcaMethods)
+library(scales)
 
 # Omics
 library(org.Hs.eg.db)
@@ -47,8 +48,7 @@ library(reshape2)
 library(dplyr)
 
 # New
-library(scales)
-# reticulate::use_condaenv(condaenv = 'mofa_1')
+library(ellipse)
 
 
 

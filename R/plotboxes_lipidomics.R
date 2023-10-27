@@ -749,13 +749,8 @@ pca_generate = function(r6, colour_list, dimensions_obj, input) {
   }
 
 
-  r6$plot_pca(data_table = table_switch(input$pca_dataset, r6),
-              group_column = input$pca_metacol,
-              apply_da = input$pca_apply_da,
-              alpha_da = input$pca_alpha_da,
-              width = width,
-              height = height,
-              colour_list = colour_list)
+  r6$plot_pca(width = width,
+              height = height)
 }
 
 pca_spawn = function(r6, format, output) {
@@ -787,25 +782,23 @@ pca_server = function(r6, output, session) {
   output$pca_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shiny::selectInput(
-        inputId = ns("pca_dataset"),
+        inputId = ns("pca_data_table"),
         label = "Select dataset",
         choices = c('Z-scored table', 'Class table z-scored', 'Z-scored total normalized table'),
-        selected = r6$params$pca$dataset
+        selected = r6$params$pca$data_table
       ),
       shiny::selectInput(
-        inputId = ns("pca_metacol"),
-        label = "Select metadata column",
+        inputId = ns("pca_sample_groups_col"),
+        label = "Sample group column",
         choices = colnames(r6$tables$raw_meta),
-        selected = r6$params$pca$group_column
+        selected = r6$params$pca$sample_groups_col
       ),
-
       shiny::selectInput(
-        inputId = ns('pca_feature_meta'),
-        label = 'Feature meta',
+        inputId = ns("pca_feature_group"),
+        label = "Feature group column",
         choices = colnames(r6$tables$feature_table),
-        selected = r6$params$pca$feature_metadata
+        selected = r6$params$pca$feature_groups_col
       ),
-
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::column(
@@ -820,7 +813,6 @@ pca_server = function(r6, output, session) {
                                     width = "100%")
         )
       ),
-
       shiny::sliderInput(inputId = ns("pca_alpha_da"),
                          label = "Alpha",
                          min = 0,
@@ -828,7 +820,54 @@ pca_server = function(r6, output, session) {
                          value = r6$params$pca$alpha_da,
                          step = 0.01,
                          width = "100%"),
-
+      shiny::selectInput(
+        inputId = ns('pca_method'),
+        label = 'PCA method',
+        choices = c('svd', 'nipals', 'rnipals', 'bpca', 'ppca', 'svdImpute', 'llsImputeAll'),
+        selected = r6$params$pca$pca_method,
+        width = '100%'
+      ),
+      shiny::textInput(
+        inputId = ns('pca_npcs'),
+        label = 'Number of PCs',
+        value = r6$params$pca$nPcs,
+        width = '100%'
+      ),
+      shiny::textInput(
+        inputId = ns('pca_displayed_pc_1'),
+        label = 'Displayed PC (1)',
+        value = r6$params$pca$displayed_pc_1,
+        width = '100%'
+      ),
+      shiny::textInput(
+        inputId = ns('pca_displayed_pc_2'),
+        label = 'Displayed PC (2)',
+        value = r6$params$pca$displayed_pc_2,
+        width = '100%'
+      ),
+      shinyWidgets::prettySwitch(
+        inputId = ns('pca_completeObs'),
+        label = 'Complete observations',
+        value = r6$params$pca$completeObs
+      ),
+      shiny::selectInput(
+        inputId = ns('pca_displayed_plots'),
+        label = 'Displayed plot',
+        choices = c('both', 'scores', 'loadings', 'variance'),
+        selected = r6$params$pca$displayed_plots,
+        width = '100%'
+      ),
+      shiny::selectInput(
+        inputId = ns('pca_colors_palette'),
+        label = 'Color palette',
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$pca$colors_palette,
+        width = '100%'
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::selectInput(
@@ -855,13 +894,22 @@ pca_server = function(r6, output, session) {
 
 pca_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da, input$pca_img_format),{
+  shiny::observeEvent(c(input$pca_data_table, input$pca_sample_groups_col, input$pca_feature_group, input$pca_apply_da, input$pca_alpha_da, input$pca_method, input$pca_npcs, input$pca_displayed_pc_1, input$pca_displayed_pc_2, input$pca_completeObs, input$pca_displayed_plots, input$pca_colors_palette, input$pca_img_format),{
     print_tm(r6$name, "PCA: Updating params...")
 
-    r6$param_pca(dataset = input$pca_dataset,
-                 group_column = input$pca_metacol,
+    print(input$pca_data_table)
+    r6$param_pca(data_table = table_name_switch(input$pca_data_table),
+                 sample_groups_col = input$pca_sample_groups_col,
+                 feature_groups_col = input$pca_feature_group,
                  apply_da = input$pca_apply_da,
                  alpha_da = input$pca_alpha_da,
+                 pca_method = input$pca_method,
+                 nPcs = input$pca_npcs,
+                 displayed_pc_1 = input$pca_displayed_pc_1,
+                 displayed_pc_2 = input$pca_displayed_pc_2,
+                 completeObs = input$pca_completeObs,
+                 displayed_plots = input$pca_displayed_plots,
+                 colors_palette = input$pca_colors_palette,
                  img_format = input$pca_img_format)
 
     base::tryCatch({

@@ -1,5 +1,5 @@
 # Utility functions
-
+base::source('./R/complex_functions/pca.R')
 #--------------------------------------------------------- Switch functions ----
 
 experiment_switch = function(selection) {
@@ -67,6 +67,30 @@ table_switch = function(table_name, r6) {
          'Class summary table' = r6$tables$summary_class_table,
          'GSEA prot list' = r6$tables$prot_list
          )
+}
+
+table_name_switch = function(table_name) {
+  switch(EXPR = table_name,
+         'Imported metadata table' = 'imp_meta',
+         'Raw metadata table' = 'raw_meta',
+         'Imported data table' = 'imp_data',
+         'Raw data table' = 'raw_data',
+         'Imported feature table' = 'imp_feature_table',
+         'Feature table' = 'feature_table',
+         'Blank table' = 'blank_table',
+         'Class normalized table' = 'class_norm_data',
+         'Total normalized table' = 'total_norm_data',
+         'Z-scored table' = 'z_scored_data',
+         'Z-scored class normalized table' = 'z_scored_class_norm_data',
+         'Z-scored total normalized table' = 'z_scored_total_norm_data',
+         'Class table' = 'class_table',
+         'Class table z-scored' = 'class_table_z_scored',
+         'Class table total normalized' = 'class_table_total_norm',
+         'Class table z-scored total normalized' = 'class_table_z_scored_total_norm',
+         'Species summary table' = 'summary_species_table',
+         'Class summary table' = 'summary_class_table',
+         'GSEA prot list' = 'prot_list'
+  )
 }
 
 method_switch = function(method) {
