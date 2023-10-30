@@ -535,51 +535,67 @@ get_lipid_classes = function(feature_list, uniques = TRUE){
   }
 }
 
-get_feature_metadata = function(data_table) {
-  feature_table = data.frame(row.names = sort(colnames(data_table)))
-  feature_table$lipid_class = get_lipid_classes(feature_list = rownames(feature_table),
-                                                uniques = FALSE)
-  # Collect carbon and unsaturation counts
-  c_count_1 = c() # Main carbon count / total carbon count (TGs)
-  s_count_1 = c() # Main saturation count
-  c_count_2 = c() # Secondary carbon count (asyl groups or TGs)
-  s_count_2 = c() # Secondary saturation (asyl groups or TGs)
-  for (c in unique(feature_table$lipid_class)) {
-    idx = rownames(feature_table)[feature_table$lipid_class == c]
+get_feature_metadata = function(data_table, dtype) {
 
-    if (c == "TG") {
-      # For triglycerides
-      for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
-        c_count_1 = c(c_count_1, i[2])
-        c_count_2 = c(c_count_2, i[4])
-        s_count_1 = c(s_count_1, i[3])
-        s_count_2 = c(s_count_2, i[5])
-      }
-    } else if (sum(stringr::str_detect(string = idx, pattern = "/|_")) >0) {
-      # For species with asyl groups ("/" or "_")
-      for (i in stringr::str_split(string = idx, pattern = " |:|_|/")) {
-        c_count_1 = c(c_count_1, gsub("[^0-9]", "", i[2]))
-        c_count_2 = c(c_count_2, i[4])
-        s_count_1 = c(s_count_1, i[3])
-        s_count_2 = c(s_count_2, i[5])
-      }
-    } else {
-      # For the rest
-      for (i in stringr::str_split(string = idx, pattern = " |:")) {
-        c_count_1 = c(c_count_1, i[2])
-        c_count_2 = c(c_count_2, 0)
-        s_count_1 = c(s_count_1, i[3])
-        s_count_2 = c(s_count_2, 0)
-      }
-    }
+  if (!(dtype %in% c('lipidomics','proteomics', 'transcriptomics', 'genomics'))) {
+    print(paste0(dtype, ' should be one of [lipidomics, proteomics, transcriptomics, genomics]'))
+    return()
   }
 
-  feature_table$carbons_1 = as.numeric(c_count_1)
-  feature_table$carbons_2 = as.numeric(c_count_2)
-  feature_table$carbons_sum = feature_table$carbons_1 + feature_table$carbons_2
-  feature_table$unsat_1 = as.numeric(s_count_1)
-  feature_table$unsat_2 = as.numeric(s_count_2)
-  feature_table$unsat_sum = feature_table$unsat_1 + feature_table$unsat_2
+  if (dtype == 'lipidomics') {
+    feature_table = data.frame(row.names = sort(colnames(data_table)))
+    feature_table$lipid_class = get_lipid_classes(feature_list = rownames(feature_table),
+                                                  uniques = FALSE)
+    # Collect carbon and unsaturation counts
+    c_count_1 = c() # Main carbon count / total carbon count (TGs)
+    s_count_1 = c() # Main saturation count
+    c_count_2 = c() # Secondary carbon count (asyl groups or TGs)
+    s_count_2 = c() # Secondary saturation (asyl groups or TGs)
+    for (c in unique(feature_table$lipid_class)) {
+      idx = rownames(feature_table)[feature_table$lipid_class == c]
+
+      if (c == "TG") {
+        # For triglycerides
+        for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
+          c_count_1 = c(c_count_1, i[2])
+          c_count_2 = c(c_count_2, i[4])
+          s_count_1 = c(s_count_1, i[3])
+          s_count_2 = c(s_count_2, i[5])
+        }
+      } else if (sum(stringr::str_detect(string = idx, pattern = "/|_")) >0) {
+        # For species with asyl groups ("/" or "_")
+        for (i in stringr::str_split(string = idx, pattern = " |:|_|/")) {
+          c_count_1 = c(c_count_1, gsub("[^0-9]", "", i[2]))
+          c_count_2 = c(c_count_2, i[4])
+          s_count_1 = c(s_count_1, i[3])
+          s_count_2 = c(s_count_2, i[5])
+        }
+      } else {
+        # For the rest
+        for (i in stringr::str_split(string = idx, pattern = " |:")) {
+          c_count_1 = c(c_count_1, i[2])
+          c_count_2 = c(c_count_2, 0)
+          s_count_1 = c(s_count_1, i[3])
+          s_count_2 = c(s_count_2, 0)
+        }
+      }
+    }
+
+    feature_table$carbons_1 = as.numeric(c_count_1)
+    feature_table$carbons_2 = as.numeric(c_count_2)
+    feature_table$carbons_sum = feature_table$carbons_1 + feature_table$carbons_2
+    feature_table$unsat_1 = as.numeric(s_count_1)
+    feature_table$unsat_2 = as.numeric(s_count_2)
+    feature_table$unsat_sum = feature_table$unsat_1 + feature_table$unsat_2
+
+  } else if (dtype %in% c('proteomics', 'transcriptomics', 'genomics')) {
+
+    features = colnames(data_table)
+    feature_table = data.frame(row.names = features)
+    feature_table$Name = features
+  }
+
+
   return(feature_table)
 }
 

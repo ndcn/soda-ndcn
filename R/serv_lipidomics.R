@@ -1434,8 +1434,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       choices = names(r6$tables$external_feature_tables)
     )
     r6$derive_data_tables()
-    # print(colnames(r6$tables$feature_table))
-    # print(names(r6$tables$external_feature_tables))
   })
 
   session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {

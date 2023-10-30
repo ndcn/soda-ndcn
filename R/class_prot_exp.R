@@ -188,7 +188,12 @@ Prot_exp = R6::R6Class(
 
       blank_table = NULL,
 
+      #Feature tables
+      imp_feature_table = NULL,
       feature_table = NULL,
+
+      # External feature tables
+      external_feature_tables = list(),
 
       # Normalised
       total_norm_data = NULL,
@@ -506,6 +511,23 @@ Prot_exp = R6::R6Class(
       }
     },
 
+    get_feature_table = function() {
+      data_table = self$tables$imp_data
+      data_table = data_table[,2:ncol(data_table)]
+      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table, base::tolower(self$type))
+    },
+
+    update_feature_table = function() {
+      feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),,drop = F]
+      ext_names = names(self$tables$external_feature_tables)
+      for (name in ext_names) {
+        feature_table = augment_feature_table(feature_table = feature_table,
+                                              external_table_name = name,
+                                              external_feature_table = self$tables$external_feature_tables[[name]])
+      }
+      self$tables$feature_table = feature_table
+    },
+
     get_blank_table = function() {
       blank_table = self$tables$imp_data[self$indices$idx_blanks,]
       rownames(blank_table) = blank_table[,self$indices$id_col_data]
@@ -531,7 +553,8 @@ Prot_exp = R6::R6Class(
 
     derive_data_tables = function() {
       # Derive tables
-
+      self$get_feature_table()
+      self$update_feature_table()
       self$normalise_total()
       self$normalise_z_score()
       self$normalise_total_z_score()

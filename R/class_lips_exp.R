@@ -391,11 +391,11 @@ Lips_exp = R6::R6Class(
     get_feature_table = function() {
       data_table = self$tables$imp_data
       data_table = data_table[,2:ncol(data_table)]
-      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table)
+      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table, dtype = base::tolower(self$type))
     },
 
     update_feature_table = function() {
-      feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),]
+      feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),,drop = F]
       ext_names = names(self$tables$external_feature_tables)
       for (name in ext_names) {
         feature_table = augment_feature_table(feature_table = feature_table,
