@@ -213,7 +213,7 @@ plot_pca = function(x, y, label_1, label_2, weight_1, weight_2, names, type, gro
       x = x,
       y = y,
       names = names,
-      group = groups
+      groups = as.factor(groups)
     )
 
     conf_ellipse = ellipse::ellipse(x = stats::cov(cbind(data_table$x, data_table$y)),
@@ -261,7 +261,7 @@ plot_pca = function(x, y, label_1, label_2, weight_1, weight_2, names, type, gro
       x = x,
       y = y,
       names = names,
-      group = groups
+      groups = as.factor(groups)
     )
 
     plot = plot_ly(data = data_table, width = width, height = height) %>%

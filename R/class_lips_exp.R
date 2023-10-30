@@ -1071,6 +1071,12 @@ Lips_exp = R6::R6Class(
 
       if (!is.null(feature_groups_col) & !is.null(feature_table)) {
         feature_groups = feature_table[colnames(data_table),feature_groups_col]
+        if (length(which(is.na(feature_groups))) < 30) {
+          feature_groups[which(is.na(feature_groups))] = colnames(data_table)[which(is.na(feature_groups))]
+        } else {
+          feature_groups[which(is.na(feature_groups))] = "UNK"
+        }
+
       } else {
         feature_groups = NULL
       }
