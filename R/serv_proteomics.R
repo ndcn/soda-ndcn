@@ -1432,12 +1432,12 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
             shiny::fluidRow(
               shiny::column(
                 width = 6,
-                shiny::h5('Add feature table'),
+                shiny::h5('User table'),
                 shiny::textInput(
                   inputId = ns('feat_name_add'),
-                  label = 'Displayed name',
+                  label = 'Name',
                   width = '100%',
-                  placeholder = 'feat_1'
+                  placeholder = 'ex: feat_1'
                 ),
                 shiny::fileInput(
                   inputId = ns("feat_add"),
@@ -1449,20 +1449,72 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               ),
               shiny::column(
                 width = 6,
+                shiny::h5('GO table'),
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 6,
+                    shiny::textInput(
+                      inputId = ns('go_name_add'),
+                      label = 'Name',
+                      width = '100%',
+                      placeholder = 'ex: ALL'
+                    )
+                  ),
+                  shiny::column(
+                    width = 6,
+                    shiny::selectInput(
+                      inputId = ns('feat_go_ont'),
+                      label = 'GO ont.',
+                      choices = c('ALL', 'BP', 'MF', 'CC'),
+                      selected = 'ALL',
+                      width = '100%'
+                    )
+                  ),
+                  shiny::actionButton(
+                    inputId = ns('add_go_table'),
+                    label = 'Add',
+                    width = '100%'
+                  )
+                )
+              ),
+              shiny::column(
+                width = 12,
+                shiny::sliderInput(
+                  inputId = ns('feat_go_ont_cutoff'),
+                  label = 'BH p-value cutoff (for GO tables)',
+                  min = 0.01,
+                  max = 1,
+                  value = 0.05,
+                  step = 0.01,
+                  width = '100%'
+                )
+              )
+
+            ),
+            shiny::fluidRow(
+              shiny::column(
+                width = 12,
                 shiny::h5('Remove feature table'),
-                shiny::selectInput(inputId = ns('feat_name_del'),
-                                   label = 'Table name',
-                                   choices = names(r6$tables$external_feature_tables),
-                                   selected = NULL,
-                                   width = '100%'),
-                shiny::actionButton(inputId = ns('feat_del'),
-                                    label = 'Remove',
-                                    width = '100%')
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 6,
+                    shiny::selectInput(inputId = ns('feat_name_del'),
+                                       label = NULL,
+                                       choices = names(r6$tables$external_feature_tables),
+                                       selected = NULL,
+                                       width = '100%')
+                  ),
+                  shiny::column(
+                    width = 6,
+                    shiny::actionButton(inputId = ns('feat_del'),
+                                        label = 'Remove',
+                                        width = '100%')
+                  )
+                )
               )
             )
           )
         )
-
       )
     )
   })
@@ -1527,8 +1579,14 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       )
     }
 
+    if (!is.null(data_table)) {
+      if (ncol(data_table) > 1000) {
+        data_table = t(data_table)
+      }
+    }
+
     output$data_preview_table = renderDataTable({
-      DT::datatable(t(data_table), options = list(paging = TRUE, pageLength = 25))
+      DT::datatable(data_table, options = list(paging = TRUE, pageLength = 25))
     })
 
   })
@@ -1555,7 +1613,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
       shiny::updateSelectInput(
         inputId = 'select_data_table',
-        choices = c('Imported data table', 'Raw data table', 'Imported feature table' ,'Feature table', 'Blank table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
+        choices = c('Imported data table', 'Raw data table', 'Imported feature table' ,'Feature table', 'GO table', 'Blank table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
         selected = 'Raw data table'
       )
 
@@ -1796,12 +1854,47 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     r6$derive_data_tables()
   })
 
-  session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {
-    r6$tables$external_feature_tables[[input$feat_name_del]] = NULL
-    r6$derive_data_tables()
+  session$userData[[id]]$feat_go_ont = shiny::observeEvent(input$feat_go_ont, {
+    shiny::updateTextInput(
+      inputId = 'go_name_add',
+      placeholder = paste0('ex: ', input$feat_go_ont)
+    )
+  })
+
+  session$userData[[id]]$add_go_table = shiny::observeEvent(input$add_go_table, {
+    shinyjs::disable("add_go_table")
+    table_name = input$go_name_add
+    if (table_name == '') {
+      counter = 1
+      while (paste0(input$feat_go_ont, counter) %in% names(r6$tables$external_feature_tables)) {
+        counter = counter + 1
+      }
+      table_name = paste0(input$feat_go_ont, counter)
+    }
+    r6$add_go_data(name = table_name,
+                       feature_names = rownames(r6$tables$imp_feature_table),
+                       keyType = input$select_feature_type,
+                       ont = input$feat_go_ont,
+                       pvalueCutoff = as.numeric(input$feat_go_ont_cutoff))
     shiny::updateSelectInput(
       inputId = 'feat_name_del',
       choices = names(r6$tables$external_feature_tables)
+    )
+    r6$derive_data_tables()
+    shinyjs::enable("add_go_table")
+  })
+
+  session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {
+    r6$del_feature_table(name = input$feat_name_del)
+    r6$derive_data_tables()
+
+    names_left = names(r6$tables$external_feature_tables)
+    if (is.null(names_left)) {
+      names_left = character(0)
+    }
+    shiny::updateSelectInput(
+      inputId = 'feat_name_del',
+      choices = names_left
     )
   })
 

@@ -724,7 +724,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Update the rows to filter once a metadata value is selected
   session$userData[[id]]$exclusion_meta_val = shiny::observeEvent(c(input$exclusion_meta_val),{
-    print('here')
     if (!is.null(input$exclusion_meta_val)) {
       bool_vector = c()
       for (value in input$exclusion_meta_val) {
@@ -1437,11 +1436,16 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {
-    r6$tables$external_feature_tables[[input$feat_name_del]] = NULL
+    r6$del_feature_table(name = input$feat_name_del)
     r6$derive_data_tables()
+
+    names_left = names(r6$tables$external_feature_tables)
+    if (is.null(names_left)) {
+      names_left = character(0)
+    }
     shiny::updateSelectInput(
       inputId = 'feat_name_del',
-      choices = names(r6$tables$external_feature_tables)
+      choices = names_left
     )
   })
 

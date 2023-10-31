@@ -405,13 +405,6 @@ Lips_exp = R6::R6Class(
       self$tables$feature_table = feature_table
     },
 
-    get_blank_table = function() {
-      blank_table = self$tables$imp_data[self$indices$idx_blanks,]
-      rownames(blank_table) = blank_table[,self$indices$id_col_data]
-      blank_table[,self$indices$id_col_data] = NULL
-      self$tables$blank_table = as.matrix(blank_table)
-    },
-
     add_feature_table = function(name, feature_file) {
       ext_feature_table = soda_read_table(feature_file)
       rownames(ext_feature_table) = ext_feature_table[,1]
@@ -421,8 +414,17 @@ Lips_exp = R6::R6Class(
 
     del_feature_table = function(name) {
       self$tables$external_feature_tables[[name]] = NULL
+      if (length(names(self$tables$external_feature_tables)) == 0) {
+        names(self$tables$external_feature_tables) = NULL
+      }
     },
 
+    get_blank_table = function() {
+      blank_table = self$tables$imp_data[self$indices$idx_blanks,]
+      rownames(blank_table) = blank_table[,self$indices$id_col_data]
+      blank_table[,self$indices$id_col_data] = NULL
+      self$tables$blank_table = as.matrix(blank_table)
+    },
 
     # Class normalisation
     normalise_class = function(){

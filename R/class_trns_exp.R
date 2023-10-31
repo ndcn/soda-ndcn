@@ -195,6 +195,12 @@ Trns_exp = R6::R6Class(
       # External feature tables
       external_feature_tables = list(),
 
+      # GO tables
+      go_table = NULL,
+
+      # External GO tables
+      external_go_tables = list(),
+
       # Normalised
       total_norm_data = NULL,
 
@@ -511,6 +517,52 @@ Trns_exp = R6::R6Class(
       }
     },
 
+    add_go_data = function(name,
+                           feature_names,
+                           keyType,
+                           ont,
+                           pvalueCutoff) {
+      go_data = annotate_go(feature_names = feature_names,
+                            keyType = keyType,
+                            ont = ont,
+                            pvalueCutoff = pvalueCutoff)
+
+      colnames(go_data$feature_table) = paste0(colnames(go_data$feature_table), '_', name)
+
+      self$tables$external_feature_tables[[name]] = go_data$feature_table
+      self$tables$external_go_tables[[name]] = go_data$go_table
+    },
+
+    get_go_table = function() {
+      if(is.null(names(self$tables$external_go_tables))){
+        self$tables$go_table = NULL
+        return()
+      }
+
+      if (length(names(self$tables$external_go_tables)) == 1) {
+        go_table = self$tables$external_go_tables[[1]]
+        self$tables$go_table = go_table
+        return()
+      }
+
+      table_names = names(self$tables$external_go_tables)[2:length(names(self$tables$external_go_tables))]
+      go_table = self$tables$external_go_tables[[1]]
+      go_table$ids = rownames(go_table)
+
+      for (name in table_names) {
+        added_table = self$tables$external_go_tables[[name]]
+        added_table$ids = rownames(added_table)
+        go_table = rbind(go_table, added_table)
+      }
+
+      go_table = go_table[!duplicated(go_table$ids), ]
+      rownames(go_table) = go_table$ids
+      go_table$ids = NULL
+
+      self$tables$go_table = go_table
+    },
+
+
     get_feature_table = function() {
       data_table = self$tables$imp_data
       data_table = data_table[,2:ncol(data_table)]
@@ -526,6 +578,22 @@ Trns_exp = R6::R6Class(
                                               external_feature_table = self$tables$external_feature_tables[[name]])
       }
       self$tables$feature_table = feature_table
+    },
+
+    add_feature_table = function(name, feature_file) {
+      ext_feature_table = soda_read_table(feature_file)
+      rownames(ext_feature_table) = ext_feature_table[,1]
+      ext_feature_table[,1] = NULL
+      self$tables$external_feature_tables[[name]] = ext_feature_table
+    },
+
+    del_feature_table = function(name) {
+      self$tables$external_feature_tables[[name]] = NULL
+      self$tables$external_go_tables[[name]] = NULL
+      if (length(names(self$tables$external_feature_tables)) == 0) {
+        names(self$tables$external_feature_tables) = NULL
+        names(self$tables$external_go_tables) = NULL
+      }
     },
 
     get_blank_table = function() {
@@ -555,6 +623,7 @@ Trns_exp = R6::R6Class(
       # Derive tables
       self$get_feature_table()
       self$update_feature_table()
+      self$get_go_table()
       self$normalise_total()
       self$normalise_z_score()
       self$normalise_total_z_score()

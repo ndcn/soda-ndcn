@@ -53,6 +53,7 @@ table_switch = function(table_name, r6) {
          'Raw data table' = r6$tables$raw_data,
          'Imported feature table' = r6$tables$imp_feature_table,
          'Feature table' = r6$tables$feature_table,
+         'GO table' = r6$tables$go_table,
          'Blank table' = r6$tables$blank_table,
          'Class normalized table' = r6$tables$class_norm_data,
          'Total normalized table' = r6$tables$total_norm_data,
@@ -229,6 +230,53 @@ augment_feature_table = function(feature_table, external_table_name, external_fe
   feature_table$merge_on = NULL
   return(feature_table)
 }
+
+annotate_go = function(feature_names,
+                       keyType,
+                       ont,
+                       pvalueCutoff) {
+  # Checks
+  if (!(ont %in% c('ALL', 'BP', 'MF', 'CC'))) {
+    print('ont should be one of [ALL, BP, MF, CC]')
+    return()
+  }
+
+  # Get GO annotations
+  go_enrich_data = clusterProfiler::enrichGO(gene = feature_names,
+                                             OrgDb = 'org.Hs.eg.db',
+                                             keyType = keyType,
+                                             ont = ont,
+                                             pvalueCutoff = pvalueCutoff)
+
+  # Extract the GO table & filter
+  go_table = go_enrich_data@result
+  go_table = go_table[go_table$p.adjust < pvalueCutoff,]
+  if (ont != 'ALL') {
+    go_table$ONTOLOGY = ont
+  }
+
+  # Split geneIDs by '/'
+  feature_id = strsplit(go_table$geneID, "/")
+
+  # Repeat GO terms based on the number of feature_id it corresponds to
+  goIDs_rep = rep(go_table$ID, sapply(feature_id, length))
+
+  # Convert feature_id list to dataframe
+  feature_table = data.frame(feature_id = unlist(feature_id), ID = goIDs_rep, stringsAsFactors = FALSE)
+
+  # Group by gene and concatenate GO terms
+  feature_table = aggregate(ID ~ feature_id, data = feature_table, FUN = function(x) paste(unique(x), collapse = "|"))
+  colnames(feature_table) = c("feature_id", "GO_ID")
+  rownames(feature_table) = feature_table$feature_id
+  feature_table$feature_id = NULL
+
+  return(list(
+    go_table = go_table[,c('Description', 'ONTOLOGY')],
+    feature_table = feature_table
+  ))
+
+}
+
 
 #-------------------------------------------------------- General utilities ----
 
@@ -538,7 +586,7 @@ get_lipid_classes = function(feature_list, uniques = TRUE){
 get_feature_metadata = function(data_table, dtype) {
 
   if (!(dtype %in% c('lipidomics','proteomics', 'transcriptomics', 'genomics'))) {
-    print(paste0(dtype, ' should be one of [lipidomics, proteomics, transcriptomics, genomics]'))
+    print('Error: dtype should be one of [lipidomics, proteomics, transcriptomics, genomics]')
     return()
   }
 
