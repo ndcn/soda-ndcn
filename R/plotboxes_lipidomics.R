@@ -609,8 +609,7 @@ heatmap_server = function(r6, output, session) {
             inputId = ns("heatmap_map_cols"),
             label = "Map feature data",
             multiple = TRUE,
-            choices = c('Lipid class', 'Double bonds (chain 1)', 'Carbon count (chain 1)', 'Double bonds (chain 2)',
-                        'Carbon count (chain 2)', 'Double bonds (sum)', 'Carbon count (sum)'),
+            choices = colnames(r6$tables$feature_table),
             selected = r6$params$heatmap$map_feature_data
           )
         )

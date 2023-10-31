@@ -982,18 +982,13 @@ Lips_exp = R6::R6Class(
       meta_table_features = meta_table_features[c(colnames(data_table)),]
 
       if (!is.null(col_annotations)) {
-        clean_names = col_annotations
+        clean_names = sub("^(.)", "\\U\\1", tolower(str_replace_all(col_annotations, '_', ' ')), perl = TRUE)
         if (length(col_annotations) == 1) {
-          col_annotations = feature_table_cols_switch(col_annotations)
           col_annotations = as.data.frame(meta_table_features[, col_annotations],
                                           row.names = rownames(meta_table_features))
           colnames(col_annotations) = clean_names
         } else {
-          new_cols = c()
-          for (i in 1:length(col_annotations)) {
-            new_cols = c(new_cols, feature_table_cols_switch(col_annotations[i]))
-          }
-          col_annotations = meta_table_features[, new_cols]
+          col_annotations = meta_table_features[, col_annotations]
           colnames(col_annotations) = clean_names
         }
       }
