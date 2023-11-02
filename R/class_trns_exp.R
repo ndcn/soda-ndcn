@@ -21,9 +21,15 @@ Trns_exp = R6::R6Class(
       # Volcano plot parameters self$params$volcano_plot$
       volcano_plot = list(
         data_table = 'Total normalized table',
-        adjustment = "Benjamini-Hochberg",
+        adjustment = "BH",
         group_col = NULL,
-        groups = NULL,
+        group_1 = NULL,
+        group_2 = NULL,
+        displayed_plot = 'all',
+        p_val_threshold = 0.05,
+        fc_threshold = 2,
+        marker_size = 6,
+        opacity = 1,
         selected_function = "mean",
         selected_test = "t-Test",
         img_format = "png"
@@ -266,13 +272,19 @@ Trns_exp = R6::R6Class(
     ),
 
     #---------------------------------------------------- Parameter methods ----
-
-    param_volcano_plot = function(data_table, adjustment, group_col, groups, selected_function, selected_test, img_format) {
+    # self$params$volcano_plot$
+    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, displayed_plot, p_val_threshold, fc_threshold, marker_size, opacity, selected_function, selected_test, img_format) {
 
       self$params$volcano_plot$data_table = data_table
       self$params$volcano_plot$adjustment = adjustment
       self$params$volcano_plot$group_col = group_col
-      self$params$volcano_plot$groups = groups
+      self$params$volcano_plot$group_1 = group_1
+      self$params$volcano_plot$group_2 = group_2
+      self$params$volcano_plot$displayed_plot = displayed_plot
+      self$params$volcano_plot$p_val_threshold = p_val_threshold
+      self$params$volcano_plot$fc_threshold = fc_threshold
+      self$params$volcano_plot$marker_size = marker_size
+      self$params$volcano_plot$opacity = opacity
       self$params$volcano_plot$selected_function = selected_function
       self$params$volcano_plot$selected_test = selected_test
       self$params$volcano_plot$img_format = img_format
@@ -630,12 +642,16 @@ Trns_exp = R6::R6Class(
 
 
       # Set plotting parameters
-
-
       self$param_volcano_plot(data_table = 'Total normalized table',
-                              adjustment = 'Benjamini-Hochberg',
+                              adjustment = 'BH',
                               group_col = self$indices$group_col,
-                              groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
+                              group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
+                              group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
+                              displayed_plot = 'all',
+                              p_val_threshold = 0.05,
+                              fc_threshold = 2,
+                              marker_size = 6,
+                              opacity = 1,
                               selected_function = 'mean',
                               selected_test = 't-Test',
                               img_format = 'png')
@@ -700,10 +716,10 @@ Trns_exp = R6::R6Class(
     # Volcano table
     get_volcano_table = function(data_table = self$tables$raw_data,
                                  group_col = self$indices$group_col,
-                                 used_function = "median",
-                                 test = "t-Test",
-                                 group_1 = self$params$volcano_plot$groups[1],
-                                 group_2 = self$params$volcano_plot$groups[2]) {
+                                 used_function = self$params$volcano_plot$selected_function,
+                                 test = self$params$volcano_plot$selected_test,
+                                 group_1 = self$params$volcano_plot$group_1,
+                                 group_2 = self$params$volcano_plot$group_2) {
 
 
 
@@ -903,23 +919,30 @@ Trns_exp = R6::R6Class(
 
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
-                            adjustment = "BH",
-                            colour_list,
+                            adjustment = self$params$volcano_plot$adjustment,
                             group_1 = self$params$volcano_plot$groups[1],
                             group_2 = self$params$volcano_plot$groups[2],
-                            displayed_plot = 'all',
-                            p_val_threshold = 0.05,
-                            fc_threshold = 2,
-                            marker_size = 6,
-                            opacity = 1,
+                            displayed_plot = self$params$volcano_plot$displayed_plot,
+                            p_val_threshold = self$params$volcano_plot$p_val_threshold,
+                            fc_threshold = self$params$volcano_plot$fc_threshold,
+                            marker_size = self$params$volcano_plot$marker_size,
+                            opacity = self$params$volcano_plot$opacity,
                             width = NULL,
                             height = NULL){
+
+      p_val_threshold = as.numeric(p_val_threshold)
+      fc_threshold = as.numeric(fc_threshold)
+      marker_size = as.numeric(marker_size)
+      opacity = as.numeric(opacity)
+
 
       if (adjustment == 'BH') {
         p_vals = data_table$q_val_bh
       } else {
         p_vals = data_table$p_val
       }
+
+
 
       fig = volcano_main(fc_vals = data_table$fold_change,
                          p_vals = p_vals,

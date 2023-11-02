@@ -1,5 +1,6 @@
 # Utility functions
 base::source('./R/complex_functions/pca.R')
+base::source('./R/complex_functions/volcano.R')
 #--------------------------------------------------------- Switch functions ----
 
 experiment_switch = function(selection) {

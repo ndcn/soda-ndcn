@@ -12,19 +12,9 @@ prot_volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$get_volcano_table(data_table = table_switch(input$volcano_plot_tables, r6),
-                       group_col = input$volcano_plot_metacol,
-                       used_function =  input$volcano_plot_function,
-                       test = input$volcano_plot_test,
-                       group_1 = input$volcano_plot_metagroup[1],
-                       group_2 = input$volcano_plot_metagroup[2])
+  r6$get_volcano_table(data_table = table_switch(input$volcano_plot_tables, r6))
 
-  r6$plot_volcano(data_table = r6$tables$volcano_table,
-                  adjustment = adjustment_switch(input$volcano_plot_adjustment),
-                  colour_list = colour_list,
-                  group_1 = input$volcano_plot_metagroup[1],
-                  group_2 = input$volcano_plot_metagroup[2],
-                  width = width,
+  r6$plot_volcano(width = width,
                   height = height)
 
 }
@@ -96,10 +86,50 @@ prot_volcano_plot_server = function(r6, output, session) {
       shiny::selectizeInput(
         inputId = ns("volcano_plot_adjustment"),
         label = "Select adjustment",
-        choices = c("None", "Benjamini-Hochberg"),
+        choices = c("None", "BH"),
         selected = r6$params$volcano_plot$adjustment,
         multiple = FALSE
       ),
+
+      shiny::selectInput(
+        inputId = ns("volcano_plot_displayed_plot"),
+        label = 'Displayed plot',
+        choices = c('main', 'all', 'left', 'right', 'top'),
+        selected = r6$params$volcano_plot$displayed_plot,
+        width = '100%'
+      ),
+
+      shiny::textInput(
+        inputId = ns("volcano_plot_p_val_threshold"),
+        label = 'p-value threshold',
+        value = r6$params$volcano_plot$p_val_threshold,
+        width = '100%'
+      ),
+
+      shiny::textInput(
+        inputId = ns("volcano_plot_fc_threshold"),
+        label = 'FC threshold',
+        value = r6$params$volcano_plot$fc_threshold,
+        width = '100%'
+      ),
+
+      shiny::textInput(
+        inputId = ns("volcano_plot_marker_size"),
+        label = 'Marker size',
+        value = r6$params$volcano_plot$marker_size,
+        width = '100%'
+      ),
+
+      shiny::sliderInput(
+        inputId = ns("volcano_plot_opacity"),
+        label = 'Opacity',
+        min = 0.1,
+        max = 1.0,
+        value = r6$params$volcano_plot$opacity,
+        step = 0.1,
+        width = '100%'
+      ),
+
       shiny::actionButton(
         inputId = ns("volcano_feature_select"),
         label = "Save selection",
@@ -143,16 +173,23 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
     )
   })
 
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format, input$volcano_plot_displayed_plot, input$volcano_plot_p_val_threshold, input$volcano_plot_fc_threshold, input$volcano_plot_marker_size, input$volcano_plot_opacity), {
     print_tm(r6$name, "Volcano plot: Updating params...")
 
     r6$param_volcano_plot(data_table = input$volcano_plot_tables,
                           adjustment = input$volcano_plot_adjustment,
                           group_col = input$volcano_plot_metacol,
-                          groups = input$volcano_plot_metagroup,
+                          group_1 = input$volcano_plot_metagroup[1],
+                          group_2 = input$volcano_plot_metagroup[2],
+                          displayed_plot = input$volcano_plot_displayed_plot,
+                          p_val_threshold = input$volcano_plot_p_val_threshold,
+                          fc_threshold = input$volcano_plot_fc_threshold,
+                          marker_size = input$volcano_plot_marker_size,
+                          opacity = input$volcano_plot_opacity,
                           selected_function = input$volcano_plot_function,
                           selected_test = input$volcano_plot_test,
                           img_format = input$volcano_plot_img_format)
+
 
     base::tryCatch({
       prot_volcano_plot_generate(r6, color_palette, dimensions_obj, input)
