@@ -1004,7 +1004,7 @@ apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, al
 }
 
 
-get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function) {
+get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function, impute_inf = T) {
 
   if (used_function == "median") {
     av_function = function(x) {return(median(x, na.rm = T))}
@@ -1026,14 +1026,16 @@ get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function)
     return(fold_change)
   })
 
-  # Impute infinite (x/0)
-  if (length(which(fold_changes == Inf)) > 0) {
-    fold_changes[which(fold_changes == Inf)] = max(fold_changes[which(fold_changes != Inf)]) * 1.01
-  }
+  if (impute_inf) {
+    # Impute infinite (x/0)
+    if (length(which(fold_changes == Inf)) > 0) {
+      fold_changes[which(fold_changes == Inf)] = max(fold_changes[which(fold_changes != Inf)]) * 1.01
+    }
 
-  # Impute zeros (0/x)
-  if (length(which(fold_changes == 0)) > 0) {
-    fold_changes[which(fold_changes == 0)] = min(fold_changes[which(fold_changes > 0)]) * 0.99
+    # Impute zeros (0/x)
+    if (length(which(fold_changes == 0)) > 0) {
+      fold_changes[which(fold_changes == 0)] = min(fold_changes[which(fold_changes > 0)]) * 0.99
+    }
   }
 
   # Impute NaNs (0/0)
@@ -1041,14 +1043,11 @@ get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function)
     fold_changes[which(is.nan(fold_changes))] = 1
   }
 
-
-
-
   return(fold_changes)
 
 }
 
-get_p_val = function(data_table, idx_group_1, idx_group_2, used_function) {
+get_p_val = function(data_table, idx_group_1, idx_group_2, used_function, impute_na = T) {
 
   if (used_function == "Wilcoxon") {
     test_function=function(x,y){
@@ -1085,7 +1084,7 @@ get_p_val = function(data_table, idx_group_1, idx_group_2, used_function) {
   })
 
 
-  if (length(which(is.na(p_values))) > 0 ){
+  if ((length(which(is.na(p_values))) > 0) & impute_na){
     p_values[which(is.na(p_values))] = min(p_values, na.rm = T) * 0.99
   }
 

@@ -731,13 +731,15 @@ Prot_exp = R6::R6Class(
       volcano_table$fold_change = get_fold_changes(data_table = data_table,
                                                    idx_group_1 = idx_group_1,
                                                    idx_group_2 = idx_group_2,
-                                                   used_function = used_function)
+                                                   used_function = used_function,
+                                                   impute_inf = F)
 
 
       volcano_table$p_val = get_p_val(data_table = data_table,
                                       idx_group_1 = idx_group_1,
                                       idx_group_2 = idx_group_2,
-                                      used_function = test)
+                                      used_function = test,
+                                      impute_na = F)
       volcano_table$q_val_bh = stats::p.adjust(volcano_table$p_val, method = "BH")
 
       volcano_table$minus_log10_p_value = -log10(volcano_table$p_val)
@@ -901,54 +903,35 @@ Prot_exp = R6::R6Class(
 
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
-                            adjustment = "minus_log10_p_value_bh_adj",
+                            adjustment = "BH",
                             colour_list,
                             group_1 = self$params$volcano_plot$groups[1],
                             group_2 = self$params$volcano_plot$groups[2],
+                            displayed_plot = 'all',
+                            p_val_threshold = 0.05,
+                            fc_threshold = 2,
+                            marker_size = 6,
+                            opacity = 1,
                             width = NULL,
                             height = NULL){
 
-
-      max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
-      data_table$coloring = rep("gray", nrow(data_table))
-
-      upper_left = which(data_table[,adjustment] > -log10(0.05) & data_table[, "log2_fold_change"] < -1)
-      upper_right = which(data_table[,adjustment] > -log10(0.05) & data_table[, "log2_fold_change"] > 1)
-      lower_corners = which(data_table[,adjustment] <= -log10(0.05) & data_table[, "log2_fold_change"] < -1)
-      lower_corners = c(lower_corners, which(data_table[,adjustment] <= -log10(0.05) & data_table[, "log2_fold_change"] > 1))
-
-
-      if (length(upper_left)>0) {
-        data_table[upper_left,"coloring"] = "blue"
+      if (adjustment == 'BH') {
+        p_vals = data_table$q_val_bh
+      } else {
+        p_vals = data_table$p_val
       }
 
-      if (length(upper_right)>0) {
-        data_table[upper_right,"coloring"] = "red"
-      }
+      fig = volcano_main(fc_vals = data_table$fold_change,
+                         p_vals = p_vals,
+                         names = rownames(data_table),
+                         groups = NULL,
+                         displayed_plot = displayed_plot,
+                         p_val_threshold = p_val_threshold,
+                         fc_threshold = fc_threshold,
+                         marker_size = marker_size,
+                         opacity = opacity)
 
-      if (length(lower_corners)>0) {
-        data_table[lower_corners,"coloring"] = "black"
-      }
 
-      fig = plotly::plot_ly(x = data_table[, "log2_fold_change"],
-                            y = data_table[, adjustment],
-                            text = rownames(data_table),
-                            hoverinfo = "text",
-                            color = data_table[, "coloring"],
-                            colors = c("black", "blue", "gray", "red"),
-                            opacity = 0.5,
-                            type  = "scatter",
-                            mode  = "markers",
-                            width = width,
-                            height = height)
-
-      fig = fig %>% layout(showlegend = F,
-                           shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot"), hline(-log10(0.05), dash = "dot")),
-                           title = paste0(group_1, " (left), ", group_2, " (right)"),
-                           xaxis = list(title = "Log2(fold change)",
-                                        range = c(-max_fc,max_fc)
-                           ),
-                           yaxis = list(title = adjustment_title_switch(adjustment)))
       self$plots$volcano_plot = fig
     },
 
