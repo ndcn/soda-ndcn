@@ -50,6 +50,11 @@ prot_volcano_plot_server = function(r6, output, session) {
   # Set UI
   output$volcano_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shinyWidgets::prettySwitch(
+        inputId = ns('volcano_plot_auto_update'),
+        label = 'Auto-update',
+        value = TRUE
+      ),
       shiny::selectInput(
         inputId = ns("volcano_plot_tables"),
         label = "Select data table",
@@ -173,7 +178,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
     )
   })
 
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format, input$volcano_plot_displayed_plot, input$volcano_plot_p_val_threshold, input$volcano_plot_fc_threshold, input$volcano_plot_marker_size, input$volcano_plot_opacity), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), shiny::req(input$volcano_plot_auto_update), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format, input$volcano_plot_displayed_plot, input$volcano_plot_p_val_threshold, input$volcano_plot_fc_threshold, input$volcano_plot_marker_size, input$volcano_plot_opacity), {
     print_tm(r6$name, "Volcano plot: Updating params...")
 
     r6$param_volcano_plot(data_table = input$volcano_plot_tables,
