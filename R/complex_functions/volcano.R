@@ -2,6 +2,7 @@
 volcano_main = function(fc_vals = volcano_table$fold_change,
                         p_vals = volcano_table$q_val_bh,
                         names = rownames(volcano_table),
+                        y_label = '-Log10(p-value)',
                         groups = NULL,
                         displayed_plot = 'main',
                         p_val_threshold = 0.05,
@@ -83,11 +84,12 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
 
   } else {right_data = NULL}
 
-  # Main plot
+  # Main plot y_label
   main_plot = plot_volcano(data = data,
                            marker_size = marker_size,
                            p_val_threshold = p_val_threshold,
                            fc_threshold = fc_threshold,
+                           y_axis_title = y_label,
                            show_y_title = F)
 
   # Blank plot
@@ -105,7 +107,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
   if (is.null(left_data) & is.null(right_data) & is.null(top_data) | (displayed_plot == 'main')) { # Only main
     out_plot = main_plot
     out_plot = plotly::layout(out_plot,
-                              yaxis = list(title = "-Log10(p-value)"))
+                              yaxis = list(title = y_label))
   } else if (!is.null(top_data) & (displayed_plot == 'top')) { # Export top violin
 
     out_plot = top_violin
@@ -163,7 +165,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
     )
 
     out_plot = plotly::layout(out_plot,
-                                yaxis = list(title = "-Log10(p-value)"))
+                                yaxis = list(title = y_label))
   } else if (!is.null(left_data) & !is.null(right_data) & !is.null(top_data) & (displayed_plot == 'all')) { # All violins
 
     out_plot = plotly::subplot(
@@ -409,11 +411,9 @@ plot_volcano_violin_top = function(data,
   return(p)
 }
 
-plot_volcano = function(data, marker_size, p_val_threshold = 0.05, fc_threshold = 2, show_y_title = F) {
+plot_volcano = function(data, marker_size, p_val_threshold = 0.05, fc_threshold = 2, show_y_title = F , y_axis_title = '-Log10(p-value)') {
 
-  if (show_y_title){
-    y_axis_title = '-Log10(p-value)'
-  } else {
+  if (!show_y_title){
     y_axis_title = NULL
   }
 

@@ -25,7 +25,7 @@ Trns_exp = R6::R6Class(
         group_col = NULL,
         group_1 = NULL,
         group_2 = NULL,
-        displayed_plot = 'all',
+        displayed_plot = 'main',
         p_val_threshold = 0.05,
         fc_threshold = 2,
         marker_size = 6,
@@ -647,7 +647,7 @@ Trns_exp = R6::R6Class(
                               group_col = self$indices$group_col,
                               group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
                               group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
-                              displayed_plot = 'all',
+                              displayed_plot = 'main',
                               p_val_threshold = 0.05,
                               fc_threshold = 2,
                               marker_size = 6,
@@ -938,17 +938,21 @@ Trns_exp = R6::R6Class(
 
       if (adjustment == 'BH') {
         p_vals = data_table$q_val_bh
+        y_label = '-Log10(BH(p-value))'
       } else {
         p_vals = data_table$p_val
+        y_label = '-Log10(p-value)'
       }
 
       displayed_text = paste0(paste0(rownames(data_table), '\n'),
                               paste0('p-value: ', round(p_vals, 3), '\n'),
                               paste0('FC: ', round(data_table$fold_change, 2)))
 
+
       fig = volcano_main(fc_vals = data_table$fold_change,
                          p_vals = p_vals,
                          names = displayed_text,
+                         y_label = y_label,
                          groups = NULL,
                          displayed_plot = displayed_plot,
                          p_val_threshold = p_val_threshold,
