@@ -24,7 +24,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
   data$log2_fold_change = log2(data$fold_change)
   data$log10_p_values = -log10(data$p_values)
 
-  data$groups = 'Unsignificant'
+  data$groups = 'Not significant'
   data$groups[data$p_values < p_val_threshold & data$log2_fold_change > log2(fc_threshold)] = "Overexpressed"
   data$groups[data$p_values < p_val_threshold & data$log2_fold_change < -log2(fc_threshold)] = "Underexpressed"
 
@@ -265,29 +265,35 @@ plot_volcano_violin = function(data, threshold, names = NULL, side, opacity = 1,
                         meanline = list(visible = F),
                         opacity = opacity,
                         points = FALSE,
-                        name = 'Unsignificant',
-                        legendgroup = 'Unsignificant',
+                        name = 'Not significant',
+                        legendgroup = 'Not significant',
                         hoverinfo = 'none',
                         showlegend = F)
 
-  p = plotly::add_trace(p,
-                        type = "scatter", mode = "markers",
-                        y = data[which(data >= threshold)], x = x_val,
-                        marker = list(size = marker_size, color = col_line, opacity = opacity, line = list(width = 0.5, color = 'white')),
-                        name = title,
-                        legendgroup = title,
-                        text = names[which(data >= threshold)],
-                        hoverinfo = 'text',
-                        showlegend = show_legend)
-  p = plotly::add_trace(p,
-                        type = "scatter", mode = "markers",
-                        y = data[which(data < threshold)], x = x_val,
-                        marker = list(size = marker_size, color = 'gray', opacity = opacity, line = list(width = 0.5, color = 'white')),
-                        name = 'Unsignificant',
-                        legendgroup = 'Unsignificant',
-                        text = names[which(data < threshold)],
-                        hoverinfo = 'text',
-                        showlegend = show_legend)
+  if (length(data[which(data >= threshold)]) > 0) {
+    p = plotly::add_trace(p,
+                          type = "scatter", mode = "markers",
+                          y = data[which(data >= threshold)], x = x_val,
+                          marker = list(size = marker_size, color = col_line, opacity = opacity, line = list(width = 0.5, color = 'white')),
+                          name = title,
+                          legendgroup = title,
+                          text = names[which(data >= threshold)],
+                          hoverinfo = 'text',
+                          showlegend = show_legend)
+  }
+
+  if (length(data[which(data < threshold)]) > 0) {
+    p = plotly::add_trace(p,
+                          type = "scatter", mode = "markers",
+                          y = data[which(data < threshold)], x = x_val,
+                          marker = list(size = marker_size, color = 'gray', opacity = opacity, line = list(width = 0.5, color = 'white')),
+                          name = 'Not significant',
+                          legendgroup = 'Not significant',
+                          text = names[which(data < threshold)],
+                          hoverinfo = 'text',
+                          showlegend = show_legend)
+  }
+
 
   p = plotly::layout(p,
                      shapes = list(
@@ -327,8 +333,8 @@ plot_volcano_violin_top = function(data,
                         meanline = list(visible = F),
                         opacity = opacity,
                         points = FALSE,
-                        name = 'Unsignificant',
-                        legendgroup = 'Unsignificant',
+                        name = 'Not significant',
+                        legendgroup = 'Not significant',
                         hoverinfo = 'none',
                         showlegend = F,
                         orientation = 'h')
@@ -357,7 +363,7 @@ plot_volcano_violin_top = function(data,
                           marker = list(size = marker_size, color = 'blue', opacity = opacity, line = list(width = 0.5, color = 'white')),
                           name = 'Underexpressed',
                           legendgroup = 'Underexpressed',
-                          text = names[which(data <= threshold)],
+                          text = names[which(data <= -threshold)],
                           hoverinfo = 'text',
                           showlegend = show_legend)
   }
@@ -370,8 +376,8 @@ plot_volcano_violin_top = function(data,
                           y = 'No p-value',
                           x = data[which((data < threshold) & (data > -threshold))],
                           marker = list(size = marker_size, color = 'darkgray', opacity = opacity, line = list(width = 0.5, color = 'white')),
-                          name = 'Unsignificant',
-                          legendgroup = 'Unsignificant',
+                          name = 'Not significant',
+                          legendgroup = 'Not significant',
                           text = names[which((data < threshold) & (data > -threshold))],
                           hoverinfo = 'text',
                           showlegend = show_legend)
