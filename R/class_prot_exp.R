@@ -942,11 +942,14 @@ Prot_exp = R6::R6Class(
         p_vals = data_table$p_val
       }
 
+      displayed_text = paste0(paste0(rownames(data_table), '\n'),
+                              paste0('p-value: ', round(p_vals, 3), '\n'),
+                              paste0('FC: ', round(data_table$fold_change, 2)))
 
 
       fig = volcano_main(fc_vals = data_table$fold_change,
                          p_vals = p_vals,
-                         names = rownames(data_table),
+                         names = displayed_text,
                          groups = NULL,
                          displayed_plot = displayed_plot,
                          p_val_threshold = p_val_threshold,
