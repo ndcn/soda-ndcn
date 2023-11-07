@@ -1,68 +1,69 @@
-# UI
+# shiny app
 library(shiny)
-library(shinydashboard)
+library(shinyjs)
+library(bs4Dash)
 library(shinyWidgets)
 library(shinybrowser)
-library(bs4Dash)
-
-# Authentification
 library(shinymanager)
-
-# OOP
-library(R6)
-
-# Data
-library(DT)
-library(markdown)
-library(dplyr)
-library(readxl)
 
 # Plotting
 library(ggplot2)
-library(plotly)
 library(gridExtra)
-library(heatmaply)
+library(plotly)
 library(visNetwork)
+library(heatmaply)
+library(ggpubr)
+library(ggupset)
+library(networkD3)
 library(igraph)
 
-# colouring
+# text
+library(stringr)
+
+# Tables
+library(DT)
+library(readxl)
+
+# Colors
 library(grDevices)
 library(RColorBrewer)
 
 # Statistics
-library(pcaMethods)
+library(stats)
 library(glmnet)
-
-# Text
-library(stringr)
-
-# Requests
-library(httr)
-library(xml2)
-library(rjson)
+library(pcaMethods)
 
 # Omics
 library(org.Hs.eg.db)
 library(clusterProfiler)
 library(enrichplot)
 library(ggridges)
+library(MOFA2)
+library(basilisk)
+library(SNFtool)
+
+# General
+library(reshape2)
+library(dplyr)
 
 # New
-library(shinyjs)
-library(logr)
+library(scales)
+# reticulate::use_condaenv(condaenv = 'mofa_1')
+
+
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
-  
+
   # Get data from the description file
   desc = read.delim("DESCRIPTION", header = FALSE)
-  
+
   # Extract and capitalise name
   name = stringr::str_split(desc[1,1], ":")[[1]][2]
   name = toupper(trimws(name))
-  
+
   # Extract version
-  version = gsub("[^0-9.-]", "", desc[3,1])  
+  version = gsub("[^0-9.-]", "", desc[3,1])
   header = paste(name, "|", version, sep = " ")
   bs4Dash::dashboardHeader(title = header)
 }
@@ -72,123 +73,55 @@ header_ui = function() {
 sidebar_ui = function() {
   bs4Dash::dashboardSidebar(
     bs4Dash::sidebarMenu(
-      
-      # Welcome menu
-      bs4Dash::menuItem(
-        text = "Welcome",
-        tabName = "welcome",
-        icon = shiny::icon("home")),
-      
-      bs4Dash::menuItem(
-        text = "Lipidomics",
-        tabName = "global_lipidomics",
-        
-        bs4Dash::menuSubItem(
-          text = "Data upload",
-          tabName = "lips_upload"
-        ),
-        
-        bs4Dash::menuSubItem(
-          text = "Visualisation",
-          tabName = "lips_visual"
-        )
-        
-      ),
-      
-      bs4Dash::menuItem(
-        text = "Proteomics",
-        tabName = "global_proteomics",
-        
-        bs4Dash::menuSubItem(
-          text = "Data upload",
-          tabName = "prot_upload"
-        ),
-        
-        bs4Dash::menuSubItem(
-          text = "Visualisation",
-          tabName = "prot_visual"
-        ),
-        
-        bs4Dash::menuSubItem(
-          text = "Geneset enrichment",
-          tabName = "prot_gse"
-        )
-        
-      ),
-      
-      bs4Dash::menuItem(
-        text = "Transcriptomics",
-        tabName = "global_transcriptomics",
-        
-        bs4Dash::menuSubItem(
-          text = "Data upload",
-          tabName = "tran_upload"
-        ),
-        
-        bs4Dash::menuSubItem(
-          text = "Visualisation",
-          tabName = "tran_visual"
-        ),
-        
-        bs4Dash::menuSubItem(
-          text = "Geneset enrichment",
-          tabName = "tran_gse"
-        )
-        
-      ),
-      
-      # General settings
-      bs4Dash::menuItem(
-        text = "General settings",
-        tabName = "gen_set",
-        icon = shiny::icon("gears")),
-        
-      
-      # Table merge menu
-      bs4Dash::menuItem(
-        text = "Utilities",
-        tabName = "utilities",
-        icon = shiny::icon("wrench"),
 
-        bs4Dash::menuSubItem(
-          text = "Merge & download",
-          tabName = "merge_tables"),
-        
-        bs4Dash::menuSubItem(
-          text = "Convert table",
-          tabName = "table_convert")
+      # Start menu
+      bs4Dash::menuItem(
+        text = "Start",
+        tabName = "start",
+        icon = shiny::icon("list")),
+
+      bs4Dash::sidebarMenuOutput("exp_1"),
+      bs4Dash::sidebarMenuOutput("exp_2"),
+      bs4Dash::sidebarMenuOutput("exp_3"),
+      bs4Dash::sidebarMenuOutput("exp_4"),
+      bs4Dash::sidebarMenuOutput("exp_5"),
+      bs4Dash::sidebarMenuOutput("exp_6"),
+
+      bs4Dash::menuItem(
+        text = "MOFA",
+        tabName = "mofa_tab",
+        icon = shiny::icon("m")
       ),
-      
-      # Help menu and submenus
+
+      bs4Dash::menuItem(
+        text = "SNF",
+        tabName = "snf_tab",
+        icon = shiny::icon("s")
+      ),
+
+      bs4Dash::menuItem(
+        text = "About",
+        tabName = "about",
+        icon = shiny::icon("question")
+      ),
+
       bs4Dash::menuItem(
         text = "Help",
-        tabName = "help_global",
-        icon = shiny::icon("circle-info"),
-        
+        tabName = "help",
+        icon = shiny::icon("question"),
         bs4Dash::menuSubItem(
-          text = "Data upload",
-          tabName = "help_data_upload"),
-        
+          text = 'Start',
+          tabName = 'help_start',
+        ),
         bs4Dash::menuSubItem(
-          text = "Data visualisation",
-          tabName = "help_visualisation"),
-        
+          text = 'Single omics',
+          tabName = 'help_single_omics',
+        ),
         bs4Dash::menuSubItem(
-          text = "Tables",
-          tabName = "help_data_tables")
-      ),
-      
-      # print output
-      shiny::htmlOutput(
-        outputId = "terminal_print"
-      ),
-      
-      tags$head(tags$style("#terminal_print{color: white;
-                                 font-size: 10px;
-                                 }"
+          text = 'Multi-omics',
+          tabName = 'help_multi_omics',
+        )
       )
-      )
-      
     )
   )
 }
@@ -197,99 +130,77 @@ sidebar_ui = function() {
 #--------------------------------------------------------------- Setup body ----
 body_ui = function() {
   bs4Dash::dashboardBody(
+
+    # Detect UI functions
     shinyjs::useShinyjs(),
+    shinybrowser::detect(),
+
     bs4Dash::tabItems(
-      
-      # Welcome page
+
+      # Start page
       bs4Dash::tabItem(
-        tabName = "welcome",
-        soda_welcome()
+        tabName = "start",
+        start_ui(id = 'mod_start')
       ),
-      
-      # General settings page
+
       bs4Dash::tabItem(
-        tabName = "gen_set",
-        soda_genset_ui(id = "general_settings")
+        tabName = "exp_1",
+        experiment_ui(id = 'mod_exp_1')
       ),
-      
-      # Data upload pages
+
       bs4Dash::tabItem(
-        tabName = "lips_upload",
-        soda_upload_lips_ui(id = "upload_lipidomics", head_meta = F, head_data = T)
+        tabName = "exp_2",
+        experiment_ui(id = 'mod_exp_2')
       ),
-      
-      # Data upload pages
+
       bs4Dash::tabItem(
-        tabName = "prot_upload",
-        soda_upload_prot_ui(id = "upload_proteomics", head_meta = F, head_data = T)
+        tabName = "exp_3",
+        experiment_ui(id = 'mod_exp_3')
       ),
-      
-      # Data upload pages
+
       bs4Dash::tabItem(
-        tabName = "tran_upload",
-        soda_upload_prot_ui(id = "upload_transcriptomics", head_meta = F, head_data = T)
+        tabName = "exp_4",
+        experiment_ui(id = 'mod_exp_4')
       ),
-      
-      # Data visualisation pages
+
       bs4Dash::tabItem(
-        tabName = "lips_visual",
-        soda_visualise_lips_ui(id = "visualise_lipidomics")
+        tabName = "exp_5",
+        experiment_ui(id = 'mod_exp_5')
       ),
-      
+
       bs4Dash::tabItem(
-        tabName = "prot_visual",
-        soda_visualise_prot_ui(id = "visualise_proteomics")
+        tabName = "exp_6",
+        experiment_ui(id = 'mod_exp_6')
       ),
-      
+
       bs4Dash::tabItem(
-        tabName = "prot_gse",
-        soda_gsea_prot_ui(id = "gse_proteomics")
+        tabName = "mofa_tab",
+        mofa_ui(id = "mofa")
       ),
-      
+
       bs4Dash::tabItem(
-        tabName = "tran_visual",
-        soda_visualise_prot_ui(id = "visualise_transcriptomics")
+        tabName = "snf_tab",
+        snf_ui(id = "snf")
       ),
-      
+
       bs4Dash::tabItem(
-        tabName = "tran_gse", 
-        soda_gsea_prot_ui(id = "gse_transcriptomics")
+        tabName = "about",
+        about_ui(id = 'mod_about')
       ),
-      
-      
-      # Table merge page
+
       bs4Dash::tabItem(
-        tabName = "merge_tables",
-        utils_merge_tables_ui(id = "merge_tables_page")
+        tabName = "help_start",
+        help_start_ui(id = 'mod_help_start')
       ),
-      
-      # Table convert page
+
       bs4Dash::tabItem(
-        tabName = "table_convert",
-        utils_convert_table_ui(id = "convert_tables_page")
-      ),
-      
-      # Help pages
-      bs4Dash::tabItem(
-        tabName = "help_data_upload",
-        soda_help_data_upload()
-      ),
-      bs4Dash::tabItem(
-        tabName = "help_visualisation",
-        soda_help_data_visualisation()
-      ),
-      bs4Dash::tabItem(
-        tabName = "help_data_tables",
-        soda_help_tables()
+        tabName = "help_single_omics",
+        help_single_omics_ui(id = 'mod_help_single_omics')
       )
 
     )
   )
 }
-
-
-
-
 
 #----------------------------------------------------------------------- UI ----
 header = header_ui()
@@ -300,86 +211,211 @@ ui = shinymanager::secure_app(bs4Dash::dashboardPage(header, sidebar, body))
 #------------------------------------------------------------------- Server ----
 
 server = function(input, output, session) {
-  
+
   # Basic authentification
-  res_auth <- shinymanager::secure_server(
+  res_auth = shinymanager::secure_server(
     check_credentials = shinymanager::check_credentials(db = data.frame(
-      user = c("user1", "user2"), # mandatory
-      password = c("1234", "monkey"), # mandatory
-      admin = c(FALSE, FALSE),
-      comment = "Secure authentification mechanism for SODA",
-      stringsAsFactors = FALSE
-    ))
+      user = c("user1", "user2"),
+      password = c("1234", "monkey"),
+      admin = c(FALSE, FALSE))
+    )
   )
-  
-  # Create log_file
-  log_file = file.path(timestamped_name("file.log"))
-  lf = logr::log_open(log_file)
-  
-  lf_reactive = shiny::reactive(lf)
-  
-  # Update feedback from log
+
+  options(shiny.maxRequestSize=300*1024^2)
+
+  module_controler = shiny::reactiveValues(
+
+    slot_taken = list(
+      'exp_1' = FALSE,
+      'exp_2' = FALSE,
+      'exp_3' = FALSE,
+      'exp_4' = FALSE,
+      'exp_5' = FALSE,
+      'exp_6' = FALSE
+    ),
+
+    module_loaded = list(
+      'exp_1' = FALSE,
+      'exp_2' = FALSE,
+      'exp_3' = FALSE,
+      'exp_4' = FALSE,
+      'exp_5' = FALSE,
+      'exp_6' = FALSE
+    ),
+
+    exp_types = list(
+      'exp_1' = NULL,
+      'exp_2' = NULL,
+      'exp_3' = NULL,
+      'exp_4' = NULL,
+      'exp_5' = NULL,
+      'exp_6' = NULL
+    ),
+
+    exp_names = list(
+      'exp_1' = NULL,
+      'exp_2' = NULL,
+      'exp_3' = NULL,
+      'exp_4' = NULL,
+      'exp_5' = NULL,
+      'exp_6' = NULL
+    ),
+
+    exp_r6 = list(
+      'exp_1' = NULL,
+      'exp_2' = NULL,
+      'exp_3' = NULL,
+      'exp_4' = NULL,
+      'exp_5' = NULL,
+      'exp_6' = NULL
+    ),
+
+    dims = list(
+      x_box = 0.9,
+      y_box = 0.75,
+      x_plot = 0.8,
+      y_plot = 0.70,
+      x_plot_full = 0.95,
+      y_plot_full = 0.91,
+      xpx_total = NULL,
+      ypx_total = NULL
+    )
+  )
+
+  mofa_data = Mofa_data$new(
+    name = "mofa_1"
+  )
+
+  snf_data = Snf_data$new(
+    name = "snf_1"
+  )
+
+  start_server(id = 'mod_start', main_input = input, main_output = output, main_session = session, module_controler = module_controler)
+  about_server(id = 'mod_about', main_output = output)
+  help_start_server(id = 'mod_help_start', main_output = output)
+  help_single_omics_server(id = 'mod_help_single_omics', main_output = output)
+
+
+  # Single omics modules
   shiny::observe({
-    shiny::invalidateLater(1000)
-    print_sequence = readLines(lf_reactive())[seq.int(length(readLines(lf_reactive()))-8, length(readLines(lf_reactive())), 1)]
-    print_sequence = print_sequence[print_sequence != ""]
-    print_sequence = paste(print_sequence, collapse = '<br/>')
-    output$terminal_print = shiny::renderUI({
-      shiny::HTML(print_sequence)
-    })
+    set_1 = names(which(module_controler$slot_taken == TRUE))
+    set_2 = names(which(module_controler$module_loaded == TRUE))
+    slot = base::setdiff(set_1, set_2)
+    if (length(slot) > 0) {
+      slot = slot[1]
+      exp_type = module_controler$exp_types[[slot]]
+      module_controler$module_loaded[[slot]] = TRUE
+      experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                        type = exp_type,
+                        module_controler = module_controler)
+    }
   })
 
+  # MOFA module
+  mofa_server("mofa", r6 = mofa_data, module_controler = module_controler)
 
+  # SNF module
+  snf_server("snf", r6 = snf_data, module_controler = module_controler)
 
-  
-  # Initiate some variables
-  options(shiny.maxRequestSize=300*1024^2)
-  
-  lipidomics_data = Lips_data$new(
-    name = "lips_1",
-    type = "lipidomics"
-  )
-  
-  proteomics_data = Prot_data$new(
-    name = "prot_1",
-    type = "proteomics"
-  )
-  
-  transcriptomics_data = Prot_data$new(
-    name = "tran_1",
-    type = "Transcriptomics"
-  )
+  # Example datasets
+  shiny::observeEvent(input[['mod_start-add_lipidomics_ex']],{
+    if (!file.exists('./examples/multiomics/lipidomics.csv') | !file.exists('./examples/multiomics/lipidomics_metadata.csv')) {
+      print('example file missing')
+      return()
+    }
+    print('Loading example lipidomics')
+    shinyjs::disable('mod_start-add_lipidomics_ex')
+    for (slot in names(module_controler$slot_taken)){
+      if (!module_controler$slot_taken[[slot]]) {
+        module_controler$module_loaded[[slot]] = T
+        module_controler$slot_taken[[slot]] = T
+        module_controler$exp_types[[slot]] = 'Lipidomics'
+        module_controler$exp_names[[slot]] = 'lips_example'
+        module_controler$exp_r6[[slot]] = example_lipidomics(name = 'lips_example',
+                                                             id = paste0(c('mod', slot), collapse = '_'),
+                                                             slot = slot)
+        output[[slot]] = bs4Dash::renderMenu({
+          bs4Dash::sidebarMenu(
+            bs4Dash::menuItem(text = 'lips_example',
+                              tabName = slot,
+                              icon = icon('l'))
+          )
+        })
+        experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                          type = 'Lipidomics',
+                          module_controler = module_controler)
+        break
+      }
+    }
+  })
 
-  
-  
-  
-  general_settings = General_settings_class$new()
-  soda_genset_server("general_settings", r6 = general_settings)
+  shiny::observeEvent(input[['mod_start-add_proteomics_ex']],{
+    if (!file.exists('./examples/multiomics/proteomics_2.tsv') | !file.exists('./examples/multiomics/metadata.csv')) {
+      print('example file missing')
+      return()
+    }
+    print('Loading example proteomics')
 
+    shinyjs::disable('mod_start-add_proteomics_ex')
 
-  # Lipidomics modules
-  soda_upload_lips_server("upload_lipidomics", r6 = lipidomics_data)
-  soda_visualise_lips_server("visualise_lipidomics", r6 = lipidomics_data, r6_settings = general_settings)
-  
-  # Proteomics modules
-  soda_upload_prot_server("upload_proteomics", r6 = proteomics_data)
-  soda_visualise_prot_server("visualise_proteomics", r6 = proteomics_data, r6_settings = general_settings)
-  soda_gsea_prot_server("gse_proteomics", r6 = proteomics_data, r6_settings = general_settings)
-  
-  # Transcriptomics modules
-  soda_upload_prot_server("upload_transcriptomics", r6 = transcriptomics_data)
-  soda_visualise_prot_server("visualise_transcriptomics", r6 = transcriptomics_data, r6_settings = general_settings)
-  soda_gsea_prot_server("gse_transcriptomics", r6 = transcriptomics_data, r6_settings = general_settings)
-  
-  
-  # Utilities modules
-  utils_merge_tables_server("merge_tables_page")
-  utils_convert_table_server("convert_tables_page")
-  
-  
+    for (slot in names(module_controler$slot_taken)){
+      if (!module_controler$slot_taken[[slot]]) {
+        module_controler$module_loaded[[slot]] = T
+        module_controler$slot_taken[[slot]] = T
+        module_controler$exp_types[[slot]] = 'Proteomics'
+        module_controler$exp_names[[slot]] = 'prot_example'
+        module_controler$exp_r6[[slot]] = example_proteomics(name = 'prot_example',
+                                                             id = paste0(c('mod', slot), collapse = '_'),
+                                                             slot = slot)
+        output[[slot]] = bs4Dash::renderMenu({
+          bs4Dash::sidebarMenu(
+            bs4Dash::menuItem(text = 'prot_example',
+                              tabName = slot,
+                              icon = icon('p'))
+          )
+        })
+        experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                          type = 'Proteomics',
+                          module_controler = module_controler)
+        break
+      }
+    }
+  })
+
+  shiny::observeEvent(input[['mod_start-add_transcriptomics_ex']],{
+    if (!file.exists('./examples/multiomics/transcriptomics_2_genename_test.tsv') | !file.exists('./examples/multiomics/metadata.csv')) {
+      print('example file missing')
+      return()
+    }
+    print('Loading example transcriptomics')
+
+    shinyjs::disable('mod_start-add_transcriptomics_ex')
+
+    for (slot in names(module_controler$slot_taken)){
+      if (!module_controler$slot_taken[[slot]]) {
+        module_controler$module_loaded[[slot]] = T
+        module_controler$slot_taken[[slot]] = T
+        module_controler$exp_types[[slot]] = 'Transcriptomics'
+        module_controler$exp_names[[slot]] = 'trns_example'
+        module_controler$exp_r6[[slot]] = example_transcriptomics(name = 'trns_example',
+                                                                  id = paste0(c('mod', slot), collapse = '_'),
+                                                                  slot = slot)
+        output[[slot]] = bs4Dash::renderMenu({
+          bs4Dash::sidebarMenu(
+            bs4Dash::menuItem(text = 'trns_example',
+                              tabName = slot,
+                              icon = icon('t'))
+          )
+        })
+        experiment_server(id = paste0(c('mod', slot), collapse = '_'),
+                          type = 'Transcriptomics',
+                          module_controler = module_controler)
+        break
+      }
+    }
+  })
+
 }
-
-
 
 #---------------------------------------------------------------------- End ----
 shinyApp(ui, server)
