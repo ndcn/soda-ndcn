@@ -34,7 +34,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
     data$color = unname(colors[data$groups])
 
   } else {
-    data$groups = groups
+    data$groups = as.character(groups)
     colors = brewer.pal(11, "Spectral")
     colors = colorRampPalette(colors)(length(unique(groups)))
     colors = setNames(colors, unique(groups))

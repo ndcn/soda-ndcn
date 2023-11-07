@@ -475,8 +475,15 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
                             selected_test = input$volcano_plot_test,
                             img_format = input$volcano_plot_img_format)
 
-    volcano_plot_generate(r6, color_palette, dimensions_obj, input)
-    volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
+    base::tryCatch({
+      volcano_plot_generate(r6, color_palette, dimensions_obj, input)
+      volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
+    },error=function(e){
+      print_tm(r6$name, 'Volcano plot: ERROR.')
+    },finally={}
+    )
+
+
   })
 
 

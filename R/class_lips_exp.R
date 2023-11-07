@@ -898,7 +898,6 @@ Lips_exp = R6::R6Class(
         } else {
           feature_metadata = NULL
         }
-
       }
 
       if (adjustment == 'BH') {
