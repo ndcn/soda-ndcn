@@ -34,13 +34,18 @@ Lips_exp = R6::R6Class(
       # Volcano plot parameters self$params$volcano_plot$
       volcano_plot = list(
         data_table = 'Total normalized table',
-        adjustment = "Benjamini-Hochberg",
+        adjustment = "BH",
         group_col = NULL,
-        groups = NULL,
-        classes = NULL,
+        group_1 = NULL,
+        group_2 = NULL,
+        feature_metadata = NULL,
+        displayed_plot = 'main',
+        p_val_threshold = 0.05,
+        fc_threshold = 2,
+        marker_size = 6,
+        opacity = 1,
         selected_function = "mean",
         selected_test = "t-Test",
-        colouring = "Lipid class",
         img_format = "png"
       ),
 
@@ -192,16 +197,22 @@ Lips_exp = R6::R6Class(
       self$params$class_comparison$img_format = img_format
     },
 
-    param_volcano_plot = function(data_table, adjustment, group_col, groups, classes, selected_function, selected_test, colouring, img_format) {
+    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, displayed_plot,
+                                  p_val_threshold, fc_threshold, marker_size, opacity, selected_function, selected_test, img_format) {
 
       self$params$volcano_plot$data_table = data_table
       self$params$volcano_plot$adjustment = adjustment
       self$params$volcano_plot$group_col = group_col
-      self$params$volcano_plot$groups = groups
-      self$params$volcano_plot$classes = classes
+      self$params$volcano_plot$group_1 = group_1
+      self$params$volcano_plot$group_2 = group_2
+      self$params$volcano_plot$feature_metadata = feature_metadata
+      self$params$volcano_plot$displayed_plot = displayed_plot
+      self$params$volcano_plot$p_val_threshold = p_val_threshold
+      self$params$volcano_plot$fc_threshold = fc_threshold
+      self$params$volcano_plot$marker_size = marker_size
+      self$params$volcano_plot$opacity = opacity
       self$params$volcano_plot$selected_function = selected_function
       self$params$volcano_plot$selected_test = selected_test
-      self$params$volcano_plot$colouring = colouring
       self$params$volcano_plot$img_format = img_format
 
     },
@@ -509,14 +520,19 @@ Lips_exp = R6::R6Class(
                                   img_format = "png")
 
       self$param_volcano_plot(data_table = 'Total normalized table',
-                              adjustment = 'Benjamini-Hochberg',
+                              adjustment = "BH",
                               group_col = self$indices$group_col,
-                              groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
-                              classes = NULL,
-                              selected_function = 'mean',
-                              selected_test = 't-Test',
-                              colouring = 'Lipid class',
-                              img_format = 'png')
+                              group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
+                              group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
+                              feature_metadata = 'lipid_class',
+                              displayed_plot = 'main',
+                              p_val_threshold = 0.05,
+                              fc_threshold = 2,
+                              marker_size = 6,
+                              opacity = 1,
+                              selected_function = "mean",
+                              selected_test = "t-Test",
+                              img_format = "png")
 
       self$param_heatmap(dataset = 'Z-scored total normalized table',
                          impute = F,
@@ -556,17 +572,17 @@ Lips_exp = R6::R6Class(
 
     #--------------------------------------------------- Plot table methods ----
 
+
+
+
     # Volcano table
     get_volcano_table = function(data_table = self$tables$raw_data,
                                  volcano_table = self$tables$feature_table,
-                                 group_col = self$indices$group_col,
-                                 used_function = "mean",
-                                 test = "t-Test",
-                                 group_1 = self$params$volcano_plot$groups[1],
-                                 group_2 = self$params$volcano_plot$groups[2]) {
-
-
-
+                                 group_col = self$params$volcano_plot$group_col,
+                                 used_function = self$params$volcano_plot$selected_function,
+                                 test = self$params$volcano_plot$selected_test,
+                                 group_1 = self$params$volcano_plot$group_1,
+                                 group_2 = self$params$volcano_plot$group_2) {
 
 
       rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_1]
@@ -596,13 +612,15 @@ Lips_exp = R6::R6Class(
       volcano_table$fold_change = get_fold_changes(data_table = data_table,
                                                    idx_group_1 = idx_group_1,
                                                    idx_group_2 = idx_group_2,
-                                                   used_function = used_function)
+                                                   used_function = used_function,
+                                                   impute_inf = F)
 
 
       volcano_table$p_val = get_p_val(data_table = data_table,
                                       idx_group_1 = idx_group_1,
                                       idx_group_2 = idx_group_2,
-                                      used_function = test)
+                                      used_function = test,
+                                      impute_na = F)
       volcano_table$q_val_bh = stats::p.adjust(volcano_table$p_val, method = "BH")
 
       volcano_table$minus_log10_p_value = -log10(volcano_table$p_val)
@@ -859,58 +877,54 @@ Lips_exp = R6::R6Class(
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
                             adjustment = self$params$volcano_plot$adjustment,
-                            colour_list,
-                            group_1 = self$params$volcano_plot$groups[1],
-                            group_2 = self$params$volcano_plot$groups[2],
-                            displayed_classes = self$params$volcano_plot$classes,
-                            colouring = self$params$volcano_plot$colouring,
+                            group_1 = self$params$volcano_plot$group_1,
+                            group_2 = self$params$volcano_plot$group_2,
+                            feature_metadata = self$params$volcano_plot$feature_metadata,
+                            displayed_plot = self$params$volcano_plot$displayed_plot,
+                            p_val_threshold = self$params$volcano_plot$p_val_threshold,
+                            fc_threshold = self$params$volcano_plot$fc_threshold,
+                            marker_size = self$params$volcano_plot$marker_size,
+                            opacity = self$params$volcano_plot$opacity,
                             width = NULL,
                             height = NULL){
 
-      adjustment = adjustment_switch(adjustment)
-
-      # Select the colouring column
-      feat_col = feature_table_cols_switch(colouring)
-
-      # If null, display all classes
-      if ((is.null(displayed_classes)) | any((displayed_classes == ""))) {
-        displayed_classes = unique(data_table[, "lipid_class"])
-      }
-
-      # Filter out classes to skip
-      removed_classes = setdiff(unique(data_table[, "lipid_class"]), displayed_classes)
-      if (length(removed_classes) > 0) {
-        del_rows = c()
-        for (lipclass in removed_classes) {
-          del_rows = c(del_rows, which(data_table[, "lipid_class"] == lipclass))
+      p_val_threshold = as.numeric(p_val_threshold)
+      fc_threshold = as.numeric(fc_threshold)
+      marker_size = as.numeric(marker_size)
+      opacity = as.numeric(opacity)
+      if (!is.null(feature_metadata)) {
+        if (feature_metadata %in% colnames(data_table)) {
+          feature_metadata = data_table[,feature_metadata]
+        } else {
+          feature_metadata = NULL
         }
-        data_table = data_table[-del_rows,]
+
       }
 
-      feature_vector = sort(unique(data_table[, feat_col]))
-
-      max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
-      i = 1
-      fig = plotly::plot_ly(colors = colour_list, type  = "scatter", mode  = "markers", width = width, height = height)
-
-
-      for (feature in feature_vector) {
-        tmp_idx = rownames(data_table)[data_table[, feat_col] == feature]
-        fig = fig %>% add_trace(x = data_table[tmp_idx, "log2_fold_change"],
-                                y = data_table[tmp_idx, adjustment],
-                                name = feature,
-                                color = colour_list[i],
-                                text = tmp_idx,
-                                hoverinfo = "text"
-        )
-        i = i + 1
+      if (adjustment == 'BH') {
+        p_vals = data_table$q_val_bh
+        y_label = '-Log10(BH(p-value))'
+      } else {
+        p_vals = data_table$p_val
+        y_label = '-Log10(p-value)'
       }
-      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot"), hline(-log10(0.05), dash = "dot")),
-                           title = paste0(group_1, " (left), ", group_2, " (right)"),
-                           xaxis = list(title = "Log2(fold change)",
-                                        range = c(-max_fc,max_fc)
-                           ),
-                           yaxis = list(title = adjustment_title_switch(adjustment)))
+
+      displayed_text = paste0(paste0(rownames(data_table), '\n'),
+                              paste0('p-value: ', round(p_vals, 3), '\n'),
+                              paste0('FC: ', round(data_table$fold_change, 2)))
+
+      fig = volcano_main(fc_vals = data_table$fold_change,
+                         p_vals = p_vals,
+                         names = displayed_text,
+                         y_label = y_label,
+                         groups = feature_metadata,
+                         displayed_plot = displayed_plot,
+                         p_val_threshold = p_val_threshold,
+                         fc_threshold = fc_threshold,
+                         marker_size = marker_size,
+                         opacity = opacity)
+
+
       self$plots$volcano_plot = fig
     },
 

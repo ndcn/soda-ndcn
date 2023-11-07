@@ -869,7 +869,7 @@ circle = function(x, y, alpha = 0.95, len = 200){
 lipidomics_summary_plot = function(r6, data_table) {
   groups = get_lipid_classes(colnames(r6$tables$imp_data)[2:length(colnames(r6$tables$imp_data))], uniques = T)
 
-  plot_table = data.frame(table(base::factor((get_lipid_classes(colnames(data_table)[2:length(colnames(data_table))], uniques = F)), levels = groups)))
+  plot_table = data.frame(table(base::factor((get_lipid_classes(colnames(data_table), uniques = F)), levels = groups)))
   names(plot_table) = c("class", "raw")
   plot_table$imported = table(base::factor((get_lipid_classes(colnames(r6$tables$imp_data)[2:length(colnames(r6$tables$imp_data))], uniques = F)), levels = groups))
   plot_table$removed = plot_table$imported - plot_table$raw
