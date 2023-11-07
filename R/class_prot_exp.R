@@ -25,6 +25,7 @@ Prot_exp = R6::R6Class(
         group_col = NULL,
         group_1 = NULL,
         group_2 = NULL,
+        feature_metadata = 'None',
         displayed_plot = 'main',
         p_val_threshold = 0.05,
         fc_threshold = 2,
@@ -274,13 +275,14 @@ Prot_exp = R6::R6Class(
 
     #---------------------------------------------------- Parameter methods ----
     # self$params$volcano_plot$
-    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, displayed_plot, p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
+    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, displayed_plot, p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
 
       self$params$volcano_plot$data_table = data_table
       self$params$volcano_plot$adjustment = adjustment
       self$params$volcano_plot$group_col = group_col
       self$params$volcano_plot$group_1 = group_1
       self$params$volcano_plot$group_2 = group_2
+      self$params$volcano_plot$feature_metadata = feature_metadata
       self$params$volcano_plot$displayed_plot = displayed_plot
       self$params$volcano_plot$p_val_threshold = p_val_threshold
       self$params$volcano_plot$fc_threshold = fc_threshold
@@ -649,6 +651,7 @@ Prot_exp = R6::R6Class(
                               group_col = self$indices$group_col,
                               group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
                               group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
+                              feature_metadata = 'None',
                               displayed_plot = 'main',
                               p_val_threshold = 0.05,
                               fc_threshold = 2,
@@ -925,6 +928,7 @@ Prot_exp = R6::R6Class(
                             adjustment = self$params$volcano_plot$adjustment,
                             group_1 = self$params$volcano_plot$groups[1],
                             group_2 = self$params$volcano_plot$groups[2],
+                            feature_metadata = self$params$volcano_plot$feature_metadata,
                             displayed_plot = self$params$volcano_plot$displayed_plot,
                             p_val_threshold = self$params$volcano_plot$p_val_threshold,
                             fc_threshold = self$params$volcano_plot$fc_threshold,

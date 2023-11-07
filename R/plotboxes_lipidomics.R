@@ -459,49 +459,47 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
   shiny::observeEvent(
     c(shiny::req(length(input$volcano_plot_metagroup) == 2),
       shiny::req(input$volcano_plot_auto_update),
-      input$volcano_plot_feature_metadata,
-      input$volcano_plot_color_palette,
       input$volcano_plot_tables,
       input$volcano_plot_function,
       input$volcano_plot_adjustment,
       input$volcano_plot_test,
       input$volcano_plot_displayed_plot,
+      input$volcano_plot_feature_metadata,
+      input$volcano_plot_color_palette,
       input$volcano_plot_p_val_threshold,
       input$volcano_plot_fc_threshold,
       input$volcano_plot_marker_size,
       input$volcano_plot_opacity,
-      input$volcano_plot_img_format),{
+      input$volcano_plot_img_format
+    ),{
 
-        print_tm(r6$name, "Volcano plot: Updating params...")
-        r6$param_volcano_plot(data_table = input$volcano_plot_tables,
-                              adjustment = input$volcano_plot_adjustment,
-                              group_col = input$volcano_plot_metacol,
-                              group_1 = input$volcano_plot_metagroup[1],
-                              group_2 = input$volcano_plot_metagroup[2],
-                              feature_metadata = input$volcano_plot_feature_metadata,
-                              color_palette = input$volcano_plot_color_palette,
-                              displayed_plot = input$volcano_plot_displayed_plot,
-                              p_val_threshold = input$volcano_plot_p_val_threshold,
-                              fc_threshold = input$volcano_plot_fc_threshold,
-                              marker_size = input$volcano_plot_marker_size,
-                              opacity = input$volcano_plot_opacity,
-                              selected_function = input$volcano_plot_function,
-                              selected_test = input$volcano_plot_test,
-                              img_format = input$volcano_plot_img_format)
+      print_tm(r6$name, "Volcano plot: Updating params...")
+      r6$param_volcano_plot(data_table = input$volcano_plot_tables,
+                            adjustment = input$volcano_plot_adjustment,
+                            group_col = input$volcano_plot_metacol,
+                            group_1 = input$volcano_plot_metagroup[1],
+                            group_2 = input$volcano_plot_metagroup[2],
+                            feature_metadata = input$volcano_plot_feature_metadata,
+                            color_palette = input$volcano_plot_color_palette,
+                            displayed_plot = input$volcano_plot_displayed_plot,
+                            p_val_threshold = input$volcano_plot_p_val_threshold,
+                            fc_threshold = input$volcano_plot_fc_threshold,
+                            marker_size = input$volcano_plot_marker_size,
+                            opacity = input$volcano_plot_opacity,
+                            selected_function = input$volcano_plot_function,
+                            selected_test = input$volcano_plot_test,
+                            img_format = input$volcano_plot_img_format)
 
+      base::tryCatch({
         volcano_plot_generate(r6, color_palette, dimensions_obj, input)
         volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
-
-        # base::tryCatch({
-        #   volcano_plot_generate(r6, color_palette, dimensions_obj, input)
-        #   volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
-        # },error=function(e){
-        #   print_tm(r6$name, 'Volcano plot: ERROR.')
-        # },finally={}
-        # )
+      },error=function(e){
+        print_tm(r6$name, 'Volcano plot: ERROR.')
+      },finally={}
+      )
 
 
-      })
+    })
 
 
 

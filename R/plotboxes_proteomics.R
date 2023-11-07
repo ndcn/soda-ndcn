@@ -75,6 +75,13 @@ prot_volcano_plot_server = function(r6, output, session) {
         multiple = TRUE
       ),
       shiny::selectizeInput(
+        inputId = ns('volcano_plot_feature_metadata'),
+        label = "Feature metadata",
+        choices = c('None', colnames(r6$tables$feature_table)),
+        selected = r6$params$volcano_plot$feature_metadata,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
         inputId = ns('volcano_plot_color_palette'),
         label = "Feature metadata colors",
         choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
@@ -189,7 +196,22 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
     )
   })
 
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), shiny::req(input$volcano_plot_auto_update), input$volcano_plot_color_palette, input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format, input$volcano_plot_displayed_plot, input$volcano_plot_p_val_threshold, input$volcano_plot_fc_threshold, input$volcano_plot_marker_size, input$volcano_plot_opacity), {
+  shiny::observeEvent(
+    c(shiny::req(length(input$volcano_plot_metagroup) == 2),
+      shiny::req(input$volcano_plot_auto_update),
+      input$volcano_plot_tables,
+      input$volcano_plot_function,
+      input$volcano_plot_adjustment,
+      input$volcano_plot_test,
+      input$volcano_plot_displayed_plot,
+      input$volcano_plot_feature_metadata,
+      input$volcano_plot_color_palette,
+      input$volcano_plot_p_val_threshold,
+      input$volcano_plot_fc_threshold,
+      input$volcano_plot_marker_size,
+      input$volcano_plot_opacity,
+      input$volcano_plot_img_format
+      ), {
     print_tm(r6$name, "Volcano plot: Updating params...")
 
     r6$param_volcano_plot(data_table = input$volcano_plot_tables,
@@ -197,6 +219,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
                           group_col = input$volcano_plot_metacol,
                           group_1 = input$volcano_plot_metagroup[1],
                           group_2 = input$volcano_plot_metagroup[2],
+                          feature_metadata = input$volcano_plot_feature_metadata,
                           displayed_plot = input$volcano_plot_displayed_plot,
                           color_palette = input$volcano_plot_color_palette,
                           p_val_threshold = input$volcano_plot_p_val_threshold,
