@@ -1232,13 +1232,5 @@ Lips_exp = R6::R6Class(
       )
       self$plots$double_bond_plot = fig
     }
-
-
-
-
-
-
-
-
   )
 )

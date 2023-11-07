@@ -1872,10 +1872,10 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       table_name = paste0(input$feat_go_ont, counter)
     }
     r6$add_go_data(name = table_name,
-                       feature_names = rownames(r6$tables$imp_feature_table),
-                       keyType = input$select_feature_type,
-                       ont = input$feat_go_ont,
-                       pvalueCutoff = as.numeric(input$feat_go_ont_cutoff))
+                   feature_names = rownames(r6$tables$imp_feature_table),
+                   keyType = input$select_feature_type,
+                   ont = input$feat_go_ont,
+                   pvalueCutoff = as.numeric(input$feat_go_ont_cutoff))
     shiny::updateSelectInput(
       inputId = 'feat_name_del',
       choices = names(r6$tables$external_feature_tables)

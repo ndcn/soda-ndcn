@@ -721,6 +721,7 @@ Trns_exp = R6::R6Class(
 
     # Volcano table
     get_volcano_table = function(data_table = self$tables$raw_data,
+                                 volcano_table = self$tables$feature_table,
                                  group_col = self$indices$group_col,
                                  used_function = self$params$volcano_plot$selected_function,
                                  test = self$params$volcano_plot$selected_test,
@@ -746,8 +747,10 @@ Trns_exp = R6::R6Class(
       data_table = remove_empty_cols(table = data_table)
       dead_features = setdiff(dead_features, colnames(data_table))
 
-      volcano_table = data.frame(matrix(data = NA, nrow = ncol(data_table), ncol = 0))
-      rownames(volcano_table) = colnames(data_table)
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(volcano_table) %in% dead_features)
+        volcano_table = volcano_table[-dead_features,]
+      }
 
       # Collect fold change and p-values
       volcano_table$fold_change = get_fold_changes(data_table = data_table,
@@ -942,6 +945,13 @@ Trns_exp = R6::R6Class(
       fc_threshold = as.numeric(fc_threshold)
       marker_size = as.numeric(marker_size)
       opacity = as.numeric(opacity)
+      if (!is.null(feature_metadata)) {
+        if (feature_metadata %in% colnames(data_table)) {
+          feature_metadata = data_table[,feature_metadata]
+        } else {
+          feature_metadata = NULL
+        }
+      }
 
 
       if (adjustment == 'BH') {
@@ -961,7 +971,7 @@ Trns_exp = R6::R6Class(
                          p_vals = p_vals,
                          names = displayed_text,
                          y_label = y_label,
-                         groups = NULL,
+                         groups = feature_metadata,
                          displayed_plot = displayed_plot,
                          color_palette = color_palette,
                          p_val_threshold = p_val_threshold,
