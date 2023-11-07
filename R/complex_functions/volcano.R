@@ -1,10 +1,51 @@
 
+colors_switch = function(selection) {
+  switch(EXPR = selection,
+         'Blues' = 9,
+         'BuGn' = 9,
+         'BuPu' = 9,
+         'GnBu' = 9,
+         'Greens' = 9,
+         'Greys' = 9,
+         'Oranges' = 9,
+         'OrRd' = 9,
+         'PuBu' = 9,
+         'PuBuGn' = 9,
+         'PuRd' = 9,
+         'Purples' = 9,
+         'RdPu' = 9,
+         'Reds' = 9,
+         'YlGn' = 9,
+         'YlGnBu' = 9,
+         'YlOrBr' = 9,
+         'YlOrRd' = 9,
+         'BrBG' = 11,
+         'PiYG' = 11,
+         'PRGn' = 11,
+         'PuOr' = 11,
+         'RdBu' = 11,
+         'RdGy' = 11,
+         'RdYlBu' = 11,
+         'RdYlGn' = 11,
+         'Spectral' = 11,
+         'Accent' = 8,
+         'Dark2' = 8,
+         'Paired' = 12,
+         'Pastel1' = 9,
+         'Pastel2' = 8,
+         'Set1' = 9,
+         'Set2' = 8,
+         'Set3' = 12
+  )
+}
+
 volcano_main = function(fc_vals = volcano_table$fold_change,
                         p_vals = volcano_table$q_val_bh,
                         names = rownames(volcano_table),
                         y_label = '-Log10(p-value)',
                         groups = NULL,
                         displayed_plot = 'main',
+                        color_palette = 'Spectral',
                         p_val_threshold = 0.05,
                         fc_threshold = 2,
                         marker_size = 6,
@@ -35,7 +76,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
 
   } else {
     data$groups = as.character(groups)
-    colors = brewer.pal(11, "Spectral")
+    colors = brewer.pal(as.numeric(colors_switch(color_palette)), color_palette)
     colors = colorRampPalette(colors)(length(unique(groups)))
     colors = setNames(colors, unique(groups))
     data$color = unname(colors[data$groups])

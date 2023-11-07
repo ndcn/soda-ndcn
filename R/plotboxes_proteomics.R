@@ -75,6 +75,17 @@ prot_volcano_plot_server = function(r6, output, session) {
         multiple = TRUE
       ),
       shiny::selectizeInput(
+        inputId = ns('volcano_plot_color_palette'),
+        label = "Feature metadata colors",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$volcano_plot$color_palette,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
         inputId = ns("volcano_plot_function"),
         label = "FC function",
         choices = c("median", "mean"),
@@ -178,7 +189,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
     )
   })
 
-  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), shiny::req(input$volcano_plot_auto_update), input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format, input$volcano_plot_displayed_plot, input$volcano_plot_p_val_threshold, input$volcano_plot_fc_threshold, input$volcano_plot_marker_size, input$volcano_plot_opacity), {
+  shiny::observeEvent(c(shiny::req(length(input$volcano_plot_metagroup) == 2), shiny::req(input$volcano_plot_auto_update), input$volcano_plot_color_palette, input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format, input$volcano_plot_displayed_plot, input$volcano_plot_p_val_threshold, input$volcano_plot_fc_threshold, input$volcano_plot_marker_size, input$volcano_plot_opacity), {
     print_tm(r6$name, "Volcano plot: Updating params...")
 
     r6$param_volcano_plot(data_table = input$volcano_plot_tables,
@@ -187,6 +198,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
                           group_1 = input$volcano_plot_metagroup[1],
                           group_2 = input$volcano_plot_metagroup[2],
                           displayed_plot = input$volcano_plot_displayed_plot,
+                          color_palette = input$volcano_plot_color_palette,
                           p_val_threshold = input$volcano_plot_p_val_threshold,
                           fc_threshold = input$volcano_plot_fc_threshold,
                           marker_size = input$volcano_plot_marker_size,

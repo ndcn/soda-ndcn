@@ -44,6 +44,7 @@ Lips_exp = R6::R6Class(
         fc_threshold = 2,
         marker_size = 6,
         opacity = 1,
+        color_palette = 'Spectral',
         selected_function = "mean",
         selected_test = "t-Test",
         img_format = "png"
@@ -198,7 +199,7 @@ Lips_exp = R6::R6Class(
     },
 
     param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, displayed_plot,
-                                  p_val_threshold, fc_threshold, marker_size, opacity, selected_function, selected_test, img_format) {
+                                  p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
 
       self$params$volcano_plot$data_table = data_table
       self$params$volcano_plot$adjustment = adjustment
@@ -211,6 +212,7 @@ Lips_exp = R6::R6Class(
       self$params$volcano_plot$fc_threshold = fc_threshold
       self$params$volcano_plot$marker_size = marker_size
       self$params$volcano_plot$opacity = opacity
+      self$params$volcano_plot$color_palette = color_palette
       self$params$volcano_plot$selected_function = selected_function
       self$params$volcano_plot$selected_test = selected_test
       self$params$volcano_plot$img_format = img_format
@@ -530,6 +532,7 @@ Lips_exp = R6::R6Class(
                               fc_threshold = 2,
                               marker_size = 6,
                               opacity = 1,
+                              color_palette = 'Spectral',
                               selected_function = "mean",
                               selected_test = "t-Test",
                               img_format = "png")
@@ -885,6 +888,7 @@ Lips_exp = R6::R6Class(
                             fc_threshold = self$params$volcano_plot$fc_threshold,
                             marker_size = self$params$volcano_plot$marker_size,
                             opacity = self$params$volcano_plot$opacity,
+                            color_palette = self$params$volcano_plot$color_palette,
                             width = NULL,
                             height = NULL){
 
@@ -918,6 +922,7 @@ Lips_exp = R6::R6Class(
                          y_label = y_label,
                          groups = feature_metadata,
                          displayed_plot = displayed_plot,
+                         color_palette = color_palette,
                          p_val_threshold = p_val_threshold,
                          fc_threshold = fc_threshold,
                          marker_size = marker_size,
