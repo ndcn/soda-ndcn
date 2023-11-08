@@ -43,6 +43,8 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
                         p_vals = volcano_table$q_val_bh,
                         names = rownames(volcano_table),
                         y_label = '-Log10(p-value)',
+                        left_label = 'Left',
+                        right_label = 'Right',
                         groups = NULL,
                         displayed_plot = 'main',
                         color_palette = 'Spectral',
@@ -67,11 +69,11 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
   data$log10_p_values = -log10(data$p_values)
 
   if (is.null(groups)) {
-    data$groups = 'Unresolved'
+    data$groups = 'Inconclusive'
     data$groups[(data$p_values > p_val_threshold) & (data$log2_fold_change < log2(fc_threshold)) & (data$log2_fold_change > -log2(fc_threshold))] = 'Not significant'
     data$groups[((data$p_values < p_val_threshold) | (is.na(data$p_values))) & (data$log2_fold_change > log2(fc_threshold))] = "Overexpressed"
     data$groups[((data$p_values < p_val_threshold) | (is.na(data$p_values))) & (data$log2_fold_change < -log2(fc_threshold))] = "Underexpressed"
-    colors = setNames(c('#bebebe', '#787878', '#FF0000', '#0000FF'), c('Not significant', 'Unresolved', 'Overexpressed', 'Underexpressed'))
+    colors = setNames(c('#bebebe', '#787878', '#FF0000', '#0000FF'), c('Not significant', 'Inconclusive', 'Overexpressed', 'Underexpressed'))
     data$color = unname(colors[data$groups])
 
   } else {
@@ -82,7 +84,12 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
     data$color = unname(colors[data$groups])
   }
 
-
+  # Add count data
+  replacement_vector = table(data$groups)
+  original_names = names(replacement_vector)
+  replacement_vector = paste0(names(replacement_vector), ' (', replacement_vector, ')')
+  names(replacement_vector) = original_names
+  data$groups = replacement_vector[data$groups]
 
   # Produce the data tables & plots
   if (length(which(is.na(data$log10_p_values))) > 0) { # Top violin
@@ -108,6 +115,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
     left_violin = plot_volcano_violin(data = left_data,
                                       threshold = -log10(p_val_threshold),
                                       side = 'left',
+                                      label = left_label,
                                       opacity = opacity,
                                       marker_size = marker_size,
                                       show_legend = F)
@@ -121,6 +129,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
     right_violin = plot_volcano_violin(data = right_data,
                                        threshold = -log10(p_val_threshold),
                                        side = 'right',
+                                       label = right_label,
                                        opacity = opacity,
                                        marker_size = marker_size,
                                        show_legend = F)
@@ -263,7 +272,7 @@ volcano_main = function(fc_vals = volcano_table$fold_change,
 
 }
 
-plot_volcano_violin = function(data, threshold, side, opacity = 1, marker_size = 6, show_legend = F) {
+plot_volcano_violin = function(data, threshold, side, label, opacity = 1, marker_size = 6, show_legend = F) {
 
   if (!(side %in% c('left', 'right', 'top'))) {
     stop('side must be in [left, right, top]')
@@ -272,13 +281,9 @@ plot_volcano_violin = function(data, threshold, side, opacity = 1, marker_size =
   if (side == 'left') {
     col_line = 'blue'
     col_fill = 'lightblue'
-    title = 'Underexpressed'
-    x_val = 'Left only'
   } else if (side == 'right') {
     col_line = 'red'
     col_fill = 'pink'
-    title = 'Overexpressed'
-    x_val = 'Right only'
   } else if (side == 'top') {
     return(plot_volcano_violin_top(data = data,
                                    threshold = threshold,
@@ -287,12 +292,14 @@ plot_volcano_violin = function(data, threshold, side, opacity = 1, marker_size =
                                    show_legend = show_legend))
   }
 
+  x_val = paste0(label, ' only')
 
   p = plotly::plot_ly()
 
   if (length(data$log10_p_values[which(data$log10_p_values >= threshold)]) > 1) {
+    sub_data = data[which(data$log10_p_values >= threshold),]
     p = plotly::add_trace(p,
-                          y = data$log10_p_values[which(data$log10_p_values >= threshold)],
+                          y = sub_data$log10_p_values,
                           x = x_val, type = "violin",
                           box = list(visible = FALSE),
                           line = list(color = col_line),
@@ -300,15 +307,16 @@ plot_volcano_violin = function(data, threshold, side, opacity = 1, marker_size =
                           meanline = list(visible = F),
                           opacity = opacity,
                           points = FALSE,
-                          name = title,
-                          legendgroup = title,
+                          name = sub_data$groups[1],
+                          legendgroup = sub_data$groups[1],
                           hoverinfo = 'none',
                           showlegend = F)
   }
 
   if (length(data$log10_p_values[which(data$log10_p_values < threshold)]) > 1) {
+    sub_data = data[which(data$log10_p_values < threshold),]
     p = plotly::add_trace(p,
-                          y = data$log10_p_values[which(data$log10_p_values < threshold)],
+                          y = sub_data$log10_p_values,
                           x = x_val, type = "violin",
                           box = list(visible = FALSE),
                           line = list(color = 'darkgray'),
@@ -316,8 +324,8 @@ plot_volcano_violin = function(data, threshold, side, opacity = 1, marker_size =
                           meanline = list(visible = F),
                           opacity = opacity,
                           points = FALSE,
-                          name = 'Unresolved',
-                          legendgroup = 'Unresolved',
+                          name = sub_data$groups[1],
+                          legendgroup = sub_data$groups[1],
                           hoverinfo = 'none',
                           showlegend = F)
   }
