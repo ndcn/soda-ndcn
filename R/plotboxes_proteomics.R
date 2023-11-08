@@ -81,6 +81,11 @@ prot_volcano_plot_server = function(r6, output, session) {
         selected = r6$params$volcano_plot$feature_metadata,
         multiple = FALSE
       ),
+      shinyWidgets::prettySwitch(
+        inputId = ns('volcano_plot_keep_significant'),
+        label = 'Keep only significant data',
+        value = r6$params$volcano_plot$keep_significant
+      ),
       shiny::selectizeInput(
         inputId = ns('volcano_plot_color_palette'),
         label = "Feature metadata colors",
@@ -205,6 +210,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
       input$volcano_plot_test,
       input$volcano_plot_displayed_plot,
       input$volcano_plot_feature_metadata,
+      input$volcano_plot_keep_significant,
       input$volcano_plot_color_palette,
       input$volcano_plot_p_val_threshold,
       input$volcano_plot_fc_threshold,
@@ -220,6 +226,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
                           group_1 = input$volcano_plot_metagroup[1],
                           group_2 = input$volcano_plot_metagroup[2],
                           feature_metadata = input$volcano_plot_feature_metadata,
+                          keep_significant = input$volcano_plot_keep_significant,
                           displayed_plot = input$volcano_plot_displayed_plot,
                           color_palette = input$volcano_plot_color_palette,
                           p_val_threshold = input$volcano_plot_p_val_threshold,

@@ -39,6 +39,7 @@ Lips_exp = R6::R6Class(
         group_1 = NULL,
         group_2 = NULL,
         feature_metadata = 'None',
+        keep_significant = F,
         displayed_plot = 'main',
         p_val_threshold = 0.05,
         fc_threshold = 2,
@@ -198,7 +199,7 @@ Lips_exp = R6::R6Class(
       self$params$class_comparison$img_format = img_format
     },
 
-    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, displayed_plot,
+    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, keep_significant, displayed_plot,
                                   p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
 
       self$params$volcano_plot$data_table = data_table
@@ -207,6 +208,7 @@ Lips_exp = R6::R6Class(
       self$params$volcano_plot$group_1 = group_1
       self$params$volcano_plot$group_2 = group_2
       self$params$volcano_plot$feature_metadata = feature_metadata
+      self$params$volcano_plot$keep_significant = keep_significant
       self$params$volcano_plot$displayed_plot = displayed_plot
       self$params$volcano_plot$p_val_threshold = p_val_threshold
       self$params$volcano_plot$fc_threshold = fc_threshold
@@ -527,6 +529,7 @@ Lips_exp = R6::R6Class(
                               group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
                               group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
                               feature_metadata = 'None',
+                              keep_significant = F,
                               displayed_plot = 'main',
                               p_val_threshold = 0.05,
                               fc_threshold = 2,
@@ -883,6 +886,7 @@ Lips_exp = R6::R6Class(
                             group_1 = self$params$volcano_plot$group_1,
                             group_2 = self$params$volcano_plot$group_2,
                             feature_metadata = self$params$volcano_plot$feature_metadata,
+                            keep_significant = self$params$volcano_plot$keep_significant,
                             displayed_plot = self$params$volcano_plot$displayed_plot,
                             p_val_threshold = self$params$volcano_plot$p_val_threshold,
                             fc_threshold = self$params$volcano_plot$fc_threshold,
@@ -896,20 +900,29 @@ Lips_exp = R6::R6Class(
       fc_threshold = as.numeric(fc_threshold)
       marker_size = as.numeric(marker_size)
       opacity = as.numeric(opacity)
+
+      if (adjustment == 'BH') {
+        if (keep_significant) {
+          data_table = data_table[data_table$q_val_bh <= p_val_threshold,]
+          data_table = data_table[(data_table$log2_fold_change >= log2(fc_threshold)) | (data_table$log2_fold_change <= -log2(fc_threshold)),]
+        }
+        p_vals = data_table$q_val_bh
+        y_label = '-Log10(BH(p-value))'
+      } else {
+        if (keep_significant) {
+          data_table = data_table[data_table$p_val <= p_val_threshold,]
+          data_table = data_table[(data_table$log2_fold_change >= log2(fc_threshold)) | (data_table$log2_fold_change <= -log2(fc_threshold)),]
+        }
+        p_vals = data_table$p_val
+        y_label = '-Log10(p-value)'
+      }
+
       if (!is.null(feature_metadata)) {
         if (feature_metadata %in% colnames(data_table)) {
           feature_metadata = data_table[,feature_metadata]
         } else {
           feature_metadata = NULL
         }
-      }
-
-      if (adjustment == 'BH') {
-        p_vals = data_table$q_val_bh
-        y_label = '-Log10(BH(p-value))'
-      } else {
-        p_vals = data_table$p_val
-        y_label = '-Log10(p-value)'
       }
 
       displayed_text = paste0(paste0(rownames(data_table), '\n'),
