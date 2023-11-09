@@ -1750,121 +1750,237 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   #--------------------------------------------- Feature metadata rendering ----
   output$up_feature_metadata_ui = shiny::renderUI({
-    shiny::fluidRow(
-
-      shiny::column(
-        width = 8,
-        shiny::br(),
-        shiny::fluidRow(
-          shiny::column(
-            width = 3,
-            shiny::fileInput(
-              inputId = ns("feat_add"),
-              label = NULL,
-              multiple = F,
-              accept = c(".csv", ".tsv", ".txt", ".xlsx"),
-              width = "100%"
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 8,
+          shiny::br(),
+          shiny::fluidRow(
+            shiny::column(
+              width = 3,
+              shiny::fileInput(
+                inputId = ns("feat_add"),
+                label = NULL,
+                multiple = F,
+                accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                width = "100%"
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::textInput(
+                inputId = ns('feat_name_add'),
+                label = NULL,
+                width = '100%',
+                placeholder = 'ex: feat_1'
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::selectInput(
+                inputId = ns('feat_table_select'),
+                label = NULL,
+                choices = c('Imported feature table', 'Feature table'),
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::downloadButton(
+                outputId = ns("download_feature_table"),
+                label = "Download",
+                style = "width:100%;"
+              )
             )
           ),
-          shiny::column(
-            width = 3,
-            shiny::textInput(
-              inputId = ns('feat_name_add'),
-              label = NULL,
-              width = '100%',
-              placeholder = 'ex: feat_1'
-            )
-          ),
-          shiny::column(
-            width = 3,
-            shiny::selectInput(
-              inputId = ns('feat_table_select'),
-              label = NULL,
-              choices = c('Imported feature table', 'Feature table', 'GO table'),
-              width = '100%'
-            )
-          ),
-          shiny::column(
-            width = 3,
-            shiny::downloadButton(
-              outputId = ns("download_feature_table"),
-              label = "Download",
-              style = "width:100%;"
+          shiny::fluidRow(
+            bs4Dash::box(
+              id = ns('feat_table_preview_box'),
+              title = 'Table preview',
+              width = 12,
+              DT::dataTableOutput(ns("feature_table_preview_table")),
+              style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
+              collapsible = T,
+              collapsed  = T,
+              maximizable = T,
+              headerBorder = T
             )
           )
         ),
-        shiny::fluidRow(
-          bs4Dash::box(
-            id = ns('feat_table_preview_box'),
-            title = 'Table preview',
-            width = 12,
-            DT::dataTableOutput(ns("feature_table_preview_table")),
-            style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
-            collapsible = T,
-            collapsed  = T,
-            maximizable = T,
-            headerBorder = T
+        shiny::column(
+          width = 4,
+          shiny::h3('Remove feature table'),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::selectInput(inputId = ns('feat_name_del'),
+                                 label = NULL,
+                                 choices = names(r6$tables$external_feature_tables),
+                                 selected = NULL,
+                                 width = '100%')
+            ),
+            shiny::column(
+              width = 6,
+              shiny::actionButton(inputId = ns('feat_del'),
+                                  label = 'Remove',
+                                  width = '100%')
+            )
           )
         )
       ),
-      shiny::column(
-        width = 4,
-        shiny::h3('GO annotation'),
-        shiny::fluidRow(
-          shiny::column(
-            width = 6,
-            shiny::textInput(
-              inputId = ns('go_name_add'),
-              label = 'Name',
-              width = '100%',
-              placeholder = 'ex: ALL'
+      shiny::fluidRow(
+        shiny::column(
+          width = 8,
+          shiny::fluidRow(
+            shiny::column(
+              width = 3,
+              shiny::selectInput(
+                inputId = ns('annotations_table_select'),
+                label = NULL,
+                choices = names(r6$tables$external_enrichment_tables),
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::downloadButton(
+                outputId = ns('download_associations_table'),
+                label = 'Associations',
+                style = "width:100%;"
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::downloadButton(
+                outputId = ns('download_terms_table'),
+                label = 'Terms',
+                style = "width:100%;"
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::actionButton(
+                inputId = ns('remove_annotations_table'),
+                label = 'Remove',
+                width = '100%'
+              )
             )
           ),
-          shiny::column(
-            width = 6,
-            shiny::selectInput(
-              inputId = ns('feat_go_ont'),
-              label = 'GO ont.',
-              choices = c('ALL', 'BP', 'MF', 'CC'),
-              selected = 'ALL',
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              bs4Dash::box(
+                id = ns('association_table_preview_box'),
+                title = 'Association table',
+                width = 12,
+                DT::dataTableOutput(ns("association_table_preview_table")),
+                style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
+                collapsible = T,
+                collapsed  = F,
+                maximizable = T,
+                headerBorder = T
+              )
+            ),
+            shiny::column(
+              width = 6,
+              bs4Dash::box(
+                id = ns('terms_table_preview_box'),
+                title = 'Terms table',
+                width = 12,
+                DT::dataTableOutput(ns("terms_table_preview_table")),
+                style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
+                collapsible = T,
+                collapsed  = F,
+                maximizable = T,
+                headerBorder = T
+              )
+            )
+          )
+        ),
+        shiny::column(
+          width = 4,
+          shiny::h3('GO annotation'),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::textInput(
+                inputId = ns('go_name_add'),
+                label = 'Name',
+                width = '100%',
+                placeholder = 'ex: ALL'
+              )
+            ),
+            shiny::column(
+              width = 6,
+              shiny::selectInput(
+                inputId = ns('feat_go_ont'),
+                label = 'GO ont.',
+                choices = c('ALL', 'BP', 'MF', 'CC'),
+                selected = 'ALL',
+                width = '100%'
+              )
+            )
+          ),
+          shiny::fluidRow(
+            shiny::sliderInput(
+              inputId = ns('feat_go_ont_cutoff'),
+              label = 'BH p-value cutoff (for GO tables)',
+              min = 0.01,
+              max = 1,
+              value = 0.05,
+              step = 0.01,
               width = '100%'
             )
-          )
-        ),
-        shiny::fluidRow(
-          shiny::sliderInput(
-            inputId = ns('feat_go_ont_cutoff'),
-            label = 'BH p-value cutoff (for GO tables)',
-            min = 0.01,
-            max = 1,
-            value = 0.05,
-            step = 0.01,
-            width = '100%'
-          )
-        ),
-        shiny::fluidRow(
-          shiny::actionButton(
-            inputId = ns('add_go_table'),
-            label = 'Add',
-            width = '100%'
-          )
-        ),
-        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-        shiny::h3('Remove feature table'),
-        shiny::fluidRow(
-          shiny::column(
-            width = 6,
-            shiny::selectInput(inputId = ns('feat_name_del'),
-                               label = NULL,
-                               choices = names(r6$tables$external_feature_tables),
-                               selected = NULL,
-                               width = '100%')
           ),
-          shiny::column(
-            width = 6,
-            shiny::actionButton(inputId = ns('feat_del'),
-                                label = 'Remove',
-                                width = '100%')
+          shiny::fluidRow(
+            shiny::actionButton(
+              inputId = ns('add_go_table'),
+              label = 'Add',
+              width = '100%'
+            )
+          ),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+          shiny::h3('Upload GO tables'),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::fileInput(
+                inputId = ns('go_association_table'),
+                label = 'Association table',
+                accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                width = '100%',
+              )
+            ),
+            shiny::column(
+              width = 6,
+              shiny::fileInput(
+                inputId = ns('go_terms_table'),
+                label = 'Terms table (optional)',
+                accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                width = '100%',
+              )
+            )
+          ),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+          shiny::h3('Remove GO tables'),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::selectInput(
+                inputId = ns('go_remove_table_select'),
+                label = NULL,
+                choices = NULL,
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 6,
+              shiny::actionButton(
+                inputId = ns('go_remove_table'),
+                label = 'Remove',
+                width = '100%'
+              )
+            )
           )
         )
       )
@@ -1906,7 +2022,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     table_name = input$go_name_add
     if (table_name == '') {
       counter = 1
-      while (paste0(input$feat_go_ont, counter) %in% names(r6$tables$external_feature_tables)) {
+      while (paste0(input$feat_go_ont, counter) %in% names(r6$tables$external_enrichment_tables)) {
         counter = counter + 1
       }
       table_name = paste0(input$feat_go_ont, counter)
@@ -1917,9 +2033,16 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                    ont = input$feat_go_ont,
                    pvalueCutoff = as.numeric(input$feat_go_ont_cutoff))
     shiny::updateSelectInput(
-      inputId = 'feat_name_del',
-      choices = names(r6$tables$external_feature_tables)
+      inputId = 'go_remove_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
     )
+
+    shiny::updateSelectInput(
+      inputId = 'annotations_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+
     r6$derive_data_tables()
     shinyjs::enable("add_go_table")
   })
@@ -1953,6 +2076,35 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
     output$feature_table_preview_table = renderDataTable({
       DT::datatable(data_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+  })
+
+  # Preview all / subset switch
+  session$userData[[id]]$annotations_table_select = shiny::observeEvent(input$annotations_table_select, {
+    shiny::req(r6$tables$imp_data)
+
+    association_table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$association_table
+    terms_table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$terms_table
+
+    if (!is.null(association_table)) {
+      if (ncol(association_table) > 1000) {
+        association_table = t(association_table)
+      }
+    }
+
+    if (!is.null(terms_table)) {
+      if (ncol(terms_table) > 1000) {
+        terms_table = t(terms_table)
+      }
+    }
+
+    output$association_table_preview_table = renderDataTable({
+      DT::datatable(association_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+    output$terms_table_preview_table = renderDataTable({
+      DT::datatable(terms_table, options = list(paging = TRUE, pageLength = 25))
     })
 
   })

@@ -81,6 +81,22 @@ prot_volcano_plot_server = function(r6, output, session) {
         selected = r6$params$volcano_plot$feature_metadata,
         multiple = FALSE
       ),
+
+      shiny::selectizeInput(
+        inputId = ns('volcano_plot_annotation_table'),
+        label = "Feature annotation table",
+        choices = c('None', names(r6$tables$external_enrichment_tables)),
+        selected = NULL,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
+        inputId = ns('volcano_plot_annotation_terms'),
+        label = "Feature annotation terms",
+        choices = NULL,
+        selected = NULL,
+        multiple = TRUE
+      ),
+
       shinyWidgets::prettySwitch(
         inputId = ns('volcano_plot_keep_significant'),
         label = 'Keep only significant data',
@@ -201,6 +217,20 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
     )
   })
 
+  shiny::observeEvent(input$volcano_plot_annotation_table, {
+
+    if (input$volcano_plot_annotation_table != 'None') {
+
+      shiny::updateSelectizeInput(
+        inputId = "volcano_plot_annotation_terms",
+        session = session,
+        choices = rownames(r6$tables$external_enrichment_tables[[input$volcano_plot_annotation_table]]$terms_table),
+        selected = character(0)
+      )
+    }
+
+  })
+
   shiny::observeEvent(
     c(shiny::req(length(input$volcano_plot_metagroup) == 2),
       shiny::req(input$volcano_plot_auto_update),
@@ -210,6 +240,7 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
       input$volcano_plot_test,
       input$volcano_plot_displayed_plot,
       input$volcano_plot_feature_metadata,
+      input$volcano_plot_annotation_terms,
       input$volcano_plot_keep_significant,
       input$volcano_plot_color_palette,
       input$volcano_plot_p_val_threshold,
@@ -217,35 +248,46 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
       input$volcano_plot_marker_size,
       input$volcano_plot_opacity,
       input$volcano_plot_img_format
-      ), {
-    print_tm(r6$name, "Volcano plot: Updating params...")
+    ), {
+      print_tm(r6$name, "Volcano plot: Updating params...")
 
-    r6$param_volcano_plot(data_table = input$volcano_plot_tables,
-                          adjustment = input$volcano_plot_adjustment,
-                          group_col = input$volcano_plot_metacol,
-                          group_1 = input$volcano_plot_metagroup[1],
-                          group_2 = input$volcano_plot_metagroup[2],
-                          feature_metadata = input$volcano_plot_feature_metadata,
-                          keep_significant = input$volcano_plot_keep_significant,
-                          displayed_plot = input$volcano_plot_displayed_plot,
-                          color_palette = input$volcano_plot_color_palette,
-                          p_val_threshold = input$volcano_plot_p_val_threshold,
-                          fc_threshold = input$volcano_plot_fc_threshold,
-                          marker_size = input$volcano_plot_marker_size,
-                          opacity = input$volcano_plot_opacity,
-                          selected_function = input$volcano_plot_function,
-                          selected_test = input$volcano_plot_test,
-                          img_format = input$volcano_plot_img_format)
+      if (length(input$volcano_plot_annotation_terms) > 0) {
+
+        feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
+                                          sparse_table = r6$tables$external_enrichment_tables[[input$volcano_plot_annotation_table]]$sparse_table)
+
+      } else {
+        feature_metadata = input$volcano_plot_feature_metadata
+      }
+
+      print(feature_metadata)
+
+      r6$param_volcano_plot(data_table = input$volcano_plot_tables,
+                            adjustment = input$volcano_plot_adjustment,
+                            group_col = input$volcano_plot_metacol,
+                            group_1 = input$volcano_plot_metagroup[1],
+                            group_2 = input$volcano_plot_metagroup[2],
+                            feature_metadata = feature_metadata,
+                            keep_significant = input$volcano_plot_keep_significant,
+                            displayed_plot = input$volcano_plot_displayed_plot,
+                            color_palette = input$volcano_plot_color_palette,
+                            p_val_threshold = input$volcano_plot_p_val_threshold,
+                            fc_threshold = input$volcano_plot_fc_threshold,
+                            marker_size = input$volcano_plot_marker_size,
+                            opacity = input$volcano_plot_opacity,
+                            selected_function = input$volcano_plot_function,
+                            selected_test = input$volcano_plot_test,
+                            img_format = input$volcano_plot_img_format)
 
 
-    base::tryCatch({
-      prot_volcano_plot_generate(r6, color_palette, dimensions_obj, input)
-      prot_volcano_plot_spawn(r6, format = input$volcano_plot_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'Volcano plot: error, missing data.')
-    },finally={}
-    )
-  })
+      base::tryCatch({
+        prot_volcano_plot_generate(r6, color_palette, dimensions_obj, input)
+        prot_volcano_plot_spawn(r6, format = input$volcano_plot_img_format, output)
+      },error=function(e){
+        print_tm(r6$name, 'Volcano plot: error, missing data.')
+      },finally={}
+      )
+    })
 
   # Save selection
   shiny::observeEvent(input$volcano_feature_select, {

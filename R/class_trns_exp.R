@@ -204,11 +204,8 @@ Trns_exp = R6::R6Class(
       # External feature tables
       external_feature_tables = list(),
 
-      # GO tables
-      go_table = NULL,
-
-      # External GO tables
-      external_go_tables = list(),
+      # External feature tables
+      external_enrichment_tables = list(),
 
       # Normalised
       total_norm_data = NULL,
@@ -545,41 +542,60 @@ Trns_exp = R6::R6Class(
                             ont = ont,
                             pvalueCutoff = pvalueCutoff)
 
-      colnames(go_data$feature_table) = paste0(colnames(go_data$feature_table), '_', name)
-
-      self$tables$external_feature_tables[[name]] = go_data$feature_table
-      self$tables$external_go_tables[[name]] = go_data$go_table
-    },
-
-    get_go_table = function() {
-      if(is.null(names(self$tables$external_go_tables))){
-        self$tables$go_table = NULL
+      if (is.null(go_data)) {
+        print('No GO enrichment with used parameters.')
         return()
       }
 
-      if (length(names(self$tables$external_go_tables)) == 1) {
-        go_table = self$tables$external_go_tables[[1]]
-        self$tables$go_table = go_table
-        return()
-      }
+      sparse_table = get_sparse_matrix(features_go_table = go_data$feature_table,
+                                       all_go_terms = rownames(go_data$go_table),
+                                       sep = '|')
 
-      table_names = names(self$tables$external_go_tables)[2:length(names(self$tables$external_go_tables))]
-      go_table = self$tables$external_go_tables[[1]]
-      go_table$ids = rownames(go_table)
-
-      for (name in table_names) {
-        added_table = self$tables$external_go_tables[[name]]
-        added_table$ids = rownames(added_table)
-        go_table = rbind(go_table, added_table)
-      }
-
-      go_table = go_table[!duplicated(go_table$ids), ]
-      rownames(go_table) = go_table$ids
-      go_table$ids = NULL
-
-      self$tables$go_table = go_table
+      self$tables$external_enrichment_tables[[name]]$terms_table = go_data$go_table
+      self$tables$external_enrichment_tables[[name]]$association_table = go_data$feature_table
+      self$tables$external_enrichment_tables[[name]]$sparse_table = sparse_table
     },
 
+    upload_go_data = function(name,
+                              association_table,
+                              terms_table = NULL,
+                              sep = '|') {
+
+      # Create terms table if null
+      if (is.null(terms_table)) {
+        go_list = vector("list", nrow(association_table))
+        # Loop through each row and split the 'go_terms' column by '|'
+        for (i in 1:nrow(association_table)) {
+          if (is.na(association_table[i,1])) {
+            next
+          } else {
+            go_list[[i]] = strsplit(as.character(association_table[i,1]), sep, fixed = TRUE)[[1]]
+          }
+        }
+        go_list = sort(unique(unlist(go_list)))
+        terms_table = data.frame(
+          ID = go_list,
+          Description = go_list
+        )
+        rownames(terms_table) = terms_table$ID
+        terms_table$ID = NULL
+      }
+      sparse_matrix = get_sparse_matrix(features_go_table = association_table[1],
+                                        all_go_terms = rownames(terms_table),
+                                        sep = sep)
+
+      self$tables$external_enrichment_tables[[name]]$terms_table = terms_table
+      self$tables$external_enrichment_tables[[name]]$association_table = association_table
+      self$tables$external_enrichment_tables[[name]]$sparse_table = sparse_matrix
+
+    },
+
+    del_go_data = function(name) {
+      self$tables$external_enrichment_tables[[name]] = NULL
+      if (length(names(self$tables$external_enrichment_tables)) == 0) {
+        names(self$tables$external_enrichment_tables) = NULL
+      }
+    },
 
     get_feature_table = function() {
       data_table = self$tables$imp_data
@@ -607,10 +623,8 @@ Trns_exp = R6::R6Class(
 
     del_feature_table = function(name) {
       self$tables$external_feature_tables[[name]] = NULL
-      self$tables$external_go_tables[[name]] = NULL
       if (length(names(self$tables$external_feature_tables)) == 0) {
         names(self$tables$external_feature_tables) = NULL
-        names(self$tables$external_go_tables) = NULL
       }
     },
 
@@ -641,7 +655,6 @@ Trns_exp = R6::R6Class(
       # Derive tables
       self$get_feature_table()
       self$update_feature_table()
-      self$get_go_table()
       self$normalise_total()
       self$normalise_z_score()
       self$normalise_total_z_score()
@@ -967,12 +980,27 @@ Trns_exp = R6::R6Class(
       }
 
       if (!is.null(feature_metadata)) {
-        if (feature_metadata %in% colnames(data_table)) {
-          feature_metadata = data_table[,feature_metadata]
+        print(1)
+        if (length(feature_metadata) == 1)  {
+          print(2)
+          if (feature_metadata %in% colnames(data_table)) {
+            feature_metadata = data_table[,feature_metadata]
+            print(3)
+          } else {
+            feature_metadata = NULL
+            print(4)
+          }
         } else {
-          feature_metadata = NULL
+          print(5)
+          if (length(names(feature_metadata)) > 0) {
+            feature_metadata = feature_metadata[rownames(data_table)]
+          } else if (length(feature_metadata) != length(p_vals)) {
+            feature_metadata = NULL
+          }
         }
       }
+
+      print(feature_metadata)
 
       displayed_text = paste0(paste0(rownames(data_table), '\n'),
                               paste0('p-value: ', round(p_vals, 3), '\n'),

@@ -54,7 +54,6 @@ table_switch = function(table_name, r6) {
          'Raw data table' = r6$tables$raw_data,
          'Imported feature table' = r6$tables$imp_feature_table,
          'Feature table' = r6$tables$feature_table,
-         'GO table' = r6$tables$go_table,
          'Blank table' = r6$tables$blank_table,
          'Class normalized table' = r6$tables$class_norm_data,
          'Total normalized table' = r6$tables$total_norm_data,
@@ -252,6 +251,11 @@ annotate_go = function(feature_names,
   # Extract the GO table & filter
   go_table = go_enrich_data@result
   go_table = go_table[go_table$p.adjust < pvalueCutoff,]
+
+  if (nrow(go_table) == 0) {
+    return(NULL)
+  }
+
   if (ont != 'ALL') {
     go_table$ONTOLOGY = ont
   }
@@ -267,9 +271,17 @@ annotate_go = function(feature_names,
 
   # Group by gene and concatenate GO terms
   feature_table = aggregate(ID ~ feature_id, data = feature_table, FUN = function(x) paste(unique(x), collapse = "|"))
-  colnames(feature_table) = c("feature_id", "GO_ID")
   rownames(feature_table) = feature_table$feature_id
   feature_table$feature_id = NULL
+
+  # Add features not associates with go terms
+  missing_features = feature_names[!(feature_names %in% rownames(feature_table))]
+  missing_features = data.frame(feature_id = missing_features,
+                                ID = NA)
+  rownames(missing_features) = missing_features$feature_id
+  missing_features$feature_id = NULL
+  feature_table = rbind(feature_table, missing_features)
+
 
   return(list(
     go_table = go_table[,c('Description', 'ONTOLOGY')],
@@ -641,7 +653,7 @@ get_feature_metadata = function(data_table, dtype) {
 
     features = colnames(data_table)
     feature_table = data.frame(row.names = features)
-    feature_table$Name = features
+    feature_table$dummy = 0
   }
 
 
@@ -1370,4 +1382,49 @@ example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA, da
   # r6$get_gsea_object()
 
   return(r6)
+}
+
+#------------------------------------------------------- GO terms utilities ----
+get_sparse_matrix = function(features_go_table, all_go_terms, sep = '|') {
+  go_list = vector("list", nrow(features_go_table))
+  # Loop through each row and split the 'go_terms' column by '|'
+  for (i in 1:nrow(features_go_table)) {
+    if (is.na(features_go_table[i,1])) {
+      go_list[[i]] = NA
+    } else {
+      go_list[[i]] = strsplit(as.character(features_go_table[i,1]), sep, fixed = TRUE)[[1]]
+    }
+  }
+
+
+  # Initialize a list to store the one-hot encoded vectors
+  one_hot_list = vector("list", nrow(features_go_table))
+
+  # Loop through each gene and create a one-hot encoded vector
+  for (i in seq_along(rownames(features_go_table))) {
+    # Create a boolean vector for the presence of each GO term
+    one_hot_vector = all_go_terms %in% go_list[[i]]
+    # Add the vector to the list
+    one_hot_list[[i]] = one_hot_vector
+  }
+
+  # Combine the one-hot encoded vectors into a matrix
+  sparse_matrix = do.call(rbind, one_hot_list)
+
+  # Convert the matrix to a sparse matrix
+  sparse_matrix = Matrix(sparse_matrix, sparse = TRUE)
+
+  # Add row and column names to the sparse matrix
+  rownames(sparse_matrix) = rownames(features_go_table)
+  colnames(sparse_matrix) = all_go_terms
+  return(sparse_matrix)
+}
+
+match_go_terms = function(terms_list, sparse_table) {
+  if (length(terms_list) > 1) {
+    matches = rowSums(sparse_table[,terms_list])
+  } else {
+    matches = sparse_table[,terms_list]
+  }
+  return(matches)
 }
