@@ -239,13 +239,13 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     bs4Dash::tabsetPanel(
       type = "tabs",
       shiny::tabPanel(
-        title = "Upload metadata",
+        title = "Sample annotations",
         shiny::uiOutput(
           outputId = ns('up_metadata_ui')
         )
       ),
       shiny::tabPanel(
-        title = "Upload data",
+        title = "Data",
         shiny::uiOutput(
           outputId = ns('up_data_ui')
         )

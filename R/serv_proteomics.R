@@ -331,7 +331,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     bs4Dash::tabsetPanel(
       type = "tabs",
       shiny::tabPanel(
-        title = "Sample metadata",
+        title = "Sample annotations",
         shiny::uiOutput(
           outputId = ns('up_sample_metadata_ui')
         )
@@ -343,7 +343,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         )
       ),
       shiny::tabPanel(
-        title = "Feature metadata",
+        title = "Feature annotations",
         shiny::uiOutput(
           outputId = ns('up_feature_metadata_ui')
         )
