@@ -81,17 +81,9 @@ prot_volcano_plot_server = function(r6, output, session) {
         selected = r6$params$volcano_plot$feature_metadata,
         multiple = FALSE
       ),
-
-      shiny::selectizeInput(
-        inputId = ns('volcano_plot_annotation_table'),
-        label = "Feature annotation table",
-        choices = c('None', names(r6$tables$external_enrichment_tables)),
-        selected = NULL,
-        multiple = FALSE
-      ),
       shiny::selectizeInput(
         inputId = ns('volcano_plot_annotation_terms'),
-        label = "Feature annotation terms",
+        label = "Feature annotations",
         choices = NULL,
         selected = NULL,
         multiple = TRUE
@@ -217,19 +209,25 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
     )
   })
 
-  shiny::observeEvent(input$volcano_plot_annotation_table, {
 
-    if (input$volcano_plot_annotation_table != 'None') {
-
+  shiny::observeEvent(input$volcano_plot_feature_metadata, {
+    if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
       shiny::updateSelectizeInput(
         inputId = "volcano_plot_annotation_terms",
         session = session,
-        choices = rownames(r6$tables$external_enrichment_tables[[input$volcano_plot_annotation_table]]$terms_table),
+        choices = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$feature_list,
+        selected = character(0)
+      )
+    } else {
+      shiny::updateSelectizeInput(
+        inputId = "volcano_plot_annotation_terms",
+        session = session,
+        choices = NULL,
         selected = character(0)
       )
     }
-
   })
+
 
   shiny::observeEvent(
     c(shiny::req(length(input$volcano_plot_metagroup) == 2),
@@ -251,16 +249,18 @@ prot_volcano_plot_events = function(r6, dimensions_obj, color_palette, input, ou
     ), {
       print_tm(r6$name, "Volcano plot: Updating params...")
 
-      if (length(input$volcano_plot_annotation_terms) > 0) {
-
-        feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
-                                          sparse_table = r6$tables$external_enrichment_tables[[input$volcano_plot_annotation_table]]$sparse_table)
-
+      # Is the column multivalue?
+      if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
+        print_tm(r6$name, 'Multivalue column')
+        if (length(input$volcano_plot_annotation_terms) > 0) {
+          feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
+                                            sparse_table = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$sparse_matrix)
+        } else {
+          return()
+        }
       } else {
         feature_metadata = input$volcano_plot_feature_metadata
       }
-
-      print(feature_metadata)
 
       r6$param_volcano_plot(data_table = input$volcano_plot_tables,
                             adjustment = input$volcano_plot_adjustment,
