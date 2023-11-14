@@ -185,12 +185,18 @@ find_delim = function(path) {
   return(names(which.max(sep)))
 }
 
-soda_read_table = function(file_path, sep = NA) {
+soda_read_table = function(file_path, sep = NA, first_column_as_index = FALSE) {
 
   if (is.na(sep)) {
     if (stringr::str_sub(file_path, -4, -1) == ".tsv") {
       sep = '\t'
     }
+  }
+
+  if (first_column_as_index) {
+    index = 1
+  } else {
+    index = NULL
   }
 
   if (stringr::str_sub(file_path, -5, -1) == ".xlsx") {
@@ -201,22 +207,25 @@ soda_read_table = function(file_path, sep = NA) {
       data_table = read.csv(file_path,
                             header = T,
                             sep = sep,
+                            row.names = index,
                             check.names = FALSE)
     } else {
       data_table = read.csv(file_path,
                             header = T,
                             sep = sep,
+                            row.names = index,
                             check.names = FALSE)
     }
 
   }
   original_count = ncol(data_table)
-  data_table = data_table[,!base::duplicated(colnames(data_table))]
-  final_count = ncol(data_table)
-  if(original_count != final_count) {
-    print(paste0('Removed ', original_count - final_count, ' duplicated columns'))
+  if (original_count > 1) {
+    data_table = data_table[,!base::duplicated(colnames(data_table))]
+    final_count = ncol(data_table)
+    if(original_count != final_count) {
+      print(paste0('Removed ', original_count - final_count, ' duplicated columns'))
+    }
   }
-
   return(data_table)
 }
 

@@ -1899,7 +1899,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         ),
         shiny::column(
           width = 4,
-          shiny::h3('GO annotation'),
+          shiny::h3('Feature enrichment'),
           shiny::fluidRow(
             shiny::column(
               width = 6,
@@ -1940,8 +1940,14 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
             )
           ),
           shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-          shiny::h3('Upload GO tables'),
+          shiny::h3('Upload enrichment tables'),
           shiny::fluidRow(
+            shiny::textInput(
+              inputId = ns('enrich_name_add'),
+              label = 'Name',
+              width = '100%',
+              placeholder = 'ex: ENR_1'
+            ),
             shiny::column(
               width = 6,
               shiny::fileInput(
@@ -1961,25 +1967,11 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               )
             )
           ),
-          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-          shiny::h3('Remove GO tables'),
           shiny::fluidRow(
-            shiny::column(
-              width = 6,
-              shiny::selectInput(
-                inputId = ns('go_remove_table_select'),
-                label = NULL,
-                choices = NULL,
-                width = '100%'
-              )
-            ),
-            shiny::column(
-              width = 6,
-              shiny::actionButton(
-                inputId = ns('go_remove_table'),
-                label = 'Remove',
-                width = '100%'
-              )
+            shiny::actionButton(
+              inputId = ns('enrichment_upload_button'),
+              label = 'Upload',
+              width = '100%'
             )
           )
         )
@@ -2062,6 +2054,53 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   # Preview all / subset switch
+  session$userData[[id]]$enrichment_upload_button = shiny::observeEvent(input$enrichment_upload_button, {
+    print('upload enrichment table')
+    shinyjs::disable("enrichment_upload_button")
+
+    table_name = input$enrich_name_add
+    if (table_name == '') {
+      counter = 1
+      while (paste0('ENR', counter) %in% names(r6$tables$external_enrichment_tables)) {
+        counter = counter + 1
+      }
+      table_name = paste0('ENR', counter)
+    }
+
+
+    if (!is.null(input$go_association_table$datapath)) {
+      association_table = soda_read_table(input$go_association_table$datapath, first_column_as_index = T)
+    } else {
+      association_table = NULL
+    }
+
+    if (!is.null(input$go_terms_table$datapath)) {
+      terms_table = soda_read_table(input$go_terms_table$datapath, first_column_as_index = T)
+    } else {
+      terms_table = NULL
+    }
+
+    r6$upload_enrichment_data(name = table_name,
+                              association_table = association_table,
+                              terms_table = terms_table,
+                              sep = '|')
+
+    shiny::updateSelectInput(
+      inputId = 'go_remove_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shiny::updateSelectInput(
+      inputId = 'annotations_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shinyjs::enable("enrichment_upload_button")
+
+  })
+
+
+  # Preview all / subset switch
   session$userData[[id]]$feat_table_select = shiny::observeEvent(input$feat_table_select, {
     shiny::req(r6$tables$imp_data)
 
@@ -2108,6 +2147,64 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     })
 
   })
+
+  # Download associations table
+  dl_associations_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_associations_table = shiny::observeEvent(c(input$annotations_table_select) , {
+    dl_associations_table$name = timestamped_name(paste0(input$annotations_table_select, "_associations.csv"))
+    dl_associations_table$table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$association_table
+  })
+
+  output$download_associations_table = shiny::downloadHandler(
+    filename = shiny::reactive(dl_associations_table$name),
+    content = function(file_name) {
+      write.csv(dl_associations_table$table, file_name, na = "")
+    }
+  )
+
+  # Download terms table
+  dl_terms_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_terms_table = shiny::observeEvent(c(input$annotations_table_select) , {
+    dl_terms_table$name = timestamped_name(paste0(input$annotations_table_select, "_terms.csv"))
+    dl_terms_table$table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$terms_table
+  })
+
+  output$download_terms_table = shiny::downloadHandler(
+    filename = shiny::reactive(dl_terms_table$name),
+    content = function(file_name) {
+      write.csv(dl_terms_table$table, file_name, na = "")
+    }
+  )
+
+  # Remove annotations table
+  session$userData[[id]]$remove_annotations_table = shiny::observeEvent(c(input$remove_annotations_table) , {
+    print(input$annotations_table_select)
+    r6$tables$external_enrichment_tables[[input$annotations_table_select]] = NULL
+    if (length(r6$tables$external_enrichment_tables[[input$annotations_table_select]]) > 0) {
+      shiny::updateSelectInput(
+        inputId = 'annotations_table_select',
+        choices = names(r6$tables$external_feature_tables)
+      )
+    } else {
+      shiny::updateSelectInput(
+        inputId = 'annotations_table_select',
+        choices = character(0)
+      )
+
+      # association_table_preview_table
+
+    }
+
+  })
+
 
   # Download data table
   dl_data_table = shiny::reactiveValues(

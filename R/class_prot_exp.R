@@ -556,10 +556,10 @@ Prot_exp = R6::R6Class(
       self$tables$external_enrichment_tables[[name]]$sparse_table = sparse_table
     },
 
-    upload_go_data = function(name,
-                              association_table,
-                              terms_table = NULL,
-                              sep = '|') {
+    upload_enrichment_data = function(name,
+                                      association_table,
+                                      terms_table = NULL,
+                                      sep = '|') {
 
       # Create terms table if null
       if (is.null(terms_table)) {
@@ -980,18 +980,13 @@ Prot_exp = R6::R6Class(
       }
 
       if (!is.null(feature_metadata)) {
-        print(1)
         if (length(feature_metadata) == 1)  {
-          print(2)
           if (feature_metadata %in% colnames(data_table)) {
             feature_metadata = data_table[,feature_metadata]
-            print(3)
           } else {
             feature_metadata = NULL
-            print(4)
           }
         } else {
-          print(5)
           if (length(names(feature_metadata)) > 0) {
             feature_metadata = feature_metadata[rownames(data_table)]
           } else if (length(feature_metadata) != length(p_vals)) {
@@ -999,8 +994,6 @@ Prot_exp = R6::R6Class(
           }
         }
       }
-
-      print(feature_metadata)
 
       displayed_text = paste0(paste0(rownames(data_table), '\n'),
                               paste0('p-value: ', round(p_vals, 3), '\n'),
