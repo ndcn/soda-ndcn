@@ -200,6 +200,7 @@ Prot_exp = R6::R6Class(
       #Feature tables
       imp_feature_table = NULL,
       feature_table = NULL,
+      feature_list = NULL,
 
       # External feature tables
       external_feature_tables = list(),
@@ -603,7 +604,7 @@ Prot_exp = R6::R6Class(
       self$tables$imp_feature_table = get_feature_metadata(data_table = data_table, base::tolower(self$type))
     },
 
-    update_feature_table = function() {
+    update_feature_table = function(sep = "|") {
       feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),,drop = F]
       ext_names = names(self$tables$external_feature_tables)
       for (name in ext_names) {
@@ -611,13 +612,39 @@ Prot_exp = R6::R6Class(
                                               external_table_name = name,
                                               external_feature_table = self$tables$external_feature_tables[[name]])
       }
+
+      multi_value_annotations = sapply(feature_table, function(column) sum(stringr::str_count(column, sep), na.rm = T))
+      multi_value_annotations[is.na(multi_value_annotations)] = 0
+      multi_value_annotations = names(multi_value_annotations)[which(multi_value_annotations > nrow(feature_table))]
+      feature_table[feature_table == ""] = NA
+      out_list = vector('list', length(multi_value_annotations))
+      names(out_list) = multi_value_annotations
+
+      for (col in multi_value_annotations) {
+        feature_list = vector("list", nrow(feature_table))
+        for (i in 1:nrow(feature_table)) {
+          if (is.na(feature_table[i,col])) {
+            next
+          } else {
+            feature_list[[i]] = strsplit(as.character(feature_table[i,col]), sep, fixed = TRUE)[[1]]
+          }
+        }
+        feature_list = sort(unique(unlist(feature_list)))
+        sparse_matrix = get_sparse_matrix(features_go_table = feature_table[col],
+                                          all_go_terms = feature_list,
+                                          sep = sep)
+        out_list[[col]]$feature_list = feature_list
+        out_list[[col]]$sparse_matrix = sparse_matrix
+      }
+
       self$tables$feature_table = feature_table
+      self$tables$feature_list = out_list
     },
 
     add_feature_table = function(name, feature_file) {
-      ext_feature_table = soda_read_table(feature_file)
-      rownames(ext_feature_table) = ext_feature_table[,1]
-      ext_feature_table[,1] = NULL
+      ext_feature_table = soda_read_table(file_path = feature_file,
+                                          sep = NA,
+                                          first_column_as_index = T)
       self$tables$external_feature_tables[[name]] = ext_feature_table
     },
 

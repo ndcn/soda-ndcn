@@ -207,17 +207,26 @@ soda_read_table = function(file_path, sep = NA, first_column_as_index = FALSE) {
       data_table = read.csv(file_path,
                             header = T,
                             sep = sep,
-                            row.names = index,
                             check.names = FALSE)
     } else {
       data_table = read.csv(file_path,
                             header = T,
                             sep = sep,
-                            row.names = index,
                             check.names = FALSE)
     }
 
   }
+
+  if (!is.null(index)) {
+    duplicates = duplicated(data_table[,index])
+    if (sum(duplicates) > 0) {
+      print(paste0('Removed ', sum(duplicates), ' duplicated features'))
+      data_table = data_table[!duplicates,]
+      rownames(data_table) = data_table[,1]
+      data_table[,1] = NULL
+    }
+  }
+
   original_count = ncol(data_table)
   if (original_count > 1) {
     data_table = data_table[,!base::duplicated(colnames(data_table))]
@@ -662,7 +671,6 @@ get_feature_metadata = function(data_table, dtype) {
 
     features = colnames(data_table)
     feature_table = data.frame(row.names = features)
-    feature_table$dummy = 0
   }
 
 
