@@ -1989,7 +1989,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         counter = counter + 1
         name = paste0("feat_", counter)
       }
-    }else {
+    } else {
       name = input$feat_name_add
     }
     r6$add_feature_table(name = name,
@@ -2000,6 +2000,16 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       choices = names(r6$tables$external_feature_tables)
     )
     r6$derive_data_tables()
+
+    if (input$feat_table_preview_box$collapsed) {
+      bs4Dash::updateBox(id = 'feat_table_preview_box', action = 'toggle')
+    }
+
+    shiny::updateSelectInput(
+      inputId = 'feat_table_select',
+      selected = 'Feature table'
+    )
+
   })
 
   session$userData[[id]]$feat_go_ont = shiny::observeEvent(input$feat_go_ont, {
@@ -2149,20 +2159,21 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   # Download associations table
-  dl_associations_table = shiny::reactiveValues(
+  dl_feature_table = shiny::reactiveValues(
     name = NULL,
     table = NULL
   )
 
-  session$userData[[id]]$download_associations_table = shiny::observeEvent(c(input$annotations_table_select) , {
-    dl_associations_table$name = timestamped_name(paste0(input$annotations_table_select, "_associations.csv"))
-    dl_associations_table$table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$association_table
+  session$userData[[id]]$download_feature_table = shiny::observeEvent(c(input$feat_table_select) , {
+    dl_feature_table$name = timestamped_name("feature_table.csv")
+    dl_feature_table$table = table_switch(table_name = input$feat_table_select,
+                                          r6 = r6)
   })
 
-  output$download_associations_table = shiny::downloadHandler(
-    filename = shiny::reactive(dl_associations_table$name),
+  output$download_feature_table = shiny::downloadHandler(
+    filename = shiny::reactive(dl_feature_table$name),
     content = function(file_name) {
-      write.csv(dl_associations_table$table, file_name, na = "")
+      write.csv(dl_feature_table$table, file_name, na = "")
     }
   )
 
