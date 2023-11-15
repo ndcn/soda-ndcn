@@ -237,6 +237,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   # Render skeleton UI
   output$omics_ui = shiny::renderUI({
     bs4Dash::tabsetPanel(
+      id = ns('skeleton_ui'),
       type = "tabs",
       shiny::tabPanel(
         title = "Sample annotations",

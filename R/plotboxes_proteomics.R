@@ -862,9 +862,7 @@ prot_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$plot_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat),
-                    enable_physics = input$cnet_plot_enable_physics,
-                    context = "gsea")
+  r6$plot_cnet_plot(context = "gsea")
 }
 
 prot_cnet_plot_spawn = function(r6, output) {
@@ -897,6 +895,13 @@ prot_cnet_plot_server = function(r6, output, session) {
         label = "Show category",
         value = r6$params$cnet_plot$showCategory
       ),
+      shiny::selectInput(
+        inputId = ns("cnet_plot_displayed_labels"),
+        label = 'Displayed labels',
+        choices = c('Description', 'IDs', 'IDs and Description'),
+        selected = r6$params$cnet_plot$displayed_labels,
+        width = '100%'
+      ),
       shinyWidgets::prettySwitch(
         inputId = ns("cnet_plot_enable_physics"),
         label = 'Enable physics',
@@ -910,12 +915,13 @@ prot_cnet_plot_server = function(r6, output, session) {
 
 prot_cnet_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(c(input$cnet_plot_showcat, input$cnet_plot_enable_physics),{
+  shiny::observeEvent(c(input$cnet_plot_showcat, input$cnet_plot_displayed_labels, input$cnet_plot_enable_physics),{
 
     # Update parameters
     print_tm(r6$name, "CNET plot: Updating params...")
 
     r6$param_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat),
+                       displayed_labels = input$cnet_plot_displayed_labels,
                        enable_physics = input$cnet_plot_enable_physics)
 
     base::tryCatch({
@@ -1513,6 +1519,7 @@ prot_or_cnet_plot_generate = function(r6, colour_list, dimensions_obj, input) {
 
   r6$plot_cnet_plot(x = r6$tables$go_enrich,
                     showCategory = as.numeric(input$or_cnet_plot_showcat),
+                    displayed_labels = r6$params$or_cnet_plot$displayed_labels,
                     enable_physics = input$or_cnet_plot_enable_physics,
                     context = "ora")
 }
@@ -1547,6 +1554,13 @@ prot_or_cnet_plot_server = function(r6, output, session) {
         label = "Show category",
         value = r6$params$or_cnet_plot$showCategory
       ),
+      shiny::selectInput(
+        inputId = ns("or_cnet_plot_displayed_labels"),
+        label = 'Displayed labels',
+        choices = c('Description', 'IDs', 'IDs and Description'),
+        selected = r6$params$cnet_plot$displayed_labels,
+        width = '100%'
+      ),
       shinyWidgets::prettySwitch(
         inputId = ns("or_cnet_plot_enable_physics"),
         label = 'Enable physics',
@@ -1560,12 +1574,13 @@ prot_or_cnet_plot_server = function(r6, output, session) {
 
 prot_or_cnet_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(c(input$or_cnet_plot_showcat, input$or_cnet_plot_enable_physics),{
+  shiny::observeEvent(c(input$or_cnet_plot_showcat, input$or_cnet_plot_displayed_labels, input$or_cnet_plot_enable_physics),{
 
     # Update parameters
     print_tm(r6$name, "CNET plot: Updating params...")
 
     r6$param_or_cnet_plot(showCategory = as.numeric(input$cnet_plot_showcat),
+                          displayed_labels = input$or_cnet_plot_displayed_labels,
                           enable_physics = input$or_cnet_plot_enable_physics)
 
     base::tryCatch({

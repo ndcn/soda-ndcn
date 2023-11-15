@@ -110,6 +110,7 @@ Prot_exp = R6::R6Class(
       # CNET plot parameters self$params$cnet_plot
       cnet_plot = list(
         showCategory = 3,
+        displayed_labels = 'IDs and Description',
         enable_physics = TRUE
       ),
 
@@ -142,6 +143,7 @@ Prot_exp = R6::R6Class(
       # Over representation CNET plot parameters self$params$or_cnet_plot
       or_cnet_plot = list(
         showCategory = 3,
+        displayed_labels = 'IDs and Description',
         enable_physics = TRUE
       ),
 
@@ -362,8 +364,9 @@ Prot_exp = R6::R6Class(
       self$params$ridge_plot$img_format = img_format
     },
 
-    param_cnet_plot = function(showCategory, enable_physics) {
+    param_cnet_plot = function(showCategory, displayed_labels, enable_physics) {
       self$params$cnet_plot$showCategory = showCategory
+      self$params$cnet_plot$displayed_labels = displayed_labels
       self$params$cnet_plot$enable_physics = enable_physics
     },
 
@@ -390,8 +393,9 @@ Prot_exp = R6::R6Class(
       self$params$or_bar_plot$img_format = img_format
     },
 
-    param_or_cnet_plot = function(showCategory, enable_physics) {
+    param_or_cnet_plot = function(showCategory, displayed_labels, enable_physics) {
       self$params$or_cnet_plot$showCategory = showCategory
+      self$params$or_cnet_plot$displayed_labels = displayed_labels
       self$params$or_cnet_plot$enable_physics = enable_physics
     },
 
@@ -1412,6 +1416,7 @@ Prot_exp = R6::R6Class(
 
     plot_cnet_plot = function(x = self$tables$gsea_object,
                               showCategory = self$params$cnet_plot$showCategory,
+                              displayed_labels = self$params$cnet_plot$displayed_labels,
                               enable_physics = self$params$cnet_plot$enable_physics,
                               context = "gsea") {
 
@@ -1423,18 +1428,25 @@ Prot_exp = R6::R6Class(
         prot_list = self$tables$ora_prot_list
       }
 
-
       geneSets = enrichplot:::extract_geneSets(x, showCategory)
 
-      main_nodes = names(geneSets)
+      if (displayed_labels == 'Description') {
+        main_nodes = names(geneSets)
+      } else if (displayed_labels == 'IDs') {
+        main_nodes = x@result$ID[1:showCategory]
+      } else if (displayed_labels == 'IDs and Description') {
+        main_nodes = paste0(x@result$ID[1:showCategory], '\n', names(geneSets))
+      } else {
+        stop("displayed_labels must be in ['Description', 'IDs', 'IDs and Description']")
+      }
+
+      names(geneSets) = main_nodes
 
       secondary_nodes = c()
       for (n in geneSets) {
         secondary_nodes = c(secondary_nodes, n)
       }
       secondary_nodes = sort(unique(secondary_nodes))
-
-
 
       all_nodes = c(main_nodes, secondary_nodes)
 
@@ -1456,8 +1468,6 @@ Prot_exp = R6::R6Class(
       hex_colors[which(is.na(hex_colors))] = "#FFD800"
       node_table$color = hex_colors
 
-
-
       source_nodes = c()
       target_nodes = c()
       for (n in main_nodes) {
@@ -1473,7 +1483,6 @@ Prot_exp = R6::R6Class(
 
       plot = visNetwork::visNetwork(node_table, edge_table)
       plot = visNetwork::visPhysics(plot, enabled = enable_physics)
-
 
       if (context == "gsea") {
         self$plots$cnetplot = plot

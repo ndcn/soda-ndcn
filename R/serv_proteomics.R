@@ -329,6 +329,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Render skeleton UI
   output$omics_ui = shiny::renderUI({
     bs4Dash::tabsetPanel(
+      id = ns('skeleton_ui'),
       type = "tabs",
       shiny::tabPanel(
         title = "Sample annotations",
@@ -349,15 +350,15 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         )
       ),
       shiny::tabPanel(
-        title = "Functional analysis",
+        title = "Interactive visualization",
         shiny::uiOutput(
-          outputId = ns('functional_analysis_ui')
+          outputId = ns('visualize_data_ui')
         )
       ),
       shiny::tabPanel(
-        title = "Visualize data",
+        title = "Functional analysis",
         shiny::uiOutput(
-          outputId = ns('visualize_data_ui')
+          outputId = ns('functional_analysis_ui')
         )
       ),
       shiny::tabPanel(
@@ -367,7 +368,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         )
       ),
       shiny::tabPanel(
-        title = "Over-representation analysis",
+        title = "Over-representation",
         shiny::uiOutput(
           outputId = ns('over_representation_ui')
         )
@@ -1255,6 +1256,28 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   })
 
+
+
+  shiny::observe({
+    shiny::req(input$skeleton_ui)
+    if (input$skeleton_ui == "Functional analysis") {
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_table_select',
+        choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
+        selected = 'Total normalized table'
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_group_col',
+        choices = colnames(r6$tables$raw_meta),
+        selected = input$select_group_col
+      )
+    }
+
+  })
+
+
   # Get ID
   session$userData[[id]]$id_select_data = shiny::observeEvent(input$select_id_data, {
     shiny::req(r6$tables$imp_data)
@@ -1984,7 +2007,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
             min = 0.01,
             max = 0.9,
             value = 0.05,
-            step = 0.01
+            step = 0.01,
+            width = '100%'
           ),
           shinyWidgets::actionBttn(
             inputId = ns('run_gsea'),
