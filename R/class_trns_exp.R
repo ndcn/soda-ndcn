@@ -609,6 +609,11 @@ Trns_exp = R6::R6Class(
     },
 
     update_feature_table = function(sep = "|") {
+      if (sep == "|") {
+        regex_sep = "\\|"
+      } else {
+        regex_sep = sep
+      }
       feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),,drop = F]
       ext_names = names(self$tables$external_feature_tables)
       for (name in ext_names) {
@@ -617,10 +622,12 @@ Trns_exp = R6::R6Class(
                                               external_feature_table = self$tables$external_feature_tables[[name]])
       }
 
-      multi_value_annotations = sapply(feature_table, function(column) sum(stringr::str_count(column, sep), na.rm = T))
+      multi_value_annotations = sapply(feature_table, function(column) sum(stringr::str_count(column, regex_sep), na.rm = T))
       multi_value_annotations[is.na(multi_value_annotations)] = 0
-      multi_value_annotations = names(multi_value_annotations)[which(multi_value_annotations > nrow(feature_table))]
       feature_table[feature_table == ""] = NA
+      non_missing_counts = sapply(feature_table, function(column) sum(!is.na(column)))
+      multi_value_annotations = names(multi_value_annotations)[multi_value_annotations > non_missing_counts]
+
       out_list = vector('list', length(multi_value_annotations))
       names(out_list) = multi_value_annotations
 

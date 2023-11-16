@@ -252,9 +252,33 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         )
       ),
       shiny::tabPanel(
-        title = "Visualize data",
+        title = "Feature annotations",
+        shiny::uiOutput(
+          outputId = ns('up_feature_metadata_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Interactive visualization",
         shiny::uiOutput(
           outputId = ns('visualize_data_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Functional analysis",
+        shiny::uiOutput(
+          outputId = ns('functional_analysis_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Geneset enrichment",
+        shiny::uiOutput(
+          outputId = ns('geneset_enrichment_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Over-representation",
+        shiny::uiOutput(
+          outputId = ns('over_representation_ui')
         )
       )
     )
@@ -1038,50 +1062,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
             width = 3,
             shiny::actionButton(inputId = ns("reset_data_table"), label =  "Reset", width = "100%")
           )
-        ),
-
-        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-
-        # Manage feature table
-        bs4Dash::box(
-          id = ns('feature_table_box'),
-          title = 'Manage feature table',
-          width = 12,
-          shiny::tagList(
-            shiny::fluidRow(
-              shiny::column(
-                width = 6,
-                shiny::h5('Add feature table'),
-                shiny::textInput(
-                  inputId = ns('feat_name_add'),
-                  label = 'Displayed name',
-                  width = '100%',
-                  placeholder = 'feat_1'
-                  ),
-                shiny::fileInput(
-                  inputId = ns("feat_add"),
-                  label = NULL,
-                  multiple = F,
-                  accept = c(".csv", ".tsv", ".txt", ".xlsx"),
-                  width = "100%"
-                  )
-              ),
-              shiny::column(
-                width = 6,
-                shiny::h5('Remove feature table'),
-                shiny::selectInput(inputId = ns('feat_name_del'),
-                                   label = 'Table name',
-                                   choices = names(r6$tables$external_feature_tables),
-                                   selected = NULL,
-                                   width = '100%'),
-                shiny::actionButton(inputId = ns('feat_del'),
-                                    label = 'Remove',
-                                    width = '100%')
-              )
-            )
-          )
         )
-
       )
     )
   })
@@ -1414,42 +1395,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     )
   })
 
-  # Manage Feature tables
-  session$userData[[id]]$feat_add = shiny::observeEvent(input$feat_add, {
-    if (input$feat_name_add == "") {
-      counter = 1
-      name = paste0("feat_", counter)
-      while (name %in% names(r6$tables$external_feature_tables)) {
-        counter = counter + 1
-        name = paste0("feat_", counter)
-      }
-    }else {
-      name = input$feat_name_add
-    }
-    r6$add_feature_table(name = name,
-                         feature_file = input$feat_add$datapath)
-
-    shiny::updateSelectInput(
-      inputId = 'feat_name_del',
-      choices = names(r6$tables$external_feature_tables)
-    )
-    r6$derive_data_tables()
-  })
-
-  session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {
-    r6$del_feature_table(name = input$feat_name_del)
-    r6$derive_data_tables()
-
-    names_left = names(r6$tables$external_feature_tables)
-    if (is.null(names_left)) {
-      names_left = character(0)
-    }
-    shiny::updateSelectInput(
-      inputId = 'feat_name_del',
-      choices = names_left
-    )
-  })
-
   # Download data table
   dl_data_table = shiny::reactiveValues(
     name = NULL,
@@ -1469,6 +1414,349 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       write.csv(dl_data_table$table, file_name, na = "")
     }
   )
+
+
+  #--------------------------------------------- Feature metadata rendering ----
+  output$up_feature_metadata_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 8,
+          shiny::br(),
+          shiny::fluidRow(
+            shiny::column(
+              width = 3,
+              shiny::fileInput(
+                inputId = ns("feat_add"),
+                label = NULL,
+                multiple = F,
+                accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                width = "100%"
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::textInput(
+                inputId = ns('feat_name_add'),
+                label = NULL,
+                width = '100%',
+                placeholder = 'ex: feat_1'
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::selectInput(
+                inputId = ns('feat_table_select'),
+                label = NULL,
+                choices = c('Imported feature table', 'Feature table'),
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::downloadButton(
+                outputId = ns("download_feature_table"),
+                label = "Download",
+                style = "width:100%;"
+              )
+            )
+          ),
+          shiny::fluidRow(
+            bs4Dash::box(
+              id = ns('feat_table_preview_box'),
+              title = 'Table preview',
+              width = 12,
+              DT::dataTableOutput(ns("feature_table_preview_table")),
+              style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
+              collapsible = T,
+              collapsed  = T,
+              maximizable = T,
+              headerBorder = T
+            )
+          )
+        ),
+        shiny::column(
+          width = 4,
+          shiny::h3('Remove feature table'),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::selectInput(inputId = ns('feat_name_del'),
+                                 label = NULL,
+                                 choices = names(r6$tables$external_feature_tables),
+                                 selected = NULL,
+                                 width = '100%')
+            ),
+            shiny::column(
+              width = 6,
+              shiny::actionButton(inputId = ns('feat_del'),
+                                  label = 'Remove',
+                                  width = '100%')
+            )
+          )
+        )
+      )
+    )
+  })
+
+  #------------------------------------------------ Feature metadata server ----
+  # Manage Feature tables
+  session$userData[[id]]$feat_add = shiny::observeEvent(input$feat_add, {
+    if (input$feat_name_add == "") {
+      counter = 1
+      name = paste0("feat_", counter)
+      while (name %in% names(r6$tables$external_feature_tables)) {
+        counter = counter + 1
+        name = paste0("feat_", counter)
+      }
+    } else {
+      name = input$feat_name_add
+    }
+    r6$add_feature_table(name = name,
+                         feature_file = input$feat_add$datapath)
+
+    shiny::updateSelectInput(
+      inputId = 'feat_name_del',
+      choices = names(r6$tables$external_feature_tables)
+    )
+    r6$derive_data_tables()
+
+    if (input$feat_table_preview_box$collapsed) {
+      bs4Dash::updateBox(id = 'feat_table_preview_box', action = 'toggle')
+    }
+
+    shiny::updateSelectInput(
+      inputId = 'feat_table_select',
+      selected = 'Feature table'
+    )
+
+  })
+
+  session$userData[[id]]$feat_go_ont = shiny::observeEvent(input$feat_go_ont, {
+    shiny::updateTextInput(
+      inputId = 'go_name_add',
+      placeholder = paste0('ex: ', input$feat_go_ont)
+    )
+  })
+
+  session$userData[[id]]$add_go_table = shiny::observeEvent(input$add_go_table, {
+    shinyjs::disable("add_go_table")
+    table_name = input$go_name_add
+    if (table_name == '') {
+      counter = 1
+      while (paste0(input$feat_go_ont, counter) %in% names(r6$tables$external_enrichment_tables)) {
+        counter = counter + 1
+      }
+      table_name = paste0(input$feat_go_ont, counter)
+    }
+    r6$add_go_data(name = table_name,
+                   feature_names = rownames(r6$tables$imp_feature_table),
+                   keyType = input$select_feature_type,
+                   ont = input$feat_go_ont,
+                   pvalueCutoff = as.numeric(input$feat_go_ont_cutoff))
+    shiny::updateSelectInput(
+      inputId = 'go_remove_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shiny::updateSelectInput(
+      inputId = 'annotations_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+
+    r6$derive_data_tables()
+    shinyjs::enable("add_go_table")
+  })
+
+  session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {
+    r6$del_feature_table(name = input$feat_name_del)
+    r6$derive_data_tables()
+
+    names_left = names(r6$tables$external_feature_tables)
+    if (is.null(names_left)) {
+      names_left = character(0)
+    }
+    shiny::updateSelectInput(
+      inputId = 'feat_name_del',
+      choices = names_left
+    )
+  })
+
+  # Preview all / subset switch
+  session$userData[[id]]$enrichment_upload_button = shiny::observeEvent(input$enrichment_upload_button, {
+    print('upload enrichment table')
+    shinyjs::disable("enrichment_upload_button")
+
+    table_name = input$enrich_name_add
+    if (table_name == '') {
+      counter = 1
+      while (paste0('ENR', counter) %in% names(r6$tables$external_enrichment_tables)) {
+        counter = counter + 1
+      }
+      table_name = paste0('ENR', counter)
+    }
+
+
+    if (!is.null(input$go_association_table$datapath)) {
+      association_table = soda_read_table(input$go_association_table$datapath, first_column_as_index = T)
+    } else {
+      association_table = NULL
+    }
+
+    if (!is.null(input$go_terms_table$datapath)) {
+      terms_table = soda_read_table(input$go_terms_table$datapath, first_column_as_index = T)
+    } else {
+      terms_table = NULL
+    }
+
+    r6$upload_enrichment_data(name = table_name,
+                              association_table = association_table,
+                              terms_table = terms_table,
+                              sep = '|')
+
+    shiny::updateSelectInput(
+      inputId = 'go_remove_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shiny::updateSelectInput(
+      inputId = 'annotations_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shinyjs::enable("enrichment_upload_button")
+
+  })
+
+
+  # Preview all / subset switch
+  session$userData[[id]]$feat_table_select = shiny::observeEvent(input$feat_table_select, {
+    shiny::req(r6$tables$imp_data)
+
+    data_table = table_switch(table_name = input$feat_table_select, r6 = r6)
+
+
+    if (!is.null(data_table)) {
+      if (ncol(data_table) > 1000) {
+        data_table = t(data_table)
+      }
+    }
+
+    output$feature_table_preview_table = renderDataTable({
+      DT::datatable(data_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+  })
+
+  # Preview all / subset switch
+  session$userData[[id]]$annotations_table_select = shiny::observeEvent(input$annotations_table_select, {
+    shiny::req(r6$tables$imp_data)
+
+    association_table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$association_table
+    terms_table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$terms_table
+
+    if (!is.null(association_table)) {
+      if (ncol(association_table) > 1000) {
+        association_table = t(association_table)
+      }
+    }
+
+    if (!is.null(terms_table)) {
+      if (ncol(terms_table) > 1000) {
+        terms_table = t(terms_table)
+      }
+    }
+
+    output$association_table_preview_table = renderDataTable({
+      DT::datatable(association_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+    output$terms_table_preview_table = renderDataTable({
+      DT::datatable(terms_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+  })
+
+  # Download associations table
+  dl_feature_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_feature_table = shiny::observeEvent(c(input$feat_table_select) , {
+    dl_feature_table$name = timestamped_name("feature_table.csv")
+    dl_feature_table$table = table_switch(table_name = input$feat_table_select,
+                                          r6 = r6)
+  })
+
+  output$download_feature_table = shiny::downloadHandler(
+    filename = shiny::reactive(dl_feature_table$name),
+    content = function(file_name) {
+      write.csv(dl_feature_table$table, file_name, na = "")
+    }
+  )
+
+  # Download terms table
+  dl_terms_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_terms_table = shiny::observeEvent(c(input$annotations_table_select) , {
+    dl_terms_table$name = timestamped_name(paste0(input$annotations_table_select, "_terms.csv"))
+    dl_terms_table$table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$terms_table
+  })
+
+  output$download_terms_table = shiny::downloadHandler(
+    filename = shiny::reactive(dl_terms_table$name),
+    content = function(file_name) {
+      write.csv(dl_terms_table$table, file_name, na = "")
+    }
+  )
+
+  # Remove annotations table
+  session$userData[[id]]$remove_annotations_table = shiny::observeEvent(c(input$remove_annotations_table) , {
+    print(input$annotations_table_select)
+    r6$tables$external_enrichment_tables[[input$annotations_table_select]] = NULL
+    if (length(r6$tables$external_enrichment_tables[[input$annotations_table_select]]) > 0) {
+      shiny::updateSelectInput(
+        inputId = 'annotations_table_select',
+        choices = names(r6$tables$external_feature_tables)
+      )
+    } else {
+      shiny::updateSelectInput(
+        inputId = 'annotations_table_select',
+        choices = character(0)
+      )
+
+      # association_table_preview_table
+
+    }
+
+  })
+
+
+  # Download data table
+  dl_data_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_datatable = shiny::observeEvent(c(input$select_data_table) , {
+    shiny::req(r6$tables$raw_data)
+    dl_data_table$name = timestamped_name(paste0(stringr::str_replace_all(input$select_data_table, " ", "_"), ".csv"))
+    dl_data_table$table = table_switch(input$select_data_table, r6)
+  })
+
+  output$download_datatable = shiny::downloadHandler(
+    filename = shiny::reactive(dl_data_table$name),
+    content = function(file_name) {
+      write.csv(dl_data_table$table, file_name, na = "")
+    }
+  )
+
+
 
 
   #----------------------------------------------- Visualize data rendering ----

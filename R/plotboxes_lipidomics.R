@@ -343,6 +343,13 @@ volcano_plot_server = function(r6, output, session) {
         selected = r6$params$volcano_plot$feature_metadata,
         multiple = FALSE
       ),
+      shiny::selectizeInput(
+        inputId = ns('volcano_plot_annotation_terms'),
+        label = "Feature annotations",
+        choices = NULL,
+        selected = NULL,
+        multiple = TRUE
+      ),
       shinyWidgets::prettySwitch(
         inputId = ns('volcano_plot_keep_significant'),
         label = 'Keep only significant data',
@@ -460,6 +467,24 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
     )
   })
 
+  shiny::observeEvent(input$volcano_plot_feature_metadata, {
+    if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
+      shiny::updateSelectizeInput(
+        inputId = "volcano_plot_annotation_terms",
+        session = session,
+        choices = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$feature_list,
+        selected = character(0)
+      )
+    } else {
+      shiny::updateSelectizeInput(
+        inputId = "volcano_plot_annotation_terms",
+        session = session,
+        choices = NULL,
+        selected = character(0)
+      )
+    }
+  })
+
 
   shiny::observeEvent(
     c(shiny::req(length(input$volcano_plot_metagroup) == 2),
@@ -470,6 +495,7 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
       input$volcano_plot_test,
       input$volcano_plot_displayed_plot,
       input$volcano_plot_feature_metadata,
+      input$volcano_plot_annotation_terms,
       input$volcano_plot_keep_significant,
       input$volcano_plot_color_palette,
       input$volcano_plot_p_val_threshold,
@@ -480,6 +506,20 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
     ),{
 
       print_tm(r6$name, "Volcano plot: Updating params...")
+
+      # Is the column multivalue?
+      if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
+        print_tm(r6$name, 'Multivalue column')
+        if (length(input$volcano_plot_annotation_terms) > 0) {
+          feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
+                                            sparse_table = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$sparse_matrix)
+        } else {
+          return()
+        }
+      } else {
+        feature_metadata = input$volcano_plot_feature_metadata
+      }
+
       r6$param_volcano_plot(data_table = input$volcano_plot_tables,
                             adjustment = input$volcano_plot_adjustment,
                             group_col = input$volcano_plot_metacol,
