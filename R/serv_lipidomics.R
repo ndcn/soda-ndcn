@@ -1137,24 +1137,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
   })
 
-  shiny::observe({
-    shiny::req(input$skeleton_ui)
-    if (input$skeleton_ui == "Functional analysis") {
-
-      shiny::updateSelectInput(
-        inputId = 'gseaprep_table_select',
-        choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
-        selected = 'Total normalized table'
-      )
-
-      shiny::updateSelectInput(
-        inputId = 'gseaprep_group_col',
-        choices = colnames(r6$tables$raw_meta),
-        selected = input$select_group_col
-      )
-    }
-
-  })
 
   # Get ID
   session$userData[[id]]$id_select_data = shiny::observeEvent(input$select_id_data, {
@@ -2032,6 +2014,15 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
   #--------------------------------------------- Functional analysis server ----
 
+  # GSEA groups
+  session$userData[[id]]$gsea_groups = shiny::observeEvent(input$gseaprep_group_col,{
+    shiny::req(input$gseaprep_group_col)
+    shiny::updateSelectInput(
+      inputId = 'gseaprep_groups',
+      choices = unique(r6$tables$raw_meta[,input$gseaprep_group_col]),
+      selected = unique(r6$tables$raw_meta[,input$gseaprep_group_col])[c(1,2)]
+    )
+  })
 
   shiny::observe({
     shiny::req(input$skeleton_ui)

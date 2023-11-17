@@ -1307,16 +1307,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     }
   })
 
-  # GSEA groups
-  session$userData[[id]]$gsea_groups = shiny::observeEvent(input$gseaprep_group_col,{
-    shiny::req(input$gseaprep_group_col)
-    shiny::updateSelectInput(
-      inputId = 'gseaprep_groups',
-      choices = unique(r6$tables$raw_meta[,input$gseaprep_group_col]),
-      selected = unique(r6$tables$raw_meta[,input$gseaprep_group_col])[c(1,2)]
-    )
-  })
-
   # Feature filters
   session$userData[[id]]$row_col_data = shiny::observeEvent(
     c(input$apply_imputation,
@@ -1984,6 +1974,16 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     )
   })
   #--------------------------------------------- Functional analysis server ----
+
+  # GSEA groups
+  session$userData[[id]]$gsea_groups = shiny::observeEvent(input$gseaprep_group_col,{
+    shiny::req(input$gseaprep_group_col)
+    shiny::updateSelectInput(
+      inputId = 'gseaprep_groups',
+      choices = unique(r6$tables$raw_meta[,input$gseaprep_group_col]),
+      selected = unique(r6$tables$raw_meta[,input$gseaprep_group_col])[c(1,2)]
+    )
+  })
 
   shiny::observe({
     shiny::req(input$skeleton_ui)
