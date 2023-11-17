@@ -906,6 +906,12 @@ Prot_exp = R6::R6Class(
                                termsim_method = self$params$gsea$termsim_method,
                                termsim_showcat = self$params$gsea$termsim_showcat) {
 
+      # Checks
+      if (is.null(ont) & is.null(custom_col)) {
+        print('No ontology nor custom col provided: returning Null')
+        return()
+      }
+
       prot_names = rownames(prot_list)
       prot_list = prot_list$log2_fold_change
       names(prot_list) = prot_names
@@ -959,7 +965,11 @@ Prot_exp = R6::R6Class(
                                             qval_cutoff = self$params$overrepresentation$qval_cutoff,
                                             minGSSize = self$params$overrepresentation$minGSSize,
                                             maxGSSize  = self$params$overrepresentation$maxGSSize) {
-
+      # Checks
+      if (is.null(ont) & is.null(custom_col)) {
+        print('No ontology nor custom col provided: returning Null')
+        return()
+      }
 
       # Get universe (all features)
       universe = prot_list$log2_fold_change

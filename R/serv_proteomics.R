@@ -2003,14 +2003,12 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
       shiny::updateSelectInput(
         inputId = 'gsea_go',
-        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list)),
-        selected = 'ALL'
+        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list))
       )
 
       shiny::updateSelectInput(
         inputId = 'or_go_ont',
-        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list)),
-        selected = 'ALL'
+        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list))
       )
 
     }
@@ -2236,6 +2234,9 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       if (input$gsea_go %in% c('ALL', 'BP', 'MF', 'CC')) {
         ont = input$gsea_go
         custom_col = NULL
+      } else if(ont == "") {
+        ont = NULL
+        custom_col = NULL
       } else {
         ont = NULL
         custom_col = input$gsea_go
@@ -2279,10 +2280,14 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
       ont = input$or_go_ont
       custom_col = NULL
+    } else if (ont == "") {
+      ont = NULL
+      custom_col = NULL
     } else {
       ont = NULL
       custom_col = input$or_go_ont
     }
+
 
     r6$over_representation_analysis(custom_col = custom_col,
                                     ont = ont,

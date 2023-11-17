@@ -1874,8 +1874,8 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('gsea_go'),
                 label = 'GO ontology',
-                choices = c('ALL', 'BP', 'MF', 'CC'),
-                selected = 'ALL'
+                choices = NULL,
+                selected = NULL
               )
             ),
             shiny::column(
@@ -1944,8 +1944,8 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('or_go_ont'),
                 label = 'GO ontology',
-                choices = c('ALL', 'BP', 'MF', 'CC'),
-                selected = 'ALL',
+                choices = NULL,
+                selected = NULL,
                 width = '100%'
               )
             ),
@@ -2031,6 +2031,36 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     )
   })
   #--------------------------------------------- Functional analysis server ----
+
+
+  shiny::observe({
+    shiny::req(input$skeleton_ui)
+    if (input$skeleton_ui == "Functional analysis") {
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_table_select',
+        choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
+        selected = 'Total normalized table'
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_group_col',
+        choices = colnames(r6$tables$raw_meta),
+        selected = input$select_group_col
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gsea_go',
+        choices = names(r6$tables$feature_list)
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'or_go_ont',
+        choices = names(r6$tables$feature_list)
+      )
+
+    }
+  })
 
   #----------------------------------------------- Visualize data rendering ----
   output$visualize_data_ui = shiny::renderUI({
@@ -2179,6 +2209,392 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       NULL
     )
   })
+
+
+  #------------------------------------------- Geneset enrichment rendering ----
+
+  output$geneset_enrichment_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 11,
+          shinyWidgets::checkboxGroupButtons(inputId = ns("show_plots_gsea"),
+                                             label = NULL,
+                                             status = "default",
+                                             choices = gsea_plot_list(),
+                                             checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
+                                             size = "normal",
+                                             justified = TRUE)
+        ),
+        shiny::column(
+          width = 1,
+          shinyWidgets::actionBttn(inputId = ns("clear_plots_gsea"),
+                                   label = "Clear",
+                                   style = "material-flat",
+                                   color = "danger",
+                                   block = T,
+                                   icon = icon("x"))
+        )
+      ),
+      shiny::uiOutput(
+        outputId = ns("gsea_plotbox_field")
+      )
+    )
+  })
+
+  #---------------------------------------------- Geneset enrichment server ----
+
+  session$userData[[id]]$select_feature_type = shiny::observeEvent(input$select_feature_type, {
+    if (r6$preloaded_data) {return()}
+    print_tm(m, paste0('GSEA: feature ID type set to ', input$select_feature_type))
+    r6$indices$feature_id_type = input$select_feature_type
+  })
+
+
+  session$userData[[id]]$run_gsea = shiny::observeEvent(input$run_gsea, {
+    shiny::req(length(input$gseaprep_groups) == 2)
+    print_tm(m, "GSEA started")
+    shinyjs::disable("run_gsea")
+
+    base::tryCatch({
+      r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
+                       group_col = input$gseaprep_group_col,
+                       group_1 = input$gseaprep_groups[1],
+                       group_2 = input$gseaprep_groups[2],
+                       used_function = input$gseaprep_method,
+                       test = input$gseaprep_test,
+                       context = 'gsea')
+
+      if (input$gsea_go %in% c('ALL', 'BP', 'MF', 'CC')) {
+        ont = input$gsea_go
+        custom_col = NULL
+      } else {
+        ont = NULL
+        custom_col = input$gsea_go
+      }
+      r6$get_gsea_object(ont = ont,
+                         custom_col = custom_col,
+                         minGSSize = as.numeric(input$gsea_min_size),
+                         maxGSSize = as.numeric(input$gsea_max_size),
+                         p_value_cutoff = input$gsea_pval,
+                         verbose = TRUE,
+                         OrgDb = "org.Hs.eg.db",
+                         pAdjustMethod = input$gsea_adjustment,
+                         termsim_showcat = as.numeric(input$gsea_showcat))
+
+
+      if (nrow(r6$tables$gsea_object@result) == 0) {
+        print_tm(m, "GSEA failed: no term enriched under specific pvalueCutoff")
+      } else {
+        print_tm(m, "GSEA finished")
+      }
+    },error=function(e){
+      print_tm(r6$name, 'GSEA failed.')
+    },finally={}
+    )
+
+    shinyjs::enable("run_gsea")
+  })
+
+  session$userData[[id]]$run_or = shiny::observeEvent(input$run_or, {
+    shiny::req(length(input$gseaprep_groups) == 2)
+    print_tm(m, "OR started")
+    shinyjs::disable("run_or")
+    r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
+                     group_col = input$gseaprep_group_col,
+                     group_1 = input$gseaprep_groups[1],
+                     group_2 = input$gseaprep_groups[2],
+                     used_function = input$gseaprep_method,
+                     test = input$gseaprep_test,
+                     context = 'ora')
+
+    if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
+      ont = input$or_go_ont
+      custom_col = NULL
+    } else {
+      ont = NULL
+      custom_col = input$or_go_ont
+    }
+
+    r6$over_representation_analysis(custom_col = custom_col,
+                                    ont = ont,
+                                    pval_cutoff_features = input$gseaprep_pval,
+                                    padjust_features = input$gseaprep_adjustment,
+                                    pval_cutoff = input$or_pval_cutoff,
+                                    pAdjustMethod = input$or_pval_adjustment,
+                                    fc_threshold = as.numeric(input$or_fc_threshold),
+                                    qval_cutoff = input$or_qval_cutoff,
+                                    minGSSize = as.numeric(input$or_min_gssize),
+                                    maxGSSize = as.numeric(input$or_max_gssize))
+
+    if (!is.null(r6$tables$go_enrich)) {
+      results = nrow(r6$tables$go_enrich@result)
+      if (results == 0) {
+        print_tm(m, 'WARNING: no over-representation under selected parameters')
+      } else {
+        print_tm(m, paste0('Over-representation successful: ', results, ' terms'))
+      }
+      print_tm(m, "OR finished")
+    } else {
+      print_tm(m, 'No over represented features, returning.')
+    }
+
+    shinyjs::enable("run_or")
+
+  })
+
+
+  # Initialise dimensions object
+  dimensions_obj_gsea = shiny::reactiveValues(
+    x_box = module_controler$dims$x_box,
+    y_box = module_controler$dims$y_box,
+    x_plot = module_controler$dims$x_plot,
+    y_plot = module_controler$dims$y_plot,
+    x_plot_full = module_controler$dims$x_plot_full,
+    y_plot_full = module_controler$dims$y_plot_full,
+    xpx_total = shinybrowser::get_width(),
+    ypx_total = shinybrowser::get_height(),
+    xbs = 12,
+    xpx = shinybrowser::get_width(),
+    ypx = shinybrowser::get_height()
+  )
+
+  # Plot selection
+  prot_dot_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  prot_ridge_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  prot_cnet_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  prot_emap_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+
+  # Plot selection
+  session$userData[[id]]$show_plots_gsea = shiny::observeEvent(input$show_plots_gsea, {
+    shiny::req(r6$tables$gsea_object)
+
+    # Update x dimensions in px and bs, and y in px
+    if (length(input$show_plots_gsea) < 2) {
+      dimensions_obj_gsea$xbs = 12
+      dimensions_obj_gsea$xpx = shinybrowser::get_width()
+      dimensions_obj_gsea$ypx = shinybrowser::get_height()
+    } else if (length(input$show_plots_gsea) == 2) {
+      dimensions_obj_gsea$xbs  = 6
+      dimensions_obj_gsea$xpx = shinybrowser::get_width()/2
+      dimensions_obj_gsea$ypx = shinybrowser::get_height()
+    } else {
+      dimensions_obj_gsea$xbs  = 6
+      dimensions_obj_gsea$xpx = shinybrowser::get_width()/2
+      dimensions_obj_gsea$ypx = shinybrowser::get_height()/2.2
+    }
+
+    # Plots selected: 1 to 4
+    print_tm(m, paste0("Plot selection: ", paste(input$show_plots_gsea, collapse = ", ")))
+    if (length(input$show_plots_gsea) == 1) {
+      plot_one_prot_gsea(r6 = r6,
+                         dimensions_obj = dimensions_obj_gsea,
+                         selection_list = input$show_plots_gsea,
+                         input = input,
+                         output = output,
+                         session = session)
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_gsea",
+        disabledChoices = input$show_plots_gsea
+      )
+
+    } else if (length(input$show_plots_gsea) == 2) {
+      plot_two_prot_gsea(r6 = r6,
+                         dimensions_obj = dimensions_obj_gsea,
+                         selection_list = input$show_plots_gsea,
+                         input = input,
+                         output = output,
+                         session = session)
+
+    } else if (length(input$show_plots_gsea) == 3) {
+      plot_three_prot_gsea(r6 = r6,
+                           dimensions_obj = dimensions_obj_gsea,
+                           selection_list = input$show_plots_gsea,
+                           input = input,
+                           output = output,
+                           session = session)
+
+    } else if (length(input$show_plots_gsea) >= 4) {
+      plot_four_prot_gsea(r6 = r6,
+                          dimensions_obj = dimensions_obj_gsea,
+                          selection_list = input$show_plots_gsea,
+                          input = input,
+                          output = output,
+                          session = session)
+
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_gsea",
+        disabledChoices = setdiff(unname(gsea_plot_list()), input$show_plots_gsea)
+      )
+
+    }
+    if ((length(input$show_plots_gsea) > 1) & (length(input$show_plots_gsea) < 4)) {
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_gsea",
+        disabledChoices = NULL
+      )
+    }
+  })
+
+
+  session$userData[[id]]$clear_plots_gsea = shiny::observeEvent(input$clear_plots_gsea, {
+    print_tm(m, "Clearing plots")
+    shinyWidgets::updateCheckboxGroupButtons(
+      session = session,
+      inputId = "show_plots_gsea",
+      disabled = FALSE,
+      selected = character(0))
+    output$gsea_plotbox_field = shiny::renderUI(
+      NULL
+    )
+  })
+
+
+
+  #------------------------------------------ Over-representation rendering ----
+
+  output$over_representation_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 11,
+          shinyWidgets::checkboxGroupButtons(inputId = ns("show_plots_or"),
+                                             label = NULL,
+                                             status = "default",
+                                             choices = or_plot_list(),
+                                             checkIcon = list(yes = icon("ok", lib = "glyphicon"), no = icon("remove", lib = "glyphicon")),
+                                             size = "normal",
+                                             justified = TRUE)
+        ),
+        shiny::column(
+          width = 1,
+          shinyWidgets::actionBttn(inputId = ns("clear_plots_or"),
+                                   label = "Clear",
+                                   style = "material-flat",
+                                   color = "danger",
+                                   block = T,
+                                   icon = icon("x"))
+        )
+      ),
+      shiny::uiOutput(
+        outputId = ns("or_plotbox_field")
+      )
+    )
+  })
+
+  #--------------------------------------------- Over-representation server ----
+
+  # Initialise dimensions object
+  dimensions_obj_or = shiny::reactiveValues(
+    x_box = module_controler$dims$x_box,
+    y_box = module_controler$dims$y_box,
+    x_plot = module_controler$dims$x_plot,
+    y_plot = module_controler$dims$y_plot,
+    x_plot_full = module_controler$dims$x_plot_full,
+    y_plot_full = module_controler$dims$y_plot_full,
+    xpx_total = shinybrowser::get_width(),
+    ypx_total = shinybrowser::get_height(),
+    xbs = 12,
+    xpx = shinybrowser::get_width(),
+    ypx = shinybrowser::get_height()
+  )
+
+  # Plot selection
+  prot_or_dot_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  prot_or_bar_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  prot_or_cnet_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  prot_or_emap_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+
+  # Plot selection
+  session$userData[[id]]$show_plots_or = shiny::observeEvent(input$show_plots_or, {
+    shiny::req(r6$tables$go_enrich)
+
+    # Update x dimensions in px and bs, and y in px
+    if (length(input$show_plots_or) < 2) {
+      dimensions_obj_or$xbs = 12
+      dimensions_obj_or$xpx = shinybrowser::get_width()
+      dimensions_obj_or$ypx = shinybrowser::get_height()
+    } else if (length(input$show_plots_or) == 2) {
+      dimensions_obj_or$xbs  = 6
+      dimensions_obj_or$xpx = shinybrowser::get_width()/2
+      dimensions_obj_or$ypx = shinybrowser::get_height()
+    } else {
+      dimensions_obj_or$xbs  = 6
+      dimensions_obj_or$xpx = shinybrowser::get_width()/2
+      dimensions_obj_or$ypx = shinybrowser::get_height()/2.2
+    }
+
+    # Plots selected: 1 to 4
+    print_tm(m, paste0("Plot selection: ", paste(input$show_plots_or, collapse = ", ")))
+    if (length(input$show_plots_or) == 1) {
+      plot_one_prot_or(r6 = r6,
+                       dimensions_obj = dimensions_obj_or,
+                       selection_list = input$show_plots_or,
+                       input = input,
+                       output = output,
+                       session = session)
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_or",
+        disabledChoices = input$show_plots_or
+      )
+
+    } else if (length(input$show_plots_or) == 2) {
+      plot_two_prot_or(r6 = r6,
+                       dimensions_obj = dimensions_obj_or,
+                       selection_list = input$show_plots_or,
+                       input = input,
+                       output = output,
+                       session = session)
+
+    } else if (length(input$show_plots_or) == 3) {
+      plot_three_prot_or(r6 = r6,
+                         dimensions_obj = dimensions_obj_or,
+                         selection_list = input$show_plots_or,
+                         input = input,
+                         output = output,
+                         session = session)
+
+    } else if (length(input$show_plots_or) >= 4) {
+      plot_four_prot_or(r6 = r6,
+                        dimensions_obj = dimensions_obj_or,
+                        selection_list = input$show_plots_or,
+                        input = input,
+                        output = output,
+                        session = session)
+
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_or",
+        disabledChoices = setdiff(unname(or_plot_list()), input$show_plots_or)
+      )
+
+    }
+    if ((length(input$show_plots_or) > 1) & (length(input$show_plots_or) < 4)) {
+      shinyWidgets::updateCheckboxGroupButtons(
+        session = session,
+        inputId = "show_plots_or",
+        disabledChoices = NULL
+      )
+    }
+  })
+
+
+  session$userData[[id]]$clear_plots_or = shiny::observeEvent(input$clear_plots_or, {
+    print_tm(m, "Clearing plots")
+    shinyWidgets::updateCheckboxGroupButtons(
+      session = session,
+      inputId = "show_plots_or",
+      disabled = FALSE,
+      selected = character(0))
+    output$or_plotbox_field = shiny::renderUI(
+      NULL
+    )
+  })
+
 
 
 }
