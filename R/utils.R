@@ -1401,7 +1401,7 @@ example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA, da
   return(r6)
 }
 
-#------------------------------------------------------- GO terms utilities ----
+#---------------------------------------------- Enrichment & GSEA utilities ----
 get_sparse_matrix = function(features_go_table, all_go_terms, sep = '|') {
   go_list = vector("list", nrow(features_go_table))
   # Loop through each row and split the 'go_terms' column by '|'
@@ -1429,7 +1429,7 @@ get_sparse_matrix = function(features_go_table, all_go_terms, sep = '|') {
   sparse_matrix = do.call(rbind, one_hot_list)
 
   # Convert the matrix to a sparse matrix
-  sparse_matrix = Matrix(sparse_matrix, sparse = TRUE)
+  sparse_matrix = Matrix::Matrix(sparse_matrix, sparse = TRUE)
 
   # Add row and column names to the sparse matrix
   rownames(sparse_matrix) = rownames(features_go_table)
@@ -1445,3 +1445,33 @@ match_go_terms = function(terms_list, sparse_table) {
   }
   return(matches)
 }
+
+get_term2gene = function(feature_table, column, sep = "\\|") {
+  term2gene=sapply(feature_table[,column], FUN = function(x) strsplit(x,sep)[[1]])
+  names(term2gene)=rownames(feature_table)
+  term2gene = utils::stack(term2gene)
+  return(term2gene)
+}
+
+custom_ora = function(geneList, pvalueCutoff = 0.05, pAdjustMethod = "BH", qvalueCutoff = 0.2, minGSSize = 10, maxGSSize = 500, term2gene) {
+  enricher_result = clusterProfiler::enricher(gene = geneList,
+                                              pvalueCutoff = pvalueCutoff,
+                                              pAdjustMethod = pAdjustMethod,
+                                              qvalueCutoff = qvalueCutoff,
+                                              minGSSize = minGSSize,
+                                              maxGSSize  = maxGSSize,
+                                              TERM2GENE=term2gene)
+  return(enricher_result)
+}
+custom_gsea = function(geneList, minGSSize = 10, maxGSSize = 500, pvalueCutoff = 0.05, verbose = TRUE, pAdjustMethod = "BH", term2gene) {
+  gsea_result = clusterProfiler::GSEA(geneList = geneList,
+                                      minGSSize = minGSSize,
+                                      maxGSSize = maxGSSize,
+                                      pvalueCutoff = pvalueCutoff,
+                                      verbose = verbose,
+                                      pAdjustMethod = pAdjustMethod,
+                                      TERM2GENE=term2gene)
+  return(gsea_result)
+}
+
+

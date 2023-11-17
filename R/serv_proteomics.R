@@ -1257,27 +1257,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
 
-
-  shiny::observe({
-    shiny::req(input$skeleton_ui)
-    if (input$skeleton_ui == "Functional analysis") {
-
-      shiny::updateSelectInput(
-        inputId = 'gseaprep_table_select',
-        choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
-        selected = 'Total normalized table'
-      )
-
-      shiny::updateSelectInput(
-        inputId = 'gseaprep_group_col',
-        choices = colnames(r6$tables$raw_meta),
-        selected = input$select_group_col
-      )
-    }
-
-  })
-
-
   # Get ID
   session$userData[[id]]$id_select_data = shiny::observeEvent(input$select_id_data, {
     shiny::req(r6$tables$imp_data)
@@ -2006,6 +1985,37 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   })
   #--------------------------------------------- Functional analysis server ----
 
+  shiny::observe({
+    shiny::req(input$skeleton_ui)
+    if (input$skeleton_ui == "Functional analysis") {
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_table_select',
+        choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
+        selected = 'Total normalized table'
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_group_col',
+        choices = colnames(r6$tables$raw_meta),
+        selected = input$select_group_col
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gsea_go',
+        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list)),
+        selected = 'ALL'
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'or_go_ont',
+        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list)),
+        selected = 'ALL'
+      )
+
+    }
+  })
+
   #----------------------------------------------- Visualize data rendering ----
 
   output$visualize_data_ui = shiny::renderUI({
@@ -2223,7 +2233,15 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                        test = input$gseaprep_test,
                        context = 'gsea')
 
-      r6$get_gsea_object(ont = input$gsea_go,
+      if (input$gsea_go %in% c('ALL', 'BP', 'MF', 'CC')) {
+        ont = input$gsea_go
+        custom_col = NULL
+      } else {
+        ont = NULL
+        custom_col = input$gsea_go
+      }
+      r6$get_gsea_object(ont = ont,
+                         custom_col = custom_col,
                          minGSSize = as.numeric(input$gsea_min_size),
                          maxGSSize = as.numeric(input$gsea_max_size),
                          p_value_cutoff = input$gsea_pval,
@@ -2258,14 +2276,21 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                      test = input$gseaprep_test,
                      context = 'ora')
 
+    if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
+      ont = input$or_go_ont
+      custom_col = NULL
+    } else {
+      ont = NULL
+      custom_col = input$or_go_ont
+    }
 
-
-    r6$over_representation_analysis(pval_cutoff_features = input$gseaprep_pval,
+    r6$over_representation_analysis(custom_col = custom_col,
+                                    ont = ont,
+                                    pval_cutoff_features = input$gseaprep_pval,
                                     padjust_features = input$gseaprep_adjustment,
                                     pval_cutoff = input$or_pval_cutoff,
                                     pAdjustMethod = input$or_pval_adjustment,
                                     fc_threshold = as.numeric(input$or_fc_threshold),
-                                    ont = input$or_go_ont,
                                     qval_cutoff = input$or_qval_cutoff,
                                     minGSSize = as.numeric(input$or_min_gssize),
                                     maxGSSize = as.numeric(input$or_max_gssize))

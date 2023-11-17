@@ -893,6 +893,8 @@ Prot_exp = R6::R6Class(
 
     # GSEA object
     get_gsea_object = function(prot_list = self$table_switch_local(self$params$gsea$prot_list),
+                               custom_col = NULL,
+                               feature_table = self$tables$feature_table,
                                keyType = self$indices$feature_id_type,
                                ont = self$params$gsea$ont,
                                minGSSize = self$params$gsea$minGSSize,
@@ -912,15 +914,30 @@ Prot_exp = R6::R6Class(
       prot_list = na.omit(prot_list)
       prot_list = sort(prot_list, decreasing = TRUE)
 
-      gsea = clusterProfiler::gseGO(geneList=prot_list,
-                                    ont = ont,
-                                    keyType = keyType,
-                                    minGSSize = minGSSize,
-                                    maxGSSize = maxGSSize,
-                                    pvalueCutoff = p_value_cutoff,
-                                    verbose = verbose,
-                                    OrgDb = OrgDb,
-                                    pAdjustMethod = pAdjustMethod)
+      if (!is.null(custom_col)) {
+        term2gene = get_term2gene(feature_table = feature_table,
+                                  column = custom_col,
+                                  sep = "\\|")
+        gsea = custom_gsea(geneList = prot_list,
+                           minGSSize = minGSSize,
+                           maxGSSize = maxGSSize,
+                           pvalueCutoff = p_value_cutoff,
+                           verbose = verbose,
+                           pAdjustMethod = pAdjustMethod,
+                           term2gene = term2gene)
+      } else {
+        gsea = clusterProfiler::gseGO(geneList=prot_list,
+                                      ont = ont,
+                                      keyType = keyType,
+                                      minGSSize = minGSSize,
+                                      maxGSSize = maxGSSize,
+                                      pvalueCutoff = p_value_cutoff,
+                                      verbose = verbose,
+                                      OrgDb = OrgDb,
+                                      pAdjustMethod = pAdjustMethod)
+      }
+
+
 
       if (nrow(gsea@result) > 0) {
         gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
@@ -930,6 +947,8 @@ Prot_exp = R6::R6Class(
     },
 
     over_representation_analysis = function(prot_list = self$tables$ora_prot_list,
+                                            custom_col = NULL,
+                                            feature_table = self$tables$feature_table,
                                             pval_cutoff_features = self$params$overrepresentation$pval_cutoff_features,
                                             padjust_features = self$params$overrepresentation$padjust_features,
                                             pval_cutoff = self$params$overrepresentation$pval_cutoff,
@@ -956,24 +975,39 @@ Prot_exp = R6::R6Class(
         features = prot_list[prot_list$p_val <= pval_cutoff_features,]
       }
       features = features[abs(features$log2_fold_change) >= log2(fc_threshold),]
-      features = rownames(features)
 
-
-      if (length(features) == 0) {
+      if (nrow(features) == 0) {
         return()
       }
 
-      go_enrich = clusterProfiler::enrichGO(gene = features,
-                                            universe = universe,
-                                            OrgDb = 'org.Hs.eg.db',
-                                            keyType = keyType,
-                                            readable = T,
-                                            ont = ont,
-                                            pvalueCutoff = pval_cutoff,
-                                            pAdjustMethod = pAdjustMethod,
-                                            qvalueCutoff = qval_cutoff,
-                                            minGSSize = minGSSize,
-                                            maxGSSize  = maxGSSize)
+      # Sort feature table
+      features = features[order(-features$log2_fold_change),]
+
+      if (!is.null(custom_col)) {
+        feature_table = feature_table[rownames(features),]
+        term2gene = get_term2gene(feature_table = feature_table,
+                                  column = custom_col,
+                                  sep = "\\|")
+        go_enrich = custom_ora(geneList = rownames(features),
+                               pvalueCutoff = pval_cutoff,
+                               pAdjustMethod = pAdjustMethod,
+                               qvalueCutoff = qval_cutoff,
+                               minGSSize = minGSSize,
+                               maxGSSize = maxGSSize,
+                               term2gene = term2gene)
+      } else {
+        go_enrich = clusterProfiler::enrichGO(gene = rownames(features),
+                                              universe = universe,
+                                              OrgDb = 'org.Hs.eg.db',
+                                              keyType = keyType,
+                                              readable = T,
+                                              ont = ont,
+                                              pvalueCutoff = pval_cutoff,
+                                              pAdjustMethod = pAdjustMethod,
+                                              qvalueCutoff = qval_cutoff,
+                                              minGSSize = minGSSize,
+                                              maxGSSize  = maxGSSize)
+      }
 
       self$tables$go_enrich = go_enrich
     },
@@ -1754,17 +1788,21 @@ Prot_exp = R6::R6Class(
                                 width = NULL,
                                 height = NULL) {
 
-      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
+      colorBy = match.arg(color, c("pvalue", "p.adjust", "qvalue"))
       if (x == "geneRatio" || x == "GeneRatio") {
-        x <- "GeneRatio"
+        x = "GeneRatio"
       } else if (x == "count" || x == "Count") {
-        x <- "Count"
+        x = "Count"
       }
 
-      df <- fortify(object, showCategory=showCategory, by=x)
+      df = object@result[1:showCategory,]
+      df$GeneRatio = sapply(strsplit(as.character(df$GeneRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
+      df$BgRatio = sapply(strsplit(as.character(df$BgRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
+
+      # df = fortify(object, showCategory=showCategory, by=x)
 
       fig = plotly::plot_ly(df,
-                            x = ~Count,
+                            x = df[,x],
                             y = df$Description,
                             type = 'bar',
                             orientation = 'h',

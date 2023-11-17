@@ -509,7 +509,6 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
 
       # Is the column multivalue?
       if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
-        print_tm(r6$name, 'Multivalue column')
         if (length(input$volcano_plot_annotation_terms) > 0) {
           feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
                                             sparse_table = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$sparse_matrix)
