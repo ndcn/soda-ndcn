@@ -270,7 +270,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         )
       ),
       shiny::tabPanel(
-        title = "Geneset enrichment",
+        title = "Enrichment",
         shiny::uiOutput(
           outputId = ns('geneset_enrichment_ui')
         )
@@ -1848,14 +1848,14 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       shiny::fluidRow(
         shiny::column(
           width = 6,
-          shiny::h4('Geneset enrichment analysis'),
+          shiny::h4('Enrichment analysis'),
 
           shiny::fluidRow(
             shiny::column(
               width = 6,
               shiny::selectInput(
                 inputId = ns('gsea_go'),
-                label = 'GO ontology',
+                label = 'Terms',
                 choices = NULL,
                 selected = NULL
               )
@@ -1901,7 +1901,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
           shiny::sliderInput(
             inputId = ns('gsea_pval'),
-            label = 'p-value cutoff (GO terms)',
+            label = 'p-value cutoff (terms)',
             min = 0.01,
             max = 0.9,
             value = 0.05,
@@ -1925,7 +1925,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
               width = 6,
               shiny::selectInput(
                 inputId = ns('or_go_ont'),
-                label = 'GO ontology',
+                label = 'Terms',
                 choices = NULL,
                 selected = NULL,
                 width = '100%'
@@ -1976,7 +1976,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
               width = 6,
               shiny::sliderInput(
                 inputId = ns('or_pval_cutoff'),
-                label = 'p-value cutoff (GO terms)',
+                label = 'p-value cutoff (terms)',
                 min = 0.01,
                 max = 0.9,
                 value = 0.05,
@@ -1988,7 +1988,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
               width = 6,
               shiny::sliderInput(
                 inputId = ns('or_qval_cutoff'),
-                label = 'q-value cutoff (GO terms)',
+                label = 'q-value cutoff (terms)',
                 min = 0.01,
                 max = 0.9,
                 value = 0.05,
@@ -2294,44 +2294,59 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     shiny::req(length(input$gseaprep_groups) == 2)
     print_tm(m, "OR started")
     shinyjs::disable("run_or")
-    r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
-                     group_col = input$gseaprep_group_col,
-                     group_1 = input$gseaprep_groups[1],
-                     group_2 = input$gseaprep_groups[2],
-                     used_function = input$gseaprep_method,
-                     test = input$gseaprep_test,
-                     context = 'ora')
 
-    if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
-      ont = input$or_go_ont
-      custom_col = NULL
-    } else {
-      ont = NULL
-      custom_col = input$or_go_ont
-    }
 
-    r6$over_representation_analysis(custom_col = custom_col,
-                                    ont = ont,
-                                    pval_cutoff_features = input$gseaprep_pval,
-                                    padjust_features = input$gseaprep_adjustment,
-                                    pval_cutoff = input$or_pval_cutoff,
-                                    pAdjustMethod = input$or_pval_adjustment,
-                                    fc_threshold = as.numeric(input$or_fc_threshold),
-                                    qval_cutoff = input$or_qval_cutoff,
-                                    minGSSize = as.numeric(input$or_min_gssize),
-                                    maxGSSize = as.numeric(input$or_max_gssize))
 
-    if (!is.null(r6$tables$go_enrich)) {
-      results = nrow(r6$tables$go_enrich@result)
-      if (results == 0) {
-        print_tm(m, 'WARNING: no over-representation under selected parameters')
+
+
+    base::tryCatch({
+
+      r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
+                       group_col = input$gseaprep_group_col,
+                       group_1 = input$gseaprep_groups[1],
+                       group_2 = input$gseaprep_groups[2],
+                       used_function = input$gseaprep_method,
+                       test = input$gseaprep_test,
+                       context = 'ora')
+
+      if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
+        ont = input$or_go_ont
+        custom_col = NULL
+      } else if(input$or_go_ont == "") {
+        ont = NULL
+        custom_col = NULL
       } else {
-        print_tm(m, paste0('Over-representation successful: ', results, ' terms'))
+        ont = NULL
+        custom_col = input$or_go_ont
       }
-      print_tm(m, "OR finished")
-    } else {
-      print_tm(m, 'No over represented features, returning.')
-    }
+
+      r6$over_representation_analysis(custom_col = custom_col,
+                                      ont = ont,
+                                      pval_cutoff_features = input$gseaprep_pval,
+                                      padjust_features = input$gseaprep_adjustment,
+                                      pval_cutoff = input$or_pval_cutoff,
+                                      pAdjustMethod = input$or_pval_adjustment,
+                                      fc_threshold = as.numeric(input$or_fc_threshold),
+                                      qval_cutoff = input$or_qval_cutoff,
+                                      minGSSize = as.numeric(input$or_min_gssize),
+                                      maxGSSize = as.numeric(input$or_max_gssize))
+
+      if (!is.null(r6$tables$go_enrich)) {
+        results = nrow(r6$tables$go_enrich@result)
+        if (results == 0) {
+          print_tm(m, 'WARNING: no over-representation under selected parameters')
+        } else {
+          print_tm(m, paste0('Over-representation successful: ', results, ' terms'))
+        }
+        print_tm(m, "OR finished")
+      } else {
+        print_tm(m, 'No over represented features, returning.')
+      }
+
+    },error=function(e){
+      print_tm(r6$name, 'ORA failed.')
+    },finally={}
+    )
 
     shinyjs::enable("run_or")
 
