@@ -1474,4 +1474,10 @@ custom_gsea = function(geneList, minGSSize = 10, maxGSSize = 500, pvalueCutoff =
   return(gsea_result)
 }
 
-
+get_ora_results = function(object, showCategory) {
+  showCategory = min(nrow(object@result), showCategory)
+  df = object@result[1:showCategory,]
+  df$GeneRatio = sapply(strsplit(as.character(df$GeneRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
+  df$BgRatio = sapply(strsplit(as.character(df$BgRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
+  return(df)
+}

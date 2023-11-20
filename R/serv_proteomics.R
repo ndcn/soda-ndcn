@@ -2280,7 +2280,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
       ont = input$or_go_ont
       custom_col = NULL
-    } else if (ont == "") {
+    } else if (input$or_go_ont == "") {
       ont = NULL
       custom_col = NULL
     } else {

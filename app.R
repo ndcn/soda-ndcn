@@ -24,6 +24,7 @@ library(stringr)
 # Tables
 library(DT)
 library(readxl)
+library(Matrix)
 
 # Colors
 library(grDevices)
@@ -49,7 +50,7 @@ library(reshape2)
 library(dplyr)
 
 # New
-library(Matrix)
+
 
 
 

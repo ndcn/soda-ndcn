@@ -1401,7 +1401,8 @@ Prot_exp = R6::R6Class(
         df <- dplyr::bind_rows(ldf, .id="category")
         df$category <- factor(df$category, levels=names(object))
       } else {
-        df <- fortify(object, showCategory = showCategory, split=split)
+        df = get_ora_results(object, showCategory)
+        # df <- fortify(object, showCategory = showCategory, split=split) # fortify crap
         ## already parsed in fortify
         ## df$GeneRatio <- parse_ratio(df$GeneRatio)
       }
@@ -1418,7 +1419,7 @@ Prot_exp = R6::R6Class(
 
       df$hover = paste0(
         paste0(df[,"Description"], "\n"),
-        paste0("GeneRatio:", as.character(round(df[,"x"],2)), "\n"),
+        paste0(x, ":", as.character(round(df[,x],2)), "\n"),
         paste0(size, ": ", as.character(df[,size]), "\n"),
         paste0(colorBy, ": ", as.character(round(df[,colorBy],5)), "\n"),
         df$.sign
@@ -1459,8 +1460,6 @@ Prot_exp = R6::R6Class(
                      categoryorder = "array",
                      categoryarray = base::rev(df[,"Description"]))
       )
-
-      print_tm(self$name, "Dot plot completed")
       self$plots$or_dotplot = fig
 
     },
@@ -1805,10 +1804,7 @@ Prot_exp = R6::R6Class(
         x = "Count"
       }
 
-      df = object@result[1:showCategory,]
-      df$GeneRatio = sapply(strsplit(as.character(df$GeneRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
-      df$BgRatio = sapply(strsplit(as.character(df$BgRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
-
+      df = get_ora_results(object, showCategory)
       # df = fortify(object, showCategory=showCategory, by=x)
 
       fig = plotly::plot_ly(df,
