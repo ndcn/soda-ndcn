@@ -362,7 +362,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         )
       ),
       shiny::tabPanel(
-        title = "Geneset enrichment",
+        title = "Enrichment",
         shiny::uiOutput(
           outputId = ns('geneset_enrichment_ui')
         )
@@ -1809,14 +1809,14 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       shiny::fluidRow(
         shiny::column(
           width = 6,
-          shiny::h4('Geneset enrichment analysis'),
+          shiny::h4('Enrichment analysis'),
 
           shiny::fluidRow(
             shiny::column(
               width = 6,
               shiny::selectInput(
                 inputId = ns('gsea_go'),
-                label = 'GO ontology',
+                label = 'Terms',
                 choices = c('ALL', 'BP', 'MF', 'CC'),
                 selected = 'ALL'
               )
@@ -1862,7 +1862,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
           shiny::sliderInput(
             inputId = ns('gsea_pval'),
-            label = 'p-value cutoff (GO terms)',
+            label = 'p-value cutoff (terms)',
             min = 0.01,
             max = 0.9,
             value = 0.05,
@@ -1886,7 +1886,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               width = 6,
               shiny::selectInput(
                 inputId = ns('or_go_ont'),
-                label = 'GO ontology',
+                label = 'Terms',
                 choices = c('ALL', 'BP', 'MF', 'CC'),
                 selected = 'ALL',
                 width = '100%'
@@ -1937,7 +1937,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               width = 6,
               shiny::sliderInput(
                 inputId = ns('or_pval_cutoff'),
-                label = 'p-value cutoff (GO terms)',
+                label = 'p-value cutoff (terms)',
                 min = 0.01,
                 max = 0.9,
                 value = 0.05,
@@ -1949,7 +1949,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               width = 6,
               shiny::sliderInput(
                 inputId = ns('or_qval_cutoff'),
-                label = 'q-value cutoff (GO terms)',
+                label = 'q-value cutoff (terms)',
                 min = 0.01,
                 max = 0.9,
                 value = 0.05,
