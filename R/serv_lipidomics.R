@@ -2259,6 +2259,9 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       if (input$gsea_go %in% c('ALL', 'BP', 'MF', 'CC')) {
         ont = input$gsea_go
         custom_col = NULL
+      } else if(input$gsea_go == "") {
+        ont = NULL
+        custom_col = NULL
       } else {
         ont = NULL
         custom_col = input$gsea_go

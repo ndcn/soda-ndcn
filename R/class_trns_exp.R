@@ -1401,7 +1401,7 @@ Trns_exp = R6::R6Class(
         df <- dplyr::bind_rows(ldf, .id="category")
         df$category <- factor(df$category, levels=names(object))
       } else {
-        df = get_ora_results(object, showCategory)
+        df = get_cp_results(object, showCategory)
         # df <- fortify(object, showCategory = showCategory, split=split) # fortify crap
         ## already parsed in fortify
         ## df$GeneRatio <- parse_ratio(df$GeneRatio)
@@ -1478,26 +1478,23 @@ Trns_exp = R6::R6Class(
         prot_list = self$tables$ora_prot_list
       }
 
-      geneSets = enrichplot:::extract_geneSets(x, showCategory)
+      df = get_cp_results(object = x, showCategory = showCategory)
+      geneSets = geneInCategory(x)
+      geneSets = geneSets[1:min(showCategory, length(geneSets))]
 
       if (displayed_labels == 'Description') {
-        main_nodes = names(geneSets)
+        main_nodes = df$Description
       } else if (displayed_labels == 'IDs') {
-        main_nodes = x@result$ID[1:showCategory]
+        main_nodes = df$ID
       } else if (displayed_labels == 'IDs and Description') {
-        main_nodes = paste0(x@result$ID[1:showCategory], '\n', names(geneSets))
+        main_nodes = paste0(df$ID, '\n', df$Description)
       } else {
         stop("displayed_labels must be in ['Description', 'IDs', 'IDs and Description']")
       }
-
       names(geneSets) = main_nodes
 
-      secondary_nodes = c()
-      for (n in geneSets) {
-        secondary_nodes = c(secondary_nodes, n)
-      }
-      secondary_nodes = sort(unique(secondary_nodes))
 
+      secondary_nodes = sort(unique(unlist(unname(geneSets))))
       all_nodes = c(main_nodes, secondary_nodes)
 
       node_table = data.frame(matrix(nrow = length(all_nodes), ncol = 1))
@@ -1804,7 +1801,7 @@ Trns_exp = R6::R6Class(
         x = "Count"
       }
 
-      df = get_ora_results(object, showCategory)
+      df = get_cp_results(object, showCategory)
       # df = fortify(object, showCategory=showCategory, by=x)
 
       fig = plotly::plot_ly(df,
