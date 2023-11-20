@@ -3,6 +3,15 @@ base::source('./R/complex_functions/pca.R')
 base::source('./R/complex_functions/volcano.R')
 #--------------------------------------------------------- Switch functions ----
 
+gene_ontology_switch = function(selection) {
+  switch (EXPR = selection,
+    'Gene ontology (ALL)' = 'ALL',
+    'Gene ontology (BP)'= 'BP',
+    'Gene ontology (MF)' = 'MF',
+    'Gene ontology (CC)' = 'CC'
+  )
+}
+
 experiment_switch = function(selection) {
   switch(EXPR = selection,
          'Lipidomics' = 'lips',

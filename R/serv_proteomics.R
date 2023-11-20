@@ -1817,8 +1817,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('gsea_go'),
                 label = 'Terms',
-                choices = c('ALL', 'BP', 'MF', 'CC'),
-                selected = 'ALL'
+                choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)'),
+                selected = 'Gene ontology (ALL)'
               )
             ),
             shiny::column(
@@ -1887,8 +1887,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('or_go_ont'),
                 label = 'Terms',
-                choices = c('ALL', 'BP', 'MF', 'CC'),
-                selected = 'ALL',
+                choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)'),
+                selected = 'Gene ontology (ALL)',
                 width = '100%'
               )
             ),
@@ -2003,12 +2003,12 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
       shiny::updateSelectInput(
         inputId = 'gsea_go',
-        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list))
+        choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)', names(r6$tables$feature_list))
       )
 
       shiny::updateSelectInput(
         inputId = 'or_go_ont',
-        choices = c('ALL', 'BP', 'MF', 'CC', names(r6$tables$feature_list))
+        choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)', names(r6$tables$feature_list))
       )
 
     }
@@ -2231,8 +2231,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                        test = input$gseaprep_test,
                        context = 'gsea')
 
-      if (input$gsea_go %in% c('ALL', 'BP', 'MF', 'CC')) {
-        ont = input$gsea_go
+      if (input$gsea_go %in% c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)')) {
+        ont = gene_ontology_switch(input$gsea_go)
         custom_col = NULL
       } else if(input$gsea_go == "") {
         ont = NULL
@@ -2277,8 +2277,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                      test = input$gseaprep_test,
                      context = 'ora')
 
-    if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
-      ont = input$or_go_ont
+    if (input$or_go_ont %in% c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)')) {
+      ont = gene_ontology_switch(input$or_go_ont)
       custom_col = NULL
     } else if (input$or_go_ont == "") {
       ont = NULL
