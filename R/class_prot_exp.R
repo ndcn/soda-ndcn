@@ -1400,8 +1400,8 @@ Prot_exp = R6::R6Class(
         df <- dplyr::bind_rows(ldf, .id="category")
         df$category <- factor(df$category, levels=names(object))
       } else {
-        df = get_cp_results(object, showCategory)
-        # df <- fortify(object, showCategory = showCategory, split=split) # fortify crap
+        # df = get_cp_results(object, showCategory)
+        df <- fortify(object, showCategory = showCategory, split=split)
         ## already parsed in fortify
         ## df$GeneRatio <- parse_ratio(df$GeneRatio)
       }
@@ -1477,16 +1477,18 @@ Prot_exp = R6::R6Class(
         prot_list = self$tables$ora_prot_list
       }
 
-      df = get_cp_results(object = x, showCategory = showCategory)
-      geneSets = geneInCategory(x)
-      geneSets = geneSets[1:min(showCategory, length(geneSets))]
+      # df = get_cp_results(object = x, showCategory = showCategory)
+      geneSets = enrichplot:::extract_geneSets(x, showCategory)
+      # df <- fortify(x, showCategory = showCategory)
+      # geneSets = geneInCategory(x)
+      # geneSets = geneSets[1:min(showCategory, length(geneSets))]
 
       if (displayed_labels == 'Description') {
-        main_nodes = df$Description
+        main_nodes = names(geneSets)
       } else if (displayed_labels == 'IDs') {
-        main_nodes = df$ID
+        main_nodes = x@result$ID[1:showCategory]
       } else if (displayed_labels == 'IDs and Description') {
-        main_nodes = paste0(df$ID, '\n', df$Description)
+        main_nodes = paste0(x@result$ID[1:showCategory], '\n', names(geneSets))
       } else {
         stop("displayed_labels must be in ['Description', 'IDs', 'IDs and Description']")
       }
@@ -1700,16 +1702,15 @@ Prot_exp = R6::R6Class(
     },
 
     plot_emap_plot = function(x = self$tables$gsea_object,
-                              showCategory = 20,
-                              color = "p.adjust",
-                              size = "Count",
-                              score_threshold = 0.2,
-                              similarity_score = 'JC',
-                              edge_magnifier = 1,
-                              node_magnifier = 5,
-                              enable_physics = FALSE,
+                              showCategory = self$params$or_emap_plot$showCategory,
+                              color = self$params$or_emap_plot$color,
+                              size = self$params$or_emap_plot$size,
+                              score_threshold = self$params$or_emap_plot$score_threshold,
+                              similarity_score = self$params$or_emap_plot$similarity_score,
+                              edge_magnifier = self$params$or_emap_plot$edge_magnifier,
+                              node_magnifier = self$params$or_emap_plot$node_magnifier,
+                              enable_physics = self$params$or_emap_plot$enable_physics,
                               context = "gsea") {
-
       # Format data
       showCategory = as.numeric(showCategory)
       score_threshold = as.numeric(score_threshold)
@@ -1752,7 +1753,6 @@ Prot_exp = R6::R6Class(
                                   color=color,
                                   cex_line=edge_magnifier,
                                   min_edge=score_threshold)
-
 
 
       # Extract data from the igraph object
@@ -1800,8 +1800,8 @@ Prot_exp = R6::R6Class(
         x = "Count"
       }
 
-      df = get_cp_results(object, showCategory)
-      # df = fortify(object, showCategory=showCategory, by=x)
+      # df = get_cp_results(object, showCategory)
+      df = fortify(object, showCategory=showCategory, by=x)
 
       fig = plotly::plot_ly(df,
                             x = df[,x],

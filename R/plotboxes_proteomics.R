@@ -1641,14 +1641,6 @@ prot_or_emap_plot_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
   r6$plot_emap_plot(x = r6$tables$go_enrich,
-                    showCategory = r6$params$or_emap_plot$showCategory,
-                    color = r6$params$or_emap_plot$color,
-                    size = r6$params$or_emap_plot$size,
-                    score_threshold = r6$params$or_emap_plot$score_threshold,
-                    similarity_score = r6$params$or_emap_plot$similarity_score,
-                    edge_magnifier = r6$params$or_emap_plot$edge_magnifier,
-                    node_magnifier = r6$params$or_emap_plot$node_magnifier,
-                    enable_physics = r6$params$or_emap_plot$enable_physics,
                     context = 'or')
 }
 prot_or_emap_plot_spawn = function(r6, output) {
