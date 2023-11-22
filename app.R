@@ -51,8 +51,8 @@ library(dplyr)
 
 # New
 
-
-
+# Use basilisk
+# reticulate::use_condaenv(condaenv = 'mofa_1')
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {

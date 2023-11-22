@@ -994,7 +994,6 @@ Trns_exp = R6::R6Class(
       features = features[order(-features$log2_fold_change),]
 
       if (!is.null(custom_col)) {
-        feature_table = feature_table[rownames(features),]
         term2gene = get_term2gene(feature_table = feature_table,
                                   column = custom_col,
                                   sep = "\\|")
