@@ -53,10 +53,18 @@ Prot_exp = R6::R6Class(
 
       # PCA parameters self$params$pca$
       pca = list(
-        dataset = 'Z-scored table',
-        group_column = NULL,
-        apply_da = TRUE,
+        data_table = 'z_scored_total_norm_data',
+        sample_groups_col = NULL,
+        feature_groups_col = NULL,
+        apply_da = FALSE,
         alpha_da = 0.8,
+        pca_method = 'svd',
+        nPcs = 10,
+        displayed_pc_1 = 1,
+        displayed_pc_2 = 2,
+        completeObs = F,
+        displayed_plots = 'both',
+        colors_palette = 'Spectral',
         img_format = "png"
       ),
 
@@ -309,12 +317,22 @@ Prot_exp = R6::R6Class(
       self$params$heatmap$img_format = img_format
     },
 
-    param_pca = function(dataset, group_column, apply_da, alpha_da, img_format) {
-      self$params$pca$dataset = dataset
-      self$params$pca$group_column = group_column
+    param_pca = function(data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
+
+      self$params$pca$data_table = data_table
+      self$params$pca$sample_groups_col = sample_groups_col
+      self$params$pca$feature_groups_col = feature_groups_col
       self$params$pca$apply_da = apply_da
       self$params$pca$alpha_da = alpha_da
+      self$params$pca$pca_method = pca_method
+      self$params$pca$nPcs = nPcs
+      self$params$pca$displayed_pc_1 = displayed_pc_1
+      self$params$pca$displayed_pc_2 = displayed_pc_2
+      self$params$pca$completeObs = completeObs
+      self$params$pca$displayed_plots = displayed_plots
+      self$params$pca$colors_palette = colors_palette
       self$params$pca$img_format = img_format
+
     },
 
     param_gsea = function(data_table, meta_table, group_col, groups, used_function, test,
@@ -726,10 +744,18 @@ Prot_exp = R6::R6Class(
                          alpha_da = 0.8,
                          img_format = "png")
 
-      self$param_pca(dataset = 'Z-scored table',
-                     group_column = self$indices$group_col,
-                     apply_da = TRUE,
+      self$param_pca(data_table = 'z_scored_total_norm_data',
+                     sample_groups_col = self$indices$group_col,
+                     feature_groups_col = NULL,
+                     apply_da = FALSE,
                      alpha_da = 0.8,
+                     pca_method = 'svd',
+                     nPcs = 10,
+                     displayed_pc_1 = 1,
+                     displayed_pc_2 = 2,
+                     completeObs = F,
+                     displayed_plots = 'both',
+                     colors_palette = 'Spectral',
                      img_format = "png")
 
       self$indices$feature_id_type = 'SYMBOL'
@@ -1189,62 +1215,80 @@ Prot_exp = R6::R6Class(
     },
 
     ## PCA scores and loading plots
-    plot_pca = function(data_table = self$tables[[self$params$pca$dataset]],
-                        group_column = self$params$pca$group_column,
+    plot_pca = function(data_table = self$tables[[self$params$pca$data_table]],
+                        meta_table = self$tables$raw_meta,
+                        feature_table = self$tables$feature_table,
+                        sample_groups_col = self$params$pca$sample_groups_col,
+                        feature_groups_col = self$params$pca$feature_groups_col,
                         apply_da = self$params$pca$apply_da,
                         alpha_da = self$params$pca$alpha_da,
+                        pca_method = self$params$pca$pca_method,
+                        nPcs = self$params$pca$nPcs,
+                        displayed_pc_1 = self$params$pca$displayed_pc_1,
+                        displayed_pc_2 = self$params$pca$displayed_pc_2,
+                        completeObs = self$params$pca$completeObs,
+                        displayed_plots = self$params$pca$displayed_plots,
+                        colors_palette = self$params$pca$colors_palette,
+                        return_data = TRUE,
                         width = NULL,
-                        height = NULL,
-                        colour_list) {
+                        height = NULL) {
 
 
+
+      alpha_da = as.numeric(alpha_da)
+      nPcs= as.numeric(nPcs)
+      displayed_pc_1 = as.numeric(displayed_pc_1)
+      displayed_pc_2 = as.numeric(displayed_pc_2)
+
+      if (is.character(data_table)) {
+        data_table = self$tables[[data_table]]
+      }
+
+      sample_groups = meta_table[rownames(data_table),sample_groups_col]
       if (apply_da) {
         data_table = apply_discriminant_analysis(data_table = data_table,
-                                                 group_list = self$tables$raw_meta[,group_column],
+                                                 group_list = sample_groups,
                                                  nlambda = 100,
-                                                 alpha = alpha_da)
-      }
+                                                 alpha = alpha_da)}
 
       ncol_1 = ncol(data_table)
-      data_table = data_table[,!is.na(colSums(data_table))]
+      data_table = data_table[,!is.na(colSums(data_table, na.rm = T))]
       ncol_2 = ncol(data_table)
       if(ncol_2 != ncol_1) {
-        print_tm(self$name, paste0("PCA : dropped ", ncol_1 - ncol_2, " features with no signal variation."))
+        print_time(paste0("PCA : dropped ", ncol_1 - ncol_2, " features with no signal variation."))
       }
 
-      pca_data = get_pca_data(data_table = data_table)
+      if (!is.null(feature_groups_col) & !is.null(feature_table)) {
+        feature_groups = feature_table[colnames(data_table),feature_groups_col]
+        if (length(which(is.na(feature_groups))) < 30) {
+          feature_groups[which(is.na(feature_groups))] = colnames(data_table)[which(is.na(feature_groups))]
+        } else {
+          feature_groups[which(is.na(feature_groups))] = "UNK"
+        }
 
-      fig = c()
+      } else {
+        feature_groups = NULL
+      }
 
-      # Store tables
-      self$tables$pca_scores_table = pca_data@scores
-      self$tables$pca_loadings_table = pca_data@loadings
+      pca_out = pca_main(data_table = data_table,
+                         sample_groups = sample_groups,
+                         feature_groups = feature_groups,
+                         nPcs = nPcs,
+                         displayed_pc_1 = displayed_pc_1,
+                         displayed_pc_2 = displayed_pc_2,
+                         pca_method = pca_method,
+                         completeObs = completeObs,
+                         displayed_plots = displayed_plots,
+                         colors_palette = colors_palette,
+                         return_data = return_data)
 
-      fig[[1]] = pca_plot_scores(x = pca_data@scores[, "PC1"],
-                                 y = pca_data@scores[, "PC2"],
-                                 meta_table = self$tables$raw_meta[rownames(data_table),],
-                                 group_col = group_column,
-                                 width = width,
-                                 height = height,
-                                 colour_list = colour_list)
-      fig[[1]] = fig[[1]] %>% layout(
-        xaxis = list(title = paste0("PC1 (", round(pca_data@R2[1] * 100), "% of the variance)")))
 
-      fig[[2]] = pca_plot_loadings(x = pca_data@loadings[, "PC1"],
-                                   y =  pca_data@loadings[, "PC2"],
-                                   feature_list = colnames(data_table),
-                                   width = width,
-                                   height = height,
-                                   colour_list = colour_list)
-      fig[[2]] = fig[[2]] %>% layout(
-        xaxis = list(title = paste0("PC1 (", round(pca_data@R2[1] * 100), "% of the variance)")))
 
-      fig = plotly::subplot(fig, nrows = 1, margin = 0.035, titleX = TRUE)
-      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
-                           yaxis = list(title = paste0("PC2 (", round(pca_data@R2[2] * 100), "% of the variance)"))
-      )
 
-      self$plots$pca_plot = fig
+
+      self$tables$pca_scores_table = pca_out$pca_data@scores
+      self$tables$pca_loadings_table = pca_out$pca_data@loadings
+      self$plots$pca_plot = pca_out$fig
     },
 
     plot_dot_plot = function(object = self$tables$gsea_object,

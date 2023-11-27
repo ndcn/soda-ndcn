@@ -140,34 +140,31 @@ plot_pca = function(x, y, label_1, label_2, weight_1, weight_2, names, type, gro
                                     centre = c(mean(data_table$x), mean(data_table$y)),
                                     level = 0.95)
 
-    plot = plotly::plot_ly(data = data_table, width = width, height = height) %>%
+    plot = plotly::plot_ly(data = data_table, width = width, height = height)
 
-      add_markers(
-        x = ~x,
-        y = ~y,
-        text = ~names,
-        mode = "markers+text",
-        marker = list(size = marker_size),
-      ) %>%
+    plot = plotly::add_markers(plot,
+                               x = ~x,
+                               y = ~y,
+                               text = ~names,
+                               mode = "markers+text",
+                               marker = list(size = marker_size))
 
-      add_trace(
-        data = as.data.frame(conf_ellipse),
-        x = ~x,
-        y = ~y,
-        mode = "lines",
-        line = list(color = 'gray',
-                    width = 1),
-        inherit = FALSE,
-        name = 'Hotelling',
-        showlegend = TRUE,
-        type = "scatter"
-      ) %>%
+    plot = plotly::add_trace(plot,
+                             data = as.data.frame(conf_ellipse),
+                             x = ~x,
+                             y = ~y,
+                             mode = "lines",
+                             line = list(color = 'gray',
+                                         width = 1),
+                             inherit = FALSE,
+                             name = 'Hotelling',
+                             showlegend = TRUE,
+                             type = "scatter")
 
-      layout(
-        title = "PCA Scores Plot",
-        xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
-        yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE)
-      )
+    plot = plotly::layout(plot,
+                          title = "PCA Scores Plot",
+                          xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
+                          yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE))
 
     return(plot)
 
@@ -179,31 +176,30 @@ plot_pca = function(x, y, label_1, label_2, weight_1, weight_2, names, type, gro
       names = names
     )
 
-    plot = plot_ly(data = data_table, width = width, height = height) %>%
+    plot = plotly::plot_ly(data = data_table, width = width, height = height)
 
-      add_segments(
-        x = 0,
-        y = 0,
-        xend = ~x,
-        yend = ~y,
-        line = list(dash = "solid"),
-        showlegend = FALSE
-      ) %>%
+    plot = plotly::add_segments(plot,
+                                x = 0,
+                                y = 0,
+                                xend = ~x,
+                                yend = ~y,
+                                line = list(dash = "solid"),
+                                showlegend = FALSE)
 
-      add_markers(
-        x = ~x,
-        y = ~y,
-        text = ~names,
-        mode = "markers+text",
-        marker = list(size = marker_size),
-        showlegend = FALSE
-      ) %>%
+    plot = plotly::add_markers(plot,
+                               x = ~x,
+                               y = ~y,
+                               text = ~names,
+                               mode = "markers+text",
+                               marker = list(size = marker_size),
+                               showlegend = FALSE)
 
-      layout(
-        title = "PCA Loadings Plot",
-        xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
-        yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE)
-      )
+
+    plot = plotly::layout(plot,
+                          title = "PCA Loadings Plot",
+                          xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
+                          yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE)
+    )
 
     return(plot)
 
@@ -220,38 +216,36 @@ plot_pca = function(x, y, label_1, label_2, weight_1, weight_2, names, type, gro
                                     centre = c(mean(data_table$x), mean(data_table$y)),
                                     level = 0.95)
 
-    plot = plotly::plot_ly(data = data_table, width = width, height = height) %>%
+    plot = plotly::plot_ly(data = data_table, width = width, height = height)
 
-    add_markers(
-        x = ~x,
-        y = ~y,
-        text = ~names,
-        mode = "markers+text",
-        marker = list(size = marker_size),
-        color = ~groups,
-        colors = colors,
-        legendgroup = ~groups,
-        showlegend = TRUE
-      ) %>%
+    plot = plotly::add_markers(plot,
+                               x = ~x,
+                               y = ~y,
+                               text = ~names,
+                               mode = "markers+text",
+                               marker = list(size = marker_size),
+                               color = ~groups,
+                               colors = colors,
+                               legendgroup = ~groups,
+                               showlegend = TRUE)
 
-      add_trace(
-        data = as.data.frame(conf_ellipse),
-        x = ~x,
-        y = ~y,
-        mode = "lines",
-        line = list(color = 'gray',
-                    width = 1),
-        inherit = FALSE,
-        name = 'Hotelling',
-        showlegend = TRUE,
-        type = "scatter"
-      )%>%
+    plot = plotly::add_trace(plot,
+                             data = as.data.frame(conf_ellipse),
+                             x = ~x,
+                             y = ~y,
+                             mode = "lines",
+                             line = list(color = 'gray',
+                                         width = 1),
+                             inherit = FALSE,
+                             name = 'Hotelling',
+                             showlegend = TRUE,
+                             type = "scatter")
 
-      layout(
-        title = "PCA Scores Plot",
-        xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
-        yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE)
-      )
+    plot = plotly::layout(plot,
+                          title = "PCA Scores Plot",
+                          xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
+                          yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE)
+    )
 
     return(plot)
 
@@ -264,37 +258,34 @@ plot_pca = function(x, y, label_1, label_2, weight_1, weight_2, names, type, gro
       groups = as.factor(groups)
     )
 
-    plot = plot_ly(data = data_table, width = width, height = height) %>%
+    plot = plotly::plot_ly(data = data_table, width = width, height = height)
 
-      add_segments(
-        x = 0,
-        y = 0,
-        xend = ~x,
-        yend = ~y,
-        line = list(dash = "solid"),
-        color = ~groups,
-        colors = colors,
-        legendgroup = ~groups,
-        showlegend = FALSE
-      ) %>%
+    plot = plotly::add_segments(plot,
+                                x = 0,
+                                y = 0,
+                                xend = ~x,
+                                yend = ~y,
+                                line = list(dash = "solid"),
+                                color = ~groups,
+                                colors = colors,
+                                legendgroup = ~groups,
+                                showlegend = FALSE)
 
-      add_markers(
-        x = ~x,
-        y = ~y,
-        text = ~names,
-        mode = "markers+text",
-        marker = list(size = marker_size),
-        color = ~groups,
-        colors = colors,
-        legendgroup = ~groups,
-        showlegend = TRUE
-      ) %>%
+    plot = plotly::add_markers(plot,
+                               x = ~x,
+                               y = ~y,
+                               text = ~names,
+                               mode = "markers+text",
+                               marker = list(size = marker_size),
+                               color = ~groups,
+                               colors = colors,
+                               legendgroup = ~groups,
+                               showlegend = TRUE)
 
-      layout(
-        title = "PCA Loadings Plot",
-        xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
-        yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE)
-      )
+    plot = plotly::layout(plot,
+                          title = "PCA Loadings Plot",
+                          xaxis = list(title = paste0(label_1, ' (', weight_1 * 100, '%)'), zeroline = TRUE),
+                          yaxis = list(title = paste0(label_2, ' (', weight_2 * 100, '%)'), zeroline = TRUE))
 
     return(plot)
 
@@ -318,21 +309,21 @@ plot_explained_variance = function(variance_explained, width, height) {
                          height = height)
 
   # Add line for cumulative variance
-  plot = plot %>%
-    add_trace(x = 1:length(variance_explained),
-              y = cumulative_variance,
-              type = 'scatter',
-              mode = 'lines+markers',
-              name = 'Cumulative Variance',
-              line = list(color = 'red'),
-              marker = list(color = 'red'))
+  plot = plotly::add_trace(plot,
+                           x = 1:length(variance_explained),
+                           y = cumulative_variance,
+                           type = 'scatter',
+                           mode = 'lines+markers',
+                           name = 'Cumulative Variance',
+                           line = list(color = 'red'),
+                           marker = list(color = 'red'))
 
   # Customize the layout
-  plot = plot %>%
-    layout(title = "Variance Explained by Each PC",
-           xaxis = list(title = "Principal Component"),
-           yaxis = list(title = "Variance Explained (%)", rangemode = "tozero"),
-           barmode = 'overlay')
+  plot = plotly::layout(plot,
+                        title = "Variance Explained by Each PC",
+                        xaxis = list(title = "Principal Component"),
+                        yaxis = list(title = "Variance Explained (%)", rangemode = "tozero"),
+                        barmode = 'overlay')
 
   return(plot)
 }

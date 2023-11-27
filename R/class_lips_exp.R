@@ -766,6 +766,20 @@ Lips_exp = R6::R6Class(
                                   group_col = self$indices$group_col,
                                   img_format = "png")
 
+      self$param_pca(data_table = 'z_scored_total_norm_data',
+                     sample_groups_col = self$indices$group_col,
+                     feature_groups_col = NULL,
+                     apply_da = FALSE,
+                     alpha_da = 0.8,
+                     pca_method = 'svd',
+                     nPcs = 10,
+                     displayed_pc_1 = 1,
+                     displayed_pc_2 = 2,
+                     completeObs = F,
+                     displayed_plots = 'both',
+                     colors_palette = 'Spectral',
+                     img_format = "png")
+
       self$param_volcano_plot(data_table = 'Total normalized table',
                               adjustment = "BH",
                               group_col = self$indices$group_col,
