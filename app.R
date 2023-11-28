@@ -217,9 +217,9 @@ server = function(input, output, session) {
   # Basic authentification
   res_auth = shinymanager::secure_server(
     check_credentials = shinymanager::check_credentials(db = data.frame(
-      user = c("user1", "user2"),
-      password = c("1234", "monkey"),
-      admin = c(FALSE, FALSE))
+      user = c("user1"),
+      password = c("user1234"),
+      admin = c(FALSE))
     )
   )
 
