@@ -1233,8 +1233,6 @@ Prot_exp = R6::R6Class(
                         width = NULL,
                         height = NULL) {
 
-
-
       alpha_da = as.numeric(alpha_da)
       nPcs= as.numeric(nPcs)
       displayed_pc_1 = as.numeric(displayed_pc_1)
@@ -1259,16 +1257,25 @@ Prot_exp = R6::R6Class(
       }
 
       if (!is.null(feature_groups_col) & !is.null(feature_table)) {
-        feature_groups = feature_table[colnames(data_table),feature_groups_col]
-        if (length(which(is.na(feature_groups))) < 30) {
-          feature_groups[which(is.na(feature_groups))] = colnames(data_table)[which(is.na(feature_groups))]
+        if (length(feature_groups_col) == 1) {
+          if (feature_groups_col %in% colnames(feature_table)) {
+            feature_groups = feature_table[colnames(data_table),feature_groups_col]
+            if (length(which(is.na(feature_groups))) < 30) {
+              feature_groups[which(is.na(feature_groups))] = colnames(data_table)[which(is.na(feature_groups))]
+            } else {
+              feature_groups[which(is.na(feature_groups))] = "UNK"
+            }
+          } else {
+            feature_groups = NULL
+          }
         } else {
-          feature_groups[which(is.na(feature_groups))] = "UNK"
+          feature_groups = feature_groups_col[colnames(data_table)]
+          print(feature_groups)
         }
-
       } else {
         feature_groups = NULL
       }
+
 
       pca_out = pca_main(data_table = data_table,
                          sample_groups = sample_groups,
@@ -1285,10 +1292,10 @@ Prot_exp = R6::R6Class(
 
 
 
-
       self$tables$pca_scores_table = pca_out$pca_data@scores
       self$tables$pca_loadings_table = pca_out$pca_data@loadings
       self$plots$pca_plot = pca_out$fig
+
     },
 
     plot_dot_plot = function(object = self$tables$gsea_object,

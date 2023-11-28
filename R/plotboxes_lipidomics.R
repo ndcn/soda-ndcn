@@ -311,10 +311,12 @@ volcano_plot_server = function(r6, output, session) {
   # Set UI
   output$volcano_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
-      shinyWidgets::prettySwitch(
+      shinyWidgets::materialSwitch(
         inputId = ns('volcano_plot_auto_update'),
         label = 'Auto-update',
-        value = TRUE
+        value = TRUE,
+        right = TRUE,
+        status = "success"
       ),
       shiny::selectInput(
         inputId = ns("volcano_plot_tables"),
@@ -509,9 +511,7 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
 
       # Is the column multivalue?
       if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
-        print('IN FEATURE LIST')
         if (length(input$volcano_plot_annotation_terms) > 0) {
-          print('DOING THE FEATURE DATA')
           feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
                                             sparse_table = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$sparse_matrix)
         } else {
@@ -891,6 +891,13 @@ pca_server = function(r6, output, session) {
 
   output$pca_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('pca_auto_update'),
+        label = 'Auto-update',
+        value = TRUE,
+        right = TRUE,
+        status = "success"
+      ),
       shiny::selectInput(
         inputId = ns("pca_data_table"),
         label = "Select dataset",
@@ -905,9 +912,16 @@ pca_server = function(r6, output, session) {
       ),
       shiny::selectInput(
         inputId = ns("pca_feature_group"),
-        label = "Feature group column",
-        choices = colnames(r6$tables$feature_table),
+        label = "Feature metadata",
+        choices = c('None', colnames(r6$tables$feature_table)),
         selected = r6$params$pca$feature_groups_col
+      ),
+      shiny::selectizeInput(
+        inputId = ns('pca_plot_annotation_terms'),
+        label = "Feature annotations",
+        choices = NULL,
+        selected = NULL,
+        multiple = TRUE
       ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
@@ -1004,13 +1018,64 @@ pca_server = function(r6, output, session) {
 
 pca_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(c(input$pca_data_table, input$pca_sample_groups_col, input$pca_feature_group, input$pca_apply_da, input$pca_alpha_da, input$pca_method, input$pca_npcs, input$pca_displayed_pc_1, input$pca_displayed_pc_2, input$pca_completeObs, input$pca_displayed_plots, input$pca_colors_palette, input$pca_img_format),{
-    print_tm(r6$name, "PCA: Updating params...")
+  shiny::observeEvent(input$pca_feature_group, {
+    if (input$pca_feature_group %in% names(r6$tables$feature_list)) {
+      shiny::updateSelectizeInput(
+        inputId = "pca_plot_annotation_terms",
+        session = session,
+        choices = r6$tables$feature_list[[input$pca_feature_group]]$feature_list,
+        selected = character(0)
+      )
+    } else {
+      shiny::updateSelectizeInput(
+        inputId = "pca_plot_annotation_terms",
+        session = session,
+        choices = NULL,
+        selected = character(0)
+      )
+    }
+  })
 
-    print(input$pca_data_table)
+  shiny::observeEvent(c(
+    shiny::req(input$pca_auto_update),
+    input$pca_data_table,
+    input$pca_sample_groups_col,
+    input$pca_feature_group,
+    input$pca_plot_annotation_terms,
+    input$pca_apply_da,
+    input$pca_alpha_da,
+    input$pca_method,
+    input$pca_npcs,
+    input$pca_displayed_pc_1,
+    input$pca_displayed_pc_2,
+    input$pca_completeObs,
+    input$pca_displayed_plots,
+    input$pca_colors_palette,
+    input$pca_img_format),{
+
+      print_tm(r6$name, "PCA: Updating params...")
+
+      # Is the column multivalue?
+      if (input$pca_feature_group %in% names(r6$tables$feature_list)) {
+        print(1)
+        if (length(input$pca_plot_annotation_terms) > 0) {
+          print(2)
+          feature_metadata = match_go_terms(terms_list = input$pca_plot_annotation_terms,
+                                            sparse_table = r6$tables$feature_list[[input$pca_feature_group]]$sparse_matrix)
+          print(3)
+        } else {
+          print(4)
+          return()
+        }
+      } else {
+        print(5)
+        feature_metadata = input$pca_feature_group
+      }
+
+
     r6$param_pca(data_table = table_name_switch(input$pca_data_table),
                  sample_groups_col = input$pca_sample_groups_col,
-                 feature_groups_col = input$pca_feature_group,
+                 feature_groups_col = feature_metadata,
                  apply_da = input$pca_apply_da,
                  alpha_da = input$pca_alpha_da,
                  pca_method = input$pca_method,
@@ -1022,13 +1087,16 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
                  colors_palette = input$pca_colors_palette,
                  img_format = input$pca_img_format)
 
-    base::tryCatch({
-      pca_generate(r6, color_palette, dimensions_obj, input)
-      pca_spawn(r6, input$pca_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'PCA: ERROR.')
-    },finally={}
-    )
+    pca_generate(r6, color_palette, dimensions_obj, input)
+    pca_spawn(r6, input$pca_img_format, output)
+
+    # base::tryCatch({
+    #   pca_generate(r6, color_palette, dimensions_obj, input)
+    #   pca_spawn(r6, input$pca_img_format, output)
+    # },error=function(e){
+    #   print_tm(r6$name, 'PCA: ERROR.')
+    # },finally={}
+    # )
 
   })
 
