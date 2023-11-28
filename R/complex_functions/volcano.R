@@ -465,8 +465,8 @@ plot_volcano = function(data, marker_size, p_val_threshold = 0.05, fc_threshold 
   main_plot = plotly::layout(main_plot,
                              xaxis = list(title = "Log2(Fold Change)",
                                           zeroline = T,
-                                          range = c(-round(max(abs(data$log2_fold_change))),
-                                                    round(max(abs(data$log2_fold_change)))
+                                          range = c(-ceiling(max(abs(data$log2_fold_change))),
+                                                    ceiling(max(abs(data$log2_fold_change)))
                                           )
                              ),
                              yaxis = list(title = y_axis_title),
