@@ -239,9 +239,9 @@ prot_plotbox_switch_ui = function(selection_list){
   ui_functions = c()
   for (plot in selection_list) {
     ui_functions = c(ui_functions, switch(EXPR = plot,
-                                          "select_pca" = prot_pca_ui,
+                                          "select_pca" = pca_ui,
                                           "select_heatmap" = prot_heatmap_ui,
-                                          "select_volcano_plot" = prot_volcano_plot_ui
+                                          "select_volcano_plot" = volcano_plot_ui
     )
     )
   }
@@ -252,9 +252,9 @@ prot_plotbox_switch_server = function(selection_list){
   server_functions = c()
   for (plot in selection_list) {
     server_functions = c(server_functions, switch(EXPR = plot,
-                                                  "select_pca" = prot_pca_server,
+                                                  "select_pca" = pca_server,
                                                   "select_heatmap" = prot_heatmap_server,
-                                                  "select_volcano_plot" = prot_volcano_plot_server
+                                                  "select_volcano_plot" = volcano_plot_server
     )
     )
   }
@@ -329,33 +329,46 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Render skeleton UI
   output$omics_ui = shiny::renderUI({
     bs4Dash::tabsetPanel(
+      id = ns('skeleton_ui'),
       type = "tabs",
       shiny::tabPanel(
-        title = "Upload metadata",
+        title = "Sample annotations",
         shiny::uiOutput(
-          outputId = ns('up_metadata_ui')
+          outputId = ns('up_sample_metadata_ui')
         )
       ),
       shiny::tabPanel(
-        title = "Upload data",
+        title = "Data",
         shiny::uiOutput(
           outputId = ns('up_data_ui')
         )
       ),
       shiny::tabPanel(
-        title = "Visualize data",
+        title = "Feature annotations",
+        shiny::uiOutput(
+          outputId = ns('up_feature_metadata_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Interactive visualization",
         shiny::uiOutput(
           outputId = ns('visualize_data_ui')
         )
       ),
       shiny::tabPanel(
-        title = "Geneset enrichment",
+        title = "Functional analysis",
+        shiny::uiOutput(
+          outputId = ns('functional_analysis_ui')
+        )
+      ),
+      shiny::tabPanel(
+        title = "Enrichment",
         shiny::uiOutput(
           outputId = ns('geneset_enrichment_ui')
         )
       ),
       shiny::tabPanel(
-        title = "Over-representation analysis",
+        title = "Over-representation",
         shiny::uiOutput(
           outputId = ns('over_representation_ui')
         )
@@ -365,7 +378,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
   #---------------------------------------------- Metadata upload rendering ----
 
-  output$up_metadata_ui = shiny::renderUI({
+  output$up_sample_metadata_ui = shiny::renderUI({
     shiny::fluidRow(
 
       # First column with the table input and preview of the raw data
@@ -924,7 +937,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
 
   #-------------------------------------------------- Data upload rendering ----
-
   output$up_data_ui = shiny::renderUI({
     shiny::fluidRow(
       # First column with the table input and preview of the raw data
@@ -1010,263 +1022,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
           collapsible = T,
           collapsed  = T,
           maximizable = F,
-          headerBorder = T
-        ),
-        bs4Dash::box(
-          id = ns('gsea_setup_box'),
-          title = 'Geneset enrichment and Over representation analysis',
-          width = 12,
-          shiny::tagList(
-            shiny::fluidRow(
-              shiny::column(
-                width = 12,
-                shiny::h4('Data preparation'),
-              )
-            ),
-            shiny::fluidRow(
-              shiny::column(
-                width= 3,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_table_select'),
-                  label = 'Select table',
-                  choices = NULL,
-                  width = '100%'
-                )
-              ),
-              shiny::column(
-                width= 3,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_group_col'),
-                  label = 'Group column',
-                  choices = NULL,
-                  width = '100%'
-                )
-              ),
-              shiny::column(
-                width = 3,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_groups'),
-                  label = 'Select two groups',
-                  choices = NULL,
-                  width = '100%',
-                  multiple = T
-                )
-              ),
-              shiny::column(
-                width = 3,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_method'),
-                  label = 'FC method',
-                  choices = c('median', 'mean'),
-                  selected = 'mean',
-                  width = '100%'
-                )
-              )
-            ),
-            shiny::fluidRow(
-              shiny::column(
-                width = 6,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_test'),
-                  label = 'Test',
-                  choices = c('Wilcoxon', 't-Test'),
-                  selected = 't-Test',
-                  width = '100%'
-                )
-              ),
-              shiny::column(
-                width = 6,
-                shiny::selectInput(
-                  inputId = ns('gseaprep_adjustment'),
-                  label = 'Adjustment',
-                  choices = c('None', 'Benjamini-Hochberg'),
-                  selected = 'Benjamini-Hochberg'
-                )
-              )
-            ),
-            shiny::fluidRow(
-              shiny::column(
-                width = 12,
-                shiny::sliderInput(
-                  inputId = ns('gseaprep_pval'),
-                  label = 'p-value cutoff (Features, only for ORA)',
-                  min = 0.01,
-                  max = 0.9,
-                  value = 0.05,
-                  step = 0.01,
-                  width = '100%'
-                ),
-                shiny::hr(style = "border-top: 1px solid #7d7d7d;")
-              )
-            ),
-            shiny::fluidRow(
-              shiny::column(
-                width = 6,
-                shiny::h4('Geneset enrichment analysis'),
-
-                shiny::fluidRow(
-                  shiny::column(
-                    width = 6,
-                    shiny::selectInput(
-                      inputId = ns('gsea_go'),
-                      label = 'GO ontology',
-                      choices = c('ALL', 'BP', 'MF', 'CC'),
-                      selected = 'ALL'
-                    )
-                  ),
-                  shiny::column(
-                    width = 6,
-                    shiny::selectInput(
-                      inputId = ns('gsea_adjustment'),
-                      label = 'Adjustment',
-                      choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                      selected = 'BH'
-                    )
-                  )
-                ),
-
-                shiny::fluidRow(
-                  shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('gsea_min_size'),
-                      label = 'Min. geneset size',
-                      value = 3
-                    )
-                  ),
-                  shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('gsea_max_size'),
-                      label = 'Max. geneset size',
-                      value = 800
-                    )
-                  ),
-                  shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('gsea_showcat'),
-                      label = 'Show category',
-                      value = 200,
-                      width = '100%'
-                    )
-                  )
-                ),
-
-                shiny::sliderInput(
-                  inputId = ns('gsea_pval'),
-                  label = 'p-value cutoff (GO terms)',
-                  min = 0.01,
-                  max = 0.9,
-                  value = 0.05,
-                  step = 0.01
-                ),
-                shinyWidgets::actionBttn(
-                  inputId = ns('run_gsea'),
-                  label = "Run GSEA",
-                  style = "material-flat",
-                  color = 'success',
-                  block = T,
-                  icon = icon("play")
-                )
-              ),
-              shiny::column(
-                width = 6,
-                shiny::h4('Over representation analysis'),
-                shiny::fluidRow(
-                  shiny::column(
-                    width = 6,
-                    shiny::selectInput(
-                      inputId = ns('or_go_ont'),
-                      label = 'GO ontology',
-                      choices = c('ALL', 'BP', 'MF', 'CC'),
-                      selected = 'ALL',
-                      width = '100%'
-                    )
-                  ),
-                  shiny::column(
-                    width = 6,
-                    shiny::selectInput(
-                      inputId = ns('or_pval_adjustment'),
-                      label = 'Adjustment',
-                      choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                      selected = "BH",
-                      width = '100%'
-                    )
-                  )
-                ),
-                shiny::fluidRow(
-                  shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('or_min_gssize'),
-                      label = 'Min. geneset size',
-                      value = 10,
-                      width = '100%'
-                    )
-                  ),
-                  shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('or_max_gssize'),
-                      label = 'Max. geneset size',
-                      value = 500,
-                      width = '100%'
-                    )
-                  ),
-                  shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('or_fc_threshold'),
-                      label = 'FC cutoff',
-                      value = 2,
-                      width = '100%'
-                    )
-                  )
-                ),
-                shiny::fluidRow(
-                  shiny::column(
-                    width = 6,
-                    shiny::sliderInput(
-                      inputId = ns('or_pval_cutoff'),
-                      label = 'p-value cutoff (GO terms)',
-                      min = 0.01,
-                      max = 0.9,
-                      value = 0.05,
-                      step = 0.01,
-                      width = '100%'
-                    )
-                  ),
-                  shiny::column(
-                    width = 6,
-                    shiny::sliderInput(
-                      inputId = ns('or_qval_cutoff'),
-                      label = 'q-value cutoff (GO terms)',
-                      min = 0.01,
-                      max = 0.9,
-                      value = 0.05,
-                      step = 0.01,
-                      width = '100%'
-                    )
-                  )
-
-                ),
-                shiny::fluidRow(
-                  shinyWidgets::actionBttn(
-                    inputId = ns('run_or'),
-                    label = "Run ORA",
-                    style = "material-flat",
-                    color = 'success',
-                    block = T,
-                    icon = icon("play")
-                  )
-                )
-              )
-            )
-          ),
-          collapsible = T,
-          collapsed  = T,
-          maximizable = T,
           headerBorder = T
         )
       ),
@@ -1442,6 +1197,11 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
     if (input$summary_box_data$collapsed) {
       bs4Dash::updateBox(id = 'summary_box_data', action = 'toggle')
     }
+    # if (input$feat_table_preview_box$collapsed) {
+    #   bs4Dash::updateBox(id = 'feat_table_preview_box', action = 'toggle')
+    # }
+
+
 
     # Update select inputs
     shiny::updateSelectInput(
@@ -1484,11 +1244,18 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
       )
     }
 
+    if (!is.null(data_table)) {
+      if (ncol(data_table) > 1000) {
+        data_table = t(data_table)
+      }
+    }
+
     output$data_preview_table = renderDataTable({
-      DT::datatable(t(data_table), options = list(paging = TRUE, pageLength = 25))
+      DT::datatable(data_table, options = list(paging = TRUE, pageLength = 25))
     })
 
   })
+
 
   # Get ID
   session$userData[[id]]$id_select_data = shiny::observeEvent(input$select_id_data, {
@@ -1538,16 +1305,6 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         selected = 'Imported metadata table'
       )
     }
-  })
-
-  # GSEA groups
-  session$userData[[id]]$gsea_groups = shiny::observeEvent(input$gseaprep_group_col,{
-    shiny::req(input$gseaprep_group_col)
-    shiny::updateSelectInput(
-      inputId = 'gseaprep_groups',
-      choices = unique(r6$tables$raw_meta[,input$gseaprep_group_col]),
-      selected = unique(r6$tables$raw_meta[,input$gseaprep_group_col])[c(1,2)]
-    )
   })
 
   # Feature filters
@@ -1621,115 +1378,326 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         })
       })
 
-  # # Drop features
-  # session$userData[[id]]$feature_drop = shiny::observeEvent(input$drop_cols,{
-  #   shiny::req(r6$tables$feature_table)
-  #   print_tm(m, 'Dropping features')
-  #   selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table$lipid_class %in% input$class_selection)]
-  #   selected_species = unique(c(selected_species, input$manual_selection))
-  #   r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
-  #   r6$indices$excluded_cols = c(r6$indices$excluded_cols, selected_species)
-  #
-  #   r6$derive_data_tables()
-  #
-  #   # Update class selection
-  #   shiny::updateSelectizeInput(
-  #     session = session,
-  #     inputId = "class_selection",
-  #     choices = unique(r6$tables$feature_table$lipid_class),
-  #     selected = character(0)
-  #   )
-  #
-  #   # Update manual selection
-  #   shiny::updateSelectizeInput(
-  #     session = session,
-  #     inputId = "manual_selection",
-  #     choices = colnames(r6$tables$raw_data),
-  #     selected = character(0)
-  #   )
-  #
-  #   if (input$select_data_table == 'Raw data table') {
-  #     shinyWidgets::updateProgressBar(
-  #       session = session,
-  #       id = "col_count_bar",
-  #       value = ncol(r6$tables$raw_data),
-  #       total = ncol(r6$tables$imp_data)
-  #     )
-  #     shinyWidgets::updateProgressBar(
-  #       session = session,
-  #       id = "row_count_bar_data",
-  #       value = nrow(r6$tables$raw_data),
-  #       total = nrow(r6$tables$imp_data)
-  #     )
-  #   }
-  # })
-  #
-  # # Keep features
-  # session$userData[[id]]$keep_cols = shiny::observeEvent(input$keep_cols,{
-  #   shiny::req(r6$tables$feature_table)
-  #   print_tm(m, 'Keeping features')
-  #   selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table$lipid_class %in% input$class_selection)]
-  #   selected_species = unique(c(selected_species, input$manual_selection))
-  #   selected_species = colnames(r6$tables$raw_data)[!(colnames(r6$tables$raw_data) %in% selected_species)]
-  #   r6$indices$excluded_cols = c(r6$indices$excluded_cols, selected_species)
-  #
-  #   r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
-  #
-  #   r6$derive_data_tables()
-  #
-  #   # Update class selection
-  #   shiny::updateSelectizeInput(
-  #     session = session,
-  #     inputId = "class_selection",
-  #     choices = unique(r6$tables$feature_table$lipid_class),
-  #     selected = character(0)
-  #   )
-  #
-  #   # Update manual selection
-  #   shiny::updateSelectizeInput(
-  #     session = session,
-  #     inputId = "manual_selection",
-  #     choices = colnames(r6$tables$raw_data),
-  #     selected = character(0)
-  #   )
-  #
-  #   if (input$select_data_table == 'Raw data table') {
-  #     shinyWidgets::updateProgressBar(
-  #       session = session,
-  #       id = "col_count_bar",
-  #       value = ncol(r6$tables$raw_data),
-  #       total = ncol(r6$tables$imp_data)
-  #     )
-  #     shinyWidgets::updateProgressBar(
-  #       session = session,
-  #       id = "row_count_bar_data",
-  #       value = nrow(r6$tables$raw_data),
-  #       total = nrow(r6$tables$imp_data)
-  #     )
-  #   }
-  # })
+  #--------------------------------------------- Feature metadata rendering ----
+  output$up_feature_metadata_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 8,
+          shiny::br(),
+          shiny::fluidRow(
+            shiny::column(
+              width = 3,
+              shiny::fileInput(
+                inputId = ns("feat_add"),
+                label = NULL,
+                multiple = F,
+                accept = c(".csv", ".tsv", ".txt", ".xlsx"),
+                width = "100%"
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::textInput(
+                inputId = ns('feat_name_add'),
+                label = NULL,
+                width = '100%',
+                placeholder = 'ex: feat_1'
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::selectInput(
+                inputId = ns('feat_table_select'),
+                label = NULL,
+                choices = c('Imported feature table', 'Feature table'),
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 3,
+              shiny::downloadButton(
+                outputId = ns("download_feature_table"),
+                label = "Download",
+                style = "width:100%;"
+              )
+            )
+          ),
+          shiny::fluidRow(
+            bs4Dash::box(
+              id = ns('feat_table_preview_box'),
+              title = 'Table preview',
+              width = 12,
+              DT::dataTableOutput(ns("feature_table_preview_table")),
+              style = "height:400px; overflow-y: scroll;overflow-x: scroll;",
+              collapsible = T,
+              collapsed  = T,
+              maximizable = T,
+              headerBorder = T
+            )
+          )
+        ),
+        shiny::column(
+          width = 4,
+          shiny::h3('Remove feature table'),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::selectInput(inputId = ns('feat_name_del'),
+                                 label = NULL,
+                                 choices = names(r6$tables$external_feature_tables),
+                                 selected = NULL,
+                                 width = '100%')
+            ),
+            shiny::column(
+              width = 6,
+              shiny::actionButton(inputId = ns('feat_del'),
+                                  label = 'Remove',
+                                  width = '100%')
+            )
+          )
+        )
+      )
+    )
+  })
 
-  # # Reset feature filter
-  # session$userData[[id]]$reset_data_table = shiny::observeEvent(input$reset_data_table,{
-  #   r6$indices$excluded_cols = NULL
-  # })
-  #
-  # # Reset filters
-  # session$userData[[id]]$clear_data_filters = shiny::observeEvent(input$clear_data_filters,{
-  #   # Reset class selection
-  #   shiny::updateSelectizeInput(
-  #     session = session,
-  #     inputId = "class_selection",
-  #     selected = character(0)
-  #   )
-  #
-  #   # Reset manual selection
-  #   shiny::updateSelectizeInput(
-  #     session = session,
-  #     inputId = "manual_selection",
-  #     selected = character(0)
-  #   )
-  # })
+  #------------------------------------------------ Feature metadata server ----
+  # Manage Feature tables
+  session$userData[[id]]$feat_add = shiny::observeEvent(input$feat_add, {
+    if (input$feat_name_add == "") {
+      counter = 1
+      name = paste0("feat_", counter)
+      while (name %in% names(r6$tables$external_feature_tables)) {
+        counter = counter + 1
+        name = paste0("feat_", counter)
+      }
+    } else {
+      name = input$feat_name_add
+    }
+    r6$add_feature_table(name = name,
+                         feature_file = input$feat_add$datapath)
+
+    shiny::updateSelectInput(
+      inputId = 'feat_name_del',
+      choices = names(r6$tables$external_feature_tables)
+    )
+    r6$derive_data_tables()
+
+    if (input$feat_table_preview_box$collapsed) {
+      bs4Dash::updateBox(id = 'feat_table_preview_box', action = 'toggle')
+    }
+
+    shiny::updateSelectInput(
+      inputId = 'feat_table_select',
+      selected = 'Feature table'
+    )
+
+  })
+
+  session$userData[[id]]$feat_go_ont = shiny::observeEvent(input$feat_go_ont, {
+    shiny::updateTextInput(
+      inputId = 'go_name_add',
+      placeholder = paste0('ex: ', input$feat_go_ont)
+    )
+  })
+
+  session$userData[[id]]$add_go_table = shiny::observeEvent(input$add_go_table, {
+    shinyjs::disable("add_go_table")
+    table_name = input$go_name_add
+    if (table_name == '') {
+      counter = 1
+      while (paste0(input$feat_go_ont, counter) %in% names(r6$tables$external_enrichment_tables)) {
+        counter = counter + 1
+      }
+      table_name = paste0(input$feat_go_ont, counter)
+    }
+    r6$add_go_data(name = table_name,
+                   feature_names = rownames(r6$tables$imp_feature_table),
+                   keyType = input$select_feature_type,
+                   ont = input$feat_go_ont,
+                   pvalueCutoff = as.numeric(input$feat_go_ont_cutoff))
+    shiny::updateSelectInput(
+      inputId = 'go_remove_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shiny::updateSelectInput(
+      inputId = 'annotations_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+
+    r6$derive_data_tables()
+    shinyjs::enable("add_go_table")
+  })
+
+  session$userData[[id]]$feat_del = shiny::observeEvent(input$feat_del, {
+    r6$del_feature_table(name = input$feat_name_del)
+    r6$derive_data_tables()
+
+    names_left = names(r6$tables$external_feature_tables)
+    if (is.null(names_left)) {
+      names_left = character(0)
+    }
+    shiny::updateSelectInput(
+      inputId = 'feat_name_del',
+      choices = names_left
+    )
+  })
+
+  # Preview all / subset switch
+  session$userData[[id]]$enrichment_upload_button = shiny::observeEvent(input$enrichment_upload_button, {
+    print('upload enrichment table')
+    shinyjs::disable("enrichment_upload_button")
+
+    table_name = input$enrich_name_add
+    if (table_name == '') {
+      counter = 1
+      while (paste0('ENR', counter) %in% names(r6$tables$external_enrichment_tables)) {
+        counter = counter + 1
+      }
+      table_name = paste0('ENR', counter)
+    }
+
+
+    if (!is.null(input$go_association_table$datapath)) {
+      association_table = soda_read_table(input$go_association_table$datapath, first_column_as_index = T)
+    } else {
+      association_table = NULL
+    }
+
+    if (!is.null(input$go_terms_table$datapath)) {
+      terms_table = soda_read_table(input$go_terms_table$datapath, first_column_as_index = T)
+    } else {
+      terms_table = NULL
+    }
+
+    r6$upload_enrichment_data(name = table_name,
+                              association_table = association_table,
+                              terms_table = terms_table,
+                              sep = '|')
+
+    shiny::updateSelectInput(
+      inputId = 'go_remove_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shiny::updateSelectInput(
+      inputId = 'annotations_table_select',
+      choices = names(r6$tables$external_enrichment_tables)
+    )
+
+    shinyjs::enable("enrichment_upload_button")
+
+  })
+
+
+  # Preview all / subset switch
+  session$userData[[id]]$feat_table_select = shiny::observeEvent(input$feat_table_select, {
+    shiny::req(r6$tables$imp_data)
+
+    data_table = table_switch(table_name = input$feat_table_select, r6 = r6)
+
+
+    if (!is.null(data_table)) {
+      if (ncol(data_table) > 1000) {
+        data_table = t(data_table)
+      }
+    }
+
+    output$feature_table_preview_table = renderDataTable({
+      DT::datatable(data_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+  })
+
+  # Preview all / subset switch
+  session$userData[[id]]$annotations_table_select = shiny::observeEvent(input$annotations_table_select, {
+    shiny::req(r6$tables$imp_data)
+
+    association_table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$association_table
+    terms_table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$terms_table
+
+    if (!is.null(association_table)) {
+      if (ncol(association_table) > 1000) {
+        association_table = t(association_table)
+      }
+    }
+
+    if (!is.null(terms_table)) {
+      if (ncol(terms_table) > 1000) {
+        terms_table = t(terms_table)
+      }
+    }
+
+    output$association_table_preview_table = renderDataTable({
+      DT::datatable(association_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+    output$terms_table_preview_table = renderDataTable({
+      DT::datatable(terms_table, options = list(paging = TRUE, pageLength = 25))
+    })
+
+  })
+
+  # Download associations table
+  dl_feature_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_feature_table = shiny::observeEvent(c(input$feat_table_select) , {
+    dl_feature_table$name = timestamped_name("feature_table.csv")
+    dl_feature_table$table = table_switch(table_name = input$feat_table_select,
+                                          r6 = r6)
+  })
+
+  output$download_feature_table = shiny::downloadHandler(
+    filename = shiny::reactive(dl_feature_table$name),
+    content = function(file_name) {
+      write.csv(dl_feature_table$table, file_name, na = "")
+    }
+  )
+
+  # Download terms table
+  dl_terms_table = shiny::reactiveValues(
+    name = NULL,
+    table = NULL
+  )
+
+  session$userData[[id]]$download_terms_table = shiny::observeEvent(c(input$annotations_table_select) , {
+    dl_terms_table$name = timestamped_name(paste0(input$annotations_table_select, "_terms.csv"))
+    dl_terms_table$table = r6$tables$external_enrichment_tables[[input$annotations_table_select]]$terms_table
+  })
+
+  output$download_terms_table = shiny::downloadHandler(
+    filename = shiny::reactive(dl_terms_table$name),
+    content = function(file_name) {
+      write.csv(dl_terms_table$table, file_name, na = "")
+    }
+  )
+
+  # Remove annotations table
+  session$userData[[id]]$remove_annotations_table = shiny::observeEvent(c(input$remove_annotations_table) , {
+    print(input$annotations_table_select)
+    r6$tables$external_enrichment_tables[[input$annotations_table_select]] = NULL
+    if (length(r6$tables$external_enrichment_tables[[input$annotations_table_select]]) > 0) {
+      shiny::updateSelectInput(
+        inputId = 'annotations_table_select',
+        choices = names(r6$tables$external_feature_tables)
+      )
+    } else {
+      shiny::updateSelectInput(
+        inputId = 'annotations_table_select',
+        choices = character(0)
+      )
+
+      # association_table_preview_table
+
+    }
+
+  })
+
 
   # Download data table
   dl_data_table = shiny::reactiveValues(
@@ -1751,6 +1719,300 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   )
 
 
+
+
+  #------------------------------------------ Functional analysis rendering ----
+  output$functional_analysis_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::fluidRow(
+        shiny::column(
+          width = 12,
+          shiny::h4('Data preparation'),
+        )
+      ),
+      shiny::fluidRow(
+        shiny::column(
+          width= 3,
+          shiny::selectInput(
+            inputId = ns('gseaprep_table_select'),
+            label = 'Select table',
+            choices = NULL,
+            width = '100%'
+          )
+        ),
+        shiny::column(
+          width= 3,
+          shiny::selectInput(
+            inputId = ns('gseaprep_group_col'),
+            label = 'Group column',
+            choices = NULL,
+            width = '100%'
+          )
+        ),
+        shiny::column(
+          width = 3,
+          shiny::selectInput(
+            inputId = ns('gseaprep_groups'),
+            label = 'Select two groups',
+            choices = NULL,
+            width = '100%',
+            multiple = T
+          )
+        ),
+        shiny::column(
+          width = 3,
+          shiny::selectInput(
+            inputId = ns('gseaprep_method'),
+            label = 'FC method',
+            choices = c('median', 'mean'),
+            selected = 'mean',
+            width = '100%'
+          )
+        )
+      ),
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shiny::selectInput(
+            inputId = ns('gseaprep_test'),
+            label = 'Test',
+            choices = c('Wilcoxon', 't-Test'),
+            selected = 't-Test',
+            width = '100%'
+          )
+        ),
+        shiny::column(
+          width = 6,
+          shiny::selectInput(
+            inputId = ns('gseaprep_adjustment'),
+            label = 'Adjustment',
+            choices = c('None', 'Benjamini-Hochberg'),
+            selected = 'Benjamini-Hochberg'
+          )
+        )
+      ),
+      shiny::fluidRow(
+        shiny::column(
+          width = 12,
+          shiny::sliderInput(
+            inputId = ns('gseaprep_pval'),
+            label = 'p-value cutoff (Features, only for ORA)',
+            min = 0.01,
+            max = 0.9,
+            value = 0.05,
+            step = 0.01,
+            width = '100%'
+          ),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;")
+        )
+      ),
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shiny::h4('Enrichment analysis'),
+
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::selectInput(
+                inputId = ns('gsea_go'),
+                label = 'Terms',
+                choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)'),
+                selected = 'Gene ontology (ALL)'
+              )
+            ),
+            shiny::column(
+              width = 6,
+              shiny::selectInput(
+                inputId = ns('gsea_adjustment'),
+                label = 'Adjustment',
+                choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                selected = 'BH'
+              )
+            )
+          ),
+
+          shiny::fluidRow(
+            shiny::column(
+              width = 4,
+              shiny::textInput(
+                inputId = ns('gsea_min_size'),
+                label = 'Min. geneset size',
+                value = 3
+              )
+            ),
+            shiny::column(
+              width = 4,
+              shiny::textInput(
+                inputId = ns('gsea_max_size'),
+                label = 'Max. geneset size',
+                value = 800
+              )
+            ),
+            shiny::column(
+              width = 4,
+              shiny::textInput(
+                inputId = ns('gsea_showcat'),
+                label = 'Show category',
+                value = 200,
+                width = '100%'
+              )
+            )
+          ),
+
+          shiny::sliderInput(
+            inputId = ns('gsea_pval'),
+            label = 'p-value cutoff (terms)',
+            min = 0.01,
+            max = 0.9,
+            value = 0.05,
+            step = 0.01,
+            width = '100%'
+          ),
+          shinyWidgets::actionBttn(
+            inputId = ns('run_gsea'),
+            label = "Run GSEA",
+            style = "material-flat",
+            color = 'success',
+            block = T,
+            icon = icon("play")
+          )
+        ),
+        shiny::column(
+          width = 6,
+          shiny::h4('Over representation analysis'),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::selectInput(
+                inputId = ns('or_go_ont'),
+                label = 'Terms',
+                choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)'),
+                selected = 'Gene ontology (ALL)',
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 6,
+              shiny::selectInput(
+                inputId = ns('or_pval_adjustment'),
+                label = 'Adjustment',
+                choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                selected = "BH",
+                width = '100%'
+              )
+            )
+          ),
+          shiny::fluidRow(
+            shiny::column(
+              width = 4,
+              shiny::textInput(
+                inputId = ns('or_min_gssize'),
+                label = 'Min. geneset size',
+                value = 10,
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 4,
+              shiny::textInput(
+                inputId = ns('or_max_gssize'),
+                label = 'Max. geneset size',
+                value = 500,
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 4,
+              shiny::textInput(
+                inputId = ns('or_fc_threshold'),
+                label = 'FC cutoff',
+                value = 2,
+                width = '100%'
+              )
+            )
+          ),
+          shiny::fluidRow(
+            shiny::column(
+              width = 6,
+              shiny::sliderInput(
+                inputId = ns('or_pval_cutoff'),
+                label = 'p-value cutoff (terms)',
+                min = 0.01,
+                max = 0.9,
+                value = 0.05,
+                step = 0.01,
+                width = '100%'
+              )
+            ),
+            shiny::column(
+              width = 6,
+              shiny::sliderInput(
+                inputId = ns('or_qval_cutoff'),
+                label = 'q-value cutoff (terms)',
+                min = 0.01,
+                max = 0.9,
+                value = 0.05,
+                step = 0.01,
+                width = '100%'
+              )
+            )
+
+          ),
+          shiny::fluidRow(
+            shinyWidgets::actionBttn(
+              inputId = ns('run_or'),
+              label = "Run ORA",
+              style = "material-flat",
+              color = 'success',
+              block = T,
+              icon = icon("play")
+            )
+          )
+        )
+      )
+    )
+  })
+  #--------------------------------------------- Functional analysis server ----
+
+  # GSEA groups
+  session$userData[[id]]$gsea_groups = shiny::observeEvent(input$gseaprep_group_col,{
+    shiny::req(input$gseaprep_group_col)
+    shiny::updateSelectInput(
+      inputId = 'gseaprep_groups',
+      choices = unique(r6$tables$raw_meta[,input$gseaprep_group_col]),
+      selected = unique(r6$tables$raw_meta[,input$gseaprep_group_col])[c(1,2)]
+    )
+  })
+
+  shiny::observe({
+    shiny::req(input$skeleton_ui)
+    if (input$skeleton_ui == "Functional analysis") {
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_table_select',
+        choices = c('Raw data table', 'Total normalized table', 'Z-scored table', 'Z-scored total normalized table'),
+        selected = 'Total normalized table'
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gseaprep_group_col',
+        choices = colnames(r6$tables$raw_meta),
+        selected = input$select_group_col
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'gsea_go',
+        choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)', names(r6$tables$feature_list))
+      )
+
+      shiny::updateSelectInput(
+        inputId = 'or_go_ont',
+        choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)', names(r6$tables$feature_list))
+      )
+
+    }
+  })
 
   #----------------------------------------------- Visualize data rendering ----
 
@@ -1815,9 +2077,9 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
 
   # Plotting events
-  prot_volcano_plot_events(r6, dimensions_obj, color_palette, input, output, session)
+  volcano_plot_events(r6, dimensions_obj, color_palette, input, output, session)
   prot_heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
-  prot_pca_events(r6, dimensions_obj, color_palette, input, output, session)
+  pca_events(r6, dimensions_obj, color_palette, input, output, session)
   prot_dot_plot_events(r6, dimensions_obj, color_palette, input, output, session)
   prot_cnet_plot_events(r6, dimensions_obj, color_palette, input, output, session)
   prot_ridge_plot_events(r6, dimensions_obj, color_palette, input, output, session)
@@ -1969,7 +2231,18 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                        test = input$gseaprep_test,
                        context = 'gsea')
 
-      r6$get_gsea_object(ont = input$gsea_go,
+      if (input$gsea_go %in% c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)')) {
+        ont = gene_ontology_switch(input$gsea_go)
+        custom_col = NULL
+      } else if(input$gsea_go == "") {
+        ont = NULL
+        custom_col = NULL
+      } else {
+        ont = NULL
+        custom_col = input$gsea_go
+      }
+      r6$get_gsea_object(ont = ont,
+                         custom_col = custom_col,
                          minGSSize = as.numeric(input$gsea_min_size),
                          maxGSSize = as.numeric(input$gsea_max_size),
                          p_value_cutoff = input$gsea_pval,
@@ -2004,14 +2277,25 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
                      test = input$gseaprep_test,
                      context = 'ora')
 
+    if (input$or_go_ont %in% c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)')) {
+      ont = gene_ontology_switch(input$or_go_ont)
+      custom_col = NULL
+    } else if (input$or_go_ont == "") {
+      ont = NULL
+      custom_col = NULL
+    } else {
+      ont = NULL
+      custom_col = input$or_go_ont
+    }
 
 
-    r6$over_representation_analysis(pval_cutoff_features = input$gseaprep_pval,
+    r6$over_representation_analysis(custom_col = custom_col,
+                                    ont = ont,
+                                    pval_cutoff_features = input$gseaprep_pval,
                                     padjust_features = input$gseaprep_adjustment,
                                     pval_cutoff = input$or_pval_cutoff,
                                     pAdjustMethod = input$or_pval_adjustment,
                                     fc_threshold = as.numeric(input$or_fc_threshold),
-                                    ont = input$or_go_ont,
                                     qval_cutoff = input$or_qval_cutoff,
                                     minGSSize = as.numeric(input$or_min_gssize),
                                     maxGSSize = as.numeric(input$or_max_gssize))

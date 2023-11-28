@@ -34,13 +34,20 @@ Lips_exp = R6::R6Class(
       # Volcano plot parameters self$params$volcano_plot$
       volcano_plot = list(
         data_table = 'Total normalized table',
-        adjustment = "Benjamini-Hochberg",
+        adjustment = "BH",
         group_col = NULL,
-        groups = NULL,
-        classes = NULL,
+        group_1 = NULL,
+        group_2 = NULL,
+        feature_metadata = 'None',
+        keep_significant = F,
+        displayed_plot = 'main',
+        p_val_threshold = 0.05,
+        fc_threshold = 2,
+        marker_size = 6,
+        opacity = 1,
+        color_palette = 'Spectral',
         selected_function = "mean",
         selected_test = "t-Test",
-        colouring = "Lipid class",
         img_format = "png"
       ),
 
@@ -60,13 +67,21 @@ Lips_exp = R6::R6Class(
 
       # PCA parameters self$params$pca$
       pca = list(
-        dataset = 'Z-scored total normalized table',
-        feature_metadata = character(0),
-        group_column = NULL,
+        data_table = 'z_scored_total_norm_data',
+        sample_groups_col = NULL,
+        feature_groups_col = NULL,
         apply_da = FALSE,
         alpha_da = 0.8,
+        pca_method = 'svd',
+        nPcs = 10,
+        displayed_pc_1 = 1,
+        displayed_pc_2 = 2,
+        completeObs = F,
+        displayed_plots = 'both',
+        colors_palette = 'Spectral',
         img_format = "png"
       ),
+
 
       # Double bonds parameters self$params$db_plot$
       db_plot = list(
@@ -84,7 +99,107 @@ Lips_exp = R6::R6Class(
         pval_range = c(0, 5),
         pval_values = c(1, 5),
         img_format = "png"
+      ),
+
+      #GSEA parameters self$params$gsea
+      gsea = list(
+        data_table = NULL,
+        meta_table = NULL,
+        group_col = NULL,
+        groups = NULL,
+        used_function = NULL,
+        test = NULL,
+        p_value_cutoff_prep = NULL,
+        prot_list = NULL,
+        ont = NULL,
+        minGSSize = NULL,
+        maxGSSize = NULL,
+        p_value_cutoff = NULL,
+        verbose = NULL,
+        OrgDb = NULL,
+        pAdjustMethod = NULL,
+        termsim_method = NULL,
+        termsim_showcat = NULL
+      ),
+
+      # Over representation analysis parameters self$params$overrepresentation
+      overrepresentation = list(
+        pval_cutoff_features = 0.05,
+        padjust_features = "Benjamini-Hochberg",
+        pval_cutoff = 0.05,
+        pAdjustMethod = "BH",
+        fc_threshold = 2,
+        ont = "Gene ontology (ALL)",
+        qval_cutoff = 0.05,
+        minGSSize = 10,
+        maxGSSize = 500
+      ),
+
+      # Dot plot parameters self$params$dot_plot
+      dot_plot = list(
+        showCategory = 10,
+        mode = "Both",
+        img_format = "png"
+      ),
+
+      # Ridge plot parameters self$params$ridge_plot
+      ridge_plot = list(
+        showCategory = 30,
+        img_format = "png"
+      ),
+
+      # CNET plot parameters self$params$cnet_plot
+      cnet_plot = list(
+        showCategory = 3,
+        displayed_labels = 'IDs and Description',
+        enable_physics = TRUE
+      ),
+
+      # eMap plot parameters self$params$emap_plot
+      emap_plot = list(
+        showCategory = 20,
+        color = "p.adjust" ,
+        size = "Count",
+        score_threshold = 0.2,
+        similarity_score = 'JC',
+        edge_magnifier = 1,
+        node_magnifier = 0.1,
+        enable_physics = FALSE
+      ),
+
+      # Over representation dot plot parameters self$params$or_dot_plot
+      or_dot_plot = list(
+        showCategory = 10,
+        img_format = "png"
+      ),
+
+      # Over representation bar plot parameters self$params$or_bar_plot
+      or_bar_plot = list(
+        x = 'Count',
+        color = 'p.adjust',
+        showCategory = 10,
+        img_format = "png"
+      ),
+
+      # Over representation CNET plot parameters self$params$or_cnet_plot
+      or_cnet_plot = list(
+        showCategory = 3,
+        displayed_labels = 'IDs and Description',
+        enable_physics = TRUE
+      ),
+
+      # Over representation eMap plot parameters self$params$or_emap_plot
+      or_emap_plot = list(
+        showCategory = 20,
+        color = "p.adjust" ,
+        size = "Count",
+        score_threshold = 0.2,
+        similarity_score = 'JC',
+        edge_magnifier = 1,
+        node_magnifier = 0.1,
+        enable_physics = FALSE
       )
+
     ),
 
 
@@ -126,6 +241,7 @@ Lips_exp = R6::R6Class(
       #Feature tables
       imp_feature_table = NULL,
       feature_table = NULL,
+      feature_list = NULL,
 
       # External feature tables
       external_feature_tables = list(),
@@ -155,19 +271,37 @@ Lips_exp = R6::R6Class(
       heatmap_table = NULL,
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
-      dbplot_table = NULL
+      dbplot_table = NULL,
+
+      # GSEA & over representation
+      gsea_prot_list = NULL,
+      ora_prot_list = NULL,
+      gsea_object = NULL,
+      go_enrich = NULL
 
 
     ),
 
     #---------------------------------------------------------------- Plots ----
     plots = list(
+
+      # Interactive visualization
       class_distribution = NULL,
       class_comparison = NULL,
       volcano_plot = NULL,
       heatmap = NULL,
       pca_plot = NULL,
-      double_bond_plot = NULL
+      double_bond_plot = NULL,
+
+      # Functional analysis plots
+      dotplot = NULL,
+      ridgeplot = NULL,
+      emap_plot = NULL,
+      cnetplot = NULL,
+      or_dotplot = NULL,
+      or_emap_plot = NULL,
+      or_cnetplot = NULL,
+      or_barplot = NULL
     ),
 
     #---------------------------------------------------- Parameter methods ----
@@ -184,16 +318,24 @@ Lips_exp = R6::R6Class(
       self$params$class_comparison$img_format = img_format
     },
 
-    param_volcano_plot = function(data_table, adjustment, group_col, groups, classes, selected_function, selected_test, colouring, img_format) {
+    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, keep_significant, displayed_plot,
+                                  p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
 
       self$params$volcano_plot$data_table = data_table
       self$params$volcano_plot$adjustment = adjustment
       self$params$volcano_plot$group_col = group_col
-      self$params$volcano_plot$groups = groups
-      self$params$volcano_plot$classes = classes
+      self$params$volcano_plot$group_1 = group_1
+      self$params$volcano_plot$group_2 = group_2
+      self$params$volcano_plot$feature_metadata = feature_metadata
+      self$params$volcano_plot$keep_significant = keep_significant
+      self$params$volcano_plot$displayed_plot = displayed_plot
+      self$params$volcano_plot$p_val_threshold = p_val_threshold
+      self$params$volcano_plot$fc_threshold = fc_threshold
+      self$params$volcano_plot$marker_size = marker_size
+      self$params$volcano_plot$opacity = opacity
+      self$params$volcano_plot$color_palette = color_palette
       self$params$volcano_plot$selected_function = selected_function
       self$params$volcano_plot$selected_test = selected_test
-      self$params$volcano_plot$colouring = colouring
       self$params$volcano_plot$img_format = img_format
 
     },
@@ -211,12 +353,22 @@ Lips_exp = R6::R6Class(
       self$params$heatmap$img_format = img_format
     },
 
-    param_pca = function(dataset, group_column, apply_da, alpha_da, img_format) {
-      self$params$pca$dataset = dataset
-      self$params$pca$group_column = group_column
+    param_pca = function(data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
+
+      self$params$pca$data_table = data_table
+      self$params$pca$sample_groups_col = sample_groups_col
+      self$params$pca$feature_groups_col = feature_groups_col
       self$params$pca$apply_da = apply_da
       self$params$pca$alpha_da = alpha_da
+      self$params$pca$pca_method = pca_method
+      self$params$pca$nPcs = nPcs
+      self$params$pca$displayed_pc_1 = displayed_pc_1
+      self$params$pca$displayed_pc_2 = displayed_pc_2
+      self$params$pca$completeObs = completeObs
+      self$params$pca$displayed_plots = displayed_plots
+      self$params$pca$colors_palette = colors_palette
       self$params$pca$img_format = img_format
+
     },
 
     param_db_plot = function(dataset, adjustment, group_column, selected_groups, selected_lipid_class,
@@ -241,7 +393,98 @@ Lips_exp = R6::R6Class(
 
     },
 
+    param_gsea = function(data_table, meta_table, group_col, groups, used_function, test,
+                          p_value_cutoff_prep, prot_list, ont, minGSSize, maxGSSize, p_value_cutoff,
+                          verbose, OrgDb, pAdjustMethod, termsim_method, termsim_showcat) {
+      self$params$gsea$data_table = data_table
+      self$params$gsea$meta_table = meta_table
+      self$params$gsea$group_col = group_col
+      self$params$gsea$groups = groups
+      self$params$gsea$used_function = used_function
+      self$params$gsea$test = test
+      self$params$gsea$p_value_cutoff_prep = p_value_cutoff_prep
+      self$params$gsea$prot_list = prot_list
+      self$params$gsea$ont = ont
+      self$params$gsea$minGSSize = minGSSize
+      self$params$gsea$maxGSSize = maxGSSize
+      self$params$gsea$p_value_cutoff = p_value_cutoff
+      self$params$gsea$verbose = verbose
+      self$params$gsea$OrgDb = OrgDb
+      self$params$gsea$pAdjustMethod = pAdjustMethod
+      self$params$gsea$termsim_method = termsim_method
+      self$params$gsea$termsim_showcat = termsim_showcat
+    },
 
+    param_overrepresentation = function(pval_cutoff_features, padjust_features, pval_cutoff, fc_threshold,
+                                        pAdjustMethod, ont, qval_cutoff, minGSSize, maxGSSize) {
+      self$params$overrepresentation$pval_cutoff_features = pval_cutoff_features
+      self$params$overrepresentation$padjust_features = padjust_features
+      self$params$overrepresentation$pval_cutoff = pval_cutoff
+      self$params$overrepresentation$pAdjustMethod = pAdjustMethod
+      self$params$overrepresentation$fc_threshold = fc_threshold
+      self$params$overrepresentation$ont = ont
+      self$params$overrepresentation$qval_cutoff = qval_cutoff
+      self$params$overrepresentation$minGSSize = minGSSize
+      self$params$overrepresentation$maxGSSize = maxGSSize
+
+    },
+
+    param_dot_plot = function(showCategory, mode, img_format) {
+      self$params$dot_plot$showCategory = showCategory
+      self$params$dot_plot$mode = mode
+      self$params$dot_plot$img_format = img_format
+    },
+
+    param_ridge_plot = function(showCategory, img_format) {
+      self$params$ridge_plot$showCategory = showCategory
+      self$params$ridge_plot$img_format = img_format
+    },
+
+    param_cnet_plot = function(showCategory, displayed_labels, enable_physics) {
+      self$params$cnet_plot$showCategory = showCategory
+      self$params$cnet_plot$displayed_labels = displayed_labels
+      self$params$cnet_plot$enable_physics = enable_physics
+    },
+
+    param_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
+      self$params$emap_plot$showCategory = showCategory
+      self$params$emap_plot$color = color
+      self$params$emap_plot$size = size
+      self$params$emap_plot$score_threshold = score_threshold
+      self$params$emap_plot$similarity_score = similarity_score
+      self$params$emap_plot$edge_magnifier = edge_magnifier
+      self$params$emap_plot$node_magnifier = node_magnifier
+      self$params$emap_plot$enable_physics = enable_physics
+    },
+
+    param_or_dot_plot = function(showCategory, img_format) {
+      self$params$or_dot_plot$showCategory = showCategory
+      self$params$or_dot_plot$img_format = img_format
+    },
+
+    param_or_bar_plot = function(x, color, showCategory, img_format) {
+      self$params$or_bar_plot$x = x
+      self$params$or_bar_plot$color = color
+      self$params$or_bar_plot$showCategory = showCategory
+      self$params$or_bar_plot$img_format = img_format
+    },
+
+    param_or_cnet_plot = function(showCategory, displayed_labels, enable_physics) {
+      self$params$or_cnet_plot$showCategory = showCategory
+      self$params$or_cnet_plot$displayed_labels = displayed_labels
+      self$params$or_cnet_plot$enable_physics = enable_physics
+    },
+
+    param_or_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
+      self$params$or_emap_plot$showCategory = showCategory
+      self$params$or_emap_plot$color = color
+      self$params$or_emap_plot$size = size
+      self$params$or_emap_plot$score_threshold = score_threshold
+      self$params$or_emap_plot$similarity_score = similarity_score
+      self$params$or_emap_plot$edge_magnifier = edge_magnifier
+      self$params$or_emap_plot$node_magnifier = node_magnifier
+      self$params$or_emap_plot$enable_physics = enable_physics
+    },
 
 
     #-------------------------------------------------------- Table methods ----
@@ -373,18 +616,65 @@ Lips_exp = R6::R6Class(
     get_feature_table = function() {
       data_table = self$tables$imp_data
       data_table = data_table[,2:ncol(data_table)]
-      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table)
+      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table, dtype = base::tolower(self$type))
     },
 
-    update_feature_table = function() {
-      feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),]
+    update_feature_table = function(sep = "|") {
+      if (sep == "|") {
+        regex_sep = "\\|"
+      } else {
+        regex_sep = sep
+      }
+      feature_table = self$tables$imp_feature_table[colnames(self$tables$raw_data),,drop = F]
       ext_names = names(self$tables$external_feature_tables)
       for (name in ext_names) {
         feature_table = augment_feature_table(feature_table = feature_table,
                                               external_table_name = name,
                                               external_feature_table = self$tables$external_feature_tables[[name]])
       }
+
+      multi_value_annotations = sapply(feature_table, function(column) sum(stringr::str_count(column, regex_sep), na.rm = T))
+      multi_value_annotations[is.na(multi_value_annotations)] = 0
+      feature_table[feature_table == ""] = NA
+      non_missing_counts = sapply(feature_table, function(column) sum(!is.na(column)))
+      multi_value_annotations = names(multi_value_annotations)[multi_value_annotations > non_missing_counts]
+
+      out_list = vector('list', length(multi_value_annotations))
+      names(out_list) = multi_value_annotations
+
+      for (col in multi_value_annotations) {
+        feature_list = vector("list", nrow(feature_table))
+        for (i in 1:nrow(feature_table)) {
+          if (is.na(feature_table[i,col])) {
+            next
+          } else {
+            feature_list[[i]] = strsplit(as.character(feature_table[i,col]), sep, fixed = TRUE)[[1]]
+          }
+        }
+        feature_list = sort(unique(unlist(feature_list)))
+        sparse_matrix = get_sparse_matrix(features_go_table = feature_table[col],
+                                          all_go_terms = feature_list,
+                                          sep = sep)
+        out_list[[col]]$feature_list = feature_list
+        out_list[[col]]$sparse_matrix = sparse_matrix
+      }
+
       self$tables$feature_table = feature_table
+      self$tables$feature_list = out_list
+    },
+
+    add_feature_table = function(name, feature_file) {
+      ext_feature_table = soda_read_table(file_path = feature_file,
+                                          sep = NA,
+                                          first_column_as_index = T)
+      self$tables$external_feature_tables[[name]] = ext_feature_table
+    },
+
+    del_feature_table = function(name) {
+      self$tables$external_feature_tables[[name]] = NULL
+      if (length(names(self$tables$external_feature_tables)) == 0) {
+        names(self$tables$external_feature_tables) = NULL
+      }
     },
 
     get_blank_table = function() {
@@ -393,18 +683,6 @@ Lips_exp = R6::R6Class(
       blank_table[,self$indices$id_col_data] = NULL
       self$tables$blank_table = as.matrix(blank_table)
     },
-
-    add_feature_table = function(name, feature_file) {
-      ext_feature_table = soda_read_table(feature_file)
-      rownames(ext_feature_table) = ext_feature_table[,1]
-      ext_feature_table[,1] = NULL
-      self$tables$external_feature_tables[[name]] = ext_feature_table
-    },
-
-    del_feature_table = function(name) {
-      self$tables$external_feature_tables[[name]] = NULL
-    },
-
 
     # Class normalisation
     normalise_class = function(){
@@ -488,15 +766,36 @@ Lips_exp = R6::R6Class(
                                   group_col = self$indices$group_col,
                                   img_format = "png")
 
+      self$param_pca(data_table = 'z_scored_total_norm_data',
+                     sample_groups_col = self$indices$group_col,
+                     feature_groups_col = NULL,
+                     apply_da = FALSE,
+                     alpha_da = 0.8,
+                     pca_method = 'svd',
+                     nPcs = 10,
+                     displayed_pc_1 = 1,
+                     displayed_pc_2 = 2,
+                     completeObs = F,
+                     displayed_plots = 'both',
+                     colors_palette = 'Spectral',
+                     img_format = "png")
+
       self$param_volcano_plot(data_table = 'Total normalized table',
-                              adjustment = 'Benjamini-Hochberg',
+                              adjustment = "BH",
                               group_col = self$indices$group_col,
-                              groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
-                              classes = NULL,
-                              selected_function = 'mean',
-                              selected_test = 't-Test',
-                              colouring = 'Lipid class',
-                              img_format = 'png')
+                              group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
+                              group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
+                              feature_metadata = 'None',
+                              keep_significant = F,
+                              displayed_plot = 'main',
+                              p_val_threshold = 0.05,
+                              fc_threshold = 2,
+                              marker_size = 6,
+                              opacity = 1,
+                              color_palette = 'Spectral',
+                              selected_function = "mean",
+                              selected_test = "t-Test",
+                              img_format = "png")
 
       self$param_heatmap(dataset = 'Z-scored total normalized table',
                          impute = F,
@@ -509,11 +808,6 @@ Lips_exp = R6::R6Class(
                          alpha_da = 0.8,
                          img_format = "png")
 
-      self$param_pca(dataset = 'Z-scored total normalized table',
-                     group_column = self$indices$group_col,
-                     apply_da = FALSE,
-                     alpha_da = 0.8,
-                     img_format = "png")
 
       self$param_db_plot(dataset = "Total normalized table",
                          adjustment = "Benjamini-Hochberg",
@@ -530,6 +824,41 @@ Lips_exp = R6::R6Class(
                          pval_values = c(1, 5),
                          img_format = "png")
 
+      self$param_gsea(data_table = 'Raw data table',
+                      meta_table = 'Raw metadata table',
+                      group_col = self$indices$group_col,
+                      groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
+                      used_function = "median",
+                      test = "t-Test",
+                      p_value_cutoff_prep = 0.05,
+                      prot_list = 'GSEA prot list',
+                      ont = 'Gene ontology (ALL)',
+                      minGSSize = 3,
+                      maxGSSize = 800,
+                      p_value_cutoff = 0.05,
+                      verbose = TRUE,
+                      OrgDb = "org.Hs.eg.db",
+                      pAdjustMethod = 'BH',
+                      termsim_method = 'JC',
+                      termsim_showcat = 200)
+
+      self$param_overrepresentation(pval_cutoff_features = 0.05,
+                                    padjust_features = 'Benjamini-Hochberg',
+                                    pval_cutoff = 0.05,
+                                    pAdjustMethod = "BH",
+                                    fc_threshold = 2,
+                                    ont = "Gene ontology (ALL)",
+                                    qval_cutoff = 0.05,
+                                    minGSSize = 10,
+                                    maxGSSize = 500)
+
+      self$param_dot_plot(showCategory = 10,
+                          mode = "Both",
+                          img_format = "png")
+
+      self$param_ridge_plot(showCategory = 30,
+                            img_format = "png")
+
 
 
 
@@ -541,17 +870,17 @@ Lips_exp = R6::R6Class(
 
     #--------------------------------------------------- Plot table methods ----
 
+
+
+
     # Volcano table
     get_volcano_table = function(data_table = self$tables$raw_data,
                                  volcano_table = self$tables$feature_table,
-                                 group_col = self$indices$group_col,
-                                 used_function = "mean",
-                                 test = "t-Test",
-                                 group_1 = self$params$volcano_plot$groups[1],
-                                 group_2 = self$params$volcano_plot$groups[2]) {
-
-
-
+                                 group_col = self$params$volcano_plot$group_col,
+                                 used_function = self$params$volcano_plot$selected_function,
+                                 test = self$params$volcano_plot$selected_test,
+                                 group_1 = self$params$volcano_plot$group_1,
+                                 group_2 = self$params$volcano_plot$group_2) {
 
 
       rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_1]
@@ -581,13 +910,15 @@ Lips_exp = R6::R6Class(
       volcano_table$fold_change = get_fold_changes(data_table = data_table,
                                                    idx_group_1 = idx_group_1,
                                                    idx_group_2 = idx_group_2,
-                                                   used_function = used_function)
+                                                   used_function = used_function,
+                                                   impute_inf = F)
 
 
       volcano_table$p_val = get_p_val(data_table = data_table,
                                       idx_group_1 = idx_group_1,
                                       idx_group_2 = idx_group_2,
-                                      used_function = test)
+                                      used_function = test,
+                                      impute_na = F)
       volcano_table$q_val_bh = stats::p.adjust(volcano_table$p_val, method = "BH")
 
       volcano_table$minus_log10_p_value = -log10(volcano_table$p_val)
@@ -698,6 +1029,136 @@ Lips_exp = R6::R6Class(
 
 
       self$tables$dbplot_table = dbplot_table
+    },
+
+    # GSEA object
+    get_gsea_object = function(prot_list = self$table_switch_local(self$params$gsea$prot_list),
+                               custom_col = NULL,
+                               feature_table = self$tables$feature_table,
+                               keyType = self$indices$feature_id_type,
+                               ont = self$params$gsea$ont,
+                               minGSSize = self$params$gsea$minGSSize,
+                               maxGSSize = self$params$gsea$maxGSSize,
+                               p_value_cutoff = self$params$gsea$p_value_cutoff,
+                               verbose = self$params$gsea$verbose,
+                               OrgDb = self$params$gsea$OrgDb,
+                               pAdjustMethod = self$params$gsea$pAdjustMethod,
+                               termsim_method = self$params$gsea$termsim_method,
+                               termsim_showcat = self$params$gsea$termsim_showcat) {
+
+      # Checks
+      if (is.null(ont) & is.null(custom_col)) {
+        print('No ontology nor custom col provided: returning Null')
+        return()
+      }
+
+      prot_names = rownames(prot_list)
+      prot_list = prot_list$log2_fold_change
+      names(prot_list) = prot_names
+
+      # NA omit and sort
+      prot_list = na.omit(prot_list)
+      prot_list = sort(prot_list, decreasing = TRUE)
+
+      if (!is.null(custom_col)) {
+        term2gene = get_term2gene(feature_table = feature_table,
+                                  column = custom_col,
+                                  sep = "\\|")
+        gsea = custom_gsea(geneList = prot_list,
+                           minGSSize = minGSSize,
+                           maxGSSize = maxGSSize,
+                           pvalueCutoff = p_value_cutoff,
+                           verbose = verbose,
+                           pAdjustMethod = pAdjustMethod,
+                           term2gene = term2gene)
+      } else {
+        gsea = clusterProfiler::gseGO(geneList=prot_list,
+                                      ont = ont,
+                                      keyType = keyType,
+                                      minGSSize = minGSSize,
+                                      maxGSSize = maxGSSize,
+                                      pvalueCutoff = p_value_cutoff,
+                                      verbose = verbose,
+                                      OrgDb = OrgDb,
+                                      pAdjustMethod = pAdjustMethod)
+      }
+
+
+
+      if (nrow(gsea@result) > 0) {
+        gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
+      }
+      self$tables$gsea_object = gsea
+
+    },
+
+    over_representation_analysis = function(prot_list = self$tables$ora_prot_list,
+                                            custom_col = NULL,
+                                            feature_table = self$tables$feature_table,
+                                            pval_cutoff_features = self$params$overrepresentation$pval_cutoff_features,
+                                            padjust_features = self$params$overrepresentation$padjust_features,
+                                            pval_cutoff = self$params$overrepresentation$pval_cutoff,
+                                            pAdjustMethod = self$params$overrepresentation$pAdjustMethod,
+                                            fc_threshold = self$params$overrepresentation$fc_threshold,
+                                            keyType = self$indices$feature_id_type,
+                                            ont = self$params$overrepresentation$ont,
+                                            qval_cutoff = self$params$overrepresentation$qval_cutoff,
+                                            minGSSize = self$params$overrepresentation$minGSSize,
+                                            maxGSSize  = self$params$overrepresentation$maxGSSize) {
+      # Checks
+      if (is.null(ont) & is.null(custom_col)) {
+        print('No ontology nor custom col provided: returning Null')
+        return()
+      }
+
+      # Get universe (all features)
+      universe = prot_list$log2_fold_change
+      names(universe) = rownames(prot_list)
+      universe = na.omit(universe)
+      universe = sort(universe, decreasing = TRUE)
+      universe = names(universe)
+
+      # Get significant features
+      if (padjust_features == "Benjamini-Hochberg") {
+        features = prot_list[prot_list$p_val_bh <= pval_cutoff_features,]
+      } else {
+        features = prot_list[prot_list$p_val <= pval_cutoff_features,]
+      }
+      features = features[abs(features$log2_fold_change) >= log2(fc_threshold),]
+
+      if (nrow(features) == 0) {
+        return()
+      }
+
+      # Sort feature table
+      features = features[order(-features$log2_fold_change),]
+
+      if (!is.null(custom_col)) {
+        term2gene = get_term2gene(feature_table = feature_table,
+                                  column = custom_col,
+                                  sep = "\\|")
+        go_enrich = custom_ora(geneList = rownames(features),
+                               pvalueCutoff = pval_cutoff,
+                               pAdjustMethod = pAdjustMethod,
+                               qvalueCutoff = qval_cutoff,
+                               minGSSize = minGSSize,
+                               maxGSSize = maxGSSize,
+                               term2gene = term2gene)
+      } else {
+        go_enrich = clusterProfiler::enrichGO(gene = rownames(features),
+                                              universe = universe,
+                                              OrgDb = 'org.Hs.eg.db',
+                                              keyType = keyType,
+                                              readable = T,
+                                              ont = ont,
+                                              pvalueCutoff = pval_cutoff,
+                                              pAdjustMethod = pAdjustMethod,
+                                              qvalueCutoff = qval_cutoff,
+                                              minGSSize = minGSSize,
+                                              maxGSSize  = maxGSSize)
+      }
+
+      self$tables$go_enrich = go_enrich
     },
 
     #----------------------------------------------------- Plotting methods ----
@@ -844,58 +1305,67 @@ Lips_exp = R6::R6Class(
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
                             adjustment = self$params$volcano_plot$adjustment,
-                            colour_list,
-                            group_1 = self$params$volcano_plot$groups[1],
-                            group_2 = self$params$volcano_plot$groups[2],
-                            displayed_classes = self$params$volcano_plot$classes,
-                            colouring = self$params$volcano_plot$colouring,
+                            group_1 = self$params$volcano_plot$group_1,
+                            group_2 = self$params$volcano_plot$group_2,
+                            feature_metadata = self$params$volcano_plot$feature_metadata,
+                            keep_significant = self$params$volcano_plot$keep_significant,
+                            displayed_plot = self$params$volcano_plot$displayed_plot,
+                            p_val_threshold = self$params$volcano_plot$p_val_threshold,
+                            fc_threshold = self$params$volcano_plot$fc_threshold,
+                            marker_size = self$params$volcano_plot$marker_size,
+                            opacity = self$params$volcano_plot$opacity,
+                            color_palette = self$params$volcano_plot$color_palette,
                             width = NULL,
                             height = NULL){
 
-      adjustment = adjustment_switch(adjustment)
+      p_val_threshold = as.numeric(p_val_threshold)
+      fc_threshold = as.numeric(fc_threshold)
+      marker_size = as.numeric(marker_size)
+      opacity = as.numeric(opacity)
 
-      # Select the colouring column
-      feat_col = feature_table_cols_switch(colouring)
-
-      # If null, display all classes
-      if ((is.null(displayed_classes)) | any((displayed_classes == ""))) {
-        displayed_classes = unique(data_table[, "lipid_class"])
-      }
-
-      # Filter out classes to skip
-      removed_classes = setdiff(unique(data_table[, "lipid_class"]), displayed_classes)
-      if (length(removed_classes) > 0) {
-        del_rows = c()
-        for (lipclass in removed_classes) {
-          del_rows = c(del_rows, which(data_table[, "lipid_class"] == lipclass))
+      if (adjustment == 'BH') {
+        if (keep_significant) {
+          data_table = data_table[data_table$q_val_bh <= p_val_threshold,]
+          data_table = data_table[(data_table$log2_fold_change >= log2(fc_threshold)) | (data_table$log2_fold_change <= -log2(fc_threshold)),]
         }
-        data_table = data_table[-del_rows,]
+        p_vals = data_table$q_val_bh
+        y_label = '-Log10(BH(p-value))'
+      } else {
+        if (keep_significant) {
+          data_table = data_table[data_table$p_val <= p_val_threshold,]
+          data_table = data_table[(data_table$log2_fold_change >= log2(fc_threshold)) | (data_table$log2_fold_change <= -log2(fc_threshold)),]
+        }
+        p_vals = data_table$p_val
+        y_label = '-Log10(p-value)'
       }
 
-      feature_vector = sort(unique(data_table[, feat_col]))
-
-      max_fc = ceiling(max(abs(data_table[, "log2_fold_change"])))
-      i = 1
-      fig = plotly::plot_ly(colors = colour_list, type  = "scatter", mode  = "markers", width = width, height = height)
-
-
-      for (feature in feature_vector) {
-        tmp_idx = rownames(data_table)[data_table[, feat_col] == feature]
-        fig = fig %>% add_trace(x = data_table[tmp_idx, "log2_fold_change"],
-                                y = data_table[tmp_idx, adjustment],
-                                name = feature,
-                                color = colour_list[i],
-                                text = tmp_idx,
-                                hoverinfo = "text"
-        )
-        i = i + 1
+      if (!is.null(feature_metadata)) {
+        if (feature_metadata %in% colnames(data_table)) {
+          feature_metadata = data_table[,feature_metadata]
+        } else {
+          feature_metadata = NULL
+        }
       }
-      fig = fig %>% layout(shapes = list(vline(x = -1, dash = "dot"), vline(x = 1, dash = "dot"), hline(-log10(0.05), dash = "dot")),
-                           title = paste0(group_1, " (left), ", group_2, " (right)"),
-                           xaxis = list(title = "Log2(fold change)",
-                                        range = c(-max_fc,max_fc)
-                           ),
-                           yaxis = list(title = adjustment_title_switch(adjustment)))
+
+      displayed_text = paste0(paste0(rownames(data_table), '\n'),
+                              paste0('p-value: ', round(p_vals, 3), '\n'),
+                              paste0('FC: ', round(data_table$fold_change, 2)))
+
+      fig = volcano_main(fc_vals = data_table$fold_change,
+                         p_vals = p_vals,
+                         names = displayed_text,
+                         y_label = y_label,
+                         left_label = group_1,
+                         right_label = group_2,
+                         groups = feature_metadata,
+                         displayed_plot = displayed_plot,
+                         color_palette = color_palette,
+                         p_val_threshold = p_val_threshold,
+                         fc_threshold = fc_threshold,
+                         marker_size = marker_size,
+                         opacity = opacity)
+
+
       self$plots$volcano_plot = fig
     },
 
@@ -967,18 +1437,13 @@ Lips_exp = R6::R6Class(
       meta_table_features = meta_table_features[c(colnames(data_table)),]
 
       if (!is.null(col_annotations)) {
-        clean_names = col_annotations
+        clean_names = sub("^(.)", "\\U\\1", tolower(str_replace_all(col_annotations, '_', ' ')), perl = TRUE)
         if (length(col_annotations) == 1) {
-          col_annotations = feature_table_cols_switch(col_annotations)
           col_annotations = as.data.frame(meta_table_features[, col_annotations],
                                           row.names = rownames(meta_table_features))
           colnames(col_annotations) = clean_names
         } else {
-          new_cols = c()
-          for (i in 1:length(col_annotations)) {
-            new_cols = c(new_cols, feature_table_cols_switch(col_annotations[i]))
-          }
-          col_annotations = meta_table_features[, new_cols]
+          col_annotations = meta_table_features[, col_annotations]
           colnames(col_annotations) = clean_names
         }
       }
@@ -1013,21 +1478,39 @@ Lips_exp = R6::R6Class(
     },
 
     ## PCA scores and loading plots
-    plot_pca = function(data_table = self$tables[[self$params$pca$dataset]],
-                        group_column = self$params$pca$group_column,
+    plot_pca = function(data_table = self$tables[[self$params$pca$data_table]],
+                        meta_table = self$tables$raw_meta,
+                        feature_table = self$tables$feature_table,
+                        sample_groups_col = self$params$pca$sample_groups_col,
+                        feature_groups_col = self$params$pca$feature_groups_col,
                         apply_da = self$params$pca$apply_da,
                         alpha_da = self$params$pca$alpha_da,
+                        pca_method = self$params$pca$pca_method,
+                        nPcs = self$params$pca$nPcs,
+                        displayed_pc_1 = self$params$pca$displayed_pc_1,
+                        displayed_pc_2 = self$params$pca$displayed_pc_2,
+                        completeObs = self$params$pca$completeObs,
+                        displayed_plots = self$params$pca$displayed_plots,
+                        colors_palette = self$params$pca$colors_palette,
+                        return_data = TRUE,
                         width = NULL,
-                        height = NULL,
-                        colour_list) {
+                        height = NULL) {
 
+      alpha_da = as.numeric(alpha_da)
+      nPcs= as.numeric(nPcs)
+      displayed_pc_1 = as.numeric(displayed_pc_1)
+      displayed_pc_2 = as.numeric(displayed_pc_2)
 
+      if (is.character(data_table)) {
+        data_table = self$tables[[data_table]]
+      }
+
+      sample_groups = meta_table[rownames(data_table),sample_groups_col]
       if (apply_da) {
         data_table = apply_discriminant_analysis(data_table = data_table,
-                                                 group_list = self$tables$raw_meta[,group_column],
+                                                 group_list = sample_groups,
                                                  nlambda = 100,
-                                                 alpha = alpha_da)
-      }
+                                                 alpha = alpha_da)}
 
       ncol_1 = ncol(data_table)
       data_table = data_table[,!is.na(colSums(data_table, na.rm = T))]
@@ -1036,38 +1519,46 @@ Lips_exp = R6::R6Class(
         print_time(paste0("PCA : dropped ", ncol_1 - ncol_2, " features with no signal variation."))
       }
 
-      pca_data = get_pca_data(data_table = data_table)
+      if (!is.null(feature_groups_col) & !is.null(feature_table)) {
+        if (length(feature_groups_col) == 1) {
+          if (feature_groups_col %in% colnames(feature_table)) {
+            feature_groups = feature_table[colnames(data_table),feature_groups_col]
+            if (length(which(is.na(feature_groups))) < 30) {
+              feature_groups[which(is.na(feature_groups))] = colnames(data_table)[which(is.na(feature_groups))]
+            } else {
+              feature_groups[which(is.na(feature_groups))] = "UNK"
+            }
+          } else {
+            feature_groups = NULL
+          }
+        } else {
+          feature_groups = feature_groups_col[colnames(data_table)]
+          print(feature_groups)
+        }
+      } else {
+        feature_groups = NULL
+      }
 
-      fig = c()
 
-      # Store tables
-      self$tables$pca_scores_table = pca_data@scores
-      self$tables$pca_loadings_table = pca_data@loadings
+      pca_out = pca_main(data_table = data_table,
+                         sample_groups = sample_groups,
+                         feature_groups = feature_groups,
+                         nPcs = nPcs,
+                         displayed_pc_1 = displayed_pc_1,
+                         displayed_pc_2 = displayed_pc_2,
+                         pca_method = pca_method,
+                         completeObs = completeObs,
+                         displayed_plots = displayed_plots,
+                         colors_palette = colors_palette,
+                         return_data = return_data)
 
-      fig[[1]] = pca_plot_scores(x = pca_data@scores[, "PC1"],
-                                 y = pca_data@scores[, "PC2"],
-                                 meta_table = self$tables$raw_meta[rownames(data_table),],
-                                 group_col = group_column,
-                                 width = width,
-                                 height = height,
-                                 colour_list = colour_list)
-      fig[[1]] = fig[[1]] %>% layout(
-        xaxis = list(title = paste0("PC1 (", round(pca_data@R2[1] * 100), "% of the variance)")))
 
-      fig[[2]] = pca_plot_loadings(x = pca_data@loadings[, "PC1"],
-                                   y =  pca_data@loadings[, "PC2"],
-                                   feature_list = colnames(data_table),
-                                   width = width,
-                                   height = height,
-                                   colour_list = colour_list)
-      fig[[2]] = fig[[2]] %>% layout(
-        xaxis = list(title = paste0("PC1 (", round(pca_data@R2[1] * 100), "% of the variance)")))
 
-      fig = plotly::subplot(fig, nrows = 1, margin = 0.035, titleX = TRUE)
-      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
-                           yaxis = list(title = paste0("PC2 (", round(pca_data@R2[2] * 100), "% of the variance)"))
-      )
-      self$plots$pca_plot = fig
+
+      self$tables$pca_scores_table = pca_out$pca_data@scores
+      self$tables$pca_loadings_table = pca_out$pca_data@loadings
+      self$plots$pca_plot = pca_out$fig
+
     },
 
     ## Double bond plot
@@ -1183,14 +1674,579 @@ Lips_exp = R6::R6Class(
         )
       )
       self$plots$double_bond_plot = fig
+    },
+
+    plot_dot_plot = function(object = self$tables$gsea_object,
+                             x = "GeneRatio",
+                             color = "p.adjust",
+                             showCategory = self$params$dot_plot$showCategory,
+                             size = NULL,
+                             split = ".sign",
+                             orderBy="x",
+                             mode = self$params$dot_plot$mode,
+                             width = NULL,
+                             height = NULL){
+
+      if (is.na(showCategory)) {
+        base::warning("Invalid showCategory, setting to 10 by default")
+        showCategory = 10
+      }
+
+      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
+      if (x == "geneRatio" || x == "GeneRatio") {
+        x <- "GeneRatio"
+        if (is.null(size))
+          size <- "Count"
+      } else if (x == "count" || x == "Count") {
+        x <- "Count"
+        if (is.null(size))
+          size <- "GeneRatio"
+      } else if (is(x, "formula")) {
+        x <- as.character(x)[2]
+        if (is.null(size))
+          size <- "Count"
+      } else {
+        if (is.null(size))
+          size  <- "Count"
+      }
+
+      if (inherits(object, c("enrichResultList", "gseaResultList"))) {
+        ldf <- lapply(object, fortify, showCategory=showCategory, split=split)
+        df <- dplyr::bind_rows(ldf, .id="category")
+        df$category <- factor(df$category, levels=names(object))
+      } else {
+        df <- fortify(object, showCategory = showCategory, split=split)
+      }
+
+      if (orderBy !=  'x' && !orderBy %in% colnames(df)) {
+        message('wrong orderBy parameter; set to default `orderBy = "x"`')
+        orderBy <- "x"
+      }
+
+      if (orderBy == "x") {
+        df <- dplyr::mutate(df, x = eval(parse(text=x)))
+      }
+
+      df$hover = paste0(
+        paste0(df[,"Description"], "\n"),
+        paste0("GeneRatio:", as.character(round(df[,"x"],2)), "\n"),
+        paste0(size, ": ", as.character(df[,size]), "\n"),
+        paste0(colorBy, ": ", as.character(round(df[,colorBy],5)), "\n"),
+        df$.sign
+      )
+
+      df[,"Description"] = as.character(df[,"Description"])
+
+      if (mode == "Activated") {
+        df = df[df$.sign == "activated",]
+        trace_hline = FALSE
+      } else if (mode == "Suppressed") {
+        df = df[df$.sign == "suppressed",]
+        trace_hline = FALSE
+      } else if (mode == "Both") {
+        mode = "Activated (top) - Suppressed (bottom)"
+        trace_hline = TRUE
+      } else {
+        warning("Invalid mode, setting to 'Both' by default")
+        mode = "Activated (top) - Suppressed (bottom)"
+        trace_hline = TRUE
+      }
+
+
+      fig = plotly::plot_ly(data = df,
+                            x = ~x,
+                            y = df[,"Description"],
+                            size = df[,size],
+                            type = "scatter",
+                            mode = "markers",
+                            marker = list(color = df[,colorBy],
+                                          sizemode ='diameter',
+                                          opacity = 0.5,
+                                          sizeref=1,
+                                          colorscale = 'RdBu',
+                                          colorbar=list(
+                                            title=colorBy
+                                          ),
+                                          line = list(width = 0),
+                                          cmax = max(df[, colorBy]),
+                                          cmin = min(df[, colorBy])
+                            ),
+                            text = df$hover,
+                            hoverinfo = "text",
+                            width = width,
+                            height = height
+      )
+      fig = fig %>% layout(
+        legend= list(itemsizing='constant'),
+        title = mode,
+        xaxis = list(title = 'GeneRatio'),
+        yaxis = list(title =  NA,
+                     categoryorder = "array",
+                     categoryarray = base::rev(df[,"Description"]))
+      )
+      if (trace_hline) {
+        fig = fig %>% layout(
+          shapes = list(hline(showCategory - 0.5))
+        )
+      }
+      print_tm(self$name, "Dot plot completed")
+      self$plots$dotplot = fig
+    },
+
+    plot_or_dot_plot = function(object = self$tables$go_enrich,
+                                x = "GeneRatio",
+                                color = "p.adjust",
+                                showCategory = self$params$or_dot_plot$showCategory,
+                                size = NULL,
+                                split = NULL,
+                                orderBy="x",
+                                width = NULL,
+                                height = NULL){
+
+      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
+      if (x == "geneRatio" || x == "GeneRatio") {
+        x <- "GeneRatio"
+        if (is.null(size))
+          size <- "Count"
+      } else if (x == "count" || x == "Count") {
+        x <- "Count"
+        if (is.null(size))
+          size <- "GeneRatio"
+      } else if (is(x, "formula")) {
+        x <- as.character(x)[2]
+        if (is.null(size))
+          size <- "Count"
+      } else {
+        ## message("invalid x, setting to 'GeneRatio' by default")
+        ## x <- "GeneRatio"
+        ## size <- "Count"
+        if (is.null(size))
+          size  <- "Count"
+      }
+
+      if (inherits(object, c("enrichResultList", "gseaResultList"))) {
+        ldf <- lapply(object, fortify, showCategory=showCategory, split=split)
+        df <- dplyr::bind_rows(ldf, .id="category")
+        df$category <- factor(df$category, levels=names(object))
+      } else {
+        # df = get_cp_results(object, showCategory)
+        df <- fortify(object, showCategory = showCategory, split=split)
+        ## already parsed in fortify
+        ## df$GeneRatio <- parse_ratio(df$GeneRatio)
+      }
+
+      if (orderBy !=  'x' && !orderBy %in% colnames(df)) {
+        message('wrong orderBy parameter; set to default `orderBy = "x"`')
+        orderBy <- "x"
+      }
+
+      if (orderBy == "x") {
+        df <- dplyr::mutate(df, x = eval(parse(text=x)))
+      }
+
+
+      df$hover = paste0(
+        paste0(df[,"Description"], "\n"),
+        paste0(x, ":", as.character(round(df[,x],2)), "\n"),
+        paste0(size, ": ", as.character(df[,size]), "\n"),
+        paste0(colorBy, ": ", as.character(round(df[,colorBy],5)), "\n"),
+        df$.sign
+      )
+
+      df[,"Description"] = as.character(df[,"Description"])
+
+
+
+      fig = plotly::plot_ly(data = df,
+                            x = df$GeneRatio,
+                            y = df[,"Description"],
+                            size = df[,size],
+                            type = "scatter",
+                            mode = "markers",
+                            marker = list(color = df[,colorBy],
+                                          sizemode ='diameter',
+                                          opacity = 0.5,
+                                          sizeref=1,
+                                          colorscale = 'RdBu',
+                                          colorbar=list(
+                                            title=colorBy
+                                          ),
+                                          line = list(width = 0),
+                                          cmax = max(df[, colorBy]),
+                                          cmin = min(df[, colorBy])
+                            ),
+                            text = df$hover,
+                            hoverinfo = "text",
+                            width = width,
+                            height = height
+      )
+      fig = fig %>% layout(
+        legend= list(itemsizing='constant'),
+        title = mode,
+        xaxis = list(title = 'GeneRatio'),
+        yaxis = list(title =  NA,
+                     categoryorder = "array",
+                     categoryarray = base::rev(df[,"Description"]))
+      )
+      self$plots$or_dotplot = fig
+
+    },
+
+    plot_cnet_plot = function(x = self$tables$gsea_object,
+                              showCategory = self$params$cnet_plot$showCategory,
+                              displayed_labels = self$params$cnet_plot$displayed_labels,
+                              enable_physics = self$params$cnet_plot$enable_physics,
+                              context = "gsea") {
+
+      showCategory = as.numeric(showCategory)
+
+      if (context == 'gsea') {
+        prot_list = self$tables$gsea_prot_list
+      } else if (context == 'ora') {
+        prot_list = self$tables$ora_prot_list
+      }
+
+      # df = get_cp_results(object = x, showCategory = showCategory)
+      geneSets = enrichplot:::extract_geneSets(x, showCategory)
+      # df <- fortify(x, showCategory = showCategory)
+      # geneSets = geneInCategory(x)
+      # geneSets = geneSets[1:min(showCategory, length(geneSets))]
+
+      if (displayed_labels == 'Description') {
+        main_nodes = names(geneSets)
+      } else if (displayed_labels == 'IDs') {
+        main_nodes = x@result$ID[1:showCategory]
+      } else if (displayed_labels == 'IDs and Description') {
+        main_nodes = paste0(x@result$ID[1:showCategory], '\n', names(geneSets))
+      } else {
+        stop("displayed_labels must be in ['Description', 'IDs', 'IDs and Description']")
+      }
+      names(geneSets) = main_nodes
+
+
+      secondary_nodes = sort(unique(unlist(unname(geneSets))))
+      all_nodes = c(main_nodes, secondary_nodes)
+
+      node_table = data.frame(matrix(nrow = length(all_nodes), ncol = 1))
+      colnames(node_table) = c("id")
+      node_table$id = all_nodes
+      node_table$label = all_nodes
+      node_table$shape = rep("dot", nrow(node_table))
+
+      feature_values = prot_list[all_nodes,]
+      rownames(feature_values) = rownames(node_table)
+
+      node_table = base::cbind(node_table, feature_values)
+
+      normalized_values = scales::rescale(feature_values$log2_fold_change, to = c(0, 1))
+
+      color_gradient = grDevices::colorRampPalette(c("blue", "white", "red"))
+      hex_colors = color_gradient(100)[round(normalized_values * 99) + 1]
+      hex_colors[which(is.na(hex_colors))] = "#FFD800"
+      node_table$color = hex_colors
+
+      source_nodes = c()
+      target_nodes = c()
+      for (n in main_nodes) {
+        target_nodes = c(target_nodes, geneSets[[n]])
+        source_nodes = c(source_nodes, rep(n, length(geneSets[[n]])))
+      }
+
+      edge_table = data.frame(matrix(nrow = length(target_nodes), ncol = 2))
+      colnames(edge_table) = c("from", "to")
+      edge_table$from = source_nodes
+      edge_table$to = target_nodes
+      edge_table$width = rep(1, nrow(edge_table))
+
+      plot = visNetwork::visNetwork(node_table, edge_table)
+      plot = visNetwork::visPhysics(plot, enabled = enable_physics)
+
+      if (context == "gsea") {
+        self$plots$cnetplot = plot
+      } else if (context == "ora") {
+        self$plots$or_cnetplot = plot
+      }
+    },
+
+    plot_ridge_plot = function(x = self$tables$gsea_object,
+                               showCategory = self$params$dot_plot$showCategory,
+                               fill="p.adjust",
+                               core_enrichment = TRUE,
+                               orderBy = "NES",
+                               decreasing = FALSE,
+                               width = NULL,
+                               height = NULL) {
+
+      print_tm(self$name, "Ridgeplot initiated")
+
+      if (is.na(showCategory)) {
+        base::warning("Invalid showCategory, setting to 30 by default")
+        showCategory = 30
+      }
+
+      n = showCategory
+      if (core_enrichment) {
+        gs2id = geneInCategory(x)[seq_len(n)]
+      } else {
+        gs2id = x@geneSets[x$ID[seq_len(n)]]
+      }
+
+      if (x@readable && length(x@gene2Symbol) > 0) {
+        id = match(names(x@geneList), names(x@gene2Symbol))
+        names(x@geneList) = x@gene2Symbol[id]
+      }
+
+      gs2val = lapply(gs2id, function(id) {
+        res = x@geneList[id]
+        res = res[!is.na(res)]
+      })
+
+      nn = names(gs2val)
+      i = match(nn, x$ID)
+      nn = x$Description[i]
+
+      j = order(x@result[[orderBy]][i], decreasing = decreasing)
+      len = sapply(gs2val, length)
+      gs2val.df = data.frame(category = rep(nn, times=len),
+                             color = rep(x[i, fill], times=len),
+                             value = unlist(gs2val))
+
+      colnames(gs2val.df)[2] = fill
+      gs2val.df$category = factor(gs2val.df$category, levels=nn[j])
+
+      xdata = na.omit(data.frame(x=gs2val.df$value, group=gs2val.df$category))
+      xs = split(xdata$x, xdata$group)
+      xs_mask = vapply(xs, length, numeric(1)) > 1
+      bws = vapply(xs[xs_mask], bw.nrd0, numeric(1))
+      bw = mean(bws, na.rm = TRUE)
+
+      all_traces = levels(gs2val.df$category)
+      total_seq = seq(floor(min(gs2val.df$value)),ceiling(max(gs2val.df$value)), by=bw)
+
+      col_values_hex = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = 'YlOrRd'))(length(unique(gs2val.df[,"p.adjust"])))
+      col_values = c()
+      for (col in col_values_hex){
+        col_values = c(col_values, paste0("rgba(",paste(as.vector(col2rgb(col)), collapse = ","), ",0.5)"))
+      }
+      names(col_values) = seq(1, length(col_values), by = 1)
+      col_pvals = sort(unique(gs2val.df[,"p.adjust"]))
+
+      p = plotly::plot_ly(width = width,
+                          height = height)
+      incr = 0
+      for (trace in all_traces) {
+        tmp_table = gs2val.df[gs2val.df[,"category"] == trace,]
+        fill_value = tmp_table[1, "p.adjust"]
+        fill_col = col_values[which(col_pvals == fill_value)]
+
+        tmp_table = as.data.frame(table(cut(tmp_table$value, breaks=total_seq)))
+        tmp_table$Var1 = gsub("\\(|]", "", levels(tmp_table$Var1))
+        x_values = c()
+        for (l in tmp_table$Var1) {
+          x_values = c(x_values, mean(as.numeric(stringr::str_split(l, ",")[[1]])))
+        }
+        tmp_table$Var1 = x_values
+
+        tmp_table$text = paste0(trace, ":\n", "Count: ", tmp_table$Freq, "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1,2))
+
+        tmp_table$Freq = tmp_table$Freq / max(tmp_table$Freq) + incr
+
+
+        # if ((tmp_table$Freq[nrow(tmp_table)] - incr) > 0) {
+        #   tmp_table = base::rbind(tmp_table, c(tmp_table$Var1[tmp_table] +0.5, incr, paste0(trace, ":\n", "Count: ", "0", "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1[1] -1,2))))
+        # }
+        # if ((tmp_table$Freq[1] - incr) > 0) {
+        #   tmp_table = rbind(c(tmp_table$Var1[1] -0.5, incr, paste0(trace, ":\n", "Count: ", "0", "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1[1] -1,2))),
+        #                     tmp_table)
+        # }
+
+
+
+        p = add_trace(p,
+                      line = list(
+                        color = "#FFFFFF",
+                        width = 0.1
+                      ),
+                      mode = "lines",
+                      type = "scatter",
+                      x = c(0, max(gs2val.df$value)),
+                      y = c(incr-0.01, incr-0.01),
+                      legendgroup=0,
+                      showlegend = F)
+
+        incr = incr + 1
+
+        p = add_trace(p,
+                      fill = "tonexty",
+                      line = list(color = "#000000",
+                                  width = 0.5,
+                                  shape = "spline",
+                                  smoothing = 1.3),
+                      mode = "lines",
+                      type = "scatter",
+                      x=tmp_table$Var1,
+                      y=tmp_table$Freq,
+                      name = trace,
+                      fillcolor = fill_col,
+                      text = tmp_table$text,
+                      hoverinfo = "text",
+                      legendgroup=0,
+                      showlegend = F)
+
+      }
+
+      p = add_trace(p,
+                    x = col_pvals,
+                    y = col_pvals,
+                    type = "scatter",
+                    mode = "markers",
+                    marker = list(
+                      color = col_pvals,
+                      colorscale = "YlOrRd",
+                      colorbar=list(title = fill),
+                      size = 1,
+                      opacity = 0.1),
+                    legendgroup=0,
+                    showlegend = F
+      )
+
+
+      p = layout(p ,
+                 showlegend = T,
+                 yaxis = list(
+                   type = "linear",
+                   range = c(0, length(all_traces)),
+                   ticklen = 4,
+                   showgrid = TRUE,
+                   showline = FALSE,
+                   ticktext = all_traces,
+                   tickvals = seq(from = 0, to = length(all_traces)-1, by = 1),
+                   zeroline = FALSE,
+                   gridcolor = "rgb(255,255,255)",
+                   gridwidth = 1
+                 ),
+                 xaxis = list(title = "Log2(fold change)"))
+
+      self$plots$ridgeplot = p
+    },
+
+    plot_emap_plot = function(x = self$tables$gsea_object,
+                              showCategory = self$params$or_emap_plot$showCategory,
+                              color = self$params$or_emap_plot$color,
+                              size = self$params$or_emap_plot$size,
+                              score_threshold = self$params$or_emap_plot$score_threshold,
+                              similarity_score = self$params$or_emap_plot$similarity_score,
+                              edge_magnifier = self$params$or_emap_plot$edge_magnifier,
+                              node_magnifier = self$params$or_emap_plot$node_magnifier,
+                              enable_physics = self$params$or_emap_plot$enable_physics,
+                              context = "gsea") {
+      # Format data
+      showCategory = as.numeric(showCategory)
+      score_threshold = as.numeric(score_threshold)
+      edge_magnifier = as.numeric(edge_magnifier)
+      node_magnifier = as.numeric(node_magnifier)
+
+      # check if showCategory appropriate
+      if (showCategory > nrow(x@result)) {
+        showCategory = nrow(x@result)
+      }
+
+      # Adding data based on GSEA or ORA
+      if (context == 'gsea') {
+        total_count = x@result$setSize
+        count = lapply(x@result$core_enrichment, function(x) {
+          elements = unlist(strsplit(x, "/"))
+          length(elements)
+        })
+        count = unlist(count)
+        x@result$Count = count
+        x@result$total_count = total_count
+        x@result$gene_ratio = round(count/total_count, 2)
+      } else if (context == 'or') {
+        total_count = base::strsplit(x@result$GeneRatio, '/')
+        total_count = as.numeric(sapply(total_count, "[[", 2))
+        x@result$total_count = total_count
+        x@result$gene_ratio = round(x@result$Count / x@result$total_count, 2)
+      }
+
+
+      # Calculate similarities
+      x = enrichplot::pairwise_termsim(x= x,
+                                       method = similarity_score,
+                                       semData = NULL,
+                                       showCategory = showCategory)
+
+      # Get the igraph object
+      g = enrichplot:::get_igraph(x=x,
+                                  nCategory=showCategory,
+                                  color=color,
+                                  cex_line=edge_magnifier,
+                                  min_edge=score_threshold)
+
+
+      # Extract data from the igraph object
+      edge_table = igraph::as_data_frame(g, what = "edges")
+      if (length(edge_table) > 0) {
+        edge_table$color = "gray"
+      }
+      node_table = igraph::as_data_frame(g, what = "vertices")
+      node_table = cbind(node_table$name, node_table)
+      colnames(node_table) = c("id", "label", "size", "color_values")
+      node_table$size = x@result[[size]][1:showCategory]
+      node_table$shape = "dot"
+      rownames(node_table) = 1:nrow(node_table)
+      node_table$size = node_table$size * node_magnifier
+
+      # Setting the color gradient
+      normalized_values = scales::rescale(node_table$color_values , to = c(0, 1))
+      color_gradient = grDevices::colorRampPalette(c("red", "white", "blue"))
+      hex_colors = color_gradient(100)[round(normalized_values * 99) + 1]
+      node_table$color = hex_colors
+
+      # Produce the network object
+      plot = visNetwork::visNetwork(node_table, edge_table)
+      plot = visNetwork::visPhysics(plot, enabled = enable_physics)
+
+      ### Store the network object
+      if (context == "gsea") {
+        self$plots$emap_plot = plot
+      } else if (context == "or") {
+        self$plots$or_emap_plot = plot
+      }
+    },
+
+    plot_or_bar_plot = function(object = self$tables$go_enrich,
+                                x = self$params$or_bar_plot$x,
+                                color = self$params$or_bar_plot$color,
+                                showCategory = self$params$or_bar_plot$showCategory,
+                                width = NULL,
+                                height = NULL) {
+
+      colorBy = match.arg(color, c("pvalue", "p.adjust", "qvalue"))
+      if (x == "geneRatio" || x == "GeneRatio") {
+        x = "GeneRatio"
+      } else if (x == "count" || x == "Count") {
+        x = "Count"
+      }
+
+      # df = get_cp_results(object, showCategory)
+      df = fortify(object, showCategory=showCategory, by=x)
+
+      fig = plotly::plot_ly(df,
+                            x = df[,x],
+                            y = df$Description,
+                            type = 'bar',
+                            orientation = 'h',
+                            marker = list(
+                              colorscale = list(c(0,1), c("red", "blue")),
+                              colorbar = list(title = "p.adjust"),
+                              color = ~p.adjust),
+                            width = width,
+                            height = height) %>%
+        layout(xaxis = list(title = 'Count')
+        )
+      self$plots$or_barplot = fig
     }
-
-
-
-
-
-
-
-
+    #------------------------------------------------------------------ END ----
   )
 )

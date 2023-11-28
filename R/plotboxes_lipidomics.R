@@ -273,21 +273,9 @@ volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$get_volcano_table(data_table = table_switch(input$volcano_plot_tables, r6),
-                       group_col = input$volcano_plot_metacol,
-                       used_function =  input$volcano_plot_function,
-                       test = input$volcano_plot_test,
-                       group_1 = input$volcano_plot_metagroup[1],
-                       group_2 = input$volcano_plot_metagroup[2])
+  r6$get_volcano_table(data_table = table_switch(input$volcano_plot_tables, r6))
 
-  r6$plot_volcano(data_table = r6$tables$volcano_table,
-                  adjustment = input$volcano_plot_adjustment,
-                  colour_list = colour_list,
-                  group_1 = input$volcano_plot_metagroup[1],
-                  group_2 = input$volcano_plot_metagroup[2],
-                  displayed_classes = input$volcano_plot_lipclass,
-                  colouring = input$volcano_plot_colouring,
-                  width = width,
+  r6$plot_volcano(width = width,
                   height = height)
 
 }
@@ -323,6 +311,13 @@ volcano_plot_server = function(r6, output, session) {
   # Set UI
   output$volcano_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('volcano_plot_auto_update'),
+        label = 'Auto-update',
+        value = TRUE,
+        right = TRUE,
+        status = "success"
+      ),
       shiny::selectInput(
         inputId = ns("volcano_plot_tables"),
         label = "Select data table",
@@ -339,15 +334,39 @@ volcano_plot_server = function(r6, output, session) {
         inputId = ns("volcano_plot_metagroup"),
         label = "Select two groups to compare",
         choices = unique(r6$tables$raw_meta[,r6$params$volcano_plot$group_col]),
-        selected = r6$params$volcano_plot$groups,
+        selected = c(r6$params$volcano_plot$group_1, r6$params$volcano_plot$group_2),
         multiple = TRUE
       ),
+
       shiny::selectizeInput(
-        inputId = ns("volcano_plot_lipclass"),
-        label = "Classes to display",
-        choices = unique(r6$tables$feature_table[,"lipid_class"]),
-        selected = r6$params$volcano_plot$classes,
+        inputId = ns('volcano_plot_feature_metadata'),
+        label = "Feature metadata",
+        choices = c('None', colnames(r6$tables$feature_table)),
+        selected = r6$params$volcano_plot$feature_metadata,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
+        inputId = ns('volcano_plot_annotation_terms'),
+        label = "Feature annotations",
+        choices = NULL,
+        selected = NULL,
         multiple = TRUE
+      ),
+      shinyWidgets::prettySwitch(
+        inputId = ns('volcano_plot_keep_significant'),
+        label = 'Keep only significant data',
+        value = r6$params$volcano_plot$keep_significant
+      ),
+      shiny::selectizeInput(
+        inputId = ns('volcano_plot_color_palette'),
+        label = "Feature metadata colors",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$volcano_plot$color_palette,
+        multiple = FALSE
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_function"),
@@ -366,16 +385,46 @@ volcano_plot_server = function(r6, output, session) {
       shiny::selectizeInput(
         inputId = ns("volcano_plot_adjustment"),
         label = "Select adjustment",
-        choices = c("None", "Benjamini-Hochberg"),
+        choices = c("None", "BH"),
         selected = r6$params$volcano_plot$adjustment,
         multiple = FALSE
       ),
-      shiny::selectizeInput(
-        inputId = ns("volcano_plot_colouring"),
-        label = "Select colouring",
-        choices = c("Lipid class", "Double bonds (chain 1)", "Double bonds (chain 2)", "Double bonds (sum)", "Carbon count (chain 1)", "Carbon count (chain 2)", "Carbon count (sum)"),
-        selected = r6$params$volcano_plot$colouring,
-        multiple = FALSE
+      shiny::selectInput(
+        inputId = ns("volcano_plot_displayed_plot"),
+        label = 'Displayed plot',
+        choices = c('main', 'all', 'left', 'right', 'top'),
+        selected = r6$params$volcano_plot$displayed_plot,
+        width = '100%'
+      ),
+      shiny::textInput(
+        inputId = ns("volcano_plot_p_val_threshold"),
+        label = 'p-value threshold',
+        value = r6$params$volcano_plot$p_val_threshold,
+        width = '100%'
+      ),
+
+      shiny::textInput(
+        inputId = ns("volcano_plot_fc_threshold"),
+        label = 'FC threshold',
+        value = r6$params$volcano_plot$fc_threshold,
+        width = '100%'
+      ),
+
+      shiny::textInput(
+        inputId = ns("volcano_plot_marker_size"),
+        label = 'Marker size',
+        value = r6$params$volcano_plot$marker_size,
+        width = '100%'
+      ),
+
+      shiny::sliderInput(
+        inputId = ns("volcano_plot_opacity"),
+        label = 'Opacity',
+        min = 0.1,
+        max = 1.0,
+        value = r6$params$volcano_plot$opacity,
+        step = 0.1,
+        width = '100%'
       ),
       shiny::actionButton(
         inputId = ns("volcano_feature_select"),
@@ -420,23 +469,85 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
     )
   })
 
-  shiny::observeEvent(c(input$volcano_plot_metagroup, input$volcano_plot_tables, input$volcano_plot_function, input$volcano_plot_colouring, input$volcano_plot_lipclass, input$volcano_plot_adjustment, input$volcano_plot_test, input$volcano_plot_img_format), {
-    shiny::req(length(input$volcano_plot_metagroup) == 2)
-
-    print_tm(r6$name, "Volcano plot: Updating params...")
-    r6$param_volcano_plot(data_table = input$volcano_plot_tables,
-                          adjustment = input$volcano_plot_adjustment,
-                          group_col = input$volcano_plot_metacol,
-                          groups = input$volcano_plot_metagroup,
-                          classes = input$volcano_plot_lipclass,
-                          selected_function = input$volcano_plot_function,
-                          selected_test = input$volcano_plot_test,
-                          colouring = input$volcano_plot_colouring,
-                          img_format = input$volcano_plot_img_format)
-
-    volcano_plot_generate(r6, color_palette, dimensions_obj, input)
-    volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
+  shiny::observeEvent(input$volcano_plot_feature_metadata, {
+    if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
+      shiny::updateSelectizeInput(
+        inputId = "volcano_plot_annotation_terms",
+        session = session,
+        choices = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$feature_list,
+        selected = character(0)
+      )
+    } else {
+      shiny::updateSelectizeInput(
+        inputId = "volcano_plot_annotation_terms",
+        session = session,
+        choices = NULL,
+        selected = character(0)
+      )
+    }
   })
+
+
+  shiny::observeEvent(
+    c(shiny::req(length(input$volcano_plot_metagroup) == 2),
+      shiny::req(input$volcano_plot_auto_update),
+      input$volcano_plot_tables,
+      input$volcano_plot_function,
+      input$volcano_plot_adjustment,
+      input$volcano_plot_test,
+      input$volcano_plot_displayed_plot,
+      input$volcano_plot_feature_metadata,
+      input$volcano_plot_annotation_terms,
+      input$volcano_plot_keep_significant,
+      input$volcano_plot_color_palette,
+      input$volcano_plot_p_val_threshold,
+      input$volcano_plot_fc_threshold,
+      input$volcano_plot_marker_size,
+      input$volcano_plot_opacity,
+      input$volcano_plot_img_format
+    ),{
+
+      print_tm(r6$name, "Volcano plot: Updating params...")
+
+      # Is the column multivalue?
+      if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
+        if (length(input$volcano_plot_annotation_terms) > 0) {
+          feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
+                                            sparse_table = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$sparse_matrix)
+        } else {
+          return()
+        }
+      } else {
+        feature_metadata = input$volcano_plot_feature_metadata
+      }
+
+      r6$param_volcano_plot(data_table = input$volcano_plot_tables,
+                            adjustment = input$volcano_plot_adjustment,
+                            group_col = input$volcano_plot_metacol,
+                            group_1 = input$volcano_plot_metagroup[1],
+                            group_2 = input$volcano_plot_metagroup[2],
+                            feature_metadata = feature_metadata,
+                            keep_significant = input$volcano_plot_keep_significant,
+                            color_palette = input$volcano_plot_color_palette,
+                            displayed_plot = input$volcano_plot_displayed_plot,
+                            p_val_threshold = input$volcano_plot_p_val_threshold,
+                            fc_threshold = input$volcano_plot_fc_threshold,
+                            marker_size = input$volcano_plot_marker_size,
+                            opacity = input$volcano_plot_opacity,
+                            selected_function = input$volcano_plot_function,
+                            selected_test = input$volcano_plot_test,
+                            img_format = input$volcano_plot_img_format)
+
+      base::tryCatch({
+        volcano_plot_generate(r6, color_palette, dimensions_obj, input)
+        volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
+      },error=function(e){
+        print_tm(r6$name, 'Volcano plot: ERROR.')
+      },finally={}
+      )
+
+
+    })
 
 
 
@@ -609,8 +720,7 @@ heatmap_server = function(r6, output, session) {
             inputId = ns("heatmap_map_cols"),
             label = "Map feature data",
             multiple = TRUE,
-            choices = c('Lipid class', 'Double bonds (chain 1)', 'Carbon count (chain 1)', 'Double bonds (chain 2)',
-                        'Carbon count (chain 2)', 'Double bonds (sum)', 'Carbon count (sum)'),
+            choices = colnames(r6$tables$feature_table),
             selected = r6$params$heatmap$map_feature_data
           )
         )
@@ -749,13 +859,8 @@ pca_generate = function(r6, colour_list, dimensions_obj, input) {
   }
 
 
-  r6$plot_pca(data_table = table_switch(input$pca_dataset, r6),
-              group_column = input$pca_metacol,
-              apply_da = input$pca_apply_da,
-              alpha_da = input$pca_alpha_da,
-              width = width,
-              height = height,
-              colour_list = colour_list)
+  r6$plot_pca(width = width,
+              height = height)
 }
 
 pca_spawn = function(r6, format, output) {
@@ -786,26 +891,38 @@ pca_server = function(r6, output, session) {
 
   output$pca_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('pca_auto_update'),
+        label = 'Auto-update',
+        value = TRUE,
+        right = TRUE,
+        status = "success"
+      ),
       shiny::selectInput(
-        inputId = ns("pca_dataset"),
+        inputId = ns("pca_data_table"),
         label = "Select dataset",
         choices = c('Z-scored table', 'Class table z-scored', 'Z-scored total normalized table'),
-        selected = r6$params$pca$dataset
+        selected = r6$params$pca$data_table
       ),
       shiny::selectInput(
-        inputId = ns("pca_metacol"),
-        label = "Select metadata column",
+        inputId = ns("pca_sample_groups_col"),
+        label = "Sample group column",
         choices = colnames(r6$tables$raw_meta),
-        selected = r6$params$pca$group_column
+        selected = r6$params$pca$sample_groups_col
       ),
-
       shiny::selectInput(
-        inputId = ns('pca_feature_meta'),
-        label = 'Feature meta',
-        choices = colnames(r6$tables$feature_table),
-        selected = r6$params$pca$feature_metadata
+        inputId = ns("pca_feature_group"),
+        label = "Feature metadata",
+        choices = c('None', colnames(r6$tables$feature_table)),
+        selected = r6$params$pca$feature_groups_col
       ),
-
+      shiny::selectizeInput(
+        inputId = ns('pca_plot_annotation_terms'),
+        label = "Feature annotations",
+        choices = NULL,
+        selected = NULL,
+        multiple = TRUE
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::column(
@@ -820,7 +937,6 @@ pca_server = function(r6, output, session) {
                                     width = "100%")
         )
       ),
-
       shiny::sliderInput(inputId = ns("pca_alpha_da"),
                          label = "Alpha",
                          min = 0,
@@ -828,7 +944,54 @@ pca_server = function(r6, output, session) {
                          value = r6$params$pca$alpha_da,
                          step = 0.01,
                          width = "100%"),
-
+      shiny::selectInput(
+        inputId = ns('pca_method'),
+        label = 'PCA method',
+        choices = c('svd', 'nipals', 'rnipals', 'bpca', 'ppca', 'svdImpute', 'llsImputeAll'),
+        selected = r6$params$pca$pca_method,
+        width = '100%'
+      ),
+      shiny::textInput(
+        inputId = ns('pca_npcs'),
+        label = 'Number of PCs',
+        value = r6$params$pca$nPcs,
+        width = '100%'
+      ),
+      shiny::textInput(
+        inputId = ns('pca_displayed_pc_1'),
+        label = 'Displayed PC (1)',
+        value = r6$params$pca$displayed_pc_1,
+        width = '100%'
+      ),
+      shiny::textInput(
+        inputId = ns('pca_displayed_pc_2'),
+        label = 'Displayed PC (2)',
+        value = r6$params$pca$displayed_pc_2,
+        width = '100%'
+      ),
+      shinyWidgets::prettySwitch(
+        inputId = ns('pca_completeObs'),
+        label = 'Complete observations',
+        value = r6$params$pca$completeObs
+      ),
+      shiny::selectInput(
+        inputId = ns('pca_displayed_plots'),
+        label = 'Displayed plot',
+        choices = c('both', 'scores', 'loadings', 'variance'),
+        selected = r6$params$pca$displayed_plots,
+        width = '100%'
+      ),
+      shiny::selectInput(
+        inputId = ns('pca_colors_palette'),
+        label = 'Color palette',
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$pca$colors_palette,
+        width = '100%'
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::selectInput(
@@ -855,22 +1018,85 @@ pca_server = function(r6, output, session) {
 
 pca_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(c(input$pca_dataset, input$pca_metacol, input$pca_apply_da, input$pca_alpha_da, input$pca_img_format),{
-    print_tm(r6$name, "PCA: Updating params...")
+  shiny::observeEvent(input$pca_feature_group, {
+    if (input$pca_feature_group %in% names(r6$tables$feature_list)) {
+      shiny::updateSelectizeInput(
+        inputId = "pca_plot_annotation_terms",
+        session = session,
+        choices = r6$tables$feature_list[[input$pca_feature_group]]$feature_list,
+        selected = character(0)
+      )
+    } else {
+      shiny::updateSelectizeInput(
+        inputId = "pca_plot_annotation_terms",
+        session = session,
+        choices = NULL,
+        selected = character(0)
+      )
+    }
+  })
 
-    r6$param_pca(dataset = input$pca_dataset,
-                 group_column = input$pca_metacol,
+  shiny::observeEvent(c(
+    shiny::req(input$pca_auto_update),
+    input$pca_data_table,
+    input$pca_sample_groups_col,
+    input$pca_feature_group,
+    input$pca_plot_annotation_terms,
+    input$pca_apply_da,
+    input$pca_alpha_da,
+    input$pca_method,
+    input$pca_npcs,
+    input$pca_displayed_pc_1,
+    input$pca_displayed_pc_2,
+    input$pca_completeObs,
+    input$pca_displayed_plots,
+    input$pca_colors_palette,
+    input$pca_img_format),{
+
+      print_tm(r6$name, "PCA: Updating params...")
+
+      # Is the column multivalue?
+      if (input$pca_feature_group %in% names(r6$tables$feature_list)) {
+        print(1)
+        if (length(input$pca_plot_annotation_terms) > 0) {
+          print(2)
+          feature_metadata = match_go_terms(terms_list = input$pca_plot_annotation_terms,
+                                            sparse_table = r6$tables$feature_list[[input$pca_feature_group]]$sparse_matrix)
+          print(3)
+        } else {
+          print(4)
+          return()
+        }
+      } else {
+        print(5)
+        feature_metadata = input$pca_feature_group
+      }
+
+
+    r6$param_pca(data_table = table_name_switch(input$pca_data_table),
+                 sample_groups_col = input$pca_sample_groups_col,
+                 feature_groups_col = feature_metadata,
                  apply_da = input$pca_apply_da,
                  alpha_da = input$pca_alpha_da,
+                 pca_method = input$pca_method,
+                 nPcs = input$pca_npcs,
+                 displayed_pc_1 = input$pca_displayed_pc_1,
+                 displayed_pc_2 = input$pca_displayed_pc_2,
+                 completeObs = input$pca_completeObs,
+                 displayed_plots = input$pca_displayed_plots,
+                 colors_palette = input$pca_colors_palette,
                  img_format = input$pca_img_format)
 
-    base::tryCatch({
-      pca_generate(r6, color_palette, dimensions_obj, input)
-      pca_spawn(r6, input$pca_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'PCA: ERROR.')
-    },finally={}
-    )
+    pca_generate(r6, color_palette, dimensions_obj, input)
+    pca_spawn(r6, input$pca_img_format, output)
+
+    # base::tryCatch({
+    #   pca_generate(r6, color_palette, dimensions_obj, input)
+    #   pca_spawn(r6, input$pca_img_format, output)
+    # },error=function(e){
+    #   print_tm(r6$name, 'PCA: ERROR.')
+    # },finally={}
+    # )
 
   })
 

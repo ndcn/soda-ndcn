@@ -1,6 +1,16 @@
 # Utility functions
-
+base::source('./R/complex_functions/pca.R')
+base::source('./R/complex_functions/volcano.R')
 #--------------------------------------------------------- Switch functions ----
+
+gene_ontology_switch = function(selection) {
+  switch (EXPR = selection,
+    'Gene ontology (ALL)' = 'ALL',
+    'Gene ontology (BP)'= 'BP',
+    'Gene ontology (MF)' = 'MF',
+    'Gene ontology (CC)' = 'CC'
+  )
+}
 
 experiment_switch = function(selection) {
   switch(EXPR = selection,
@@ -67,6 +77,30 @@ table_switch = function(table_name, r6) {
          'Class summary table' = r6$tables$summary_class_table,
          'GSEA prot list' = r6$tables$prot_list
          )
+}
+
+table_name_switch = function(table_name) {
+  switch(EXPR = table_name,
+         'Imported metadata table' = 'imp_meta',
+         'Raw metadata table' = 'raw_meta',
+         'Imported data table' = 'imp_data',
+         'Raw data table' = 'raw_data',
+         'Imported feature table' = 'imp_feature_table',
+         'Feature table' = 'feature_table',
+         'Blank table' = 'blank_table',
+         'Class normalized table' = 'class_norm_data',
+         'Total normalized table' = 'total_norm_data',
+         'Z-scored table' = 'z_scored_data',
+         'Z-scored class normalized table' = 'z_scored_class_norm_data',
+         'Z-scored total normalized table' = 'z_scored_total_norm_data',
+         'Class table' = 'class_table',
+         'Class table z-scored' = 'class_table_z_scored',
+         'Class table total normalized' = 'class_table_total_norm',
+         'Class table z-scored total normalized' = 'class_table_z_scored_total_norm',
+         'Species summary table' = 'summary_species_table',
+         'Class summary table' = 'summary_class_table',
+         'GSEA prot list' = 'prot_list'
+  )
 }
 
 method_switch = function(method) {
@@ -160,12 +194,18 @@ find_delim = function(path) {
   return(names(which.max(sep)))
 }
 
-soda_read_table = function(file_path, sep = NA) {
+soda_read_table = function(file_path, sep = NA, first_column_as_index = FALSE) {
 
   if (is.na(sep)) {
     if (stringr::str_sub(file_path, -4, -1) == ".tsv") {
       sep = '\t'
     }
+  }
+
+  if (first_column_as_index) {
+    index = 1
+  } else {
+    index = NULL
   }
 
   if (stringr::str_sub(file_path, -5, -1) == ".xlsx") {
@@ -185,13 +225,25 @@ soda_read_table = function(file_path, sep = NA) {
     }
 
   }
-  original_count = ncol(data_table)
-  data_table = data_table[,!base::duplicated(colnames(data_table))]
-  final_count = ncol(data_table)
-  if(original_count != final_count) {
-    print(paste0('Removed ', original_count - final_count, ' duplicated columns'))
+
+  if (!is.null(index)) {
+    duplicates = duplicated(data_table[,index])
+    if (sum(duplicates) > 0) {
+      print(paste0('Removed ', sum(duplicates), ' duplicated features'))
+      data_table = data_table[!duplicates,]
+      rownames(data_table) = data_table[,1]
+      data_table[,1] = NULL
+    }
   }
 
+  original_count = ncol(data_table)
+  if (original_count > 1) {
+    data_table = data_table[,!base::duplicated(colnames(data_table))]
+    final_count = ncol(data_table)
+    if(original_count != final_count) {
+      print(paste0('Removed ', original_count - final_count, ' duplicated columns'))
+    }
+  }
   return(data_table)
 }
 
@@ -205,6 +257,66 @@ augment_feature_table = function(feature_table, external_table_name, external_fe
   feature_table$merge_on = NULL
   return(feature_table)
 }
+
+annotate_go = function(feature_names,
+                       keyType,
+                       ont,
+                       pvalueCutoff) {
+  # Checks
+  if (!(ont %in% c('ALL', 'BP', 'MF', 'CC'))) {
+    print('ont should be one of [ALL, BP, MF, CC]')
+    return()
+  }
+
+  # Get GO annotations
+  go_enrich_data = clusterProfiler::enrichGO(gene = feature_names,
+                                             OrgDb = 'org.Hs.eg.db',
+                                             keyType = keyType,
+                                             ont = ont,
+                                             pvalueCutoff = pvalueCutoff)
+
+  # Extract the GO table & filter
+  go_table = go_enrich_data@result
+  go_table = go_table[go_table$p.adjust < pvalueCutoff,]
+
+  if (nrow(go_table) == 0) {
+    return(NULL)
+  }
+
+  if (ont != 'ALL') {
+    go_table$ONTOLOGY = ont
+  }
+
+  # Split geneIDs by '/'
+  feature_id = strsplit(go_table$geneID, "/")
+
+  # Repeat GO terms based on the number of feature_id it corresponds to
+  goIDs_rep = rep(go_table$ID, sapply(feature_id, length))
+
+  # Convert feature_id list to dataframe
+  feature_table = data.frame(feature_id = unlist(feature_id), ID = goIDs_rep, stringsAsFactors = FALSE)
+
+  # Group by gene and concatenate GO terms
+  feature_table = aggregate(ID ~ feature_id, data = feature_table, FUN = function(x) paste(unique(x), collapse = "|"))
+  rownames(feature_table) = feature_table$feature_id
+  feature_table$feature_id = NULL
+
+  # Add features not associates with go terms
+  missing_features = feature_names[!(feature_names %in% rownames(feature_table))]
+  missing_features = data.frame(feature_id = missing_features,
+                                ID = NA)
+  rownames(missing_features) = missing_features$feature_id
+  missing_features$feature_id = NULL
+  feature_table = rbind(feature_table, missing_features)
+
+
+  return(list(
+    go_table = go_table[,c('Description', 'ONTOLOGY')],
+    feature_table = feature_table
+  ))
+
+}
+
 
 #-------------------------------------------------------- General utilities ----
 
@@ -511,51 +623,66 @@ get_lipid_classes = function(feature_list, uniques = TRUE){
   }
 }
 
-get_feature_metadata = function(data_table) {
-  feature_table = data.frame(row.names = sort(colnames(data_table)))
-  feature_table$lipid_class = get_lipid_classes(feature_list = rownames(feature_table),
-                                                uniques = FALSE)
-  # Collect carbon and unsaturation counts
-  c_count_1 = c() # Main carbon count / total carbon count (TGs)
-  s_count_1 = c() # Main saturation count
-  c_count_2 = c() # Secondary carbon count (asyl groups or TGs)
-  s_count_2 = c() # Secondary saturation (asyl groups or TGs)
-  for (c in unique(feature_table$lipid_class)) {
-    idx = rownames(feature_table)[feature_table$lipid_class == c]
+get_feature_metadata = function(data_table, dtype) {
 
-    if (c == "TG") {
-      # For triglycerides
-      for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
-        c_count_1 = c(c_count_1, i[2])
-        c_count_2 = c(c_count_2, i[4])
-        s_count_1 = c(s_count_1, i[3])
-        s_count_2 = c(s_count_2, i[5])
-      }
-    } else if (sum(stringr::str_detect(string = idx, pattern = "/|_")) >0) {
-      # For species with asyl groups ("/" or "_")
-      for (i in stringr::str_split(string = idx, pattern = " |:|_|/")) {
-        c_count_1 = c(c_count_1, gsub("[^0-9]", "", i[2]))
-        c_count_2 = c(c_count_2, i[4])
-        s_count_1 = c(s_count_1, i[3])
-        s_count_2 = c(s_count_2, i[5])
-      }
-    } else {
-      # For the rest
-      for (i in stringr::str_split(string = idx, pattern = " |:")) {
-        c_count_1 = c(c_count_1, i[2])
-        c_count_2 = c(c_count_2, 0)
-        s_count_1 = c(s_count_1, i[3])
-        s_count_2 = c(s_count_2, 0)
-      }
-    }
+  if (!(dtype %in% c('lipidomics','proteomics', 'transcriptomics', 'genomics'))) {
+    print('Error: dtype should be one of [lipidomics, proteomics, transcriptomics, genomics]')
+    return()
   }
 
-  feature_table$carbons_1 = as.numeric(c_count_1)
-  feature_table$carbons_2 = as.numeric(c_count_2)
-  feature_table$carbons_sum = feature_table$carbons_1 + feature_table$carbons_2
-  feature_table$unsat_1 = as.numeric(s_count_1)
-  feature_table$unsat_2 = as.numeric(s_count_2)
-  feature_table$unsat_sum = feature_table$unsat_1 + feature_table$unsat_2
+  if (dtype == 'lipidomics') {
+    feature_table = data.frame(row.names = sort(colnames(data_table)))
+    feature_table$lipid_class = get_lipid_classes(feature_list = rownames(feature_table),
+                                                  uniques = FALSE)
+    # Collect carbon and unsaturation counts
+    c_count_1 = c() # Main carbon count / total carbon count (TGs)
+    s_count_1 = c() # Main saturation count
+    c_count_2 = c() # Secondary carbon count (asyl groups or TGs)
+    s_count_2 = c() # Secondary saturation (asyl groups or TGs)
+    for (c in unique(feature_table$lipid_class)) {
+      idx = rownames(feature_table)[feature_table$lipid_class == c]
+
+      if (c == "TG") {
+        # For triglycerides
+        for (i in stringr::str_split(string = idx, pattern = " |:|-FA")) {
+          c_count_1 = c(c_count_1, i[2])
+          c_count_2 = c(c_count_2, i[4])
+          s_count_1 = c(s_count_1, i[3])
+          s_count_2 = c(s_count_2, i[5])
+        }
+      } else if (sum(stringr::str_detect(string = idx, pattern = "/|_")) >0) {
+        # For species with asyl groups ("/" or "_")
+        for (i in stringr::str_split(string = idx, pattern = " |:|_|/")) {
+          c_count_1 = c(c_count_1, gsub("[^0-9]", "", i[2]))
+          c_count_2 = c(c_count_2, i[4])
+          s_count_1 = c(s_count_1, i[3])
+          s_count_2 = c(s_count_2, i[5])
+        }
+      } else {
+        # For the rest
+        for (i in stringr::str_split(string = idx, pattern = " |:")) {
+          c_count_1 = c(c_count_1, i[2])
+          c_count_2 = c(c_count_2, 0)
+          s_count_1 = c(s_count_1, i[3])
+          s_count_2 = c(s_count_2, 0)
+        }
+      }
+    }
+
+    feature_table$carbons_1 = as.numeric(c_count_1)
+    feature_table$carbons_2 = as.numeric(c_count_2)
+    feature_table$carbons_sum = feature_table$carbons_1 + feature_table$carbons_2
+    feature_table$unsat_1 = as.numeric(s_count_1)
+    feature_table$unsat_2 = as.numeric(s_count_2)
+    feature_table$unsat_sum = feature_table$unsat_1 + feature_table$unsat_2
+
+  } else if (dtype %in% c('proteomics', 'transcriptomics', 'genomics')) {
+
+    features = colnames(data_table)
+    feature_table = data.frame(row.names = features)
+  }
+
+
   return(feature_table)
 }
 
@@ -780,7 +907,7 @@ circle = function(x, y, alpha = 0.95, len = 200){
 lipidomics_summary_plot = function(r6, data_table) {
   groups = get_lipid_classes(colnames(r6$tables$imp_data)[2:length(colnames(r6$tables$imp_data))], uniques = T)
 
-  plot_table = data.frame(table(base::factor((get_lipid_classes(colnames(data_table)[2:length(colnames(data_table))], uniques = F)), levels = groups)))
+  plot_table = data.frame(table(base::factor((get_lipid_classes(colnames(data_table), uniques = F)), levels = groups)))
   names(plot_table) = c("class", "raw")
   plot_table$imported = table(base::factor((get_lipid_classes(colnames(r6$tables$imp_data)[2:length(colnames(r6$tables$imp_data))], uniques = F)), levels = groups))
   plot_table$removed = plot_table$imported - plot_table$raw
@@ -916,7 +1043,7 @@ apply_discriminant_analysis = function(data_table, group_list, nlambda = 100, al
 }
 
 
-get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function) {
+get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function, impute_inf = T) {
 
   if (used_function == "median") {
     av_function = function(x) {return(median(x, na.rm = T))}
@@ -938,14 +1065,16 @@ get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function)
     return(fold_change)
   })
 
-  # Impute infinite (x/0)
-  if (length(which(fold_changes == Inf)) > 0) {
-    fold_changes[which(fold_changes == Inf)] = max(fold_changes[which(fold_changes != Inf)]) * 1.01
-  }
+  if (impute_inf) {
+    # Impute infinite (x/0)
+    if (length(which(fold_changes == Inf)) > 0) {
+      fold_changes[which(fold_changes == Inf)] = max(fold_changes[which(fold_changes != Inf)]) * 1.01
+    }
 
-  # Impute zeros (0/x)
-  if (length(which(fold_changes == 0)) > 0) {
-    fold_changes[which(fold_changes == 0)] = min(fold_changes[which(fold_changes > 0)]) * 0.99
+    # Impute zeros (0/x)
+    if (length(which(fold_changes == 0)) > 0) {
+      fold_changes[which(fold_changes == 0)] = min(fold_changes[which(fold_changes > 0)]) * 0.99
+    }
   }
 
   # Impute NaNs (0/0)
@@ -953,14 +1082,11 @@ get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function)
     fold_changes[which(is.nan(fold_changes))] = 1
   }
 
-
-
-
   return(fold_changes)
 
 }
 
-get_p_val = function(data_table, idx_group_1, idx_group_2, used_function) {
+get_p_val = function(data_table, idx_group_1, idx_group_2, used_function, impute_na = T) {
 
   if (used_function == "Wilcoxon") {
     test_function=function(x,y){
@@ -997,7 +1123,7 @@ get_p_val = function(data_table, idx_group_1, idx_group_2, used_function) {
   })
 
 
-  if (length(which(is.na(p_values))) > 0 ){
+  if ((length(which(is.na(p_values))) > 0) & impute_na){
     p_values[which(is.na(p_values))] = min(p_values, na.rm = T) * 0.99
   }
 
@@ -1282,4 +1408,89 @@ example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA, da
   # r6$get_gsea_object()
 
   return(r6)
+}
+
+#---------------------------------------------- Enrichment & GSEA utilities ----
+get_sparse_matrix = function(features_go_table, all_go_terms, sep = '|') {
+  go_list = vector("list", nrow(features_go_table))
+  # Loop through each row and split the 'go_terms' column by '|'
+  for (i in 1:nrow(features_go_table)) {
+    if (is.na(features_go_table[i,1])) {
+      go_list[[i]] = NA
+    } else {
+      go_list[[i]] = strsplit(as.character(features_go_table[i,1]), sep, fixed = TRUE)[[1]]
+    }
+  }
+
+
+  # Initialize a list to store the one-hot encoded vectors
+  one_hot_list = vector("list", nrow(features_go_table))
+
+  # Loop through each gene and create a one-hot encoded vector
+  for (i in seq_along(rownames(features_go_table))) {
+    # Create a boolean vector for the presence of each GO term
+    one_hot_vector = all_go_terms %in% go_list[[i]]
+    # Add the vector to the list
+    one_hot_list[[i]] = one_hot_vector
+  }
+
+  # Combine the one-hot encoded vectors into a matrix
+  sparse_matrix = do.call(rbind, one_hot_list)
+
+  # Convert the matrix to a sparse matrix
+  sparse_matrix = Matrix::Matrix(sparse_matrix, sparse = TRUE)
+
+  # Add row and column names to the sparse matrix
+  rownames(sparse_matrix) = rownames(features_go_table)
+  colnames(sparse_matrix) = all_go_terms
+  return(sparse_matrix)
+}
+
+match_go_terms = function(terms_list, sparse_table) {
+  if (length(terms_list) > 1) {
+    matches = rowSums(sparse_table[,terms_list])
+  } else {
+    matches = sparse_table[,terms_list]
+  }
+  return(matches)
+}
+
+get_term2gene = function(feature_table, column, sep = "\\|") {
+  term2gene=sapply(feature_table[,column], FUN = function(x) strsplit(x,sep)[[1]])
+  names(term2gene)=rownames(feature_table)
+  term2gene = utils::stack(term2gene)
+  return(term2gene)
+}
+
+custom_ora = function(geneList, pvalueCutoff = 0.05, pAdjustMethod = "BH", qvalueCutoff = 0.2, minGSSize = 10, maxGSSize = 500, term2gene) {
+  enricher_result = clusterProfiler::enricher(gene = geneList,
+                                              pvalueCutoff = pvalueCutoff,
+                                              pAdjustMethod = pAdjustMethod,
+                                              qvalueCutoff = qvalueCutoff,
+                                              minGSSize = minGSSize,
+                                              maxGSSize  = maxGSSize,
+                                              TERM2GENE=term2gene)
+  return(enricher_result)
+}
+custom_gsea = function(geneList, minGSSize = 10, maxGSSize = 500, pvalueCutoff = 0.05, verbose = TRUE, pAdjustMethod = "BH", term2gene) {
+  gsea_result = clusterProfiler::GSEA(geneList = geneList,
+                                      minGSSize = minGSSize,
+                                      maxGSSize = maxGSSize,
+                                      pvalueCutoff = pvalueCutoff,
+                                      verbose = verbose,
+                                      pAdjustMethod = pAdjustMethod,
+                                      TERM2GENE=term2gene)
+  return(gsea_result)
+}
+
+get_cp_results = function(object, showCategory) {
+  showCategory = min(nrow(object@result), showCategory)
+  df = object@result[1:showCategory,]
+  if (!is.null(df$GeneRatio)) {
+    df$GeneRatio = sapply(strsplit(as.character(df$GeneRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
+  }
+  if (!is.null(df$BgRatio)) {
+    df$BgRatio = sapply(strsplit(as.character(df$BgRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
+  }
+  return(df)
 }
