@@ -509,7 +509,9 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
 
       # Is the column multivalue?
       if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
+        print('IN FEATURE LIST')
         if (length(input$volcano_plot_annotation_terms) > 0) {
+          print('DOING THE FEATURE DATA')
           feature_metadata = match_go_terms(terms_list = input$volcano_plot_annotation_terms,
                                             sparse_table = r6$tables$feature_list[[input$volcano_plot_feature_metadata]]$sparse_matrix)
         } else {
@@ -524,7 +526,7 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
                             group_col = input$volcano_plot_metacol,
                             group_1 = input$volcano_plot_metagroup[1],
                             group_2 = input$volcano_plot_metagroup[2],
-                            feature_metadata = input$volcano_plot_feature_metadata,
+                            feature_metadata = feature_metadata,
                             keep_significant = input$volcano_plot_keep_significant,
                             color_palette = input$volcano_plot_color_palette,
                             displayed_plot = input$volcano_plot_displayed_plot,
