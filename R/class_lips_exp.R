@@ -33,6 +33,7 @@ Lips_exp = R6::R6Class(
 
       # Volcano plot parameters self$params$volcano_plot$
       volcano_plot = list(
+        auto_refresh = T,
         data_table = 'Total normalized table',
         adjustment = "BH",
         group_col = NULL,
@@ -53,20 +54,27 @@ Lips_exp = R6::R6Class(
 
       # Heatmap parameters self$params$heatmap$
       heatmap = list(
+        auto_refresh = T,
         dataset = 'Z-scored total normalized table',
-        impute = F,
-        cluster_samples = F,
-        cluster_features = F,
+        impute = T,
+        cluster_samples = T,
+        cluster_features = T,
         map_sample_data = NULL,
         map_feature_data = NULL,
+        map_feature_terms = NULL,
+        multival_cols = 'None',
         group_column_da = NULL,
-        apply_da = FALSE,
+        apply_da = T,
         alpha_da = 0.8,
+        lock_da = T,
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
         img_format = "png"
       ),
 
       # PCA parameters self$params$pca$
       pca = list(
+        auto_refresh = T,
         data_table = 'z_scored_total_norm_data',
         sample_groups_col = NULL,
         feature_groups_col = NULL,
@@ -318,9 +326,10 @@ Lips_exp = R6::R6Class(
       self$params$class_comparison$img_format = img_format
     },
 
-    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, keep_significant, displayed_plot,
+    param_volcano_plot = function(auto_refresh, data_table, adjustment, group_col, group_1, group_2, feature_metadata, keep_significant, displayed_plot,
                                   p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
 
+      self$params$volcano_plot$auto_refresh = auto_refresh
       self$params$volcano_plot$data_table = data_table
       self$params$volcano_plot$adjustment = adjustment
       self$params$volcano_plot$group_col = group_col
@@ -340,21 +349,26 @@ Lips_exp = R6::R6Class(
 
     },
 
-    param_heatmap = function(dataset, impute, cluster_samples, cluster_features, map_sample_data, map_feature_data, group_column_da, apply_da, alpha_da, img_format) {
+    param_heatmap = function(auto_refresh, dataset, impute, cluster_samples, cluster_features, map_sample_data, map_feature_data, map_feature_terms, multival_cols, group_column_da, apply_da, alpha_da, color_palette, reverse_palette, img_format) {
+      self$params$heatmap$auto_refresh = auto_refresh
       self$params$heatmap$dataset = dataset
       self$params$heatmap$impute = impute
       self$params$heatmap$cluster_samples = cluster_samples
       self$params$heatmap$cluster_features = cluster_features
       self$params$heatmap$map_sample_data = map_sample_data
       self$params$heatmap$map_feature_data = map_feature_data
+      self$params$heatmap$map_feature_terms = map_feature_terms
+      self$params$heatmap$multival_cols = multival_cols
       self$params$heatmap$group_column_da = group_column_da
       self$params$heatmap$apply_da = apply_da
       self$params$heatmap$alpha_da = alpha_da
+      self$params$heatmap$color_palette = color_palette
+      self$params$heatmap$reverse_palette = reverse_palette
       self$params$heatmap$img_format = img_format
     },
 
-    param_pca = function(data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
-
+    param_pca = function(auto_refresh, data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
+      self$params$pca$auto_refresh = auto_refresh
       self$params$pca$data_table = data_table
       self$params$pca$sample_groups_col = sample_groups_col
       self$params$pca$feature_groups_col = feature_groups_col
@@ -766,7 +780,8 @@ Lips_exp = R6::R6Class(
                                   group_col = self$indices$group_col,
                                   img_format = "png")
 
-      self$param_pca(data_table = 'z_scored_total_norm_data',
+      self$param_pca(auto_refresh = T,
+                     data_table = 'z_scored_total_norm_data',
                      sample_groups_col = self$indices$group_col,
                      feature_groups_col = NULL,
                      apply_da = FALSE,
@@ -780,7 +795,8 @@ Lips_exp = R6::R6Class(
                      colors_palette = 'Spectral',
                      img_format = "png")
 
-      self$param_volcano_plot(data_table = 'Total normalized table',
+      self$param_volcano_plot(auto_refresh = T,
+                              data_table = 'Total normalized table',
                               adjustment = "BH",
                               group_col = self$indices$group_col,
                               group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
@@ -797,15 +813,20 @@ Lips_exp = R6::R6Class(
                               selected_test = "t-Test",
                               img_format = "png")
 
-      self$param_heatmap(dataset = 'Z-scored total normalized table',
-                         impute = F,
-                         cluster_samples = F,
-                         cluster_features = F,
+      self$param_heatmap(auto_refresh = T,
+                         dataset = 'Z-scored total normalized table',
+                         impute = T,
+                         cluster_samples = T,
+                         cluster_features = T,
                          map_sample_data = NULL,
                          map_feature_data = NULL,
+                         map_feature_terms = NULL,
+                         multival_cols = "None",
                          group_column_da = self$indices$group_col,
-                         apply_da = FALSE,
+                         apply_da = T,
                          alpha_da = 0.8,
+                         color_palette = 'RdYlBu',
+                         reverse_palette = F,
                          img_format = "png")
 
 
@@ -1378,9 +1399,12 @@ Lips_exp = R6::R6Class(
                             cluster_cols = self$params$heatmap$cluster_features,
                             row_annotations = self$params$heatmap$map_sample_data,
                             col_annotations = self$params$heatmap$map_feature_data,
+                            map_feature_terms = self$params$heatmap$map_feature_terms,
                             apply_da = self$params$heatmap$apply_da,
                             group_column_da = self$params$heatmap$group_column_da,
                             alpha_da = self$params$heatmap$alpha_da,
+                            color_palette = self$params$heatmap$color_palette,
+                            reverse_palette = self$params$heatmap$reverse_palette,
                             width = NULL,
                             height = NULL) {
 
@@ -1409,6 +1433,7 @@ Lips_exp = R6::R6Class(
         dendrogram_list = "none"
       }
 
+      # Set zmax and zmin
       val_list = as.vector(data_table)
       val_list = na.omit(val_list)
       val_list = sort(val_list)
@@ -1448,26 +1473,38 @@ Lips_exp = R6::R6Class(
         }
       }
 
+      # Add multivalue annotations
+      if (!is.null(map_feature_terms)) {
+        if (is.null(col_annotations)) {
+          col_annotations = as.data.frame(meta_table_features[, NULL])
+        }
+        for (name in names(map_feature_terms))
+          col_annotations[[name]] = map_feature_terms[[name]][rownames(col_annotations)]
+      }
+
+
+      # Impute missing values
       if (impute) {
-        print('Imputing NAs')
         data_table[is.na(data_table)] = zmin
+      }
+
+      # Get the color palette
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      if (reverse_palette) {
+        color_palette = base::rev(color_palette)
       }
 
       # Plot the data
       self$plots$heatmap = heatmaply::heatmaply(x = t(data_table),
                                                 scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                                  low = "blue",
-                                                  mid = "#faf4af",
-                                                  high = "red",
+                                                  low = color_palette[3],
+                                                  mid = color_palette[2],
+                                                  high = color_palette[1],
                                                   midpoint = 0,
-                                                  # limits = c(-col_lim, col_lim)
                                                   limits = c(zmin, zmax)
                                                 ),
-                                                # scale_fill_gradient_fun = ggplot2::scale_fill_gradient(
-                                                #   low = "blue4",
-                                                #   high = "red",
-                                                #   # limits = c(-col_lim, col_lim)
-                                                # ),
                                                 width = width,
                                                 height = height,
                                                 limits = c(zmin, zmax),

@@ -312,9 +312,9 @@ volcano_plot_server = function(r6, output, session) {
   output$volcano_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shinyWidgets::materialSwitch(
-        inputId = ns('volcano_plot_auto_update'),
-        label = 'Auto-update',
-        value = TRUE,
+        inputId = ns('volcano_plot_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$volcano_plot$auto_refresh,
         right = TRUE,
         status = "success"
       ),
@@ -490,7 +490,7 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
 
   shiny::observeEvent(
     c(shiny::req(length(input$volcano_plot_metagroup) == 2),
-      shiny::req(input$volcano_plot_auto_update),
+      input$volcano_plot_auto_refresh,
       input$volcano_plot_tables,
       input$volcano_plot_function,
       input$volcano_plot_adjustment,
@@ -507,6 +507,11 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
       input$volcano_plot_img_format
     ),{
 
+      if (!input$volcano_plot_auto_refresh) {
+        r6$params$volcano_plot$auto_refresh = input$volcano_plot_auto_refresh
+        return()
+      }
+
       print_tm(r6$name, "Volcano plot: Updating params...")
 
       # Is the column multivalue?
@@ -521,7 +526,8 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
         feature_metadata = input$volcano_plot_feature_metadata
       }
 
-      r6$param_volcano_plot(data_table = input$volcano_plot_tables,
+      r6$param_volcano_plot(auto_refresh = input$volcano_plot_auto_refresh,
+                            data_table = input$volcano_plot_tables,
                             adjustment = input$volcano_plot_adjustment,
                             group_col = input$volcano_plot_metacol,
                             group_1 = input$volcano_plot_metagroup[1],
@@ -619,19 +625,8 @@ heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$plot_heatmap(data_table = table_switch(input$heatmap_dataset, r6),
-                  impute = input$heatmap_impute,
-                  meta_table = r6$tables$raw_meta,
-                  meta_table_features = r6$tables$feature_table,
-                  cluster_rows = input$heatmap_cluster_samples,
-                  cluster_cols = input$heatmap_cluster_features,
-                  row_annotations = input$heatmap_map_rows,
-                  col_annotations = input$heatmap_map_cols,
-                  apply_da = input$heatmap_apply_da,
-                  group_column_da = input$heatmap_group_col_da,
-                  alpha_da = input$heatmap_alpha_da,
-                  width = dimensions_obj$xpx * dimensions_obj$x_plot,
-                  height = dimensions_obj$ypx * dimensions_obj$y_plot)
+  r6$plot_heatmap(width = width,
+                  height = height)
 }
 
 heatmap_spawn = function(r6, format, output) {
@@ -664,6 +659,13 @@ heatmap_server = function(r6, output, session) {
 
   output$heatmap_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('heatmap_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$heatmap$auto_refresh,
+        right = TRUE,
+        status = "success"
+      ),
       shiny::selectInput(
         inputId = ns("heatmap_dataset"),
         label = "Select dataset",
@@ -676,7 +678,7 @@ heatmap_server = function(r6, output, session) {
           width = 4,
           shinyWidgets::switchInput(inputId = ns("heatmap_impute"),
                                     label = "Impute missing",
-                                    value = r6$params$heatmap$imputation,
+                                    value = r6$params$heatmap$impute,
                                     onLabel = 'YES',
                                     offLabel = 'NO',
                                     labelWidth = '150px'
@@ -703,27 +705,36 @@ heatmap_server = function(r6, output, session) {
           )
         )
       ),
-      shiny::fluidRow(
-        shiny::column(
-          width = 6,
-          shiny::selectizeInput(
-            inputId = ns("heatmap_map_rows"),
-            label = "Map sample data",
-            multiple = TRUE,
-            choices = colnames(r6$tables$raw_meta),
-            selected = r6$params$heatmap$map_sample_data
-          )
-        ),
-        shiny::column(
-          width = 6,
-          shiny::selectizeInput(
-            inputId = ns("heatmap_map_cols"),
-            label = "Map feature data",
-            multiple = TRUE,
-            choices = colnames(r6$tables$feature_table),
-            selected = r6$params$heatmap$map_feature_data
-          )
-        )
+
+      shiny::selectizeInput(
+        inputId = ns("heatmap_map_rows"),
+        label = "Map sample data",
+        multiple = TRUE,
+        choices = colnames(r6$tables$raw_meta),
+        selected = r6$params$heatmap$map_sample_data
+      ),
+      shiny::selectizeInput(
+        inputId = ns("heatmap_map_cols"),
+        label = "Map feature data",
+        multiple = TRUE,
+        choices = colnames(r6$tables$feature_table)[!(colnames(r6$tables$feature_table) %in% names(r6$tables$feature_list))],
+        selected = r6$params$heatmap$map_feature_data
+      ),
+
+      shiny::selectizeInput(
+        inputId = ns("heatmap_multival_cols"),
+        label = "Feature annotations col",
+        multiple = F,
+        choices = c('None', names(r6$tables$feature_list)),
+        selected = r6$params$heatmap$multival_cols
+      ),
+
+      shiny::selectizeInput(
+        inputId = ns("heatmap_multival_terms"),
+        label = "Feature terms",
+        multiple = T,
+        choices = NULL,
+        selected = r6$params$heatmap$multival_cols
       ),
 
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
@@ -736,7 +747,8 @@ heatmap_server = function(r6, output, session) {
           width = 6,
           shinyWidgets::switchInput(inputId = ns("heatmap_apply_da"),
                                     label = "Apply",
-                                    value = r6$params$heatmap$apply_da)
+                                    value = r6$params$heatmap$apply_da,
+                                    disabled = r6$params$heatmap$lock_da)
         )
       ),
       shiny::fluidRow(
@@ -761,12 +773,24 @@ heatmap_server = function(r6, output, session) {
         )
       ),
 
-      shiny::actionButton(
-        inputId = ns("heatmap_run"),
-        label = "Generate heatmap",
-        width = "100%"
+      shiny::selectInput(
+        inputId = ns('heatmap_colors_palette'),
+        label = 'Color palette',
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$heatmap$color_palette,
+        width = '100%'
       ),
-
+      shinyWidgets::materialSwitch(
+        inputId = ns('heatmap_reverse_palette'),
+        label = 'Reverse palette',
+        value = r6$params$heatmap$reverse_palette,
+        right = TRUE,
+        status = "primary"
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("heatmap_img_format"),
@@ -785,32 +809,81 @@ heatmap_server = function(r6, output, session) {
 
 heatmap_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  shiny::observeEvent(input$heatmap_run,{
-    shinyjs::disable("heatmap_run")
-    print_tm(r6$name, "Heatmap: Updating params...")
-
-    r6$param_heatmap(dataset = input$heatmap_dataset,
-                     impute = input$heatmap_impute,
-                     cluster_samples = input$heatmap_cluster_samples,
-                     cluster_features = input$heatmap_cluster_features,
-                     map_sample_data = input$heatmap_map_rows,
-                     map_feature_data = input$heatmap_map_cols,
-                     group_column_da = input$heatmap_group_col_da,
-                     apply_da = input$heatmap_apply_da,
-                     alpha_da = input$heatmap_alpha_da,
-                     img_format = input$heatmap_img_format)
-
-    base::tryCatch({
-      heatmap_generate(r6, color_palette, dimensions_obj, input)
-      heatmap_spawn(r6, input$heatmap_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'Heatmap: ERROR.')
-      shinyjs::enable("heatmap_run")
-    },finally={}
-    )
-
-    shinyjs::enable("heatmap_run")
+  shiny::observeEvent(input$heatmap_multival_cols, {
+    if (input$heatmap_multival_cols %in% names(r6$tables$feature_list)) {
+      shiny::updateSelectizeInput(
+        inputId = "heatmap_multival_terms",
+        session = session,
+        choices = r6$tables$feature_list[[input$heatmap_multival_cols]]$feature_list,
+        selected = character(0)
+      )
+    } else {
+      shiny::updateSelectizeInput(
+        inputId = "heatmap_multival_terms",
+        session = session,
+        choices = NULL,
+        selected = character(0)
+      )
+    }
   })
+
+  shiny::observeEvent(
+    c(input$heatmap_auto_refresh,
+      input$heatmap_dataset,
+      input$heatmap_impute,
+      input$heatmap_cluster_samples,
+      input$heatmap_cluster_features,
+      input$heatmap_map_rows,
+      input$heatmap_map_cols,
+      input$heatmap_multival_terms,
+      input$heatmap_group_col_da,
+      input$heatmap_apply_da,
+      input$heatmap_alpha_da,
+      input$heatmap_colors_palette,
+      input$heatmap_reverse_palette,
+      input$heatmap_img_format
+    ),{
+
+      if (!input$heatmap_auto_refresh) {
+        r6$params$heatmap$auto_refresh = input$heatmap_auto_refresh
+        return()
+      }
+
+      # Feature annotation terms
+      if (length(input$heatmap_multival_terms) > 0) {
+        map_feature_terms = list()
+        map_feature_terms[[input$heatmap_multival_cols]] = match_go_terms(terms_list = input$heatmap_multival_terms,
+                                                                          sparse_table = r6$tables$feature_list[[input$heatmap_multival_cols]]$sparse_matrix)
+      } else {
+        map_feature_terms = NULL
+      }
+
+      print_tm(r6$name, "Heatmap: Updating params...")
+
+      r6$param_heatmap(auto_refresh = input$heatmap_auto_refresh,
+                       dataset = input$heatmap_dataset,
+                       impute = input$heatmap_impute,
+                       cluster_samples = input$heatmap_cluster_samples,
+                       cluster_features = input$heatmap_cluster_features,
+                       map_sample_data = input$heatmap_map_rows,
+                       map_feature_data = input$heatmap_map_cols,
+                       map_feature_terms = map_feature_terms,
+                       multival_cols = input$heatmap_multival_cols,
+                       group_column_da = input$heatmap_group_col_da,
+                       apply_da = input$heatmap_apply_da,
+                       alpha_da = input$heatmap_alpha_da,
+                       color_palette = input$heatmap_colors_palette,
+                       reverse_palette = input$heatmap_reverse_palette,
+                       img_format = input$heatmap_img_format)
+
+      base::tryCatch({
+        heatmap_generate(r6, color_palette, dimensions_obj, input)
+        heatmap_spawn(r6, input$heatmap_img_format, output)
+      },error=function(e){
+        print_tm(r6$name, 'Heatmap: ERROR.')
+      },finally={}
+      )
+    })
 
 
   # Download associated table
@@ -892,9 +965,9 @@ pca_server = function(r6, output, session) {
   output$pca_sidebar_ui = shiny::renderUI({
     shiny::tagList(
       shinyWidgets::materialSwitch(
-        inputId = ns('pca_auto_update'),
-        label = 'Auto-update',
-        value = TRUE,
+        inputId = ns('pca_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$pca$auto_refresh,
         right = TRUE,
         status = "success"
       ),
@@ -1037,7 +1110,7 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
   })
 
   shiny::observeEvent(c(
-    shiny::req(input$pca_auto_update),
+    input$pca_auto_refresh,
     input$pca_data_table,
     input$pca_sample_groups_col,
     input$pca_feature_group,
@@ -1053,27 +1126,28 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
     input$pca_colors_palette,
     input$pca_img_format),{
 
+      if (!input$pca_auto_refresh) {
+        r6$params$pca$auto_refresh = input$pca_auto_refresh
+        return()
+      }
+
       print_tm(r6$name, "PCA: Updating params...")
 
       # Is the column multivalue?
       if (input$pca_feature_group %in% names(r6$tables$feature_list)) {
-        print(1)
         if (length(input$pca_plot_annotation_terms) > 0) {
-          print(2)
           feature_metadata = match_go_terms(terms_list = input$pca_plot_annotation_terms,
                                             sparse_table = r6$tables$feature_list[[input$pca_feature_group]]$sparse_matrix)
-          print(3)
         } else {
-          print(4)
           return()
         }
       } else {
-        print(5)
         feature_metadata = input$pca_feature_group
       }
 
 
-    r6$param_pca(data_table = table_name_switch(input$pca_data_table),
+    r6$param_pca(auto_refresh = input$pca_auto_refresh,
+                 data_table = table_name_switch(input$pca_data_table),
                  sample_groups_col = input$pca_sample_groups_col,
                  feature_groups_col = feature_metadata,
                  apply_da = input$pca_apply_da,
@@ -1087,16 +1161,13 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
                  colors_palette = input$pca_colors_palette,
                  img_format = input$pca_img_format)
 
-    pca_generate(r6, color_palette, dimensions_obj, input)
-    pca_spawn(r6, input$pca_img_format, output)
-
-    # base::tryCatch({
-    #   pca_generate(r6, color_palette, dimensions_obj, input)
-    #   pca_spawn(r6, input$pca_img_format, output)
-    # },error=function(e){
-    #   print_tm(r6$name, 'PCA: ERROR.')
-    # },finally={}
-    # )
+    base::tryCatch({
+      pca_generate(r6, color_palette, dimensions_obj, input)
+      pca_spawn(r6, input$pca_img_format, output)
+    },error=function(e){
+      print_tm(r6$name, 'PCA: ERROR.')
+    },finally={}
+    )
 
   })
 
