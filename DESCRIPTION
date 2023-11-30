@@ -16,5 +16,4 @@ Authors@R:
            family = "Olivier-Jimenez",
            email = "d.olivier@lumc.nl",
            role = c("cre", "aut"),
-           comment = c(ORCID = "0000-0002-6363-0857"))
-  )
+           comment = c(ORCID = "0000-0002-6363-0857")))
