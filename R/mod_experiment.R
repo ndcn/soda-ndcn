@@ -21,6 +21,8 @@ experiment_server = function(id, type, module_controler) {
         proteomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
       } else if (type == 'Transcriptomics') {
         proteomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
+      } else if (type == 'Genomics') {
+        proteomics_server(id = id, ns = ns, input = input, output = output, session = session, module_controler = module_controler)
       }
     }
   )

@@ -2,6 +2,7 @@ base::source('./R/utils.R')
 base::source('./R/class_lips_exp.R')
 base::source('./R/class_prot_exp.R')
 base::source('./R/class_trns_exp.R')
+base::source('./R/class_omics_exp.R')
 base::source('./R/class_mofa_exp.R')
 base::source('./R/class_snf_exp.R')
 base::source('./R/complex_functions/pca.R')
@@ -11,14 +12,17 @@ base::source('./R/complex_functions/volcano.R')
 #---------------------------------------------------- PROTEOMICS TEST APO-E ----
 
 self = example_proteomics(name = 'prot_1',
-                          data = 'C:/Users/dolivier/Desktop/local_work/230704_soda/230728_dmc_soda/test_data/230828_multiomics_2/proteomics_2.tsv',
-                          meta = 'C:/Users/dolivier/Desktop/local_work/230704_soda/230728_dmc_soda/test_data/230828_multiomics_2/metadata.csv')
+                          data = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/proteomics_2.tsv',
+                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/metadata.csv')
 
 
 self$add_feature_table(name = 'feat_1',
-                       feature_file = 'C:/Users/dolivier/Desktop/local_work/230704_soda/230728_dmc_soda/test_data/231023_feature_tables/proteomics_feat_annotation_clean.tsv')
+                       feature_file = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/231023_feature_tables/proteomics_feat_annotation_clean.tsv')
 
 self$derive_data_tables()
+
+self$plot_heatmap()
+self$plots$heatmap
 
 features = c('GREM1', 'MICAL2', 'RUNX2', 'BOP1', 'PYCR1', 'TBL3', 'CRMP1', 'IGFBP4', 'ITGA11',
              'SSSCA1', 'ARHGAP29', 'ALDH1B1', 'PUS7L', 'APOBEC3C', 'MAPK12', 'CPA4', 'DPYSL3',

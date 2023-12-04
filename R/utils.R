@@ -16,7 +16,8 @@ experiment_switch = function(selection) {
   switch(EXPR = selection,
          'Lipidomics' = 'lips',
          'Proteomics' = 'prot',
-         'Transcriptomics' = 'trns'
+         'Transcriptomics' = 'trns',
+         'Genomics' = 'geno'
   )
 }
 
@@ -48,9 +49,10 @@ feature_table_cols_switch = function(col) {
 
 r6_switch = function(exp_type, name, id, slot){
   switch(EXPR = exp_type,
-         "Lipidomics" = Lips_exp$new(name = name, id = id, slot = slot),
-         "Proteomics" = Prot_exp$new(name = name, id = id, slot = slot),
-         "Transcriptomics" = Trns_exp$new(name = name, id = id, slot = slot)
+         "Lipidomics" = Omics_exp$new(name = name, type = "Lipidomics",id = id, slot = slot),
+         "Proteomics" = Omics_exp$new(name = name, type = "Proteomics",id = id, slot = slot),
+         "Transcriptomics" = Omics_exp$new(name = name, type = "Transcriptomics",id = id, slot = slot),
+         "Genomics" = Omics_exp$new(name = name, type = "Genomics",id = id, slot = slot)
 
   )
 }
@@ -1231,7 +1233,7 @@ example_lipidomics = function(name, id = NA, slot = NA, data = './examples/multi
   lips_data = soda_read_table(data)
   meta_data = soda_read_table(meta)
 
-  r6 = Lips_exp$new(name = name, id = id, slot = slot, preloaded = T)
+  r6 = Omics_exp$new(name = name, type = "Lipidomics", id = id, slot = slot, preloaded = T)
 
   r6$tables$imp_meta = meta_data
   r6$tables$imp_data = lips_data
@@ -1290,7 +1292,7 @@ example_proteomics = function(name = 'prot_example', id = NA, slot = NA, data = 
   prot_data = soda_read_table(data)
   meta_data = soda_read_table(meta)
 
-  r6 = Prot_exp$new(name = name, id = id, slot = slot, preloaded = T)
+  r6 = Omics_exp$new(name = name, type = "Proteomics", id = id, slot = slot, preloaded = T)
 
   r6$tables$imp_meta = meta_data
   r6$tables$imp_data = prot_data
@@ -1352,7 +1354,7 @@ example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA, da
   trns_data = soda_read_table(data)
   meta_data = soda_read_table(meta)
 
-  r6 = Trns_exp$new(name = name, id = id, slot = slot, preloaded = T)
+  r6 = Omics_exp$new(name = name, type = "Transcriptomics", id = id, slot = slot, preloaded = T)
 
   r6$tables$imp_meta = meta_data
   r6$tables$imp_data = trns_data

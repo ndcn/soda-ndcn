@@ -23,7 +23,7 @@ start_ui = function(id){
             shiny::selectInput(
               inputId = ns('exp_type'),
               label = 'Exp. type',
-              choices = c('Lipidomics', 'Proteomics', 'Transcriptomics'),
+              choices = c('Lipidomics', 'Proteomics', 'Transcriptomics', 'Genomics'),
               width = '100%'
             )
           ),
