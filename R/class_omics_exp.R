@@ -73,6 +73,22 @@ Omics_exp = R6::R6Class(
         img_format = "png"
       ),
 
+      # samples correlation parameters self$params$samples_correlation$
+      samples_correlation = list(
+        auto_refresh = T,
+        dataset = 'Z-scored total normalized table',
+        impute = T,
+        correlation_method = "pearson",
+        use = 'pairwise.complete.obs',
+        cluster_cols = T,
+        cluster_rows = T,
+        row_annotations = 'Group_type',
+        col_annotations = 'Group_type',
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
+        img_format = "png"
+      ),
+
       # PCA parameters self$params$pca$
       pca = list(
         auto_refresh = T,
@@ -283,6 +299,7 @@ Omics_exp = R6::R6Class(
       class_distribution_table = NULL,
       volcano_table = NULL,
       heatmap_table = NULL,
+      samples_correlation = NULL,
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
       dbplot_table = NULL,
@@ -330,6 +347,7 @@ Omics_exp = R6::R6Class(
       class_comparison = NULL,
       volcano_plot = NULL,
       heatmap = NULL,
+      samples_correlation = NULL,
       pca_plot = NULL,
       double_bond_plot = NULL,
 
@@ -397,6 +415,21 @@ Omics_exp = R6::R6Class(
       self$params$heatmap$color_palette = color_palette
       self$params$heatmap$reverse_palette = reverse_palette
       self$params$heatmap$img_format = img_format
+    },
+
+    param_samples_correlation = function(auto_refresh, dataset, impute, correlation_method, use, cluster_rows, cluster_cols, row_annotations, col_annotations, color_palette, reverse_palette, img_format) {
+      self$params$samples_correlation$auto_refresh = auto_refresh
+      self$params$samples_correlation$dataset = dataset
+      self$params$samples_correlation$impute = impute
+      self$params$samples_correlation$correlation_method = correlation_method
+      self$params$samples_correlation$use = use
+      self$params$samples_correlation$cluster_rows = cluster_rows
+      self$params$samples_correlation$cluster_cols = cluster_cols
+      self$params$samples_correlation$row_annotations = row_annotations
+      self$params$samples_correlation$col_annotations = col_annotations
+      self$params$samples_correlation$color_palette = color_palette
+      self$params$samples_correlation$reverse_palette = reverse_palette
+      self$params$samples_correlation$img_format = img_format
     },
 
     param_pca = function(auto_refresh, data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
@@ -931,6 +964,20 @@ Omics_exp = R6::R6Class(
                          reverse_palette = F,
                          img_format = "png")
 
+
+      self$param_samples_correlation(auto_refresh = T,
+                                     dataset = 'Z-scored total normalized table',
+                                     impute = T,
+                                     correlation_method = "pearson",
+                                     use = 'pairwise.complete.obs',
+                                     cluster_cols = T,
+                                     cluster_rows = T,
+                                     row_annotations = 'Group_type',
+                                     col_annotations = 'Group_type',
+                                     color_palette = 'RdYlBu',
+                                     reverse_palette = F,
+                                     img_format = "png"
+      )
 
       self$param_db_plot(dataset = "Total normalized table",
                          adjustment = "Benjamini-Hochberg",
@@ -1661,6 +1708,115 @@ Omics_exp = R6::R6Class(
                                                 col_side_colors = row_annotations,
                                                 row_side_colors = col_annotations,
                                                 dendrogram = dendrogram_list)
+
+    },
+
+    ## Sample correlation plot
+    plot_samples_correlation = function(data_table = self$tables$z_scored_total_norm_data,
+                                        impute = self$params$samples_correlation$impute,
+                                        meta_table = self$tables$raw_meta,
+                                        correlation_method = self$params$samples_correlation$correlation_method,
+                                        use = self$params$samples_correlation$use,
+                                        cluster_cols = self$params$samples_correlation$cluster_cols,
+                                        cluster_rows = self$params$samples_correlation$cluster_rows,
+                                        row_annotations = self$params$samples_correlation$row_annotations,
+                                        col_annotations = self$params$samples_correlation$col_annotations,
+                                        color_palette = self$params$samples_correlation$color_palette,
+                                        reverse_palette = self$params$samples_correlation$reverse_palette,
+                                        width = NULL,
+                                        height = NULL) {
+
+
+
+      # Set the clustering
+      if (cluster_rows & cluster_cols) {
+        dendrogram_list = "both"
+      } else if (cluster_rows) {
+        dendrogram_list = "column" # Because of the transpose, rows => cols
+      } else if (cluster_cols) {
+        dendrogram_list = "row" # Because of the transpose, cols => rows
+      } else {
+        dendrogram_list = "none"
+      }
+
+      data_table = stats::cor(x = t(data_table),
+                              y = NULL,
+                              use = use,
+                              method = correlation_method)
+
+      # diag(data_table) = 0
+
+      # Set zmax and zmin
+      val_list = as.vector(data_table)
+      val_list = na.omit(val_list)
+      val_list = sort(val_list)
+
+      zmax = min(c(abs(min(val_list)), max(val_list)))
+      zmin = -zmax
+
+      # Filter out the data
+      data_table[data_table > zmax] = zmax
+      data_table[data_table < zmin] = zmin
+
+      # Annotations
+      if (!is.null(row_annotations)) {
+        if (length(row_annotations) > 1) {
+          row_annotations = meta_table[, row_annotations]
+          colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
+        } else {
+          row_names = row_annotations
+          row_annotations = as.data.frame(meta_table[, row_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      if (!is.null(col_annotations)) {
+        if (length(col_annotations) > 1) {
+          col_annotations = meta_table[, col_annotations]
+          colnames(col_annotations) = stringr::str_replace_all(colnames(col_annotations), "_", " ")
+        } else {
+          row_names = col_annotations
+          col_annotations = as.data.frame(meta_table[, col_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(col_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      # Impute missing values
+      if (impute) {
+        if (length(data_table[is.na(data_table)]) > 0) {
+          data_table[is.na(data_table)] = zmin
+        }
+      }
+
+
+      # Save table as heatmap table
+      self$tables$samples_correlation = data_table
+
+      # Get the color palette
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      if (reverse_palette) {
+        color_palette = base::rev(color_palette)
+      }
+
+      # Plot the data
+      self$plots$samples_correlation = heatmaply::heatmaply(x = t(data_table),
+                                                            scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                                                              low = color_palette[3],
+                                                              mid = color_palette[2],
+                                                              high = color_palette[1],
+                                                              midpoint = 0,
+                                                              limits = c(zmin, zmax)
+                                                            ),
+                                                            width = width,
+                                                            height = height,
+                                                            limits = c(zmin, zmax),
+                                                            col_side_colors = row_annotations,
+                                                            row_side_colors = col_annotations,
+                                                            dendrogram = dendrogram_list)
 
     },
 
