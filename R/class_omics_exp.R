@@ -77,7 +77,6 @@ Omics_exp = R6::R6Class(
       samples_correlation = list(
         auto_refresh = T,
         dataset = 'Z-scored total normalized table',
-        impute = T,
         correlation_method = "pearson",
         use = 'pairwise.complete.obs',
         cluster_cols = T,
@@ -417,10 +416,9 @@ Omics_exp = R6::R6Class(
       self$params$heatmap$img_format = img_format
     },
 
-    param_samples_correlation = function(auto_refresh, dataset, impute, correlation_method, use, cluster_rows, cluster_cols, row_annotations, col_annotations, color_palette, reverse_palette, img_format) {
+    param_samples_correlation = function(auto_refresh, dataset, correlation_method, use, cluster_rows, cluster_cols, row_annotations, col_annotations, color_palette, reverse_palette, img_format) {
       self$params$samples_correlation$auto_refresh = auto_refresh
       self$params$samples_correlation$dataset = dataset
-      self$params$samples_correlation$impute = impute
       self$params$samples_correlation$correlation_method = correlation_method
       self$params$samples_correlation$use = use
       self$params$samples_correlation$cluster_rows = cluster_rows
@@ -967,7 +965,6 @@ Omics_exp = R6::R6Class(
 
       self$param_samples_correlation(auto_refresh = T,
                                      dataset = 'Z-scored total normalized table',
-                                     impute = T,
                                      correlation_method = "pearson",
                                      use = 'pairwise.complete.obs',
                                      cluster_cols = T,
@@ -1713,7 +1710,6 @@ Omics_exp = R6::R6Class(
 
     ## Sample correlation plot
     plot_samples_correlation = function(data_table = self$tables$z_scored_total_norm_data,
-                                        impute = self$params$samples_correlation$impute,
                                         meta_table = self$tables$raw_meta,
                                         correlation_method = self$params$samples_correlation$correlation_method,
                                         use = self$params$samples_correlation$use,
@@ -1782,14 +1778,6 @@ Omics_exp = R6::R6Class(
           colnames(col_annotations) = stringr::str_replace_all(row_names, "_", " ")
         }
       }
-
-      # Impute missing values
-      if (impute) {
-        if (length(data_table[is.na(data_table)]) > 0) {
-          data_table[is.na(data_table)] = zmin
-        }
-      }
-
 
       # Save table as heatmap table
       self$tables$samples_correlation = data_table

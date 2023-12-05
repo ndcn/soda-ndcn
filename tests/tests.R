@@ -133,12 +133,7 @@ plot_samples_correlation = function(data_table = self$tables$z_scored_total_norm
     }
   }
 
-  # Impute missing values
-  if (impute) {
-    if (length(data_table[is.na(data_table)]) > 0) {
-      data_table[is.na(data_table)] = zmin
-    }
-  }
+
 
 
   # Save table as heatmap table
@@ -170,7 +165,7 @@ plot_samples_correlation = function(data_table = self$tables$z_scored_total_norm
 
 },
 
-roh_lim = 0.90
+roh_lim = 0.85
 diag(data_table) = 0
 max_abs_values = apply(data_table, 1, function(x) max(abs(x), na.rm = T))
 roh_filter = unname(which(max_abs_values >= roh_lim))
@@ -261,5 +256,14 @@ rownames(matrix)
 as.matrix()
 
 matrix[c('GREM1', 'MICAL2', 'RUNX2', 'BOP1', 'PYCR1'),]
+
+
+#------------------------------------------------ PROTEOMICS TEST CELLMINER ----
+
+self = example_proteomics(name = 'prot_1',
+                          data = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230927_Cellminer_data/protein_swath/prot_data.csv',
+                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230927_Cellminer_data/protein_swath/prot_meta.tsv')
+
+self$derive_data_tables()
 
 

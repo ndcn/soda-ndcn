@@ -613,7 +613,6 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
 }
 
 #----------------------------------------------------------------- Heat map ----
-
 heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
   print_tm(r6$name, "Heatmap: generating plot.")
 
@@ -916,7 +915,223 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
 
 }
 
+#------------------------------------------------------ Samples correlation ----
+samples_correlation_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_tm(r6$name, "samples_correlation: generating plot.")
 
+  if (input$samples_correlation_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$plot_samples_correlation(width = width,
+                              height = height)
+}
+
+samples_correlation_spawn = function(r6, format, output) {
+  print_tm(r6$name, "samples_correlation: spawning plot.")
+  output$samples_correlation_plot = plotly::renderPlotly({
+    r6$plots$samples_correlation
+    plotly::config(r6$plots$samples_correlation, toImageButtonOptions = list(format= format,
+                                                                             filename= timestamped_name('samples_correlation'),
+                                                                             height= NULL,
+                                                                             width= NULL,
+                                                                             scale= 1))
+  })
+}
+
+
+samples_correlation_ui = function(dimensions_obj, session) {
+
+  get_plotly_box(id = "samples_correlation",
+                 label = "Samples correlation",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+
+}
+
+
+samples_correlation_server = function(r6, output, session) {
+
+  ns = session$ns
+  print_tm(r6$name, "samples_correlation: START.")
+
+  output$samples_correlation_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('samples_correlation_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$samples_correlation$auto_refresh,
+        right = TRUE,
+        status = "success"
+      ),
+      shiny::selectInput(
+        inputId = ns("samples_correlation_dataset"),
+        label = "Select dataset",
+        choices = c('Z-scored table'),
+        selected = r6$params$samples_correlation$dataset
+      ),
+
+      shiny::selectInput(
+        inputId = ns("samples_correlation_correlation_method"),
+        label = "Correlation method",
+        choices = c("pearson", "kendall", "spearman"),
+        selected = r6$params$samples_correlation$correlation_method
+      ),
+      shiny::selectInput(
+        inputId = ns("samples_correlation_use"),
+        label = "Data completeness",
+        choices = c("everything", "all.obs", "complete.obs", "na.or.complete", "pairwise.complete.obs"),
+        selected = r6$params$samples_correlation$use
+      ),
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shinyWidgets::switchInput(inputId = ns("samples_correlation_cluster_rows"),
+                                    label = "Cluster rows",
+                                    value = r6$params$samples_correlation$cluster_rows,
+                                    onLabel = 'YES',
+                                    offLabel = 'NO',
+                                    labelWidth = '150px'
+          )
+        ),
+        shiny::column(
+          width = 6,
+          shinyWidgets::switchInput(inputId = ns("samples_correlation_cluster_cols"),
+                                    label = "Cluster columns",
+                                    value = r6$params$samples_correlation$cluster_cols,
+                                    onLabel = 'YES',
+                                    offLabel = 'NO',
+                                    labelWidth = '150px'
+          )
+        )
+      ),
+
+      shiny::selectizeInput(
+        inputId = ns("samples_correlation_map_rows"),
+        label = "Map data on rows",
+        multiple = TRUE,
+        choices = colnames(r6$tables$raw_meta),
+        selected = r6$params$samples_correlation$row_annotations
+      ),
+      shiny::selectizeInput(
+        inputId = ns("samples_correlation_map_cols"),
+        label = "Map data on cols",
+        multiple = TRUE,
+        choices = colnames(r6$tables$raw_meta),
+        selected = r6$params$samples_correlation$col_annotations
+      ),
+      shiny::selectInput(
+        inputId = ns('samples_correlation_colors_palette'),
+        label = 'Color palette',
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$samples_correlation$color_palette,
+        width = '100%'
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('samples_correlation_reverse_palette'),
+        label = 'Reverse palette',
+        value = r6$params$samples_correlation$reverse_palette,
+        right = TRUE,
+        status = "primary"
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("samples_correlation_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$samples_correlation$img_format,
+        width = "100%"),
+      shiny::downloadButton(
+        outputId = ns("download_samples_correlation_table"),
+        label = "Download associated table",
+        style = "width:100%;"
+      )
+    )
+  })
+}
+
+samples_correlation_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  shiny::observeEvent(
+    c(input$samples_correlation_auto_refresh,
+      input$samples_correlation_dataset,
+      input$samples_correlation_correlation_method,
+      input$samples_correlation_use,
+      input$samples_correlation_cluster_rows,
+      input$samples_correlation_cluster_cols,
+      input$samples_correlation_map_rows,
+      input$samples_correlation_map_cols,
+      input$samples_correlation_colors_palette,
+      input$samples_correlation_reverse_palette,
+      input$samples_correlation_img_format
+    ),{
+
+      print_tm(r6$name, "samples_correlation: Updating params...")
+
+      r6$param_samples_correlation(auto_refresh = input$samples_correlation_auto_refresh,
+                                   dataset = input$samples_correlation_dataset,
+                                   correlation_method = input$samples_correlation_correlation_method,
+                                   use = input$samples_correlation_use,
+                                   cluster_rows = input$samples_correlation_cluster_rows,
+                                   cluster_cols = input$samples_correlation_cluster_cols,
+                                   row_annotations = input$samples_correlation_map_rows,
+                                   col_annotations = input$samples_correlation_map_cols,
+                                   color_palette = input$samples_correlation_colors_palette,
+                                   reverse_palette = input$samples_correlation_reverse_palette,
+                                   img_format = input$samples_correlation_img_format)
+
+      if (!input$samples_correlation_auto_refresh) {
+        r6$params$samples_correlation$auto_refresh = input$samples_correlation_auto_refresh
+        return()
+      }
+
+      base::tryCatch({
+        samples_correlation_generate(r6, color_palette, dimensions_obj, input)
+        samples_correlation_spawn(r6, input$samples_correlation_img_format, output)
+      },error=function(e){
+        print_tm(r6$name, 'samples_correlation: ERROR.')
+      },finally={}
+      )
+    })
+
+
+  # Download associated table
+  output$download_samples_correlation_table = shiny::downloadHandler(
+    filename = function(){timestamped_name("samples_correlation_table.csv")},
+    content = function(file_name){
+      write.csv(r6$tables$samples_correlation_table, file_name)
+    }
+  )
+
+  # Expanded boxes
+  samples_correlation_proxy = plotly::plotlyProxy(outputId = "samples_correlation_plot",
+                                                  session = session)
+
+  shiny::observeEvent(input$samples_correlation_plotbox,{
+    if (input$samples_correlation_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = samples_correlation_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = samples_correlation_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+
+}
 
 #---------------------------------------------------------------------- PCA ----
 

@@ -122,6 +122,7 @@ lipidomics_plot_list = function() {
                 "Class comparison" = "select_class_comparison",
                 "Volcano plot" = "select_volcano_plot",
                 "Heatmap" = "select_heatmap",
+                "Samples correlation" = "select_samples_correlation",
                 "PCA" = "select_pca",
                 "Double bond plot" = "select_double_bond_plot"
   )
