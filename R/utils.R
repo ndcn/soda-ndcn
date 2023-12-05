@@ -15,6 +15,7 @@ gene_ontology_switch = function(selection) {
 experiment_switch = function(selection) {
   switch(EXPR = selection,
          'Lipidomics' = 'lips',
+         'Metabolomics' = 'meta',
          'Proteomics' = 'prot',
          'Transcriptomics' = 'trns',
          'Genomics' = 'geno'
@@ -50,6 +51,7 @@ feature_table_cols_switch = function(col) {
 r6_switch = function(exp_type, name, id, slot){
   switch(EXPR = exp_type,
          "Lipidomics" = Omics_exp$new(name = name, type = "Lipidomics",id = id, slot = slot),
+         "Metabolomics" = Omics_exp$new(name = name, type = "Metabolomics",id = id, slot = slot),
          "Proteomics" = Omics_exp$new(name = name, type = "Proteomics",id = id, slot = slot),
          "Transcriptomics" = Omics_exp$new(name = name, type = "Transcriptomics",id = id, slot = slot),
          "Genomics" = Omics_exp$new(name = name, type = "Genomics",id = id, slot = slot)

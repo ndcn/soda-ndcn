@@ -55,8 +55,8 @@ correlation_method = "pearson"
 use = 'pairwise.complete.obs'
 cluster_cols = T
 cluster_rows = T
-row_annotations = 'Group_type'
-col_annotations = 'Group_type'
+row_annotations = NULL
+col_annotations = NULL
 color_palette = 'RdYlBu'
 reverse_palette = F
 img_format = "png"
@@ -170,6 +170,15 @@ plot_samples_correlation = function(data_table = self$tables$z_scored_total_norm
 
 },
 
+roh_lim = 0.90
+diag(data_table) = 0
+max_abs_values = apply(data_table, 1, function(x) max(abs(x), na.rm = T))
+roh_filter = unname(which(max_abs_values >= roh_lim))
+length(roh_filter)
+length(max_abs_values)
+data_table = data_table[roh_filter, roh_filter]
+
+
 
 correlation_method = c("pearson", "kendall", "spearman")[3]
 use = 'pairwise.complete.obs' # c("everything", "all.obs", "complete.obs", "na.or.complete", or "pairwise.complete.obs")
@@ -208,6 +217,22 @@ self = example_proteomics(name = 'prot_1',
 
 self$add_feature_table(name = 'feat_1',
                        feature_file = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/231023_feature_tables/proteomics_feat_annotation_clean.tsv')
+
+self$derive_data_tables()
+
+self$plot_samples_correlation(data_table = self$tables$z_scored_total_norm_data,
+                              impute = self$params$samples_correlation$impute,
+                              meta_table = self$tables$raw_meta,
+                              correlation_method = self$params$samples_correlation$correlation_method,
+                              use = self$params$samples_correlation$use,
+                              cluster_cols = self$params$samples_correlation$cluster_cols,
+                              cluster_rows = self$params$samples_correlation$cluster_rows,
+                              row_annotations = self$params$samples_correlation$row_annotations,
+                              col_annotations = self$params$samples_correlation$col_annotations,
+                              color_palette = 'RdYlGn',
+                              reverse_palette = T,
+                              width = NULL,
+                              height = NULL)
 
 
 

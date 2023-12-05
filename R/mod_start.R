@@ -23,7 +23,7 @@ start_ui = function(id){
             shiny::selectInput(
               inputId = ns('exp_type'),
               label = 'Exp. type',
-              choices = c('Lipidomics', 'Proteomics', 'Transcriptomics', 'Genomics'),
+              choices = c('Lipidomics', 'Metabolomics', 'Proteomics', 'Transcriptomics', 'Genomics'),
               width = '100%'
             )
           ),
@@ -253,6 +253,18 @@ start_server = function(id, main_input, main_output, main_session, module_contro
             inputId = 'exp_name',
             value = character(0),
             placeholder = 'lips_1'
+          )
+        } else if (input$exp_type == 'Genomics') {
+          shiny::updateTextInput(
+            inputId = 'exp_name',
+            value = character(0),
+            placeholder = 'geno_1'
+          )
+        } else if (input$exp_type == 'Metabolomics') {
+          shiny::updateTextInput(
+            inputId = 'exp_name',
+            value = character(0),
+            placeholder = 'meta_1'
           )
         }
 
