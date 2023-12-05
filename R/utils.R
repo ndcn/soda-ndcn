@@ -132,6 +132,7 @@ lipidomics_plot_list = function() {
 proteomics_plot_list = function() {
   plot_list = c("Volcano plot" = "select_volcano_plot",
                 "Heatmap" = "select_heatmap",
+                "Samples correlation" = "select_samples_correlation",
                 "PCA" = "select_pca"
   )
   return(plot_list)

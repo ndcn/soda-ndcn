@@ -241,6 +241,7 @@ prot_plotbox_switch_ui = function(selection_list){
     ui_functions = c(ui_functions, switch(EXPR = plot,
                                           "select_pca" = pca_ui,
                                           "select_heatmap" = heatmap_ui,
+                                          "select_samples_correlation" = samples_correlation_ui,
                                           "select_volcano_plot" = volcano_plot_ui
     )
     )
@@ -254,6 +255,7 @@ prot_plotbox_switch_server = function(selection_list){
     server_functions = c(server_functions, switch(EXPR = plot,
                                                   "select_pca" = pca_server,
                                                   "select_heatmap" = heatmap_server,
+                                                  "select_samples_correlation" = samples_correlation_server,
                                                   "select_volcano_plot" = volcano_plot_server
     )
     )
@@ -2079,6 +2081,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
   # Plotting events
   volcano_plot_events(r6, dimensions_obj, color_palette, input, output, session)
   heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
+  samples_correlation_events(r6, dimensions_obj, color_palette, input, output, session)
   pca_events(r6, dimensions_obj, color_palette, input, output, session)
   prot_dot_plot_events(r6, dimensions_obj, color_palette, input, output, session)
   prot_cnet_plot_events(r6, dimensions_obj, color_palette, input, output, session)
