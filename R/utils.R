@@ -123,6 +123,7 @@ lipidomics_plot_list = function() {
                 "Volcano plot" = "select_volcano_plot",
                 "Heatmap" = "select_heatmap",
                 "Samples correlation" = "select_samples_correlation",
+                "Feature correlation" = "select_feature_correlation",
                 "PCA" = "select_pca",
                 "Double bond plot" = "select_double_bond_plot"
   )
@@ -133,6 +134,7 @@ proteomics_plot_list = function() {
   plot_list = c("Volcano plot" = "select_volcano_plot",
                 "Heatmap" = "select_heatmap",
                 "Samples correlation" = "select_samples_correlation",
+                "Feature correlation" = "select_feature_correlation",
                 "PCA" = "select_pca"
   )
   return(plot_list)
@@ -682,7 +684,7 @@ get_feature_metadata = function(data_table, dtype) {
     feature_table$unsat_2 = as.numeric(s_count_2)
     feature_table$unsat_sum = feature_table$unsat_1 + feature_table$unsat_2
 
-  } else if (dtype %in% c('proteomics', 'transcriptomics', 'genomics')) {
+  } else if (dtype %in% c('metabolomics', 'proteomics', 'transcriptomics', 'genomics')) {
 
     features = colnames(data_table)
     feature_table = data.frame(row.names = features)

@@ -213,7 +213,30 @@ self = example_proteomics(name = 'prot_1',
 self$add_feature_table(name = 'feat_1',
                        feature_file = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/231023_feature_tables/proteomics_feat_annotation_clean.tsv')
 
+
+
 self$derive_data_tables()
+
+
+auto_refresh = T
+data_table = self$tables$z_scored_total_norm_data
+meta_table = self$tables$feature_table
+dataset = 'Z-scored total normalized table'
+map_feature_terms = NULL
+correlation_method = "pearson"
+use = 'pairwise.complete.obs'
+cluster_cols = T
+cluster_rows = T
+row_annotations = NULL
+col_annotations = NULL
+roh_threshold = 0.80
+top_features = 300
+color_palette = 'RdYlBu'
+reverse_palette = F
+img_format = "png"
+
+self$plot_feature_correlation(roh_threshold = 0.95)
+self$plots$feature_correlation
 
 self$plot_samples_correlation(data_table = self$tables$z_scored_total_norm_data,
                               impute = self$params$samples_correlation$impute,

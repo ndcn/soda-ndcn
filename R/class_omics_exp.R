@@ -88,6 +88,25 @@ Omics_exp = R6::R6Class(
         img_format = "png"
       ),
 
+      # feature_correlation parameters self$params$feature_correlation$
+      feature_correlation = list(
+        auto_refresh = T,
+        dataset = 'Z-scored total normalized table',
+        multival_cols = 'None',
+        map_feature_terms = NULL,
+        correlation_method = "pearson",
+        use = 'pairwise.complete.obs',
+        cluster_cols = T,
+        cluster_rows = T,
+        row_annotations = NULL,
+        col_annotations = NULL,
+        roh_threshold = 0.95,
+        top_features = 300,
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
+        img_format = "png"
+      ),
+
       # PCA parameters self$params$pca$
       pca = list(
         auto_refresh = T,
@@ -299,6 +318,7 @@ Omics_exp = R6::R6Class(
       volcano_table = NULL,
       heatmap_table = NULL,
       samples_correlation = NULL,
+      feature_correlation = NULL,
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
       dbplot_table = NULL,
@@ -347,6 +367,7 @@ Omics_exp = R6::R6Class(
       volcano_plot = NULL,
       heatmap = NULL,
       samples_correlation = NULL,
+      feature_correlation = NULL,
       pca_plot = NULL,
       double_bond_plot = NULL,
 
@@ -428,6 +449,25 @@ Omics_exp = R6::R6Class(
       self$params$samples_correlation$color_palette = color_palette
       self$params$samples_correlation$reverse_palette = reverse_palette
       self$params$samples_correlation$img_format = img_format
+    },
+
+    param_feature_correlation = function(auto_refresh, dataset, multival_cols, map_feature_terms, correlation_method, use, cluster_cols, cluster_rows, row_annotations, col_annotations, roh_threshold, top_features, color_palette, reverse_palette, img_format) {
+
+      self$params$feature_correlation$auto_refresh = auto_refresh
+      self$params$feature_correlation$dataset = dataset
+      self$params$feature_correlation$multival_cols = multival_cols
+      self$params$feature_correlation$map_feature_terms = map_feature_terms
+      self$params$feature_correlation$correlation_method = correlation_method
+      self$params$feature_correlation$use = use
+      self$params$feature_correlation$cluster_cols = cluster_cols
+      self$params$feature_correlation$cluster_rows = cluster_rows
+      self$params$feature_correlation$row_annotations = row_annotations
+      self$params$feature_correlation$col_annotations = col_annotations
+      self$params$feature_correlation$roh_threshold = roh_threshold
+      self$params$feature_correlation$top_features = top_features
+      self$params$feature_correlation$color_palette = color_palette
+      self$params$feature_correlation$reverse_palette = reverse_palette
+      self$params$feature_correlation$img_format = img_format
     },
 
     param_pca = function(auto_refresh, data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
@@ -974,6 +1014,24 @@ Omics_exp = R6::R6Class(
                                      color_palette = 'RdYlBu',
                                      reverse_palette = F,
                                      img_format = "png"
+      )
+
+      self$param_feature_correlation(
+        auto_refresh = T,
+        dataset = 'Z-scored total normalized table',
+        multival_cols = 'None',
+        map_feature_terms = NULL,
+        correlation_method = "pearson",
+        use = 'pairwise.complete.obs',
+        cluster_cols = T,
+        cluster_rows = T,
+        row_annotations = NULL,
+        col_annotations = NULL,
+        roh_threshold = 0.95,
+        top_features = 300,
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
+        img_format = "png"
       )
 
       self$param_db_plot(dataset = "Total normalized table",
@@ -1792,6 +1850,128 @@ Omics_exp = R6::R6Class(
 
       # Plot the data
       self$plots$samples_correlation = heatmaply::heatmaply(x = t(data_table),
+                                                            scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                                                              low = color_palette[3],
+                                                              mid = color_palette[2],
+                                                              high = color_palette[1],
+                                                              midpoint = 0,
+                                                              limits = c(zmin, zmax)
+                                                            ),
+                                                            width = width,
+                                                            height = height,
+                                                            limits = c(zmin, zmax),
+                                                            col_side_colors = row_annotations,
+                                                            row_side_colors = col_annotations,
+                                                            dendrogram = dendrogram_list)
+
+    },
+
+    ## Feature correlation plot
+    plot_feature_correlation = function(data_table = self$tables$z_scored_total_norm_data,
+                                        meta_table = self$tables$feature_table,
+                                        map_feature_terms = self$params$feature_correlation$map_feature_terms,
+                                        correlation_method = self$params$feature_correlation$correlation_method,
+                                        use = self$params$feature_correlation$use,
+                                        cluster_cols = self$params$feature_correlation$cluster_cols,
+                                        cluster_rows = self$params$feature_correlation$cluster_rows,
+                                        row_annotations = self$params$feature_correlation$row_annotations,
+                                        col_annotations = self$params$feature_correlation$col_annotations,
+                                        roh_threshold = self$params$feature_correlation$roh_threshold,
+                                        top_features = self$params$feature_correlation$top_features,
+                                        color_palette = self$params$feature_correlation$color_palette,
+                                        reverse_palette = self$params$feature_correlation$reverse_palette,
+                                        width = NULL,
+                                        height = NULL) {
+
+
+
+      # Set the clustering
+      if (cluster_rows & cluster_cols) {
+        dendrogram_list = "both"
+      } else if (cluster_rows) {
+        dendrogram_list = "column" # Because of the transpose, rows => cols
+      } else if (cluster_cols) {
+        dendrogram_list = "row" # Because of the transpose, cols => rows
+      } else {
+        dendrogram_list = "none"
+      }
+
+      data_table = stats::cor(x = data_table,
+                              y = NULL,
+                              use = use,
+                              method = correlation_method)
+
+      diag(data_table) = 0
+      max_abs_values = apply(data_table, 1, function(x) max(abs(x), na.rm = T))
+      roh_filter = unname(which(max_abs_values >= roh_threshold))
+      diag(data_table) = 1
+
+      if (length(roh_filter) > top_features) {
+        best_hits = names(sort(rowSums(abs(data_table), na.rm = T), decreasing = T)[1:top_features])
+        roh_filter = which((rownames(data_table) %in% best_hits))
+      }
+      data_table = data_table[roh_filter, roh_filter]
+      meta_table = meta_table[rownames(data_table),]
+
+      # Set zmax and zmin
+      val_list = as.vector(data_table)
+      val_list = na.omit(val_list)
+      val_list = sort(val_list)
+
+      zmax = min(c(abs(min(val_list)), max(val_list)))
+      zmin = -zmax
+
+      # Filter out the data
+      data_table[data_table > zmax] = zmax
+      data_table[data_table < zmin] = zmin
+
+      # Annotations
+      if (!is.null(row_annotations)) {
+        if (length(row_annotations) > 1) {
+          row_annotations = meta_table[, row_annotations]
+          colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
+        } else {
+          row_names = row_annotations
+          row_annotations = as.data.frame(meta_table[, row_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      if (!is.null(col_annotations)) {
+        if (length(col_annotations) > 1) {
+          col_annotations = meta_table[, col_annotations]
+          colnames(col_annotations) = stringr::str_replace_all(colnames(col_annotations), "_", " ")
+        } else {
+          row_names = col_annotations
+          col_annotations = as.data.frame(meta_table[, col_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(col_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      # Add multivalue annotations
+      if (!is.null(map_feature_terms)) {
+        if (is.null(col_annotations)) {
+          col_annotations = as.data.frame(meta_table[, NULL])
+        }
+        for (name in names(map_feature_terms))
+          col_annotations[[name]] = map_feature_terms[[name]][rownames(col_annotations)]
+      }
+
+      # Save table as heatmap table
+      self$tables$feature_correlation = data_table
+
+      # Get the color palette
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      if (reverse_palette) {
+        color_palette = base::rev(color_palette)
+      }
+
+      # Plot the data
+      self$plots$feature_correlation = heatmaply::heatmaply(x = data_table,
                                                             scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
                                                               low = color_palette[3],
                                                               mid = color_palette[2],

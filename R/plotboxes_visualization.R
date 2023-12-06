@@ -733,7 +733,7 @@ heatmap_server = function(r6, output, session) {
         label = "Feature terms",
         multiple = T,
         choices = NULL,
-        selected = r6$params$heatmap$multival_cols
+        selected = r6$params$heatmap$map_feature_terms
       ),
 
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
@@ -917,7 +917,7 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
 
 #------------------------------------------------------ Samples correlation ----
 samples_correlation_generate = function(r6, colour_list, dimensions_obj, input) {
-  print_tm(r6$name, "samples_correlation: generating plot.")
+  print_tm(r6$name, "Samples correlation: generating plot.")
 
   if (input$samples_correlation_plotbox$maximized){
     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
@@ -932,7 +932,7 @@ samples_correlation_generate = function(r6, colour_list, dimensions_obj, input) 
 }
 
 samples_correlation_spawn = function(r6, format, output) {
-  print_tm(r6$name, "samples_correlation: spawning plot.")
+  print_tm(r6$name, "Samples correlation: spawning plot.")
   output$samples_correlation_plot = plotly::renderPlotly({
     r6$plots$samples_correlation
     plotly::config(r6$plots$samples_correlation, toImageButtonOptions = list(format= format,
@@ -957,7 +957,7 @@ samples_correlation_ui = function(dimensions_obj, session) {
 samples_correlation_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "samples_correlation: START.")
+  print_tm(r6$name, "Samples correlation: START.")
 
   output$samples_correlation_sidebar_ui = shiny::renderUI({
     shiny::tagList(
@@ -1074,7 +1074,7 @@ samples_correlation_events = function(r6, dimensions_obj, color_palette, input, 
       input$samples_correlation_img_format
     ),{
 
-      print_tm(r6$name, "samples_correlation: Updating params...")
+      print_tm(r6$name, "Samples correlation: Updating params...")
 
       r6$param_samples_correlation(auto_refresh = input$samples_correlation_auto_refresh,
                                    dataset = input$samples_correlation_dataset,
@@ -1097,7 +1097,7 @@ samples_correlation_events = function(r6, dimensions_obj, color_palette, input, 
         samples_correlation_generate(r6, color_palette, dimensions_obj, input)
         samples_correlation_spawn(r6, input$samples_correlation_img_format, output)
       },error=function(e){
-        print_tm(r6$name, 'samples_correlation: ERROR.')
+        print_tm(r6$name, 'Samples correlation: ERROR.')
       },finally={}
       )
     })
@@ -1124,6 +1124,290 @@ samples_correlation_events = function(r6, dimensions_obj, color_palette, input, 
                                 ))
     } else {
       plotly::plotlyProxyInvoke(p = samples_correlation_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+
+}
+
+#------------------------------------------------------ Feature correlation ----
+feature_correlation_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_tm(r6$name, "Feature correlation: generating plot.")
+
+  if (input$feature_correlation_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$plot_feature_correlation(width = width,
+                              height = height)
+}
+
+feature_correlation_spawn = function(r6, format, output) {
+  print_tm(r6$name, "Feature correlation: spawning plot.")
+  output$feature_correlation_plot = plotly::renderPlotly({
+    r6$plots$feature_correlation
+    plotly::config(r6$plots$feature_correlation, toImageButtonOptions = list(format= format,
+                                                                             filename= timestamped_name('feature_correlation'),
+                                                                             height= NULL,
+                                                                             width= NULL,
+                                                                             scale= 1))
+  })
+}
+
+
+feature_correlation_ui = function(dimensions_obj, session) {
+
+  get_plotly_box(id = "feature_correlation",
+                 label = "Feature correlation",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+
+}
+
+
+feature_correlation_server = function(r6, output, session) {
+
+  ns = session$ns
+  print_tm(r6$name, "Feature correlation: START.")
+
+  output$feature_correlation_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('feature_correlation_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$feature_correlation$auto_refresh,
+        right = TRUE,
+        status = "success"
+      ),
+      shiny::selectInput(
+        inputId = ns("feature_correlation_dataset"),
+        label = "Select dataset",
+        choices = c('Z-scored table'),
+        selected = r6$params$feature_correlation$dataset
+      ),
+      shiny::selectInput(
+        inputId = ns("feature_correlation_correlation_method"),
+        label = "Correlation method",
+        choices = c("pearson", "kendall", "spearman"),
+        selected = r6$params$feature_correlation$correlation_method
+      ),
+      shiny::selectInput(
+        inputId = ns("feature_correlation_use"),
+        label = "Data completeness",
+        choices = c("everything", "all.obs", "complete.obs", "na.or.complete", "pairwise.complete.obs"),
+        selected = r6$params$feature_correlation$use
+      ),
+      shiny::fluidRow(
+        shiny::column(
+          width = 6,
+          shinyWidgets::switchInput(inputId = ns("feature_correlation_cluster_rows"),
+                                    label = "Cluster rows",
+                                    value = r6$params$feature_correlation$cluster_rows,
+                                    onLabel = 'YES',
+                                    offLabel = 'NO',
+                                    labelWidth = '150px'
+          )
+        ),
+        shiny::column(
+          width = 6,
+          shinyWidgets::switchInput(inputId = ns("feature_correlation_cluster_cols"),
+                                    label = "Cluster cols",
+                                    value = r6$params$feature_correlation$cluster_cols,
+                                    onLabel = 'YES',
+                                    offLabel = 'NO',
+                                    labelWidth = '150px'
+          )
+        )
+      ),
+
+      shiny::selectizeInput(
+        inputId = ns("feature_correlation_map_rows"),
+        label = "Map data on rows",
+        multiple = TRUE,
+        choices = colnames(r6$tables$feature_table)[!(colnames(r6$tables$feature_table) %in% names(r6$tables$feature_list))],
+        selected = r6$params$feature_correlation$row_annotations
+      ),
+      shiny::selectizeInput(
+        inputId = ns("feature_correlation_map_cols"),
+        label = "Map data on cols",
+        multiple = TRUE,
+        choices = colnames(r6$tables$feature_table)[!(colnames(r6$tables$feature_table) %in% names(r6$tables$feature_list))],
+        selected = r6$params$feature_correlation$col_annotations
+      ),
+
+      shiny::selectizeInput(
+        inputId = ns("feature_correlation_multival_cols"),
+        label = "Feature annotations col",
+        multiple = F,
+        choices = c('None', names(r6$tables$feature_list)),
+        selected = r6$params$feature_correlation$multival_cols
+      ),
+
+      shiny::selectizeInput(
+        inputId = ns("feature_correlation_multival_terms"),
+        label = "Feature terms",
+        multiple = T,
+        choices = NULL,
+        selected = r6$params$feature_correlation$map_feature_terms
+      ),
+
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::h3("Filter features"),
+      shiny::sliderInput(inputId = ns("feature_correlation_roh_threshold"),
+                         label = "Roh threshold",
+                         min = 0,
+                         max = 0.99,
+                         value = r6$params$feature_correlation$roh_threshold,
+                         step = 0.01,
+                         width = "100%"),
+      shiny::sliderInput(inputId = ns("feature_correlation_top_features"),
+                         label = "Top features",
+                         min = 50,
+                         max = 500,
+                         value = r6$params$feature_correlation$top_features,
+                         step = 1,
+                         width = "100%"),
+      shiny::selectInput(
+        inputId = ns('feature_correlation_colors_palette'),
+        label = 'Color palette',
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$feature_correlation$color_palette,
+        width = '100%'
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('feature_correlation_reverse_palette'),
+        label = 'Reverse palette',
+        value = r6$params$feature_correlation$reverse_palette,
+        right = TRUE,
+        status = "primary"
+      ),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("feature_correlation_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$feature_correlation$img_format,
+        width = "100%"),
+      shiny::downloadButton(
+        outputId = ns("download_feature_correlation_table"),
+        label = "Download associated table",
+        style = "width:100%;"
+      )
+    )
+  })
+}
+
+feature_correlation_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  shiny::observeEvent(input$feature_correlation_multival_cols, {
+    if (input$feature_correlation_multival_cols %in% names(r6$tables$feature_list)) {
+      shiny::updateSelectizeInput(
+        inputId = "feature_correlation_multival_terms",
+        session = session,
+        choices = r6$tables$feature_list[[input$feature_correlation_multival_cols]]$feature_list,
+        selected = character(0)
+      )
+    } else {
+      shiny::updateSelectizeInput(
+        inputId = "feature_correlation_multival_terms",
+        session = session,
+        choices = NULL,
+        selected = character(0)
+      )
+    }
+  })
+
+  shiny::observeEvent(
+    c(input$feature_correlation_auto_refresh,
+      input$feature_correlation_dataset,
+      input$feature_correlation_correlation_method,
+      input$feature_correlation_use,
+      input$feature_correlation_cluster_rows,
+      input$feature_correlation_cluster_cols,
+      input$feature_correlation_map_rows,
+      input$feature_correlation_map_cols,
+      input$feature_correlation_multival_terms,
+      input$feature_correlation_roh_threshold,
+      input$feature_correlation_top_features,
+      input$feature_correlation_colors_palette,
+      input$feature_correlation_reverse_palette,
+      input$feature_correlation_img_format
+    ),{
+
+      if (!input$feature_correlation_auto_refresh) {
+        r6$params$feature_correlation$auto_refresh = input$feature_correlation_auto_refresh
+        return()
+      }
+
+      # Feature annotation terms
+      if (length(input$feature_correlation_multival_terms) > 0) {
+        map_feature_terms = list()
+        map_feature_terms[[input$feature_correlation_multival_cols]] = match_go_terms(terms_list = input$feature_correlation_multival_terms,
+                                                                                      sparse_table = r6$tables$feature_list[[input$feature_correlation_multival_cols]]$sparse_matrix)
+      } else {
+        map_feature_terms = NULL
+      }
+
+      print_tm(r6$name, "Feature correlation: Updating params...")
+
+      r6$param_feature_correlation(auto_refresh = input$feature_correlation_auto_refresh,
+                                   dataset = input$feature_correlation_dataset,
+                                   multival_cols = input$feature_correlation_multival_cols,
+                                   map_feature_terms = map_feature_terms,
+                                   correlation_method = input$feature_correlation_correlation_method,
+                                   use = input$feature_correlation_use,
+                                   cluster_cols = input$feature_correlation_cluster_cols,
+                                   cluster_rows = input$feature_correlation_cluster_rows,
+                                   row_annotations = input$feature_correlation_map_rows,
+                                   col_annotations = input$feature_correlation_map_cols,
+                                   roh_threshold = input$feature_correlation_roh_threshold,
+                                   top_features = input$feature_correlation_top_features,
+                                   color_palette = input$feature_correlation_colors_palette,
+                                   reverse_palette = input$feature_correlation_reverse_palette,
+                                   img_format = input$feature_correlation_img_format)
+
+      base::tryCatch({
+        feature_correlation_generate(r6, color_palette, dimensions_obj, input)
+        feature_correlation_spawn(r6, input$feature_correlation_img_format, output)
+      },error=function(e){
+        print_tm(r6$name, 'Feature correlation: ERROR.')
+      },finally={}
+      )
+    })
+
+
+  # Download associated table
+  output$download_feature_correlation_table = shiny::downloadHandler(
+    filename = function(){timestamped_name("feature_correlation_table.csv")},
+    content = function(file_name){
+      write.csv(r6$tables$feature_correlation_table, file_name)
+    }
+  )
+
+  # Expanded boxes
+  feature_correlation_proxy = plotly::plotlyProxy(outputId = "feature_correlation_plot",
+                                                  session = session)
+
+  shiny::observeEvent(input$feature_correlation_plotbox,{
+    if (input$feature_correlation_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = feature_correlation_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = feature_correlation_proxy,
                                 method = "relayout",
                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
                                      height = dimensions_obj$ypx * dimensions_obj$y_plot
