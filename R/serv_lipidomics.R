@@ -1402,7 +1402,17 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     table = NULL
   )
 
-  session$userData[[id]]$download_datatable = shiny::observeEvent(c(input$select_data_table, input$reset_data_table, input$keep_cols, input$drop_cols, input$reset_meta, input$selection_keep, input$selection_drop) , {
+  session$userData[[id]]$download_datatable = shiny::observeEvent(c(input$select_data_table,
+                                                                    input$reset_data_table,
+                                                                    input$keep_cols,
+                                                                    input$drop_cols,
+                                                                    input$reset_meta,
+                                                                    input$selection_keep,
+                                                                    input$selection_drop,
+                                                                    input$apply_filtering,
+                                                                    input$blank_multiplier,
+                                                                    input$sample_threshold,
+                                                                    input$group_threshold) , {
     shiny::req(r6$tables$raw_data)
     if (r6$preloaded_data) {return()}
     dl_data_table$name = timestamped_name(paste0(stringr::str_replace_all(input$select_data_table, " ", "_"), ".csv"))
