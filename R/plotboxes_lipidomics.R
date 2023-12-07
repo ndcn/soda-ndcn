@@ -1477,3 +1477,138 @@ db_plot_events = function(r6, dimensions_obj, color_palette, input, output, sess
     }
   })
 }
+
+
+#-----------------------------------------------------------FA analysis index ----
+fa_analysis_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_tm(r6$name, "Fatty acid analysis index plot: generating plot.")
+
+  if (input$fa_analysis_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$plot_fa_analysis(data_table = r6$tables$raw_data, #table_switch(input$class_comparison_dataset, r6),
+                      group_col = input$fa_analysis_metacol,
+                      colour_list = colour_list,
+                      width = width,
+                      height = height)
+}
+
+fa_analysis_spawn = function(r6, format, output) {
+  print_tm(r6$name, "Fatty acid analysis index: spawning plot.")
+
+  output$fa_analysis_plot = plotly::renderPlotly({
+    r6$plots$fa_analysis_plot
+    plotly::config(r6$plots$fa_analysis_plot, toImageButtonOptions = list(format = format,
+                                                                          filename = timestamped_name('fa_analysis'),
+                                                                          height = NULL,
+                                                                          width = NULL,
+                                                                          scale = 1))
+  })
+}
+
+fa_analysis_ui = function(dimensions_obj, session) {
+  # add function to show bs4dash with plotting function
+  get_plotly_box(id = "fa_analysis",
+                 label = "Fatty acid analysis",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+}
+
+fa_analysis_server = function(r6, output, session) {
+  ns = session$ns
+  print_tm(r6$name, "Fatty acid analysis index: START.")
+
+  # set some UI
+  output$fa_analysis_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::selectInput(
+        inputId = ns("fa_analysis_metacol"),
+        label = "Select group column",
+        choices = colnames(r6$tables$raw_meta),
+        selected = r6$params$fa_analysis_plot$group_col
+      ),
+      shiny::selectInput(
+        inputId = ns("fa_analysis_pathway"),
+        label = "Select pathway",
+        choices = c("SFA" = "SFA",
+                    "MUFA" = "MUFA",
+                    "PUFA(n-6)" = "PUFA6",
+                    "PUFA(n-3)" = "PUFA3"),
+        selected = "",
+        multiple = TRUE,
+        width = "100%"),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("fa_analysis_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$fa_analysis_plot$img_format,
+        width = "100%"),
+      shiny::downloadButton(
+        outputId = ns("download_fa_analysis_table"),
+        label = "Download associated table",
+        style = "width:100%;"
+      )
+    )
+  })
+}
+
+fa_analysis_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+  # Generate the plot
+  shiny::observeEvent(c(input$fa_analysis_metacol,
+                        input$fa_analysis_pathway,
+                        input$fa_analysis_img_format), {
+                          print_tm(r6$name, "Fatty acid analysis: Updating params...")
+
+                          r6$param_fa_analysis_plot(data_table = r6$tables$raw_data,
+                                                    feature_meta = r6$tables$feature_table,
+                                                    sample_meta = r6$tables$raw_meta,
+                                                    group_col = input$fa_analysis_metacol,
+                                                    pathway = input$fa_analysis_pathway,
+                                                    img_format = input$fa_analysis_img_format)
+
+                          base::tryCatch({
+                            fa_analysis_generate(r6, color_palette, dimensions_obj, input)
+                            fa_analysis_spawn(r6, input$fa_analysis_img_format, output)
+                          },
+                          error = function(e) {
+                            print_tm(r6$name, 'Fatty acid analysis error, missing data.')
+                            print(e)
+                          },
+                          finally = {}
+                          )
+                        })
+
+  # Download associated table
+  output$download_fa_analysis_table = shiny::downloadHandler(
+    filename = function(){timestamped_name("fa_analysis_table.csv")},
+    content = function(file_name){
+      write.csv(r6$tables$fa_analysis_table, file_name)
+    }
+  )
+
+  # Expanded boxes
+  fa_analysis_proxy = plotly::plotlyProxy(outputId = "fa_analysis_plot",
+                                          session = session)
+
+  shiny::observeEvent(input$fa_analysis_plotbox,{
+    if (input$fa_analysis_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = fa_analysis_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = fa_analysis_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+}

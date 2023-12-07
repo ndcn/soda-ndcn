@@ -272,6 +272,7 @@ Lips_exp = R6::R6Class(
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
       dbplot_table = NULL,
+      fa_analysis_table = NULL,
 
       # GSEA & over representation
       gsea_prot_list = NULL,
@@ -292,6 +293,7 @@ Lips_exp = R6::R6Class(
       heatmap = NULL,
       pca_plot = NULL,
       double_bond_plot = NULL,
+      fa_analysis_plot = NULL,
 
       # Functional analysis plots
       dotplot = NULL,
@@ -486,6 +488,14 @@ Lips_exp = R6::R6Class(
       self$params$or_emap_plot$enable_physics = enable_physics
     },
 
+    param_fa_analysis_plot = function(data_table, feature_meta, sample_meta, group_column, pathway, img_format) {
+      self$params$fa_analysis_plot$data_table = data_table
+      self$params$fa_analysis_plot$feature_meta = feature_meta
+      self$params$fa_analysis_plot$sample_meta = sample_meta
+      self$params$fa_analysis_plot$group_col = group_column
+      self$params$fa_analysis_plot$pathway = pathway
+      self$params$fa_analysis_plot$img_format = img_format
+    },
 
     #-------------------------------------------------------- Table methods ----
 
@@ -859,9 +869,12 @@ Lips_exp = R6::R6Class(
       self$param_ridge_plot(showCategory = 30,
                             img_format = "png")
 
-
-
-
+      self$param_fa_analysis_plot(data_table = self$tables$raw_data,
+                                  feature_meta = self$tables$feature_table,
+                                  sample_meta = self$tables$raw_meta,
+                                  group_column = self$indices$group_col,
+                                  pathway = NULL,
+                                  img_format = "png")
 
 
 
@@ -2246,7 +2259,110 @@ Lips_exp = R6::R6Class(
         layout(xaxis = list(title = 'Count')
         )
       self$plots$or_barplot = fig
+    },
+
+
+    plot_fa_analysis = function(data_table = self$tables$raw_data,
+                                feature_table = self$tables$feature_table,
+                                sample_meta = self$tables$raw_meta,
+                                group_col = self$indices$group_col,
+                                pathway = self$params$fa_analysis_plot$pathway,
+                                colour_list,
+                                width = NULL,
+                                height = NULL) {
+
+      ## At the moment this function is using the raw data table
+      # do the calculations
+      res <- fa_analysis_calc(data_table = data_table,
+                              feature_table = feature_table,
+                              sample_meta = sample_meta)
+
+
+      # Produce the class x group table
+      # add ID's, group's and make long
+      res$ID <- rownames(res)
+      res$group <- sample_meta[res$ID, group_col]
+      res_long <- res |>
+        tidyr::pivot_longer(cols = -c(ID, group),
+                            names_to = "fa_chain",
+                            values_to = "value")
+
+      # calculate mean and stdev per group
+      plot_table <- tapply(as.data.frame(res_long), list(res_long$group, res_long$fa_chain), function(x) {
+        avg <- mean(x[, "value"], na.rm = TRUE)
+        stdev <- sd(x[, "value"], na.rm = TRUE)
+
+        return(list(avg = avg,
+                    stdev = stdev,
+                    fa_chain = x[1, "fa_chain"],
+                    group = x[1, "group"]))
+        # print(x)
+      })
+
+      plot_table <- do.call(rbind.data.frame, plot_table)
+
+      # filter plot_table based on pathway selection
+      pathway_fa <- c(
+        paste(seq(16, 26, 2), 0, sep = ":"),
+        paste(seq(16, 24, 2), 1, sep = ":"),
+        c("18:2", "18:3", "20:2", "20:3", "20:4",
+          "22:4", "22:5","24:4", "24:5"),
+        c("18:3", "18:4", "20:3", "20:4", "20:5",
+          "22:5", "22:6", "24:5", "24:6")
+      )
+      names(pathway_fa) <- c(rep("SFA", 6),
+                             rep("MUFA", 5),
+                             rep("PUFA6", 9),
+                             rep("PUFA3", 9))
+
+      if(!is.null(pathway)) {
+        selected_pathway_fa <- unique(pathway_fa[names(pathway_fa) %in% pathway])
+        plot_table <- plot_table[plot_table$fa_chain %in% selected_pathway_fa, ]
+      }
+
+      # Store the plot_table
+      self$tables$fa_analysis_table <- plot_table
+
+      # plotting
+      i <- 1
+      fig <- plotly::plot_ly(colors = colour_list, width = width, height = height)
+      for (grp in unique(plot_table$group)) {
+        fig <- fig |>
+          plotly::add_trace(data = plot_table[plot_table$group == grp, ],
+                            x = ~fa_chain,
+                            y = ~avg,
+                            color = colour_list[i],
+                            type = "bar",
+                            name = grp,
+                            error_y = ~ list(array = stdev,
+                                             color = "#000000"))
+        fig <- fig |>
+          plotly::layout(legend = list(orientation = 'h',
+                                       xanchor = "center",
+                                       x = 0.5),
+                         xaxis = list(title = "Fatty acid chain"),
+                         yaxis = list(title = "Concentration"))
+        i <- i + 1
+      }
+      fig <- fig |>
+        plotly::layout(annotations =
+                         list(x = 1,
+                              y = -0.175,
+                              text = "NOTE: error bars are standard deviation",
+                              showarrow = FALSE,
+                              xref = "paper",
+                              yref = "paper",
+                              xanchor = "right",
+                              yanchor = "auto",
+                              xshift = 0,
+                              yshift = 0,
+                              font = list(size = 10))
+        )
+      fig
+
+      self$plots$fa_analysis_plot <- fig
     }
+
     #------------------------------------------------------------------ END ----
   )
 )

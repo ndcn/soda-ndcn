@@ -119,7 +119,8 @@ lipidomics_plot_list = function() {
                 "Volcano plot" = "select_volcano_plot",
                 "Heatmap" = "select_heatmap",
                 "PCA" = "select_pca",
-                "Double bond plot" = "select_double_bond_plot"
+                "Double bond plot" = "select_double_bond_plot",
+                "Fatty acid analysis" = "select_fa_analysis_plot"
   )
   return(plot_list)
 }
@@ -1493,4 +1494,62 @@ get_cp_results = function(object, showCategory) {
     df$BgRatio = sapply(strsplit(as.character(df$BgRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
   }
   return(df)
+}
+
+#------------------------------------------------------ Fatty acid analysis ----
+fa_analysis_calc <- function(data_table = NULL,
+                             feature_table = NULL,
+                             sample_meta = NULL) {
+  ## Features
+  # remove PA and TG
+  feature_table$lipid <- rownames(feature_table)
+  sel_feat_idx <- feature_table$lipid[!(feature_table$lipid_class %in% c("PA", "TG"))]
+  sel_feature_table <- feature_table[feature_table$lipid %in% sel_feat_idx, ]
+
+  ## Data
+  # remove PA and TG
+  sel_data_table <- data_table[, sel_feat_idx]
+
+  # get the unique chain lengths and unsaturation
+  uniq_carbon <- sort(union(unique(sel_feature_table$carbons_1),
+                            unique(sel_feature_table$carbons_2)))
+  uniq_carbon <- uniq_carbon[uniq_carbon != 0]
+  uniq_unsat <- sort(union(unique(sel_feature_table$unsat_1),
+                           unique(sel_feature_table$unsat_2)))
+
+  # Initialize results data.frame
+  fa_chains <- expand.grid(uniq_unsat, uniq_carbon)
+  fa_chains <- paste(fa_chains[, 2], fa_chains[, 1], sep = ":")
+  res <- as.data.frame(matrix(ncol = length(fa_chains),
+                              nrow = nrow(sel_data_table)))
+  colnames(res) <- fa_chains
+  rownames(res) <- rownames(sel_data_table)
+
+  # do the calculations
+  for(a in uniq_carbon) {
+    for(b in uniq_unsat) {
+      sel_fa_chain <- paste(a, b, sep = ":")
+      sel_lipids <- sel_feature_table$lipid[(sel_feature_table$carbons_1 == a &
+                                               sel_feature_table$unsat_1 == b) |
+                                              (sel_feature_table$carbons_2 == a &
+                                                 sel_feature_table$unsat_2 == b)]
+      sel_lipids_double <- sel_feature_table$lipid[(sel_feature_table$carbons_1 == a &
+                                                      sel_feature_table$unsat_1 == b) &
+                                                     (sel_feature_table$carbons_2 == a &
+                                                        sel_feature_table$unsat_2 == b)]
+
+      res[, sel_fa_chain] <- `+`(
+        rowSums(sel_data_table[, sel_lipids, drop = FALSE], na.rm = TRUE),
+        rowSums(sel_data_table[, sel_lipids_double, drop = FALSE], na.rm = TRUE)
+      )
+    }
+  }
+
+  # remove empty columns
+  empty_idx <- apply(res, 2, function(x) {
+    all(x == 0)
+  })
+  res <- res[, !empty_idx]
+
+  return(res)
 }
