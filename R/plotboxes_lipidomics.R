@@ -1477,3 +1477,183 @@ db_plot_events = function(r6, dimensions_obj, color_palette, input, output, sess
     }
   })
 }
+
+#----------------------------------------------------------------- SI index ----
+satindex_generate = function(r6, colour_list, dimensions_obj, input) {
+  print_tm(r6$name, "Saturation index plot: generating plot.")
+
+  if (input$satindex_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$plot_satindex(data_table = r6$tables$raw_data, #table_switch(input$class_comparison_dataset, r6),
+                   group_col = input$satindex_metacol,
+                   colour_list = colour_list,
+                   method = input$satindex_select_method,
+                   width = width,
+                   height = height)
+}
+
+satindex_spawn = function(r6, format, output) {
+  print_tm(r6$name, "Saturation index: spawning plot.")
+
+  output$satindex_plot = plotly::renderPlotly({
+    r6$plots$satindex_plot
+    plotly::config(r6$plots$satindex_plot, toImageButtonOptions = list(format = format,
+                                                                       filename = timestamped_name('si_index'),
+                                                                       height = NULL,
+                                                                       width = NULL,
+                                                                       scale = 1))
+  })
+}
+
+satindex_ui = function(dimensions_obj, session) {
+  # add function to show bs4dash with plotting function
+  get_plotly_box(id = "satindex",
+                 label = "Saturation index",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+}
+
+satindex_server = function(r6, output, session) {
+  ns = session$ns
+  print_tm(r6$name, "Saturation index: START.")
+
+  # set some UI
+  output$satindex_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shiny::selectInput(
+        inputId = ns("satindex_select_method"),
+        label = "Select a method",
+        choices = c("(palmitate+stearate) / oleate ratio" = "ratio",
+                    "use all FA tails" = "all",
+                    "overall" = "overall",
+                    "double bond" = "db"),
+        selected = "ratio"
+      ),
+      shiny::textOutput(outputId = ns("satindex_note")),
+      shiny::selectInput(
+        inputId = ns("satindex_metacol"),
+        label = "Select group column",
+        choices = colnames(r6$tables$raw_meta),
+        selected = r6$params$satindex_plot$group_col
+      ),
+      shinyjs::hidden(shiny::selectizeInput(
+        inputId = ns("satindex_metagroup"),
+        label = "Select two groups to compare",
+        choices = unique(r6$tables$raw_meta[,r6$params$satindex_plot$group_col]),
+        selected = c(r6$params$satindex_plot$group_1, r6$params$satindex_plot$group_2),
+        multiple = TRUE
+      )),
+      shinyjs::hidden(shiny::selectizeInput(
+        inputId = ns("satindex_lipidclass"),
+        label = "Select lipid class",
+        choices = unique(r6$tables$feature_table$lipid_class),
+        selected = r6$params$satindex_plot$selected_lipid_class,
+        multiple = FALSE
+      )),
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("satindex_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$satindex_plot$img_format,
+        width = "100%"),
+      shiny::downloadButton(
+        outputId = ns("download_satindex_table"),
+        label = "Download associated table",
+        style = "width:100%;"
+      )
+    )
+  })
+}
+
+satindex_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+  # Generate the plot
+  shiny::observeEvent(c(input$satindex_metacol,
+                        input$satindex_img_format,
+                        input$satindex_select_method,
+                        input$satindex_metagroup,
+                        input$satindex_lipidclass), {
+                          print_tm(r6$name, "Saturation index: Updating params...")
+
+                          if(input$satindex_select_method == "ratio") {
+                            output$satindex_note <- shiny::renderText({
+                              "Ref:  Cell Rep. 2018 Sep 4;24(10):2596-2605"
+                            })
+                          } else {
+                            output$satindex_note <- shiny::renderText({
+                              ""
+                            })
+                          }
+
+                          # show / hide the group selection
+                          if(input$satindex_select_method == "db") {
+                            shinyjs::show(id = "satindex_metagroup")
+                            shinyjs::show(id = "satindex_lipidclass")
+                          } else {
+                            shinyjs::hide(id = "satindex_metagroup")
+                            shinyjs::hide(id = "satindex_lipidclass")
+                          }
+
+                          r6$param_satindex_plot(data_table = r6$tables$raw_data,
+                                                 feature_meta = r6$tables$feature_table,
+                                                 sample_meta = r6$tables$raw_meta,
+                                                 group_col = input$satindex_metacol,
+                                                 group_1 = input$satindex_metagroup[1],
+                                                 group_2 = input$satindex_metagroup[2],
+                                                 selected_lipid_class = input$satindex_lipidclass,
+                                                 method = input$satindex_select_method,
+                                                 img_format = input$satindex_img_format)
+
+                          base::tryCatch({
+                            satindex_generate(r6, color_palette, dimensions_obj, input)
+                            satindex_spawn(r6, input$satindex_img_format, output)
+                          },
+                          error = function(e) {
+                            print_tm(r6$name, 'Saturation index error, missing data.')
+                            print(e)
+                          },
+                          finally = {}
+                          )
+                        })
+
+  # Download associated table
+  output$download_satindex_table = shiny::downloadHandler(
+    filename = function() {
+      if(input$satindex_select_method == "db") {
+        timestamped_name(paste(input$satindex_select_method, input$satindex_lipidclass, "si_table.csv", sep = "_"))
+      } else {
+        timestamped_name(paste(input$satindex_select_method, "si_table.csv", sep = "_"))
+      }
+    },
+    content = function(file_name){
+      write.csv(r6$tables$satindex_table, file_name)
+    }
+  )
+
+  # Expanded boxes
+  satindex_proxy = plotly::plotlyProxy(outputId = "satindex_plot",
+                                       session = session)
+
+  shiny::observeEvent(input$satindex_plotbox,{
+    if (input$satindex_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = satindex_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = satindex_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+}
+

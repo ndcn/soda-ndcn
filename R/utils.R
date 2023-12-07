@@ -119,7 +119,8 @@ lipidomics_plot_list = function() {
                 "Volcano plot" = "select_volcano_plot",
                 "Heatmap" = "select_heatmap",
                 "PCA" = "select_pca",
-                "Double bond plot" = "select_double_bond_plot"
+                "Double bond plot" = "select_double_bond_plot",
+                "Saturation index" = "select_satindex_plot"
   )
   return(plot_list)
 }
@@ -1493,4 +1494,253 @@ get_cp_results = function(object, showCategory) {
     df$BgRatio = sapply(strsplit(as.character(df$BgRatio), "/"), function(x) as.numeric(x[1]) / as.numeric(x[2]))
   }
   return(df)
+}
+
+#------------------------------------------------------- Saturation index ------
+# Here are some functions to calculate the saturation index in several different
+# ways.
+
+# use palmitate, stearate and oleate tails for the calculation of the SI index per lipid class
+satindex_calc_ratio <- function(data_table = NULL,
+                                feature_table = NULL,
+                                sample_meta = NULL) {
+  ## Initialize some stuff
+  # the feature table doesn't contain a column lipids fix here
+  feature_table$lipid <- rownames(feature_table)
+  # get the unique lipid classes
+  lipid_classes <- unique(feature_table$lipid_class)
+
+  # define list with which FA tails to search for
+  lipids <- list(
+    palmitate = c("carbon" = 16,
+                  "db" = 0),
+    stearate = c("carbon" = 18,
+                 "db" = 0),
+    oleate = c("carbon" = 18,
+               "db" = 1)
+  )
+  # get the names of the FA tails
+  lipid_names <- names(lipids)
+
+  # initialize result list
+  tot_lipids <- vector(mode = "list",
+                       length = length(lipid_classes))
+  names(tot_lipids) <- lipid_classes
+  tot_lipids <- lapply(tot_lipids, function(x) {
+    setNames(vector(mode = "list",
+                    length = length(lipid_names) + 1),
+             c(lipid_names, "SI"))
+  })
+
+  for(a in lipid_classes) {
+    for(b in lipid_names) {
+      # select the lipids with the correct FA tails
+      lipid_all <- feature_table$lipid[feature_table$lipid_class == a &
+                                         ((feature_table$carbons_1 == lipids[[b]]["carbon"] & feature_table$unsat_1 == lipids[[b]]["db"]) |
+                                            (feature_table$carbons_2 == lipids[[b]]["carbon"] & feature_table$unsat_2 == lipids[[b]]["db"]))]
+      lipid_dbl <- feature_table$lipid[feature_table$lipid_class == a &
+                                         (feature_table$carbons_1 == lipids[[b]]["carbon"] & feature_table$unsat_1 == lipids[[b]]["db"] &
+                                            feature_table$carbons_2 == lipids[[b]]["carbon"] & feature_table$unsat_2 == lipids[[b]]["db"])]
+
+      # get all data
+      lipid_data <- data_table[, colnames(data_table) %in% feature_table$lipid[feature_table$lipid_class == a], drop = FALSE]
+      # If doesn't contain any of the FA tail multiply by zero
+      lipid_data[, !(colnames(lipid_data) %in% lipid_all)] <- lipid_data[, !(colnames(lipid_data) %in% lipid_all)] * 0
+      # if contains 2x FA tail multiply by 2
+      lipid_data[, colnames(lipid_data) %in% lipid_dbl] <- lipid_data[, colnames(lipid_data) %in% lipid_dbl] * 2
+
+      # get the total
+      tot_lipids[[a]][[b]] <- rowSums(lipid_data, na.rm = TRUE)
+    }
+    tot_lipids[[a]][["SI"]] <- (tot_lipids[[a]][["palmitate"]] + tot_lipids[[a]][["stearate"]]) / tot_lipids[[a]][["oleate"]]
+  }
+
+  # make data.frame
+  tot_lipids <- do.call("cbind.data.frame", lapply(tot_lipids, function(x) {
+    x["SI"]
+  }))
+  names(tot_lipids) <- lipid_classes
+
+  return(tot_lipids)
+}
+
+# use all FA tails for the calculation of the SI index per lipid class
+satindex_calc_all <- function(data_table = NULL,
+                              feature_table = NULL,
+                              sample_meta = NULL) {
+  # initialize some stuff
+  # the feature table doesn't contain a column lipids fix here
+  feature_table$lipid <- rownames(feature_table)
+  # get the unique lipid classes
+  lipid_classes <- unique(feature_table$lipid_class)
+
+  tot_lipids <- vector(mode = "list",
+                       length = length(lipid_classes))
+  names(tot_lipids) <- lipid_classes
+  tot_lipids <- lapply(tot_lipids, function(x) {
+    setNames(vector(mode = "list",
+                    length = 3),
+             c("tot_sat", "tot_unsat", "SI"))
+  })
+
+  for(a in lipid_classes) {
+    # lipids with only one FA chain
+    if(all(feature_table$carbons_2[feature_table$lipid_class == a] == 0) | a == "TG") {
+      if(a == "TG") {
+        sat_lipid <- feature_table$lipid[feature_table$lipid_class == a &
+                                           feature_table$unsat_2 == 0]
+        unsat_lipid <- feature_table$lipid[feature_table$lipid_class == a &
+                                             feature_table$unsat_2 != 0]
+        sat_lipid_dbl <- NULL
+        unsat_lipid_dbl <- NULL
+      } else {
+        sat_lipid <- feature_table$lipid[feature_table$lipid_class == a &
+                                           feature_table$unsat_1 == 0]
+        unsat_lipid <- feature_table$lipid[feature_table$lipid_class == a &
+                                             feature_table$unsat_1 != 0]
+        sat_lipid_dbl <- NULL
+        unsat_lipid_dbl <- NULL
+      }
+    } else {
+      # lipids with 2 FA chains
+      sat_lipid <- feature_table$lipid[feature_table$lipid_class == a &
+                                         (feature_table$unsat_1 == 0 |
+                                            feature_table$unsat_2 == 0)]
+      unsat_lipid <- feature_table$lipid[feature_table$lipid_class == a &
+                                           (feature_table$unsat_1 != 0 |
+                                              feature_table$unsat_2 != 0)]
+      sat_lipid_dbl <- feature_table$lipid[feature_table$lipid_class == a &
+                                             feature_table$unsat_1 == 0 &
+                                             feature_table$unsat_2 == 0]
+      unsat_lipid_dbl <- feature_table$lipid[feature_table$lipid_class == a &
+                                               feature_table$unsat_1 != 0 &
+                                               feature_table$unsat_2 != 0]
+    }
+
+    # get data per lipid class
+    lipid_data <- data_table[, colnames(data_table) %in% feature_table$lipid[feature_table$lipid_class == a], drop = FALSE]
+    # saturated
+    lipid_data_sat <- lipid_data[, colnames(lipid_data) %in% c(sat_lipid, sat_lipid_dbl), drop = FALSE]
+    lipid_data_sat[, colnames(lipid_data_sat) %in% sat_lipid_dbl] <- lipid_data_sat[, colnames(lipid_data_sat) %in% sat_lipid_dbl] * 2
+    # # if contains 2x FA tail multiply by 2
+    lipid_data_unsat <- lipid_data[, colnames(lipid_data) %in% c(unsat_lipid, unsat_lipid_dbl), drop = FALSE]
+    lipid_data_unsat[, colnames(lipid_data_unsat) %in% unsat_lipid_dbl] <- lipid_data_unsat[, colnames(lipid_data_unsat) %in% unsat_lipid_dbl] * 2
+
+    # calculate the SI index
+    tot_lipids[[a]][["tot_sat"]] <- rowSums(lipid_data_sat, na.rm = TRUE)
+    tot_lipids[[a]][["tot_unsat"]] <- rowSums(lipid_data_unsat, na.rm = TRUE)
+    tot_lipids[[a]][["SI"]] <- tot_lipids[[a]][["tot_sat"]] / tot_lipids[[a]][["tot_unsat"]]
+
+  }
+
+  # make data.frame
+  tot_lipids <- do.call("cbind.data.frame", lapply(tot_lipids, function(x) {
+    x["SI"]
+  }))
+  names(tot_lipids) <- lipid_classes
+
+  return(tot_lipids)
+}
+
+# use all FA tails for the calculation of the overall SI index
+satindex_calc_overall <- function(data_table = NULL,
+                                  feature_table = NULL,
+                                  sample_meta = NULL) {
+  # the feature table doesn't contain a column lipids fix here
+  feature_table$lipid <- rownames(feature_table)
+
+  # leave TG's and PA's out
+  sat_lipid <- feature_table$lipid[!(feature_table$lipid_class %in% c("TG", "PA")) &
+                                     (feature_table$unsat_1 == 0 |
+                                        feature_table$unsat_2 == 0)]
+  unsat_lipid <- feature_table$lipid[!(feature_table$lipid_class %in% c("TG", "PA")) &
+                                       (feature_table$unsat_1 != 0 |
+                                          feature_table$unsat_2 != 0)]
+  sat_lipid_dbl <- feature_table$lipid[!(feature_table$lipid_class %in% c("TG", "PA")) &
+                                         feature_table$unsat_1 == 0 &
+                                         feature_table$unsat_2 == 0]
+  unsat_lipid_dbl <- feature_table$lipid[!(feature_table$lipid_class %in% c("TG", "PA")) &
+                                           feature_table$unsat_1 != 0 &
+                                           feature_table$unsat_2 != 0]
+  # with TG's
+  sat_lipid_TG <- feature_table$lipid[feature_table$lipid_class == "TG" &
+                                        feature_table$unsat_2 == 0]
+  unsat_lipid_TG <- feature_table$lipid[feature_table$lipid_class == "TG" &
+                                          feature_table$unsat_2 != 0]
+
+  # with PA's
+  sat_lipid_PA <- feature_table$lipid[feature_table$lipid_class == "PA" &
+                                        feature_table$unsat_2 == 0]
+  unsat_lipid_PA <- feature_table$lipid[feature_table$lipid_class == "PA" &
+                                          feature_table$unsat_2 != 0]
+  # saturated
+  lipid_data_sat <- data_table[, colnames(data_table) %in% Reduce("union", list(sat_lipid, sat_lipid_dbl, sat_lipid_TG, sat_lipid_PA)), drop = FALSE]
+  if(length(sat_lipid_dbl) > 0 ) {
+    lipid_data_sat[, colnames(lipid_data_sat) %in% sat_lipid_dbl] <- lipid_data_sat[, colnames(lipid_data_sat) %in% sat_lipid_dbl, drop = FALSE] * 2
+  }
+
+  # unsaturated
+  lipid_data_unsat <- data_table[, colnames(data_table) %in% Reduce("union", list(unsat_lipid, unsat_lipid_dbl, unsat_lipid_TG, unsat_lipid_PA)), drop = FALSE]
+  if(length(unsat_lipid_dbl) > 0 ) {
+    lipid_data_unsat[, colnames(lipid_data_unsat) %in% unsat_lipid_dbl] <- lipid_data_unsat[, colnames(lipid_data_unsat) %in% unsat_lipid_dbl, drop = FALSE] * 2
+  }
+
+  SI_index_overall <- rowSums(lipid_data_sat, na.rm = TRUE) / rowSums(lipid_data_unsat, na.rm = TRUE)
+
+  tot_lipids <- data.frame(SI = SI_index_overall)
+
+  return(tot_lipids)
+}
+
+satindex_calc_db <- function(data_table = NULL,
+                             feature_table = NULL,
+                             sample_meta = NULL,
+                             group_col = NULL,
+                             group_1 = NULL,
+                             group_2 = NULL,
+                             selected_lipid_class = NULL) {
+  # get only the selected lipid class
+  class_data <- feature_table[feature_table$lipid_class == selected_lipid_class, ]
+
+  # which saturations are there
+  saturation <- sort(unique(class_data$unsat_sum))
+
+  groups <- c(group_1, group_2)
+
+  # initialize some things
+  db_data <- vector(mode = "list",
+                    length = length(saturation))
+  names(db_data) <- as.character(saturation)
+
+  db_data <- lapply(db_data, function(x) {
+    setNames(data.frame(group1 = rep(NA, 1),
+                        group2 = rep(NA, 1),
+                        doubleBond = rep(NA, 1),
+                        foldChange = rep(NA, 1)),
+             c(group_1, group_2, "doubleBond", "foldChange"))
+  })
+
+  # do the calculations
+  for(a in saturation) {
+    for(b in groups) {
+      # get the correct lipids
+      sel_lipids <- rownames(class_data)[class_data$unsat_sum == a]
+      # get the correct samples
+      sel_samples <- rownames(sample_meta)[sample_meta[, group_col] == b]
+      # calculate the average over the samples after summing the lipid species
+      db_data[[as.character(a)]][[b]] <- mean(rowSums(data_table[rownames(data_table) %in% sel_samples,
+                                                                 colnames(data_table) %in% sel_lipids,
+                                                                 drop = FALSE],
+                                                      na.rm = TRUE),
+                                              na.rm = TRUE)
+    }
+    db_data[[as.character(a)]][["foldChange"]] <- db_data[[as.character(a)]][[1]] / db_data[[as.character(a)]][[2]]
+    db_data[[as.character(a)]][["doubleBond"]] <- a
+  }
+
+  # make one nice data.frame
+  db_data <- do.call(rbind.data.frame, db_data)
+  db_data$doubleBond <- as.factor(db_data$doubleBond)
+
+  return(db_data)
 }
