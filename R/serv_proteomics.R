@@ -1821,8 +1821,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('gsea_go'),
                 label = 'Terms',
-                choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)'),
-                selected = 'Gene ontology (ALL)'
+                choices = r6$hardcoded_settings$enrichment_analysis$terms,
+                selected = NULL
               )
             ),
             shiny::column(
@@ -1830,8 +1830,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('gsea_adjustment'),
                 label = 'Adjustment',
-                choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                selected = 'BH'
+                choices = r6$hardcoded_settings$enrichment_analysis$adjustment,
+                selected = NULL
               )
             )
           ),
@@ -1891,8 +1891,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('or_go_ont'),
                 label = 'Terms',
-                choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)'),
-                selected = 'Gene ontology (ALL)',
+                choices = r6$hardcoded_settings$over_representation_analysis$terms,
+                selected = NULL,
                 width = '100%'
               )
             ),
@@ -1901,8 +1901,8 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
               shiny::selectInput(
                 inputId = ns('or_pval_adjustment'),
                 label = 'Adjustment',
-                choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
-                selected = "BH",
+                choices = r6$hardcoded_settings$over_representation_analysis$adjustment,
+                selected = NULL,
                 width = '100%'
               )
             )
@@ -2007,12 +2007,12 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
 
       shiny::updateSelectInput(
         inputId = 'gsea_go',
-        choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)', names(r6$tables$feature_list))
+        choices = unique(c(r6$hardcoded_settings$enrichment_analysis$terms, names(r6$tables$feature_list)))
       )
 
       shiny::updateSelectInput(
         inputId = 'or_go_ont',
-        choices = c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)', names(r6$tables$feature_list))
+        choices = unique(c(r6$hardcoded_settings$over_representation_analysis$terms, names(r6$tables$feature_list)))
       )
 
     }

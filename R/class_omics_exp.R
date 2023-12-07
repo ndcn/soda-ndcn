@@ -2,12 +2,23 @@
 Omics_exp = R6::R6Class(
   "Omics_exp",
   public = list(
-    initialize = function(name, type = NA, id = NA, slot = NA, preloaded = F){
+    initialize = function(name, type = NA, id = NA, slot = NA, preloaded = F, param_file = NULL){
       self$name = name
       self$type = type
       self$id = id
       self$slot = slot
       self$preloaded_data = preloaded
+      if (!is.null(param_file) & file.exists(param_file)) {
+
+        tryCatch({
+          params = base::dget(param_file)
+          self$params = params$params
+          self$hardcoded_settings = params$hardcoded_settings
+        },
+        error = function(e) {
+          message("Error in reading the parameter file, default parameters kept: ", e$message)
+        })
+      }
     },
     #--------------------------------------------------------------- Global ----
     name = NA,
@@ -243,6 +254,24 @@ Omics_exp = R6::R6Class(
         enable_physics = FALSE
       )
 
+    ),
+
+    hardcoded_settings = list(
+
+      enrichment_analysis = list(
+        terms = c('Gene ontology (ALL)',
+                  'Gene ontology (BP)',
+                  'Gene ontology (MF)',
+                  'Gene ontology (CC)'),
+        adjustment = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")
+      ),
+      over_representation_analysis = list(
+        terms = c('Gene ontology (ALL)',
+                  'Gene ontology (BP)',
+                  'Gene ontology (MF)',
+                  'Gene ontology (CC)'),
+        adjustment = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")
+      )
     ),
 
 

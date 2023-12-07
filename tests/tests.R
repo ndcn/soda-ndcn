@@ -207,7 +207,8 @@ pheatmap(correlation_data)
 
 self = example_proteomics(name = 'prot_1',
                           data = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/proteomics_2.tsv',
-                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/metadata.csv')
+                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/metadata.csv',
+                          param_file = './R/params/params_gene_based_omics.R')
 
 
 self$add_feature_table(name = 'feat_1',
@@ -217,6 +218,21 @@ self$add_feature_table(name = 'feat_1',
 
 self$derive_data_tables()
 
+self$hardcoded_settings$enrichment_analysis$terms
+self$hardcoded_settings$enrichment_analysis$adjustment
+
+#---- Save params method ----
+parameter_file = list(params = self$params,
+
+                      hardcoded_settings = self$hardcoded_settings)
+
+
+base::dput(parameter_file, file = 'prot_1_params.R')
+
+
+names(params_list)
+params_list$class_comparison
+#---- Save params method ----
 
 auto_refresh = T
 data_table = self$tables$z_scored_total_norm_data

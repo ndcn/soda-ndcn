@@ -50,11 +50,11 @@ feature_table_cols_switch = function(col) {
 
 r6_switch = function(exp_type, name, id, slot){
   switch(EXPR = exp_type,
-         "Lipidomics" = Omics_exp$new(name = name, type = "Lipidomics",id = id, slot = slot),
-         "Metabolomics" = Omics_exp$new(name = name, type = "Metabolomics",id = id, slot = slot),
-         "Proteomics" = Omics_exp$new(name = name, type = "Proteomics",id = id, slot = slot),
-         "Transcriptomics" = Omics_exp$new(name = name, type = "Transcriptomics",id = id, slot = slot),
-         "Genomics" = Omics_exp$new(name = name, type = "Genomics",id = id, slot = slot)
+         "Lipidomics" = Omics_exp$new(name = name, type = "Lipidomics",id = id, slot = slot, param_file = './R/params/params_lipidomics.R'),
+         "Metabolomics" = Omics_exp$new(name = name, type = "Metabolomics",id = id, slot = slot, param_file = './R/params/params_metabolomics.R'),
+         "Proteomics" = Omics_exp$new(name = name, type = "Proteomics",id = id, slot = slot, param_file = './R/params/params_gene_based_omics.R'),
+         "Transcriptomics" = Omics_exp$new(name = name, type = "Transcriptomics",id = id, slot = slot, param_file = './R/params/params_gene_based_omics.R'),
+         "Genomics" = Omics_exp$new(name = name, type = "Genomics",id = id, slot = slot, param_file = './R/params/params_gene_based_omics.R')
 
   )
 }
@@ -1234,12 +1234,12 @@ get_fc_and_pval = function(data_table, idx_group_1, idx_group_2, used_function, 
 
 
 #--------------------------------------------------------- Example datasets ----
-example_lipidomics = function(name, id = NA, slot = NA, data = './examples/multiomics/lipidomics.csv', meta = './examples/multiomics/lipidomics_metadata.csv') {
+example_lipidomics = function(name, id = NA, slot = NA, data = './examples/multiomics/lipidomics.csv', meta = './examples/multiomics/lipidomics_metadata.csv', param_file = NULL) {
 
   lips_data = soda_read_table(data)
   meta_data = soda_read_table(meta)
 
-  r6 = Omics_exp$new(name = name, type = "Lipidomics", id = id, slot = slot, preloaded = T)
+  r6 = Omics_exp$new(name = name, type = "Lipidomics", id = id, slot = slot, preloaded = T, param_file = param_file)
 
   r6$tables$imp_meta = meta_data
   r6$tables$imp_data = lips_data
@@ -1294,11 +1294,11 @@ example_lipidomics = function(name, id = NA, slot = NA, data = './examples/multi
   return(r6)
 }
 
-example_proteomics = function(name = 'prot_example', id = NA, slot = NA, data = './examples/multiomics/proteomics_2.tsv', meta = './examples/multiomics/metadata.csv') {
+example_proteomics = function(name = 'prot_example', id = NA, slot = NA, data = './examples/multiomics/proteomics_2.tsv', meta = './examples/multiomics/metadata.csv', param_file = NULL) {
   prot_data = soda_read_table(data)
   meta_data = soda_read_table(meta)
 
-  r6 = Omics_exp$new(name = name, type = "Proteomics", id = id, slot = slot, preloaded = T)
+  r6 = Omics_exp$new(name = name, type = "Proteomics", id = id, slot = slot, preloaded = T, param_file = param_file)
 
   r6$tables$imp_meta = meta_data
   r6$tables$imp_data = prot_data
@@ -1356,11 +1356,11 @@ example_proteomics = function(name = 'prot_example', id = NA, slot = NA, data = 
   return(r6)
 }
 
-example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA, data = './examples/multiomics/transcriptomics_2_genename_test.tsv', meta = './examples/multiomics/metadata.csv') {
+example_transcriptomics = function(name = 'trns_example', id = NA, slot = NA, data = './examples/multiomics/transcriptomics_2_genename_test.tsv', meta = './examples/multiomics/metadata.csv', param_file = NULL) {
   trns_data = soda_read_table(data)
   meta_data = soda_read_table(meta)
 
-  r6 = Omics_exp$new(name = name, type = "Transcriptomics", id = id, slot = slot, preloaded = T)
+  r6 = Omics_exp$new(name = name, type = "Transcriptomics", id = id, slot = slot, preloaded = T, param_file = param_file)
 
   r6$tables$imp_meta = meta_data
   r6$tables$imp_data = trns_data
