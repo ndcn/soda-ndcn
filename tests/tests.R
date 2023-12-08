@@ -9,9 +9,12 @@ base::source('./R/complex_functions/volcano.R')
 
 self = example_lipidomics(name = 'lips_1',
                           data = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics.csv',
-                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics_metadata.csv')
+                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics_metadata.csv',
+                          param_file = './R/params/params_lipidomics.R')
 
 self$derive_data_tables()
+
+
 
 self$plot_samples_correlation(data_table = self$tables$z_scored_total_norm_data,
                               impute = self$params$samples_correlation$impute,

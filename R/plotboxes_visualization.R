@@ -11,10 +11,7 @@ class_distribution_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$plot_class_distribution(table = table_switch(input$class_distribution_dataset, r6),
-                             group_col = input$class_distribution_metacol,
-                             colour_list = colour_list,
-                             width = width,
+  r6$plot_class_distribution(width = width,
                              height = height)
 }
 
@@ -62,6 +59,19 @@ class_distribution_server = function(r6, output, session) {
         choices = colnames(r6$tables$raw_meta),
         selected = r6$params$class_distribution$group_col
       ),
+
+      shiny::selectizeInput(
+        inputId = ns('class_distribution_color_palette'),
+        label = "Feature metadata colors",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$class_distribution$color_palette,
+        multiple = FALSE
+      ),
+
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("class_distribution_img_format"),
@@ -84,11 +94,12 @@ class_distribution_events = function(r6, dimensions_obj, color_palette, input, o
 
 
   # Generate the plot
-  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol, input$class_distribution_img_format), {
+  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol, input$class_distribution_color_palette, input$class_distribution_img_format), {
     print_tm(r6$name, "Class distribution: Updating params...")
 
     r6$param_class_distribution(dataset = input$class_distribution_dataset,
                                 group_col = input$class_distribution_metacol,
+                                color_palette = input$class_distribution_color_palette,
                                 img_format = input$class_distribution_img_format)
 
     base::tryCatch({
