@@ -989,7 +989,7 @@ samples_correlation_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("samples_correlation_dataset"),
         label = "Select dataset",
-        choices = c('Z-scored table'),
+        choices = r6$hardcoded_settings$samples_correlation$datasets,
         selected = r6$params$samples_correlation$dataset
       ),
 
@@ -1207,7 +1207,7 @@ feature_correlation_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("feature_correlation_dataset"),
         label = "Select dataset",
-        choices = c('Z-scored table'),
+        choices = r6$hardcoded_settings$feature_correlation$datasets,
         selected = r6$params$feature_correlation$dataset
       ),
       shiny::selectInput(
@@ -1491,7 +1491,7 @@ pca_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("pca_data_table"),
         label = "Select dataset",
-        choices = c('Z-scored table', 'Class table z-scored', 'Z-scored total normalized table'),
+        choices = r6$hardcoded_settings$pca$datasets,
         selected = r6$params$pca$data_table
       ),
       shiny::selectInput(
@@ -1664,7 +1664,7 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
 
 
     r6$param_pca(auto_refresh = input$pca_auto_refresh,
-                 data_table = table_name_switch(input$pca_data_table),
+                 data_table = input$pca_data_table,
                  sample_groups_col = input$pca_sample_groups_col,
                  feature_groups_col = feature_metadata,
                  apply_da = input$pca_apply_da,
@@ -1677,6 +1677,7 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
                  displayed_plots = input$pca_displayed_plots,
                  colors_palette = input$pca_colors_palette,
                  img_format = input$pca_img_format)
+
 
     base::tryCatch({
       pca_generate(r6, color_palette, dimensions_obj, input)
@@ -1868,7 +1869,7 @@ double_bonds_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("double_bonds_dataset"),
         label = "Select data table",
-        choices = c("Raw data table", "Class normalized table", "Total normalized table"),
+        choices = r6$hardcoded_settings$db_plot$datasets,
         selected = r6$params$db_plot$dataset
       ),
       shiny::selectInput(

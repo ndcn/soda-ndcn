@@ -16,6 +16,14 @@ list(params = list(
           'Class table z-scored'
         )
       ),
+      pca = list(
+        datasets = list(
+          'Z-scored table',
+          'Z-scored total normalized table',
+          'Class table z-scored',
+          'Class table z-scored total normalized'
+        )
+      ),
         enrichment_analysis = list(
             terms = NULL,
             adjustment = NULL),

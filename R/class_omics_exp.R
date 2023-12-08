@@ -295,6 +295,37 @@ Omics_exp = R6::R6Class(
           'Class table z-scored'
         )
       ),
+      samples_correlation = list(
+        datasets = list(
+          "Raw data table",
+          "Total normalized table",
+          'Z-scored table',
+          'Z-scored total normalized table'
+        )
+      ),
+      feature_correlation = list(
+        datasets = list(
+          "Raw data table",
+          "Total normalized table",
+          'Z-scored table',
+          'Z-scored total normalized table'
+        )
+      ),
+
+      pca = list(
+        datasets = list(
+          'Z-scored table',
+          'Z-scored total normalized table'
+        )
+      ),
+      db_plot = list(
+        datasets = list(
+          "Raw data table",
+          "Class normalized table",
+          "Total normalized table"
+        )
+      ),
+
       enrichment_analysis = list(
         terms = c('Gene ontology (ALL)',
                   'Gene ontology (BP)',
@@ -1868,7 +1899,7 @@ Omics_exp = R6::R6Class(
     },
 
     ## Sample correlation plot
-    plot_samples_correlation = function(data_table = self$tables$z_scored_total_norm_data,
+    plot_samples_correlation = function(data_table = self$params$samples_correlation$dataset,
                                         meta_table = self$tables$raw_meta,
                                         correlation_method = self$params$samples_correlation$correlation_method,
                                         use = self$params$samples_correlation$use,
@@ -1881,7 +1912,7 @@ Omics_exp = R6::R6Class(
                                         width = NULL,
                                         height = NULL) {
 
-
+      data_table = self$table_check_convert(data_table)
 
       # Set the clustering
       if (cluster_rows & cluster_cols) {
@@ -1968,7 +1999,7 @@ Omics_exp = R6::R6Class(
     },
 
     ## Feature correlation plot
-    plot_feature_correlation = function(data_table = self$tables$z_scored_total_norm_data,
+    plot_feature_correlation = function(data_table = self$params$feature_correlation$dataset,
                                         meta_table = self$tables$feature_table,
                                         map_feature_terms = self$params$feature_correlation$map_feature_terms,
                                         correlation_method = self$params$feature_correlation$correlation_method,
@@ -1984,7 +2015,7 @@ Omics_exp = R6::R6Class(
                                         width = NULL,
                                         height = NULL) {
 
-
+      data_table = self$table_check_convert(data_table)
 
       # Set the clustering
       if (cluster_rows & cluster_cols) {
@@ -2090,7 +2121,7 @@ Omics_exp = R6::R6Class(
     },
 
     ## PCA scores and loading plots
-    plot_pca = function(data_table = self$tables[[self$params$pca$data_table]],
+    plot_pca = function(data_table = self$params$pca$data_table,
                         meta_table = self$tables$raw_meta,
                         feature_table = self$tables$feature_table,
                         sample_groups_col = self$params$pca$sample_groups_col,
@@ -2107,6 +2138,8 @@ Omics_exp = R6::R6Class(
                         return_data = TRUE,
                         width = NULL,
                         height = NULL) {
+
+      data_table = self$table_check_convert(data_table)
 
       alpha_da = as.numeric(alpha_da)
       nPcs= as.numeric(nPcs)
@@ -2174,13 +2207,16 @@ Omics_exp = R6::R6Class(
     },
 
     ## Double bond plot
-    plot_doublebonds_single = function(data_table = self$tables$dbplot_table,
+    plot_doublebonds_single = function(data_table = self$params$db_plot$dataset,
                                        lipid_class = self$params$db_plot$selected_lipid_class,
                                        carbon_selection = self$params$db_plot$selected_carbon_chain,
                                        unsat_selection = self$params$db_plot$selected_unsat,
                                        group_1 = self$params$db_plot$selected_groups[1],
                                        width = NULL,
                                        height = NULL){
+
+      data_table = self$table_check_convert(data_table)
+
       x_label = carbon_selection
       y_label = unsat_selection
       carbon_selection = feature_table_cols_switch(carbon_selection)
