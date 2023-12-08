@@ -62,7 +62,7 @@ class_distribution_server = function(r6, output, session) {
 
       shiny::selectizeInput(
         inputId = ns('class_distribution_color_palette'),
-        label = "Feature metadata colors",
+        label = "Color palette",
         choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
                     'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
                     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
@@ -155,12 +155,7 @@ class_comparison_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-
-
-  r6$plot_class_comparison(data_table = table_switch(input$class_comparison_dataset, r6),
-                           group_col = input$class_comparison_metacol,
-                           colour_list = colour_list,
-                           width = width,
+  r6$plot_class_comparison(width = width,
                            height = height)
 }
 class_comparison_spawn = function(r6, format, output) {
@@ -202,6 +197,17 @@ class_comparison_server = function(r6, output, session) {
         choices = colnames(r6$tables$raw_meta),
         selected = r6$params$class_comparison$group_col
       ),
+      shiny::selectizeInput(
+        inputId = ns('class_comparison_color_palette'),
+        label = "Color palette",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$class_comparison$color_palette,
+        multiple = FALSE
+      ),
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("class_comparison_img_format"),
@@ -220,11 +226,12 @@ class_comparison_server = function(r6, output, session) {
 class_comparison_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
   # Generate the plot
-  shiny::observeEvent(c(input$class_comparison_dataset, input$class_comparison_metacol, input$class_comparison_img_format), {
+  shiny::observeEvent(c(input$class_comparison_dataset, input$class_comparison_metacol, input$class_comparison_color_palette, input$class_comparison_img_format), {
     print_tm(r6$name, "Class comparison: Updating params...")
 
     r6$param_class_comparison(dataset = input$class_comparison_dataset,
                               group_col = input$class_comparison_metacol,
+                              color_palette = input$class_comparison_color_palette,
                               img_format = input$class_comparison_img_format)
 
     base::tryCatch({
