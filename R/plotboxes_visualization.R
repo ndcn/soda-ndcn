@@ -339,7 +339,7 @@ volcano_plot_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("volcano_plot_tables"),
         label = "Select data table",
-        choices = c("Raw data table", "Class normalized table", "Total normalized table"),
+        choices = r6$hardcoded_settings$volcano_plot$datasets,
         selected = r6$params$volcano_plot$data_table
       ),
       shiny::selectInput(
@@ -686,7 +686,7 @@ heatmap_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("heatmap_dataset"),
         label = "Select dataset",
-        choices = c('Z-scored table', 'Class table z-scored'),
+        choices = r6$hardcoded_settings$heatmap$datasets,
         selected = r6$params$heatmap$dataset
       ),
 

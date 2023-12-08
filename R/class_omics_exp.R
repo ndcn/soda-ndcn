@@ -8,16 +8,37 @@ Omics_exp = R6::R6Class(
       self$id = id
       self$slot = slot
       self$preloaded_data = preloaded
-      if (!is.null(param_file) & file.exists(param_file)) {
 
-        tryCatch({
-          params = base::dget(param_file)
-          self$params = params$params
-          self$hardcoded_settings = params$hardcoded_settings
-        },
-        error = function(e) {
-          message("Error in reading the parameter file, default parameters kept: ", e$message)
-        })
+      if (!is.null(param_file)) {
+        if (file.exists(param_file)){
+          tryCatch({
+            params = base::dget(param_file)
+            # Regular params
+            for (p1 in names(params$params)) {
+              if (p1 %in% names(self$params)){
+                for (p2 in names(params$params[[p1]])){
+                  if (p2 %in% names(self$params[[p1]])){
+                    self$params[[p1]][[p2]] = params$params[[p1]][[p2]]
+                  }
+                }
+              }
+            }
+
+            # Settings
+            for (p1 in names(params$hardcoded_settings)) {
+              if (p1 %in% names(self$hardcoded_settings)){
+                for (p2 in names(params$hardcoded_settings[[p1]])) {
+                  if (p2 %in% names(self$hardcoded_settings[[p1]])) {
+                    self$hardcoded_settings[[p1]][[p2]] = params$hardcoded_settings[[p1]][[p2]]
+                  }
+                }
+              }
+            }
+          },
+          error = function(e) {
+            message("Error in reading the parameter file, default parameters kept: ", e$message)
+          })
+        }
       }
     },
     #--------------------------------------------------------------- Global ----
@@ -260,6 +281,20 @@ Omics_exp = R6::R6Class(
 
     hardcoded_settings = list(
 
+      volcano_plot = list(
+        datasets = list(
+          "Raw data table",
+          "Class normalized table",
+          "Total normalized table"
+        )
+      ),
+      heatmap = list(
+        datasets = list(
+          'Z-scored table',
+          'Z-scored total normalized table',
+          'Class table z-scored'
+        )
+      ),
       enrichment_analysis = list(
         terms = c('Gene ontology (ALL)',
                   'Gene ontology (BP)',
@@ -423,6 +458,12 @@ Omics_exp = R6::R6Class(
     ),
 
     #---------------------------------------------------- Parameter methods ----
+
+    export_params= function(file_name) {
+      parameter_file = list(params = self$params,
+                            hardcoded_settings = self$hardcoded_settings)
+      base::dput(parameter_file, file = file_name)
+    },
 
     param_class_distribution = function(dataset, group_col, color_palette, img_format) {
       self$params$class_distribution$dataset = dataset
@@ -1648,6 +1689,8 @@ Omics_exp = R6::R6Class(
                             width = NULL,
                             height = NULL){
 
+      data_table = self$table_check_convert(data_table)
+
       p_val_threshold = as.numeric(p_val_threshold)
       fc_threshold = as.numeric(fc_threshold)
       marker_size = as.numeric(marker_size)
@@ -1700,7 +1743,7 @@ Omics_exp = R6::R6Class(
     },
 
     ## Heatmap plot
-    plot_heatmap = function(data_table = self$tables$z_scored_total_norm_data,
+    plot_heatmap = function(data_table = self$params$heatmap$dataset,
                             impute = self$params$heatmap$impute,
                             meta_table = self$tables$raw_meta,
                             meta_table_features = self$tables$feature_table,
@@ -1717,6 +1760,7 @@ Omics_exp = R6::R6Class(
                             width = NULL,
                             height = NULL) {
 
+      data_table = self$table_check_convert(data_table)
 
       if (apply_da) {
         data_table = apply_discriminant_analysis(data_table = data_table,

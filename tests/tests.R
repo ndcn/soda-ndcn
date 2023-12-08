@@ -12,8 +12,26 @@ self = example_lipidomics(name = 'lips_1',
                           meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics_metadata.csv',
                           param_file = './R/params/params_lipidomics.R')
 
+
 self$derive_data_tables()
 
+
+data_table = 'Class table z-scored'
+impute = self$params$heatmap$impute
+meta_table = self$tables$raw_meta
+meta_table_features = self$tables$feature_table
+cluster_rows = self$params$heatmap$cluster_samples
+cluster_cols = self$params$heatmap$cluster_features
+row_annotations = self$params$heatmap$map_sample_data
+col_annotations = self$params$heatmap$map_feature_data
+map_feature_terms = self$params$heatmap$map_feature_terms
+apply_da = self$params$heatmap$apply_da
+group_column_da = self$params$heatmap$group_column_da
+alpha_da = self$params$heatmap$alpha_da
+color_palette = self$params$heatmap$color_palette
+reverse_palette = self$params$heatmap$reverse_palette
+width = NULL
+height = NULL
 
 
 self$plot_samples_correlation(data_table = self$tables$z_scored_total_norm_data,
@@ -214,6 +232,8 @@ self = example_proteomics(name = 'prot_1',
                           param_file = './R/params/params_gene_based_omics.R')
 
 
+self$hardcoded_settings$volcano_plot$datasets
+
 self$add_feature_table(name = 'feat_1',
                        feature_file = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/231023_feature_tables/proteomics_feat_annotation_clean.tsv')
 
@@ -225,12 +245,8 @@ self$hardcoded_settings$enrichment_analysis$terms
 self$hardcoded_settings$enrichment_analysis$adjustment
 
 #---- Save params method ----
-parameter_file = list(params = self$params,
-
-                      hardcoded_settings = self$hardcoded_settings)
 
 
-base::dput(parameter_file, file = 'prot_1_params.R')
 
 
 names(params_list)
