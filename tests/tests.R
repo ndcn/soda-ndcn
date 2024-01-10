@@ -8,8 +8,8 @@ base::source('./R/complex_functions/volcano.R')
 #---------------------------------------------------- LIPIDOMICS TEST APO-E ----
 
 self = example_lipidomics(name = 'lips_1',
-                          data = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics.csv',
-                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics_metadata.csv',
+                          data = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics.csv',
+                          meta = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/lipidomics_metadata.csv',
                           param_file = './R/params/params_lipidomics.R')
 
 

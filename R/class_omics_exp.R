@@ -974,7 +974,7 @@ Omics_exp = R6::R6Class(
     },
 
     get_blank_table = function() {
-      blank_idx = which(self$tables$imp_meta[self$indices$idx_blanks,self$indices$id_col_data] %in% self$tables$imp_data[,self$indices$id_col_meta])
+      blank_idx = which(self$tables$imp_data[,self$indices$id_col_meta] %in% self$tables$imp_meta[self$indices$idx_blanks,self$indices$id_col_data])
       blank_table = self$tables$imp_data[blank_idx,]
       rownames(blank_table) = blank_table[,self$indices$id_col_data]
       blank_table[,self$indices$id_col_data] = NULL
