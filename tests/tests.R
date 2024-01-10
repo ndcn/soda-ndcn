@@ -16,210 +16,13 @@ self = example_lipidomics(name = 'lips_1',
 self$derive_data_tables()
 
 
-data_table = 'Class table z-scored'
-impute = self$params$heatmap$impute
-meta_table = self$tables$raw_meta
-meta_table_features = self$tables$feature_table
-cluster_rows = self$params$heatmap$cluster_samples
-cluster_cols = self$params$heatmap$cluster_features
-row_annotations = self$params$heatmap$map_sample_data
-col_annotations = self$params$heatmap$map_feature_data
-map_feature_terms = self$params$heatmap$map_feature_terms
-apply_da = self$params$heatmap$apply_da
-group_column_da = self$params$heatmap$group_column_da
-alpha_da = self$params$heatmap$alpha_da
-color_palette = self$params$heatmap$color_palette
-reverse_palette = self$params$heatmap$reverse_palette
-width = NULL
-height = NULL
 
-
-self$plot_samples_correlation(data_table = self$tables$z_scored_total_norm_data,
-                              impute = self$params$samples_correlation$impute,
-                              meta_table = self$tables$raw_meta,
-                              correlation_method = self$params$samples_correlation$correlation_method,
-                              use = self$params$samples_correlation$use,
-                              cluster_cols = self$params$samples_correlation$cluster_cols,
-                              cluster_rows = self$params$samples_correlation$cluster_rows,
-                              row_annotations = self$params$samples_correlation$row_annotations,
-                              col_annotations = self$params$samples_correlation$col_annotations,
-                              color_palette = 'RdYlGn',
+self$plot_samples_correlation(color_palette = 'RdYlGn',
                               reverse_palette = T,
                               width = NULL,
                               height = NULL)
 self$plots$samples_correlation
 
-data_table = self$tables$z_scored_total_norm_data
-
-
-samples_correlation = list(
-  auto_refresh = T,
-  dataset = 'Z-scored total normalized table',
-  impute = T,
-  correlation_method = "pearson",
-  use = 'pairwise.complete.obs',
-  cluster_cols = T,
-  cluster_rows = T,
-  row_annotations = 'Group_type',
-  col_annotations = 'Group_type',
-  color_palette = 'RdYlBu',
-  reverse_palette = F,
-  img_format = "png"
-)
-
-data_table = self$tables$z_scored_total_norm_data
-meta_table = self$tables$raw_meta
-auto_refresh = T
-dataset = 'Z-scored total normalized table'
-impute = T
-correlation_method = "pearson"
-use = 'pairwise.complete.obs'
-cluster_cols = T
-cluster_rows = T
-row_annotations = NULL
-col_annotations = NULL
-color_palette = 'RdYlBu'
-reverse_palette = F
-img_format = "png"
-
-## Sample correlation plot
-plot_samples_correlation = function(data_table = self$tables$z_scored_total_norm_data,
-                        impute = self$params$samples_correlation$impute,
-                        meta_table = self$tables$raw_meta,
-                        correlation_method = self$params$samples_correlation$correlation_method,
-                        use = self$params$samples_correlation$use,
-                        cluster_cols = self$params$samples_correlation$cluster_cols,
-                        cluster_rows = self$params$samples_correlation$cluster_rows,
-                        row_annotations = self$params$samples_correlation$row_annotations,
-                        col_annotations = self$params$samples_correlation$col_annotations,
-                        color_palette = self$params$samples_correlation$color_palette,
-                        reverse_palette = self$params$samples_correlation$reverse_palette,
-                        width = NULL,
-                        height = NULL) {
-
-
-
-  # Set the clustering
-  if (cluster_rows & cluster_cols) {
-    dendrogram_list = "both"
-  } else if (cluster_rows) {
-    dendrogram_list = "column" # Because of the transpose, rows => cols
-  } else if (cluster_cols) {
-    dendrogram_list = "row" # Because of the transpose, cols => rows
-  } else {
-    dendrogram_list = "none"
-  }
-
-  data_table = stats::cor(x = t(data_table),
-                          y = NULL,
-                          use = use,
-                          method = correlation_method)
-
-  # diag(data_table) = 0
-
-  # Set zmax and zmin
-  val_list = as.vector(data_table)
-  val_list = na.omit(val_list)
-  val_list = sort(val_list)
-
-  zmax = min(c(abs(min(val_list)), max(val_list)))
-  zmin = -zmax
-
-  # Filter out the data
-  data_table[data_table > zmax] = zmax
-  data_table[data_table < zmin] = zmin
-
-  # Annotations
-  if (!is.null(row_annotations)) {
-    if (length(row_annotations) > 1) {
-      row_annotations = meta_table[, row_annotations]
-      colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
-    } else {
-      row_names = row_annotations
-      row_annotations = as.data.frame(meta_table[, row_annotations],
-                                      row.names = rownames(meta_table))
-      colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
-    }
-  }
-
-  if (!is.null(col_annotations)) {
-    if (length(col_annotations) > 1) {
-      col_annotations = meta_table[, col_annotations]
-      colnames(col_annotations) = stringr::str_replace_all(colnames(col_annotations), "_", " ")
-    } else {
-      row_names = col_annotations
-      col_annotations = as.data.frame(meta_table[, col_annotations],
-                                      row.names = rownames(meta_table))
-      colnames(col_annotations) = stringr::str_replace_all(row_names, "_", " ")
-    }
-  }
-
-
-
-
-  # Save table as heatmap table
-  self$tables$samples_correlation = data_table
-
-  # Get the color palette
-  color_count = colors_switch(color_palette)
-  color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
-  color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
-  if (reverse_palette) {
-    color_palette = base::rev(color_palette)
-  }
-
-  # Plot the data
-  self$plots$samples_correlation = heatmaply::heatmaply(x = t(data_table),
-                                                        scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                                          low = color_palette[3],
-                                                          mid = color_palette[2],
-                                                          high = color_palette[1],
-                                                          midpoint = 0,
-                                                          limits = c(zmin, zmax)
-                                                        ),
-                                                        width = width,
-                                                        height = height,
-                                                        limits = c(zmin, zmax),
-                                                        col_side_colors = row_annotations,
-                                                        row_side_colors = col_annotations,
-                                                        dendrogram = dendrogram_list)
-
-},
-
-roh_lim = 0.85
-diag(data_table) = 0
-max_abs_values = apply(data_table, 1, function(x) max(abs(x), na.rm = T))
-roh_filter = unname(which(max_abs_values >= roh_lim))
-length(roh_filter)
-length(max_abs_values)
-data_table = data_table[roh_filter, roh_filter]
-
-
-
-correlation_method = c("pearson", "kendall", "spearman")[3]
-use = 'pairwise.complete.obs' # c("everything", "all.obs", "complete.obs", "na.or.complete", or "pairwise.complete.obs")
-roh_lim = 0.95
-
-correlation_data = stats::cor(x = t(data_table),
-                              y = NULL,
-                              use = use,
-                              method = correlation_method)
-
-correlation_data = stats::cor(x = data_table,
-                              y = NULL,
-                              use = use,
-                              method = correlation_method)
-diag(correlation_data) = 0
-max_abs_values = apply(correlation_data, 1, function(x) max(abs(x), na.rm = T))
-roh_filter = unname(which(max_abs_values >= roh_lim))
-length(roh_filter)
-length(max_abs_values)
-correlation_data = correlation_data[roh_filter, roh_filter]
-
-library(corrplot)
-library(pheatmap)
-corrplot(correlation_data, method = "color")
-pheatmap(correlation_data)
 
 
 
@@ -227,19 +30,67 @@ pheatmap(correlation_data)
 #---------------------------------------------------- PROTEOMICS TEST APO-E ----
 
 self = example_proteomics(name = 'prot_1',
-                          data = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/proteomics_2.tsv',
-                          meta = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/metadata.csv',
+                          data = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/proteomics_2.tsv',
+                          meta = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/metadata.csv',
                           param_file = './R/params/params_gene_based_omics.R')
 
 
-self$hardcoded_settings$volcano_plot$datasets
-
 self$add_feature_table(name = 'feat_1',
-                       feature_file = 'D:/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/231023_feature_tables/proteomics_feat_annotation_clean.tsv')
+                       feature_file = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/proteomics_feat_annotation_clean.tsv')
 
 
 
 self$derive_data_tables()
+
+
+self$get_prot_list(context = 'ora')
+self$over_representation_analysis(ont = 'ALL')
+
+prot_list = self$tables$ora_prot_list
+custom_col = NULL
+feature_table = self$tables$feature_table
+pval_cutoff_features = self$params$overrepresentation$pval_cutoff_features
+padjust_features = self$params$overrepresentation$padjust_features
+pval_cutoff = self$params$overrepresentation$pval_cutoff
+pAdjustMethod = self$params$overrepresentation$pAdjustMethod
+fc_threshold = self$params$overrepresentation$fc_threshold
+keyType = self$indices$feature_id_type
+ont = 'ALL'
+qval_cutoff = self$params$overrepresentation$qval_cutoff
+minGSSize = self$params$overrepresentation$minGSSize
+maxGSSize  = self$params$overrepresentation$maxGSSize
+
+
+
+
+
+go_enrich = clusterProfiler::enrichGO(gene = rownames(features),
+                                      universe = universe,
+                                      OrgDb = 'org.Hs.eg.db',
+                                      keyType = keyType,
+                                      readable = F,
+                                      ont = ont,
+                                      pvalueCutoff = pval_cutoff,
+                                      pAdjustMethod = pAdjustMethod,
+                                      qvalueCutoff = qval_cutoff,
+                                      minGSSize = minGSSize,
+                                      maxGSSize  = maxGSSize)
+
+
+gene = rownames(features)
+universe = universe
+OrgDb = 'org.Hs.eg.db'
+keyType = keyType
+readable = T
+ont = ont
+pvalueCutoff = pval_cutoff
+pAdjustMethod = pAdjustMethod
+qvalueCutoff = qval_cutoff
+minGSSize = minGSSize
+maxGSSize  = maxGSSize
+
+length(gene)
+length(universe)
 
 self$hardcoded_settings$enrichment_analysis$terms
 self$hardcoded_settings$enrichment_analysis$adjustment
