@@ -39,12 +39,28 @@ self$add_feature_table(name = 'feat_1',
 
 self$derive_data_tables()
 
-colnames(self$tables$raw_meta)
-
 self$plot_heatmap(row_annotations = "Group_type")
 self$plots$heatmap
 
+self$plot_pca()
 
+data_table = 'Z-scored total normalized table'
+meta_table = self$tables$raw_meta
+feature_table = self$tables$feature_table
+sample_groups_col = self$params$pca$sample_groups_col
+feature_groups_col = self$params$pca$feature_groups_col
+apply_da = T
+alpha_da = self$params$pca$alpha_da
+pca_method = self$params$pca$pca_method
+nPcs = self$params$pca$nPcs
+displayed_pc_1 = self$params$pca$displayed_pc_1
+displayed_pc_2 = self$params$pca$displayed_pc_2
+completeObs = self$params$pca$completeObs
+displayed_plots = self$params$pca$displayed_plots
+colors_palette = self$params$pca$colors_palette
+return_data = TRUE
+width = NULL
+height = NULL
 
 
 #---------------------------------------------------- PROTEOMICS TEST APO-E ----

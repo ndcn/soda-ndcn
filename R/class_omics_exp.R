@@ -144,7 +144,7 @@ Omics_exp = R6::R6Class(
       # PCA parameters self$params$pca$
       pca = list(
         auto_refresh = T,
-        data_table = 'z_scored_total_norm_data',
+        data_table = 'Z-scored total normalized table',
         sample_groups_col = NULL,
         feature_groups_col = NULL,
         apply_da = FALSE,
@@ -1071,7 +1071,7 @@ Omics_exp = R6::R6Class(
                                   img_format = "png")
 
       self$param_pca(auto_refresh = T,
-                     data_table = 'z_scored_total_norm_data',
+                     data_table = 'Z-scored total normalized table',
                      sample_groups_col = self$indices$group_col,
                      feature_groups_col = NULL,
                      apply_da = FALSE,
@@ -2154,11 +2154,17 @@ Omics_exp = R6::R6Class(
       }
 
       sample_groups = meta_table[rownames(data_table),sample_groups_col]
+
       if (apply_da) {
         data_table = apply_discriminant_analysis(data_table = data_table,
                                                  group_list = sample_groups,
                                                  nlambda = 100,
-                                                 alpha = alpha_da)}
+                                                 alpha = alpha_da)
+
+        sample_groups = meta_table[rownames(data_table),sample_groups_col]
+      }
+
+
 
       ncol_1 = ncol(data_table)
       data_table = data_table[,!is.na(colSums(data_table, na.rm = T))]
