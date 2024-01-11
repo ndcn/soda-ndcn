@@ -1,7 +1,7 @@
 ## Single-omics analysis
 
-### Metadata upload:
-Tab designed for the upload and curation metadata. Once uploaded, two distinct tables are generated and stored in the omics object:
+### Sample annotations:
+Tab designed for the upload and curation of sample metadata. Once uploaded, two distinct tables are generated and stored in the omics object:
 - Imported metadata table: this is the original table, reserved for reset purposes.
 - Raw metadata table: the above table filtered by the user, specifically for processing in later steps.
 

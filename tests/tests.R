@@ -24,6 +24,26 @@ self$plot_samples_correlation(color_palette = 'RdYlGn',
 self$plots$samples_correlation
 
 
+#------------------------------------------------ PROTEOMICS TEST CellMiner ----
+
+self = example_proteomics(name = 'prot_1',
+                          data = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230927_Cellminer_data/protein_swath/prot_data.csv',
+                          meta = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230927_Cellminer_data/protein_swath/prot_meta.tsv',
+                          param_file = './R/params/params_gene_based_omics.R')
+
+
+self$add_feature_table(name = 'feat_1',
+                       feature_file = '/home/dolivierj/Dropbox/1_Travail/221219_lumc/230828_dmc_soda/test_data/230828_multiomics_1/proteomics_feat_annotation_clean.tsv')
+
+
+
+self$derive_data_tables()
+
+colnames(self$tables$raw_meta)
+
+self$plot_heatmap(row_annotations = "Group_type")
+self$plots$heatmap
+
 
 
 

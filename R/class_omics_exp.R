@@ -1800,6 +1800,8 @@ Omics_exp = R6::R6Class(
                                                  nlambda = 100,
                                                  alpha = alpha_da)
 
+        meta_table = meta_table[rownames(data_table),]
+
         meta_table_features = meta_table_features[colnames(data_table),]
       }
 
