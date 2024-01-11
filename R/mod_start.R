@@ -4,7 +4,7 @@ start_ui = function(id){
   ns = shiny::NS(id)
   shiny::tagList(
     shiny::fluidRow(
-      shiny::h1('SODA - Simple Omics Data Analysis')
+      shiny::h1('iSODA - integrated Simple Omics Data Analysis')
     ),
     shiny::fluidRow(
       shiny::column(
@@ -14,27 +14,27 @@ start_ui = function(id){
         shiny::fluidRow(
           shiny::column(
             width = 6,
-            shiny::textInput(
-              inputId = ns('exp_name'),
-              label = 'Exp. name',
-              placeholder = 'lips_1',
-              width = '100%'
-            ),
             shiny::selectInput(
               inputId = ns('exp_type'),
               label = 'Exp. type',
               choices = c('Lipidomics', 'Metabolomics', 'Proteomics', 'Transcriptomics', 'Genomics'),
               width = '100%'
             )
+            # shiny::selectInput(
+            #   inputId = ns('del_exp'),
+            #   label = 'Delete exp.',
+            #   choices = NULL,
+            #   selected = NULL,
+            #   multiple = TRUE,
+            #   width = '100%'
+            # )
           ),
           shiny::column(
             width = 6,
-            shiny::selectInput(
-              inputId = ns('del_exp'),
-              label = 'Delete exp.',
-              choices = NULL,
-              selected = NULL,
-              multiple = TRUE,
+            shiny::textInput(
+              inputId = ns('exp_name'),
+              label = 'Exp. name',
+              placeholder = 'lips_1',
               width = '100%'
             )
           )
@@ -68,7 +68,7 @@ start_ui = function(id){
             width = 12,
             shiny::br(),
             shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-            shiny::h3('... or try out SODA with our example datasets!'),
+            shiny::h3('... or try out iSODA with example datasets!'),
             shiny::br(),
             shiny::fluidRow(
               shiny::column(
@@ -114,18 +114,17 @@ start_ui = function(id){
       shiny::column(
         width = 5,
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-        shiny::h3('What is the SODA app?'),
-        shiny::p('SODA is designed to analyze and visualize preprocessed omics data.
+        shiny::h3('What is iSODA?'),
+        shiny::p('iSODA is designed to analyze and visualize preprocessed omics data.
                  Currently available omic experiments are lipidomics, proteomics
                  and transcriptomics.'),
-        shiny::p("Start using SODA by creating an experiment with the options on
-                 the left, by defining an experiment name (for you), a it's type
-                 and pressing ADD EXP. This will create a new module on the sidebar
-                 for you to start importing and analysing your data. Made a mistake
-                 creating an experiment? You can select one or multiple experiments
-                 in Delete exp. and remove them by pressing REMOVE EXP. Bear in
-                 mind, SODA is currently limited to a maximum of 6 simultaneous
+        shiny::p("Start using iSODA by creating an experiment by defining an experiment
+                 type and an optional experiment name, then pressing ADD EXP.
+                 The new experiment will then be accessible through the sidebar.
+                  iSODA is currently limited to a maximum of 6 simultaneous
                  experiments."),
+        #Made a mistake creating an experiment? You can select one or multiple experiments
+        #in Delete exp. and remove them by pressing REMOVE EXP.
         shiny::p('The general workflow consists in uploading a metadata and a data
                   table: samples and rows, descriptors/features as columns. The
                   metadata table contains all types of data describing each sample

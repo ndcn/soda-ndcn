@@ -63,7 +63,7 @@ header_ui = function() {
 
   # Extract and capitalise name
   name = stringr::str_split(desc[1,1], ":")[[1]][2]
-  name = toupper(trimws(name))
+  name = trimws(name)
 
   # Extract version
   version = gsub("[^0-9.-]", "", desc[3,1])
