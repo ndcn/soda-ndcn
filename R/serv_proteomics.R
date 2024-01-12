@@ -342,7 +342,7 @@ proteomics_server = function(id, ns, input, output, session, module_controler) {
         )
       ),
       shiny::tabPanel(
-        title = "Data",
+        title = "Measurement data",
         shiny::uiOutput(
           outputId = ns('up_data_ui')
         )

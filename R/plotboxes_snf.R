@@ -512,15 +512,11 @@ similarity_network_1_generate = function(r6, colour_list, dimensions_obj, input)
     width = dimensions_obj$xpx * dimensions_obj$x_plot
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
-  r6$plot_similarity_network(data_table = r6$params$similarity_network_1$data_table,
-                             K1 = r6$params$similarity_network_1$K1,
-                             sigma = r6$params$similarity_network_1$sigma,
-                             K2 = r6$params$similarity_network_1$K2,
-                             context = 'similarity_network_1')
+  r6$plot_similarity_network(context = 'similarity_network_1')
 }
 similarity_network_1_spawn = function(r6, format, output) {
   print_tm(r6$name, "Similarity Network 1: spawning plot.")
-  output$similarity_network_1_plot = networkD3::renderSimpleNetwork({
+  output$similarity_network_1_plot = networkD3::renderForceNetwork({
     r6$plots$similarity_network_1
   })
 }
@@ -552,6 +548,28 @@ similarity_network_1_server = function(r6, output, session) {
         multiple = F,
         width = '100%'
       ),
+
+
+      shiny::selectInput(
+        inputId = ns('similarity_network_1_sample_groups'),
+        label = 'Sample groups',
+        choices = colnames(r6$tables$metadata),
+        selected = r6$params$similarity_network_1$sample_groups,
+        multiple = F,
+        width = '100%'
+      ),
+      shiny::selectizeInput(
+        inputId = ns('similarity_network_1_color_palette'),
+        label = "Color palette",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$similarity_network_1$color_palette,
+        multiple = FALSE
+      ),
+
       shiny::textInput(
         inputId = ns('similarity_network_1_K1'),
         label = 'K1',
@@ -570,6 +588,13 @@ similarity_network_1_server = function(r6, output, session) {
         value = r6$params$similarity_network_1$K2,
         width = '100%'
       ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('similarity_network_1_legend'),
+        label = 'Show legend',
+        value = r6$params$similarity_network_1$legend,
+        right = TRUE,
+        status = "primary"
+      ),
       shiny::downloadButton(
         outputId = ns("similarity_network_1_dl_table"),
         label = "Download associated table",
@@ -584,13 +609,16 @@ similarity_network_1_server = function(r6, output, session) {
 similarity_network_1_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
   # Generate the plot
-  shiny::observeEvent(c(input$similarity_network_1_data_table, input$similarity_network_1_K1, input$similarity_network_1_sigma, input$similarity_network_1_K2), {
+  shiny::observeEvent(c(input$similarity_network_1_data_table, input$similarity_network_1_sample_groups, input$similarity_network_1_color_palette, input$similarity_network_1_K1, input$similarity_network_1_sigma, input$similarity_network_1_K2, input$similarity_network_1_legend), {
     print_tm(r6$name, "Similarity Network 1: Updating params...")
 
     r6$param_similarity_network(data_table = input$similarity_network_1_data_table,
+                                sample_groups = input$similarity_network_1_sample_groups,
+                                color_palette = input$similarity_network_1_color_palette,
                                 K1 = input$similarity_network_1_K1,
                                 sigma = input$similarity_network_1_sigma,
                                 K2 = input$similarity_network_1_K2,
+                                legend = input$similarity_network_1_legend,
                                 context = 'similarity_network_1')
 
     base::tryCatch({
@@ -600,6 +628,7 @@ similarity_network_1_events = function(r6, dimensions_obj, color_palette, input,
       print_tm(r6$name, 'Similarity Network 1: ERROR.')
     },finally={}
     )
+
   })
 
   # Download associated table
@@ -642,11 +671,7 @@ similarity_network_2_generate = function(r6, colour_list, dimensions_obj, input)
     width = dimensions_obj$xpx * dimensions_obj$x_plot
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
-  r6$plot_similarity_network(data_table = r6$params$similarity_network_2$data_table,
-                             K1 = r6$params$similarity_network_2$K1,
-                             sigma = r6$params$similarity_network_2$sigma,
-                             K2 = r6$params$similarity_network_2$K2,
-                             context = 'similarity_network_2')
+  r6$plot_similarity_network(context = 'similarity_network_2')
 }
 similarity_network_2_spawn = function(r6, format, output) {
   print_tm(r6$name, "Similarity Network 2: spawning plot.")
@@ -682,6 +707,25 @@ similarity_network_2_server = function(r6, output, session) {
         multiple = F,
         width = '100%'
       ),
+      shiny::selectInput(
+        inputId = ns('similarity_network_2_sample_groups'),
+        label = 'Sample groups',
+        choices = colnames(r6$tables$metadata),
+        selected = r6$params$similarity_network_2$sample_groups,
+        multiple = F,
+        width = '100%'
+      ),
+      shiny::selectizeInput(
+        inputId = ns('similarity_network_2_color_palette'),
+        label = "Color palette",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$similarity_network_2$color_palette,
+        multiple = FALSE
+      ),
       shiny::textInput(
         inputId = ns('similarity_network_2_K1'),
         label = 'K1',
@@ -700,6 +744,13 @@ similarity_network_2_server = function(r6, output, session) {
         value = r6$params$similarity_network_2$K2,
         width = '100%'
       ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('similarity_network_2_legend'),
+        label = 'Show legend',
+        value = r6$params$similarity_network_2$legend,
+        right = TRUE,
+        status = "primary"
+      ),
       shiny::downloadButton(
         outputId = ns("similarity_network_2_dl_table"),
         label = "Download associated table",
@@ -714,13 +765,16 @@ similarity_network_2_server = function(r6, output, session) {
 similarity_network_2_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
   # Generate the plot
-  shiny::observeEvent(c(input$similarity_network_2_data_table, input$similarity_network_2_K1, input$similarity_network_2_sigma, input$similarity_network_2_K2), {
+  shiny::observeEvent(c(input$similarity_network_2_data_table, input$similarity_network_2_sample_groups, input$similarity_network_2_color_palette, input$similarity_network_2_K1, input$similarity_network_2_sigma, input$similarity_network_2_K2, input$similarity_network_2_legend), {
     print_tm(r6$name, "Similarity Network 2: Updating params...")
 
     r6$param_similarity_network(data_table = input$similarity_network_2_data_table,
+                                sample_groups = input$similarity_network_2_sample_groups,
+                                color_palette = input$similarity_network_2_color_palette,
                                 K1 = input$similarity_network_2_K1,
                                 sigma = input$similarity_network_2_sigma,
                                 K2 = input$similarity_network_2_K2,
+                                legend = input$similarity_network_2_legend,
                                 context = 'similarity_network_2')
 
     base::tryCatch({

@@ -35,16 +35,22 @@ Snf_data = R6::R6Class(
 
       similarity_network_1 = list(
         data_table = NULL,
+        sample_groups = "Group_type",
+        color_palette = "Spectral",
         K1 = 5,
         sigma = 0.5,
-        K2 = 3
+        K2 = 3,
+        legend = TRUE
       ),
 
       similarity_network_2 = list(
         data_table = NULL,
+        sample_groups = "Group_type",
+        color_palette = "Spectral",
         K1 = 5,
         sigma = 0.5,
-        K2 = 3
+        K2 = 3,
+        legend = TRUE
       ),
 
       fusion_heatmap = list(
@@ -82,11 +88,14 @@ Snf_data = R6::R6Class(
 
     },
 
-    param_similarity_network = function(data_table, K1, sigma, K2, context) {
+    param_similarity_network = function(data_table, sample_groups, color_palette, K1, sigma, K2, legend, context) {
       self$params[[context]]$data_table = data_table
+      self$params[[context]]$sample_groups = sample_groups
+      self$params[[context]]$color_palette = color_palette
       self$params[[context]]$K1 = K1
       self$params[[context]]$sigma = sigma
       self$params[[context]]$K2 = K2
+      self$params[[context]]$legend = legend
     },
 
     param_fusion_heatmap = function(K1, sigma, K2, Wall, K3, t, vertical_annotations, horizontal_annotations, img_format) {
@@ -300,12 +309,17 @@ Snf_data = R6::R6Class(
     },
 
 
-    plot_similarity_network = function(data_table = self$params$similarity_network_1$data_table,
-                                       meta_table = self$tables$metadata,
-                                       K1 = self$params$similarity_network_1$K1,
-                                       sigma = self$params$similarity_network_1$sigma,
-                                       K2 = self$params$similarity_network_1$K2,
+    plot_similarity_network = function(meta_table = self$tables$metadata,
                                        context = 'similarity_network_1') {
+
+      # Load parameters
+      data_table = self$params[[context]]$data_table
+      sample_groups = self$params[[context]]$sample_groups
+      color_palette = self$params[[context]]$color_palette
+      K1 = self$params[[context]]$K1
+      sigma = self$params[[context]]$sigma
+      K2 = self$params[[context]]$K2
+      legend = self$params[[context]]$legend
 
       if (is.null(data_table)) {
         print('ERROR: no default data table for clusters heatmaps')
@@ -333,9 +347,42 @@ Snf_data = R6::R6Class(
       network_table = igraph::simplify(network_table)
       network_table = igraph::mst(network_table)
       network_table = base::as.data.frame(igraph::get.edgelist(network_table))
-      fig = networkD3::simpleNetwork(network_table, zoom = T)
 
-      self$tables[[context]] = network_table
+      # Create the node table with coloring
+      nodes = data.frame(name = unique(c(network_table$V1, network_table$V2)))
+      nodes$group = meta_table[rownames(data_table), sample_groups]
+
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = colorRampPalette(color_palette)(length(unique(nodes$group)))
+      color_mapping = setNames(color_palette, unique(nodes$group))
+
+      # Format for forceNetwork
+      links = network_table
+      links$source = match(links$V1, nodes$name) - 1
+      links$target = match(links$V2, nodes$name) - 1
+
+      # JavaScript function for colourScale
+      js_colourScale = base::sprintf("d3.scaleOrdinal().domain(%s).range(%s)",
+                                     jsonlite::toJSON(names(color_mapping)),
+                                     jsonlite::toJSON(color_mapping))
+
+      fig = networkD3::forceNetwork(Links = links,
+                                    Nodes = nodes,
+                                    Source = "source",
+                                    Target = "target",
+                                    NodeID = "name",
+                                    Group = "group",
+                                    linkWidth = 1,
+                                    opacity = 1,
+                                    legend = legend,
+                                    zoom = TRUE,
+                                    opacityNoHover = 1,
+                                    colourScale = networkD3::JS(js_colourScale))
+
+
+      self$tables[[context]]$edge_table = links
+      self$tables[[context]]$node_table = nodes
       self$plots[[context]] = fig
     },
 
