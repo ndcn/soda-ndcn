@@ -66,12 +66,15 @@ Snf_data = R6::R6Class(
       ),
 
       similarity_network_fusion = list(
+        sample_groups = "Group_type",
+        color_palette = "Spectral",
         K1 = 5,
         sigma = 0.5,
         K2 = 3,
         Wall = NULL,
         K3 = 3,
-        t = 5
+        t = 5,
+        legend = TRUE
       )
 
     ),
@@ -110,13 +113,16 @@ Snf_data = R6::R6Class(
       self$params$fusion_heatmap$img_format = img_format
     },
 
-    param_similarity_network_fusion = function(K1, sigma, K2, Wall, K3, t) {
+    param_similarity_network_fusion = function(sample_groups, color_palette, K1, sigma, K2, Wall, K3, t, legend) {
+      self$params$similarity_network_fusion$sample_groups = sample_groups
+      self$params$similarity_network_fusion$color_palette = color_palette
       self$params$similarity_network_fusion$K1 = K1
       self$params$similarity_network_fusion$sigma = sigma
       self$params$similarity_network_fusion$K2 = K2
       self$params$similarity_network_fusion$Wall = Wall
       self$params$similarity_network_fusion$K3 = K3
       self$params$similarity_network_fusion$t = t
+      self$params$similarity_network_fusion$legend = legend
     },
 
     #---------------------------------------------------------------- Plots ----
@@ -386,14 +392,18 @@ Snf_data = R6::R6Class(
       self$plots[[context]] = fig
     },
 
-    plot_similarity_network_fusion = function(meta_table = self$tables$metadata,
+    plot_similarity_network_fusion = function(sample_groups = self$params$similarity_network_fusion$sample_groups,
+                                              color_palette = self$params$similarity_network_fusion$color_palette,
+                                              meta_table = self$tables$metadata,
                                               K1 = self$params$similarity_network_fusion$K1,
                                               sigma = self$params$similarity_network_fusion$sigma,
                                               K2 = self$params$similarity_network_fusion$K2,
                                               Wall = self$params$similarity_network_fusion$Wall,
                                               K3 = self$params$similarity_network_fusion$K3,
-                                              t = self$params$similarity_network_fusion$t
+                                              t = self$params$similarity_network_fusion$t,
+                                              legend = self$params$similarity_network_fusion$legend
     ) {
+
 
       if (is.null(Wall)) {
         Wall = names(self$tables$omics_tables)
@@ -420,9 +430,43 @@ Snf_data = R6::R6Class(
       network_table = igraph::simplify(network_table)
       network_table = igraph::mst(network_table)
       network_table = base::as.data.frame(igraph::get.edgelist(network_table))
-      fig = networkD3::simpleNetwork(network_table, zoom = T)
 
-      self$tables$similarity_network_fusion = network_table
+
+      # Create the node table with coloring
+      nodes = data.frame(name = unique(c(network_table$V1, network_table$V2)))
+      nodes$group = meta_table[rownames(data_table), sample_groups]
+
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = colorRampPalette(color_palette)(length(unique(nodes$group)))
+      color_mapping = setNames(color_palette, unique(nodes$group))
+
+      # Format for forceNetwork
+      links = network_table
+      links$source = match(links$V1, nodes$name) - 1
+      links$target = match(links$V2, nodes$name) - 1
+
+      # JavaScript function for colourScale
+      js_colourScale = base::sprintf("d3.scaleOrdinal().domain(%s).range(%s)",
+                                     jsonlite::toJSON(names(color_mapping)),
+                                     jsonlite::toJSON(color_mapping))
+
+      fig = networkD3::forceNetwork(Links = links,
+                                    Nodes = nodes,
+                                    Source = "source",
+                                    Target = "target",
+                                    NodeID = "name",
+                                    Group = "group",
+                                    linkWidth = 1,
+                                    opacity = 1,
+                                    legend = legend,
+                                    zoom = TRUE,
+                                    opacityNoHover = 1,
+                                    colourScale = networkD3::JS(js_colourScale))
+
+
+      self$tables$similarity_network_fusion$edge_table = links
+      self$tables$similarity_network_fusion$node_table = nodes
       self$plots$similarity_network_fusion = fig
 
     }

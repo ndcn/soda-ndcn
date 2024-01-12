@@ -675,7 +675,7 @@ similarity_network_2_generate = function(r6, colour_list, dimensions_obj, input)
 }
 similarity_network_2_spawn = function(r6, format, output) {
   print_tm(r6$name, "Similarity Network 2: spawning plot.")
-  output$similarity_network_2_plot = networkD3::renderSimpleNetwork({
+  output$similarity_network_2_plot = networkD3::renderForceNetwork({
     r6$plots$similarity_network_2
   })
 }
@@ -826,20 +826,14 @@ similarity_network_fusion_generate = function(r6, colour_list, dimensions_obj, i
     width = dimensions_obj$xpx * dimensions_obj$x_plot
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
-  r6$plot_similarity_network_fusion(K1 = r6$params$similarity_network_fusion$K1,
-                                    sigma = r6$params$similarity_network_fusion$sigma,
-                                    K2 = r6$params$similarity_network_fusion$K2,
-                                    Wall = r6$params$similarity_network_fusion$Wall,
-                                    K3 = r6$params$similarity_network_fusion$K3,
-                                    t = r6$params$similarity_network_fusion$t)
+  r6$plot_similarity_network_fusion()
 }
 similarity_network_fusion_spawn = function(r6, format, output) {
   print_tm(r6$name, "Similarity Network Fusion: spawning plot.")
-  output$similarity_network_fusion_plot = networkD3::renderSimpleNetwork({
+  output$similarity_network_fusion_plot = networkD3::renderForceNetwork({
     r6$plots$similarity_network_fusion
   })
 }
-
 
 similarity_network_fusion_ui = function(dimensions_obj, session) {
 
@@ -859,6 +853,25 @@ similarity_network_fusion_server = function(r6, output, session) {
   # Generate UI
   output$similarity_network_fusion_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shiny::selectInput(
+        inputId = ns('similarity_network_fusion_sample_groups'),
+        label = 'Sample groups',
+        choices = colnames(r6$tables$metadata),
+        selected = r6$params$similarity_network_fusion$sample_groups,
+        multiple = F,
+        width = '100%'
+      ),
+      shiny::selectizeInput(
+        inputId = ns('similarity_network_fusion_color_palette'),
+        label = "Color palette",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+        selected = r6$params$similarity_network_fusion$color_palette,
+        multiple = FALSE
+      ),
       shiny::textInput(
         inputId = ns('similarity_network_fusion_K1'),
         label = 'K1',
@@ -897,6 +910,13 @@ similarity_network_fusion_server = function(r6, output, session) {
         value = r6$params$similarity_network_fusion$t,
         width = '100%'
       ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('similarity_network_fusion_legend'),
+        label = 'Show legend',
+        value = r6$params$similarity_network_fusion$legend,
+        right = TRUE,
+        status = "primary"
+      ),
       shiny::downloadButton(
         outputId = ns("similarity_network_fusion_dl_table"),
         label = "Download associated table",
@@ -911,15 +931,18 @@ similarity_network_fusion_server = function(r6, output, session) {
 similarity_network_fusion_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
   # Generate the plot
-  shiny::observeEvent(c(input$similarity_network_fusion_K1, input$similarity_network_fusion_sigma, input$similarity_network_fusion_K2, input$similarity_network_fusion_Wall, input$similarity_network_fusion_K3, input$similarity_network_fusion_t), {
+  shiny::observeEvent(c(input$similarity_network_fusion_sample_groups, input$similarity_network_fusion_color_palette, input$similarity_network_fusion_K1, input$similarity_network_fusion_sigma, input$similarity_network_fusion_K2, input$similarity_network_fusion_Wall, input$similarity_network_fusion_K3, input$similarity_network_fusion_t, input$similarity_network_fusion_legend), {
     print_tm(r6$name, "Similarity Network Fusion: Updating params...")
 
-    r6$param_similarity_network_fusion(K1 = input$similarity_network_fusion_K1,
+    r6$param_similarity_network_fusion(sample_groups = input$similarity_network_fusion_sample_groups,
+                                       color_palette = input$similarity_network_fusion_color_palette,
+                                       K1 = input$similarity_network_fusion_K1,
                                        sigma = input$similarity_network_fusion_sigma,
                                        K2 = input$similarity_network_fusion_K2,
                                        Wall = input$similarity_network_fusion_Wall,
                                        K3 = input$similarity_network_fusion_K3,
-                                       t = input$similarity_network_fusion_t)
+                                       t = input$similarity_network_fusion_t,
+                                       legend = input$similarity_network_fusion_legend)
 
     base::tryCatch({
       similarity_network_fusion_generate(r6, color_palette, dimensions_obj, input)

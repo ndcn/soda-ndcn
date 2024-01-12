@@ -54,7 +54,7 @@ snf_data$add_data(name = geno_1$name,
 
 print(names(snf_data$tables$omics_tables))
 
-
+# Single omics similarity network
 snf_data$param_similarity_network(data_table = 'prot_1',
                                   sample_groups = 'Group_type',
                                   color_palette = 'Paired',
@@ -67,7 +67,18 @@ snf_data$param_similarity_network(data_table = 'prot_1',
 snf_data$plot_similarity_network(context = 'similarity_network_1')
 snf_data$plots$similarity_network_1
 
+# Fusion similarity network
 
+sample_groups = snf_data$params$similarity_network_fusion$sample_groups
+color_palette = snf_data$params$similarity_network_fusion$color_palette
+meta_table = snf_data$tables$metadata
+K1 = snf_data$params$similarity_network_fusion$K1
+sigma = snf_data$params$similarity_network_fusion$sigma
+K2 = snf_data$params$similarity_network_fusion$K2
+Wall = snf_data$params$similarity_network_fusion$Wall
+K3 = snf_data$params$similarity_network_fusion$K3
+t = snf_data$params$similarity_network_fusion$t
+legend = snf_data$params$similarity_network_fusion$legend
 
 
 #---------------------------------------------------- LIPIDOMICS TEST APO-E ----
