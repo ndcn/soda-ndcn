@@ -20,6 +20,7 @@ library(ellipse)
 
 # text
 library(stringr)
+library(markdown)
 
 # Tables
 library(DT)

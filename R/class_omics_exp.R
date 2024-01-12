@@ -1,25 +1,74 @@
-#---------------------------------------------- Proteomics experiment class ----
-Prot_exp = R6::R6Class(
-  "Prot_exp",
+#--------------------------------------------------- Omics experiment class ----
+Omics_exp = R6::R6Class(
+  "Omics_exp",
   public = list(
-    initialize = function(name, id = NA, slot = NA, preloaded = F){
+    initialize = function(name, type = NA, id = NA, slot = NA, preloaded = F, param_file = NULL){
       self$name = name
+      self$type = type
       self$id = id
       self$slot = slot
       self$preloaded_data = preloaded
+
+      if (!is.null(param_file)) {
+        if (file.exists(param_file)){
+          tryCatch({
+            params = base::dget(param_file)
+            # Regular params
+            for (p1 in names(params$params)) {
+              if (p1 %in% names(self$params)){
+                for (p2 in names(params$params[[p1]])){
+                  if (p2 %in% names(self$params[[p1]])){
+                    self$params[[p1]][[p2]] = params$params[[p1]][[p2]]
+                  }
+                }
+              }
+            }
+
+            # Settings
+            for (p1 in names(params$hardcoded_settings)) {
+              if (p1 %in% names(self$hardcoded_settings)){
+                for (p2 in names(params$hardcoded_settings[[p1]])) {
+                  if (p2 %in% names(self$hardcoded_settings[[p1]])) {
+                    self$hardcoded_settings[[p1]][[p2]] = params$hardcoded_settings[[p1]][[p2]]
+                  }
+                }
+              }
+            }
+          },
+          error = function(e) {
+            message("Error in reading the parameter file, default parameters kept: ", e$message)
+          })
+        }
+      }
     },
     #--------------------------------------------------------------- Global ----
     name = NA,
     id = NA,
     slot = NA,
-    type = 'Proteomics',
+    type = NA,
     preloaded_data = F,
 
     #----------------------------------------------------------- Parameters ----
     params = list(
+      # Class distribution parameters
+      class_distribution = list(
+        dataset = 'Class table total normalized',
+        group_col = NULL,
+        color_palette = 'Spectral',
+        img_format = "png"
+      ),
+
+      # Class comparison parameters
+      class_comparison = list(
+        dataset = 'Class table total normalized',
+        group_col = NULL,
+        color_palette = 'Spectral',
+        img_format = "png"
+      ),
 
       # Volcano plot parameters self$params$volcano_plot$
       volcano_plot = list(
+        auto_refresh = T,
         data_table = 'Total normalized table',
         adjustment = "BH",
         group_col = NULL,
@@ -40,19 +89,61 @@ Prot_exp = R6::R6Class(
 
       # Heatmap parameters self$params$heatmap$
       heatmap = list(
-        dataset = 'Z-scored table',
-        impute = F,
-        cluster_samples = F,
-        cluster_features = F,
+        auto_refresh = T,
+        dataset = 'Z-scored total normalized table',
+        impute = T,
+        cluster_samples = T,
+        cluster_features = T,
         map_sample_data = NULL,
+        map_feature_data = NULL,
+        map_feature_terms = NULL,
+        multival_cols = 'None',
         group_column_da = NULL,
-        apply_da = TRUE,
+        apply_da = T,
         alpha_da = 0.8,
+        lock_da = T,
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
+        img_format = "png"
+      ),
+
+      # samples correlation parameters self$params$samples_correlation$
+      samples_correlation = list(
+        auto_refresh = T,
+        dataset = 'Z-scored total normalized table',
+        correlation_method = "pearson",
+        use = 'pairwise.complete.obs',
+        cluster_cols = T,
+        cluster_rows = T,
+        row_annotations = 'Group_type',
+        col_annotations = 'Group_type',
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
+        img_format = "png"
+      ),
+
+      # feature_correlation parameters self$params$feature_correlation$
+      feature_correlation = list(
+        auto_refresh = T,
+        dataset = 'Z-scored total normalized table',
+        multival_cols = 'None',
+        map_feature_terms = NULL,
+        correlation_method = "pearson",
+        use = 'pairwise.complete.obs',
+        cluster_cols = T,
+        cluster_rows = T,
+        row_annotations = NULL,
+        col_annotations = NULL,
+        roh_threshold = 0.95,
+        top_features = 300,
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
         img_format = "png"
       ),
 
       # PCA parameters self$params$pca$
       pca = list(
+        auto_refresh = T,
         data_table = 'z_scored_total_norm_data',
         sample_groups_col = NULL,
         feature_groups_col = NULL,
@@ -65,6 +156,25 @@ Prot_exp = R6::R6Class(
         completeObs = F,
         displayed_plots = 'both',
         colors_palette = 'Spectral',
+        img_format = "png"
+      ),
+
+
+      # Double bonds parameters self$params$db_plot$
+      db_plot = list(
+        dataset = "Total normalized table",
+        adjustment = "Benjamini-Hochberg",
+        group_column = NULL,
+        selected_groups = NULL,
+        selected_lipid_class = NULL,
+        selected_carbon_chain = 'Carbon count (chain 1)',
+        selected_unsat = 'Double bonds (chain 1)',
+        selected_function = "mean",
+        selected_test = "T-test",
+        fc_range = c(-5, 5),
+        fc_values = c(-1, 1),
+        pval_range = c(0, 5),
+        pval_values = c(1, 5),
         img_format = "png"
       ),
 
@@ -167,9 +277,72 @@ Prot_exp = R6::R6Class(
         enable_physics = FALSE
       )
 
-
-
     ),
+
+    hardcoded_settings = list(
+
+      volcano_plot = list(
+        datasets = list(
+          "Raw data table",
+          "Class normalized table",
+          "Total normalized table"
+        )
+      ),
+      heatmap = list(
+        datasets = list(
+          'Z-scored table',
+          'Z-scored total normalized table',
+          'Class table z-scored'
+        )
+      ),
+      samples_correlation = list(
+        datasets = list(
+          "Raw data table",
+          "Total normalized table",
+          'Z-scored table',
+          'Z-scored total normalized table'
+        )
+      ),
+      feature_correlation = list(
+        datasets = list(
+          "Raw data table",
+          "Total normalized table",
+          'Z-scored table',
+          'Z-scored total normalized table'
+        )
+      ),
+
+      pca = list(
+        datasets = list(
+          'Z-scored table',
+          'Z-scored total normalized table'
+        )
+      ),
+      db_plot = list(
+        datasets = list(
+          "Raw data table",
+          "Class normalized table",
+          "Total normalized table"
+        )
+      ),
+
+      enrichment_analysis = list(
+        terms = c('Gene ontology (ALL)',
+                  'Gene ontology (BP)',
+                  'Gene ontology (MF)',
+                  'Gene ontology (CC)'),
+        adjustment = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")
+      ),
+      over_representation_analysis = list(
+        terms = c('Gene ontology (ALL)',
+                  'Gene ontology (BP)',
+                  'Gene ontology (MF)',
+                  'Gene ontology (CC)'),
+        adjustment = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")
+      )
+    ),
+
+
 
     #--------------------------------------------------------------- Indices ----
 
@@ -218,19 +391,34 @@ Prot_exp = R6::R6Class(
       # External feature tables
       external_enrichment_tables = list(),
 
+      # Group summaries
+      summary_species_table = NULL,
+      summary_class_table = NULL,
+
       # Normalised
+      class_norm_data = NULL,
       total_norm_data = NULL,
 
       # Z-scored
       z_scored_data = NULL,
+      z_scored_class_norm_data = NULL,
       z_scored_total_norm_data = NULL,
 
+      # class tables
+      class_table= NULL,
+      class_table_z_scored = NULL,
+      class_table_total_norm = NULL,
+      class_table_z_scored_total_norm = NULL,
+
       # Plot tables
+      class_distribution_table = NULL,
       volcano_table = NULL,
       heatmap_table = NULL,
+      samples_correlation = NULL,
+      feature_correlation = NULL,
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
-
+      dbplot_table = NULL,
 
       # GSEA & over representation
       gsea_prot_list = NULL,
@@ -267,11 +455,29 @@ Prot_exp = R6::R6Class(
       )
     },
 
+    table_check_convert = function(table) {
+      if (length(table) == 1) {
+        if (is.character(table)){
+          table = self$table_switch_local(table)
+        }
+      }
+      return(table)
+    },
+
     #---------------------------------------------------------------- Plots ----
     plots = list(
+
+      # Interactive visualization
+      class_distribution = NULL,
+      class_comparison = NULL,
       volcano_plot = NULL,
       heatmap = NULL,
+      samples_correlation = NULL,
+      feature_correlation = NULL,
       pca_plot = NULL,
+      double_bond_plot = NULL,
+
+      # Functional analysis plots
       dotplot = NULL,
       ridgeplot = NULL,
       emap_plot = NULL,
@@ -283,9 +489,31 @@ Prot_exp = R6::R6Class(
     ),
 
     #---------------------------------------------------- Parameter methods ----
-    # self$params$volcano_plot$
-    param_volcano_plot = function(data_table, adjustment, group_col, group_1, group_2, feature_metadata, keep_significant, displayed_plot, p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
 
+    export_params= function(file_name) {
+      parameter_file = list(params = self$params,
+                            hardcoded_settings = self$hardcoded_settings)
+      base::dput(parameter_file, file = file_name)
+    },
+
+    param_class_distribution = function(dataset, group_col, color_palette, img_format) {
+      self$params$class_distribution$dataset = dataset
+      self$params$class_distribution$group_col = group_col
+      self$params$class_distribution$color_palette = color_palette
+      self$params$class_distribution$img_format = img_format
+    },
+
+    param_class_comparison = function(dataset, group_col, color_palette, img_format) {
+      self$params$class_comparison$dataset = dataset
+      self$params$class_comparison$group_col = group_col
+      self$params$class_comparison$color_palette = color_palette
+      self$params$class_comparison$img_format = img_format
+    },
+
+    param_volcano_plot = function(auto_refresh, data_table, adjustment, group_col, group_1, group_2, feature_metadata, keep_significant, displayed_plot,
+                                  p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
+
+      self$params$volcano_plot$auto_refresh = auto_refresh
       self$params$volcano_plot$data_table = data_table
       self$params$volcano_plot$adjustment = adjustment
       self$params$volcano_plot$group_col = group_col
@@ -305,20 +533,59 @@ Prot_exp = R6::R6Class(
 
     },
 
-    param_heatmap = function(dataset, impute, cluster_samples, cluster_features, map_sample_data, group_column_da, apply_da, alpha_da, img_format) {
+    param_heatmap = function(auto_refresh, dataset, impute, cluster_samples, cluster_features, map_sample_data, map_feature_data, map_feature_terms, multival_cols, group_column_da, apply_da, alpha_da, color_palette, reverse_palette, img_format) {
+      self$params$heatmap$auto_refresh = auto_refresh
       self$params$heatmap$dataset = dataset
       self$params$heatmap$impute = impute
       self$params$heatmap$cluster_samples = cluster_samples
       self$params$heatmap$cluster_features = cluster_features
       self$params$heatmap$map_sample_data = map_sample_data
+      self$params$heatmap$map_feature_data = map_feature_data
+      self$params$heatmap$map_feature_terms = map_feature_terms
+      self$params$heatmap$multival_cols = multival_cols
       self$params$heatmap$group_column_da = group_column_da
       self$params$heatmap$apply_da = apply_da
       self$params$heatmap$alpha_da = alpha_da
+      self$params$heatmap$color_palette = color_palette
+      self$params$heatmap$reverse_palette = reverse_palette
       self$params$heatmap$img_format = img_format
     },
 
-    param_pca = function(data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
+    param_samples_correlation = function(auto_refresh, dataset, correlation_method, use, cluster_rows, cluster_cols, row_annotations, col_annotations, color_palette, reverse_palette, img_format) {
+      self$params$samples_correlation$auto_refresh = auto_refresh
+      self$params$samples_correlation$dataset = dataset
+      self$params$samples_correlation$correlation_method = correlation_method
+      self$params$samples_correlation$use = use
+      self$params$samples_correlation$cluster_rows = cluster_rows
+      self$params$samples_correlation$cluster_cols = cluster_cols
+      self$params$samples_correlation$row_annotations = row_annotations
+      self$params$samples_correlation$col_annotations = col_annotations
+      self$params$samples_correlation$color_palette = color_palette
+      self$params$samples_correlation$reverse_palette = reverse_palette
+      self$params$samples_correlation$img_format = img_format
+    },
 
+    param_feature_correlation = function(auto_refresh, dataset, multival_cols, map_feature_terms, correlation_method, use, cluster_cols, cluster_rows, row_annotations, col_annotations, roh_threshold, top_features, color_palette, reverse_palette, img_format) {
+
+      self$params$feature_correlation$auto_refresh = auto_refresh
+      self$params$feature_correlation$dataset = dataset
+      self$params$feature_correlation$multival_cols = multival_cols
+      self$params$feature_correlation$map_feature_terms = map_feature_terms
+      self$params$feature_correlation$correlation_method = correlation_method
+      self$params$feature_correlation$use = use
+      self$params$feature_correlation$cluster_cols = cluster_cols
+      self$params$feature_correlation$cluster_rows = cluster_rows
+      self$params$feature_correlation$row_annotations = row_annotations
+      self$params$feature_correlation$col_annotations = col_annotations
+      self$params$feature_correlation$roh_threshold = roh_threshold
+      self$params$feature_correlation$top_features = top_features
+      self$params$feature_correlation$color_palette = color_palette
+      self$params$feature_correlation$reverse_palette = reverse_palette
+      self$params$feature_correlation$img_format = img_format
+    },
+
+    param_pca = function(auto_refresh, data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
+      self$params$pca$auto_refresh = auto_refresh
       self$params$pca$data_table = data_table
       self$params$pca$sample_groups_col = sample_groups_col
       self$params$pca$feature_groups_col = feature_groups_col
@@ -332,6 +599,28 @@ Prot_exp = R6::R6Class(
       self$params$pca$displayed_plots = displayed_plots
       self$params$pca$colors_palette = colors_palette
       self$params$pca$img_format = img_format
+
+    },
+
+    param_db_plot = function(dataset, adjustment, group_column, selected_groups, selected_lipid_class,
+                             selected_carbon_chain, selected_unsat, selected_function,
+                             selected_test, fc_range, fc_values, pval_range,
+                             pval_values, img_format) {
+
+      self$params$db_plot$dataset = dataset
+      self$params$db_plot$adjustment = adjustment
+      self$params$db_plot$group_column = group_column
+      self$params$db_plot$selected_groups = selected_groups
+      self$params$db_plot$selected_lipid_class = selected_lipid_class
+      self$params$db_plot$selected_carbon_chain = selected_carbon_chain
+      self$params$db_plot$selected_unsat = selected_unsat
+      self$params$db_plot$selected_function = selected_function
+      self$params$db_plot$selected_test = selected_test
+      self$params$db_plot$fc_range = fc_range
+      self$params$db_plot$fc_values = fc_values
+      self$params$db_plot$pval_range = pval_range
+      self$params$db_plot$pval_values = pval_values
+      self$params$db_plot$img_format = img_format
 
     },
 
@@ -545,10 +834,10 @@ Prot_exp = R6::R6Class(
 
         if (norm_col != "") {
           if (is_num_coercible(self$tables$raw_meta[,norm_col]) & !base::any(is.na(self$tables$raw_meta[,norm_col]))) {
-            print_tm(self$name, paste0('Normalizing data by ', norm_col))
+            print(paste0('Normalizing data by ', norm_col))
             data_table = data_table/as.numeric(self$tables$raw_meta[,norm_col])
           } else {
-            print_tm(self$name, 'Warning: Normalization skipped, selected column contains either non numeric or missing data.')
+            print('Warning: Normalization skipped, selected column contains either non numeric or missing data.')
           }
         }
         self$tables$raw_data = data_table
@@ -623,7 +912,7 @@ Prot_exp = R6::R6Class(
     get_feature_table = function() {
       data_table = self$tables$imp_data
       data_table = data_table[,2:ncol(data_table)]
-      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table, base::tolower(self$type))
+      self$tables$imp_feature_table = get_feature_metadata(data_table = data_table, dtype = base::tolower(self$type))
     },
 
     update_feature_table = function(sep = "|") {
@@ -685,10 +974,16 @@ Prot_exp = R6::R6Class(
     },
 
     get_blank_table = function() {
-      blank_table = self$tables$imp_data[self$indices$idx_blanks,]
+      blank_idx = which(self$tables$imp_data[,self$indices$id_col_meta] %in% self$tables$imp_meta[self$indices$idx_blanks,self$indices$id_col_data])
+      blank_table = self$tables$imp_data[blank_idx,]
       rownames(blank_table) = blank_table[,self$indices$id_col_data]
       blank_table[,self$indices$id_col_data] = NULL
       self$tables$blank_table = as.matrix(blank_table)
+    },
+
+    # Class normalisation
+    normalise_class = function(){
+      self$tables$class_norm_data = normalise_lipid_class(self$tables$raw_data)
     },
 
     # Total or Row normalisation
@@ -701,50 +996,82 @@ Prot_exp = R6::R6Class(
       self$tables$z_scored_data = z_score_normalisation(data_table = self$tables$raw_data)
     },
 
+    # Class and z-score normalisation
+    normalise_class_z_score = function() {
+      self$tables$z_scored_class_norm_data = z_score_normalisation(data_table = self$tables$class_norm_data)
+    },
+
     # Total and z-score normalisation
     normalise_total_z_score = function() {
       self$tables$z_scored_total_norm_data = z_score_normalisation(data_table = self$tables$total_norm_data)
     },
 
+    # Class table
+    get_class_table = function(){
+      self$tables$class_table = get_lipid_class_table(self$tables$raw_data)
+    },
 
-    derive_data_tables = function() {
+    # Class table z-scored
+    get_class_table_z_scored = function(){
+      self$tables$class_table_z_scored = z_score_normalisation(data_table = self$tables$class_table)
+    },
+
+    # Class table total norm
+    class_grouping_total_norm = function(){
+      self$tables$class_table_total_norm = get_lipid_class_table(self$tables$total_norm_data)
+    },
+
+    # Z-score the class table (generated by the class_grouping method)
+    normalise_class_table_z_score = function() {
+      self$tables$class_table_z_scored_total_norm = z_score_normalisation(data_table = self$tables$class_table_total_norm)
+    },
+
+    get_group_summary_species = function() {
+      self$tables$summary_species_table = get_group_median_table(data_table = self$tables$raw_data,
+                                                                 meta_table = self$tables$raw_meta,
+                                                                 group_col = self$indices$group_col)
+    },
+
+    get_group_summary_classes = function() {
+      self$tables$summary_class_table = get_group_median_table(data_table = self$tables$class_table,
+                                                               meta_table = self$tables$raw_meta,
+                                                               group_col = self$indices$group_col)
+    },
+
+    derive_data_tables = function(params_list) {
       # Derive tables
       self$get_feature_table()
       self$update_feature_table()
       self$normalise_total()
       self$normalise_z_score()
       self$normalise_total_z_score()
+      self$get_group_summary_species()
 
+      if (self$type == "Lipidomics") {
+        self$normalise_class()
+        self$normalise_class_z_score()
+        self$get_class_table()
+        self$get_class_table_z_scored()
+        self$class_grouping_total_norm()
+        self$normalise_class_table_z_score()
+        self$get_group_summary_classes()
+      }
 
       # Set plotting parameters
-      self$param_volcano_plot(data_table = 'Total normalized table',
-                              adjustment = 'BH',
-                              group_col = self$indices$group_col,
-                              group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
-                              group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
-                              feature_metadata = 'None',
-                              keep_significant = F,
-                              displayed_plot = 'main',
-                              p_val_threshold = 0.05,
-                              fc_threshold = 2,
-                              marker_size = 6,
-                              opacity = 1,
-                              color_palette = 'Spectral',
-                              selected_function = 'mean',
-                              selected_test = 't-Test',
-                              img_format = 'png')
+      self$indices$feature_id_type = 'SYMBOL'
 
-      self$param_heatmap(dataset = 'Z-scored table',
-                         impute = F,
-                         cluster_samples = F,
-                         cluster_features = F,
-                         map_sample_data = NULL,
-                         group_column_da = self$indices$group_col,
-                         apply_da = TRUE,
-                         alpha_da = 0.8,
-                         img_format = "png")
+      self$param_class_distribution(dataset = 'Class table total normalized',
+                                    group_col = self$indices$group_col,
+                                    color_palette = 'Spectral',
+                                    img_format = "png")
 
-      self$param_pca(data_table = 'z_scored_total_norm_data',
+      self$param_class_comparison(dataset = 'Class table total normalized',
+                                  group_col = self$indices$group_col,
+                                  color_palette = 'Spectral',
+                                  img_format = "png")
+
+      self$param_pca(auto_refresh = T,
+                     data_table = 'z_scored_total_norm_data',
                      sample_groups_col = self$indices$group_col,
                      feature_groups_col = NULL,
                      apply_da = FALSE,
@@ -758,7 +1085,86 @@ Prot_exp = R6::R6Class(
                      colors_palette = 'Spectral',
                      img_format = "png")
 
-      self$indices$feature_id_type = 'SYMBOL'
+      self$param_volcano_plot(auto_refresh = T,
+                              data_table = 'Total normalized table',
+                              adjustment = "BH",
+                              group_col = self$indices$group_col,
+                              group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
+                              group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
+                              feature_metadata = 'None',
+                              keep_significant = F,
+                              displayed_plot = 'main',
+                              p_val_threshold = 0.05,
+                              fc_threshold = 2,
+                              marker_size = 6,
+                              opacity = 1,
+                              color_palette = 'Spectral',
+                              selected_function = "mean",
+                              selected_test = "t-Test",
+                              img_format = "png")
+
+      self$param_heatmap(auto_refresh = T,
+                         dataset = 'Z-scored total normalized table',
+                         impute = T,
+                         cluster_samples = T,
+                         cluster_features = T,
+                         map_sample_data = NULL,
+                         map_feature_data = NULL,
+                         map_feature_terms = NULL,
+                         multival_cols = "None",
+                         group_column_da = self$indices$group_col,
+                         apply_da = T,
+                         alpha_da = 0.8,
+                         color_palette = 'RdYlBu',
+                         reverse_palette = F,
+                         img_format = "png")
+
+
+      self$param_samples_correlation(auto_refresh = T,
+                                     dataset = 'Z-scored total normalized table',
+                                     correlation_method = "pearson",
+                                     use = 'pairwise.complete.obs',
+                                     cluster_cols = T,
+                                     cluster_rows = T,
+                                     row_annotations = 'Group_type',
+                                     col_annotations = 'Group_type',
+                                     color_palette = 'RdYlBu',
+                                     reverse_palette = F,
+                                     img_format = "png"
+      )
+
+      self$param_feature_correlation(
+        auto_refresh = T,
+        dataset = 'Z-scored total normalized table',
+        multival_cols = 'None',
+        map_feature_terms = NULL,
+        correlation_method = "pearson",
+        use = 'pairwise.complete.obs',
+        cluster_cols = T,
+        cluster_rows = T,
+        row_annotations = NULL,
+        col_annotations = NULL,
+        roh_threshold = 0.95,
+        top_features = 300,
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
+        img_format = "png"
+      )
+
+      self$param_db_plot(dataset = "Total normalized table",
+                         adjustment = "Benjamini-Hochberg",
+                         group_column = self$indices$group_col,
+                         selected_groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
+                         selected_lipid_class = NULL,
+                         selected_carbon_chain = 'Carbon count (chain 1)',
+                         selected_unsat = 'Double bonds (chain 1)',
+                         selected_function = "median",
+                         selected_test = "t-Test",
+                         fc_range = c(-5, 5),
+                         fc_values = c(-1, 1),
+                         pval_range = c(0, 5),
+                         pval_values = c(1, 5),
+                         img_format = "png")
 
       self$param_gsea(data_table = 'Raw data table',
                       meta_table = 'Raw metadata table',
@@ -802,12 +1208,11 @@ Prot_exp = R6::R6Class(
     # Volcano table
     get_volcano_table = function(data_table = self$tables$raw_data,
                                  volcano_table = self$tables$feature_table,
-                                 group_col = self$indices$group_col,
+                                 group_col = self$params$volcano_plot$group_col,
                                  used_function = self$params$volcano_plot$selected_function,
                                  test = self$params$volcano_plot$selected_test,
                                  group_1 = self$params$volcano_plot$group_1,
                                  group_2 = self$params$volcano_plot$group_2) {
-
 
 
       rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_1]
@@ -832,6 +1237,7 @@ Prot_exp = R6::R6Class(
         volcano_table = volcano_table[-dead_features,]
       }
 
+
       # Collect fold change and p-values
       volcano_table$fold_change = get_fold_changes(data_table = data_table,
                                                    idx_group_1 = idx_group_1,
@@ -854,6 +1260,109 @@ Prot_exp = R6::R6Class(
       self$tables$volcano_table = volcano_table
     },
 
+    # Double bond plot table
+    get_dbplot_table_single = function(data_table = self$tables[[self$params$db_plot$dataset]],
+                                       dbplot_table = self$tables$feature_table,
+                                       col_group = self$params$db_plot$group_column,
+                                       used_function = self$params$db_plot$selected_function,
+                                       group_1 = self$params$db_plot$selected_groups[1]){
+
+      # Set the averaging function
+      if (used_function == "median") {
+        av_function = function(x) {return(median(x, na.rm = T))}
+      } else {
+        av_function = function(x) {return(mean(x, na.rm = T))}
+      }
+
+      # Get the rownames for each group
+      idx_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_1]
+
+      # Remove empty columns
+      dead_features = colnames(data_table)
+      data_table = remove_empty_cols(table = data_table)
+      dead_features = setdiff(dead_features, colnames(data_table))
+
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(dbplot_table) %in% dead_features)
+        dbplot_table = dbplot_table[-dead_features,]
+      }
+
+
+      averages = apply(data_table,2,av_function)
+      dbplot_table[, "averages"] = averages
+
+      lips = rownames(dbplot_table)
+      txt_medians = as.character(round(dbplot_table[,"averages"],5))
+      dbplot_table$text = paste0(lips, " | ", used_function, ": ", txt_medians)
+
+      self$tables$dbplot_table = dbplot_table
+    },
+
+    get_dbplot_table_double = function(data_table,
+                                       dbplot_table = self$tables$feature_table,
+                                       col_group = self$params$db_plot$group_column,
+                                       used_function = self$params$db_plot$selected_function,
+                                       test = self$params$db_plot$selected_test,
+                                       group_1 = self$params$db_plot$selected_groups[1],
+                                       group_2 = self$params$db_plot$selected_groups[2]) {
+
+
+      rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_1]
+      rownames_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_2]
+      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
+
+      # Filter data to keep only the two groups
+      data_table = data_table[all_rownames,]
+
+      # Get the indices for each group
+      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
+      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
+
+      # Get all row names from both groups
+      idx_all = c(idx_group_1, idx_group_2)
+      idx_all = sort(unique(idx_all))
+
+      # Filter data to keep only the two groups
+      data_table = data_table[idx_all,]
+
+      # Remove empty columns
+      dead_features = colnames(data_table)
+      data_table = remove_empty_cols(table = data_table)
+      dead_features = setdiff(dead_features, colnames(data_table))
+
+      if (length(dead_features) > 0) {
+        dead_features = which(rownames(dbplot_table) %in% dead_features)
+        dbplot_table = dbplot_table[-dead_features,]
+      }
+
+
+      # Collect fold change and p-values
+      dbplot_table$fold_change = get_fold_changes(data_table = data_table,
+                                                  idx_group_1 = idx_group_1,
+                                                  idx_group_2 = idx_group_2,
+                                                  used_function = used_function)
+
+
+      dbplot_table$p_val = get_p_val(data_table = data_table,
+                                     idx_group_1 = idx_group_1,
+                                     idx_group_2 = idx_group_2,
+                                     used_function = test)
+      dbplot_table$q_val_bh = stats::p.adjust(dbplot_table$p_val, method = "BH")
+
+      dbplot_table$minus_log10_p_value = -log10(dbplot_table$p_val)
+      dbplot_table$log2_fold_change = log2(dbplot_table$fold_change)
+      dbplot_table$minus_log10_p_value_bh_adj = -log10(dbplot_table$q_val_bh)
+
+      lips = rownames(dbplot_table)
+      fc = as.character(round(dbplot_table[,"log2_fold_change"],2))
+      pval = as.character(round(dbplot_table[,"minus_log10_p_value_bh_adj"],2))
+      dbplot_table$text = paste0(lips, " | log2(fc): ", fc, " | -log10(bh(pval)): ", pval)
+
+
+
+      self$tables$dbplot_table = dbplot_table
+    },
+
     #---------------------------------------------------- GSEA & OR methods ----
 
     # GSEA table
@@ -866,10 +1375,6 @@ Prot_exp = R6::R6Class(
                              test = self$params$gsea$test,
                              context = 'gsea'
     ) {
-
-
-
-
 
       rownames_group_1 = rownames(meta_table)[meta_table[, group_col] == group_1]
       rownames_group_2 = rownames(meta_table)[meta_table[, group_col] == group_2]
@@ -915,7 +1420,6 @@ Prot_exp = R6::R6Class(
         self$tables$ora_prot_list = prot_list
       }
     },
-
 
     # GSEA object
     get_gsea_object = function(prot_list = self$table_switch_local(self$params$gsea$prot_list),
@@ -1048,6 +1552,158 @@ Prot_exp = R6::R6Class(
     },
 
     #----------------------------------------------------- Plotting methods ----
+    # Class distribution
+    plot_class_distribution = function(table = self$params$class_distribution$dataset,
+                                       meta_table = self$tables$raw_meta,
+                                       group_col = self$params$class_distribution$group_col,
+                                       color_palette = self$params$class_distribution$color_palette,
+                                       width = NULL,
+                                       height = NULL){
+
+      table = self$table_check_convert(table)
+
+
+      # Produce the class x group table
+      samp_list = rownames(table)
+      class_list = colnames(table)
+      group_list = sort(unique(meta_table[,group_col]))
+
+      plot_table = data.frame(matrix(data = 0.0,
+                                     nrow = length(class_list),
+                                     ncol = length(group_list)))
+      rownames(plot_table) = class_list
+      colnames(plot_table) = group_list
+
+      for (c in class_list) {
+        for (g in group_list){
+          s = rownames(meta_table)[meta_table[,group_col] == g]
+          m = mean(as.matrix(table[s, c]))
+          plot_table[c,g] = m
+        }
+      }
+
+      # Store the plot_table
+      self$tables$class_distribution_table = plot_table
+
+      colors = brewer.pal(as.numeric(colors_switch(color_palette)), color_palette)
+      colors = colorRampPalette(colors)(length(group_list))
+      colors = setNames(colors, group_list)
+
+      # Produce the plot
+      i = 1
+      fig = plotly::plot_ly(colors = unname(colors), width = width, height = height)
+      for (col in colnames(plot_table)) {
+        fig = fig %>% add_trace(x = rownames(plot_table), y = plot_table[,col],
+                                name = col, color = colors[col], type  = "bar")
+        fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
+                             yaxis = list(title = "Concentration"))
+        i = i + 1
+      }
+
+      self$plots$class_distribution = fig
+    },
+
+    # Class comparison
+    plot_class_comparison = function(data_table = self$params$class_comparison$dataset,
+                                     meta_table = self$tables$raw_meta,
+                                     group_col = self$params$class_comparison$group_col,
+                                     color_palette = self$params$class_comparison$color_palette,
+                                     width = NULL,
+                                     height = NULL){
+
+      data_table = self$table_check_convert(data_table)
+
+      # Get sample groups and the list of classes
+      groups = sort(unique(meta_table[,group_col]))
+      class_list = colnames(data_table)
+
+      x_dim = ceiling(sqrt(length(class_list)))
+      y_dim = floor(sqrt(length(class_list)))
+
+
+      x_step = 1/x_dim
+      y_step = 1/y_dim
+
+      x = x_step/2
+      y = 0.97 - y_step
+      i = 1
+
+      annotations = c()
+      for (c in class_list) {
+        tmp_ann = list(
+          x = x,
+          y = y,
+          text = c,
+          xref = "paper",
+          yref = "paper",
+          xanchor = "center",
+          yanchor = "bottom",
+          showarrow = FALSE)
+        annotations[[i]] = tmp_ann
+        i = i + 1
+        x = x + x_step
+        if (x >= 1) {
+          x = x_step/2
+          y = y - y_step}
+      }
+      annotations[[i]] = list(x = -0.08, y = 0.5, text = "Concentration",
+                              font = list(size = 10),
+                              textangle = 270, showarrow = FALSE, xref='paper',
+                              yref='paper')
+
+      colors = brewer.pal(as.numeric(colors_switch(color_palette)), color_palette)
+      colors = colorRampPalette(colors)(length(groups))
+      colors = setNames(colors, groups)
+
+      # Plot list will be the list of subplots
+      plot_list = c()
+
+      # Cleared groups is created for the legends
+      cleared_groups = c()
+      j = 1
+      for (c in class_list) {
+        i = 1
+        subplot = plot_ly(colors = unname(colors), width = width, height = height)
+        for (g in groups){
+          if (g %in% cleared_groups) {
+            first_bool = FALSE
+          }else{
+            first_bool = TRUE
+            cleared_groups = c(cleared_groups, g)
+          }
+
+          # For each class, each group
+          s = rownames(meta_table)[meta_table[, group_col] == g] # Get the samples for the current group
+          d = data_table[s, c] # Get the concentrations for all s samples in the current class c
+          m = mean(d) # Get the mean concentration for samples s for class c
+
+          # Subplot for the bar chart displaying the mean concentration
+          subplot = subplot %>% add_trace(x = g, y = m, type  = "bar", name = g,
+                                          color = colors[g], alpha = 1,
+                                          legendgroup=i, showlegend = first_bool)
+
+          # Subplot for boxplots displaying the median and all datapoints
+          subplot = subplot %>% add_trace(x = g, y = d, type  = "box", boxpoints = "all",
+                                          pointpos = 0, name = g, color = colors[g],
+                                          line = list(color = 'rgb(100,100,100)'),
+                                          marker = list(color = 'rgb(100,100,100)'), alpha = 1,
+                                          legendgroup=i, showlegend = FALSE,
+                                          text = s,
+                                          hoverinfo = "text")
+          subplot = subplot %>% layout(xaxis= list(showticklabels = FALSE),
+                                       yaxis = list(tickfont = list(size = 8)))
+          i = i + 1
+        }
+        plot_list[[j]] = plotly_build(subplot)
+        j = j + 1
+      }
+
+      fig = subplot(plot_list, nrows = y_dim, margin = 0.035, titleX = TRUE)
+      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
+                           annotations = annotations)
+
+      self$plots$class_comparison = fig
+    },
 
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
@@ -1064,6 +1720,8 @@ Prot_exp = R6::R6Class(
                             color_palette = self$params$volcano_plot$color_palette,
                             width = NULL,
                             height = NULL){
+
+      data_table = self$table_check_convert(data_table)
 
       p_val_threshold = as.numeric(p_val_threshold)
       fc_threshold = as.numeric(fc_threshold)
@@ -1087,25 +1745,16 @@ Prot_exp = R6::R6Class(
       }
 
       if (!is.null(feature_metadata)) {
-        if (length(feature_metadata) == 1)  {
-          if (feature_metadata %in% colnames(data_table)) {
-            feature_metadata = data_table[,feature_metadata]
-          } else {
-            feature_metadata = NULL
-          }
+        if (feature_metadata %in% colnames(data_table)) {
+          feature_metadata = data_table[,feature_metadata]
         } else {
-          if (length(names(feature_metadata)) > 0) {
-            feature_metadata = feature_metadata[rownames(data_table)]
-          } else if (length(feature_metadata) != length(p_vals)) {
-            feature_metadata = NULL
-          }
+          feature_metadata = NULL
         }
       }
 
       displayed_text = paste0(paste0(rownames(data_table), '\n'),
                               paste0('p-value: ', round(p_vals, 3), '\n'),
                               paste0('FC: ', round(data_table$fold_change, 2)))
-
 
       fig = volcano_main(fc_vals = data_table$fold_change,
                          p_vals = p_vals,
@@ -1126,17 +1775,24 @@ Prot_exp = R6::R6Class(
     },
 
     ## Heatmap plot
-    plot_heatmap = function(data_table = self$tables$z_scored_total_norm_data,
+    plot_heatmap = function(data_table = self$params$heatmap$dataset,
                             impute = self$params$heatmap$impute,
                             meta_table = self$tables$raw_meta,
+                            meta_table_features = self$tables$feature_table,
                             cluster_rows = self$params$heatmap$cluster_samples,
                             cluster_cols = self$params$heatmap$cluster_features,
                             row_annotations = self$params$heatmap$map_sample_data,
+                            col_annotations = self$params$heatmap$map_feature_data,
+                            map_feature_terms = self$params$heatmap$map_feature_terms,
                             apply_da = self$params$heatmap$apply_da,
                             group_column_da = self$params$heatmap$group_column_da,
                             alpha_da = self$params$heatmap$alpha_da,
+                            color_palette = self$params$heatmap$color_palette,
+                            reverse_palette = self$params$heatmap$reverse_palette,
                             width = NULL,
                             height = NULL) {
+
+      data_table = self$table_check_convert(data_table)
 
       if (apply_da) {
         data_table = apply_discriminant_analysis(data_table = data_table,
@@ -1144,7 +1800,9 @@ Prot_exp = R6::R6Class(
                                                  nlambda = 100,
                                                  alpha = alpha_da)
 
+        meta_table_features = meta_table_features[colnames(data_table),]
       }
+
 
       # Save table as heatmap table
       self$tables$heatmap_table = data_table
@@ -1160,6 +1818,7 @@ Prot_exp = R6::R6Class(
         dendrogram_list = "none"
       }
 
+      # Set zmax and zmin
       val_list = as.vector(data_table)
       val_list = na.omit(val_list)
       val_list = sort(val_list)
@@ -1174,48 +1833,296 @@ Prot_exp = R6::R6Class(
       # Annotations
       if (!is.null(row_annotations)) {
         if (length(row_annotations) > 1) {
-          row_annotations = meta_table[rownames(data_table), row_annotations]
+          row_annotations = meta_table[, row_annotations]
           colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
         } else {
           row_names = row_annotations
-          row_annotations = as.data.frame(meta_table[rownames(data_table), row_annotations],
-                                          row.names = rownames(data_table))
-
+          row_annotations = as.data.frame(meta_table[, row_annotations],
+                                          row.names = rownames(meta_table))
           colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
         }
       }
 
+      # Reorder the feature metadata according to the data_table order
+      meta_table_features = meta_table_features[c(colnames(data_table)),]
 
+      if (!is.null(col_annotations)) {
+        clean_names = sub("^(.)", "\\U\\1", tolower(str_replace_all(col_annotations, '_', ' ')), perl = TRUE)
+        if (length(col_annotations) == 1) {
+          col_annotations = as.data.frame(meta_table_features[, col_annotations],
+                                          row.names = rownames(meta_table_features))
+          colnames(col_annotations) = clean_names
+        } else {
+          col_annotations = meta_table_features[, col_annotations]
+          colnames(col_annotations) = clean_names
+        }
+      }
+
+      # Add multivalue annotations
+      if (!is.null(map_feature_terms)) {
+        if (is.null(col_annotations)) {
+          col_annotations = as.data.frame(meta_table_features[, NULL])
+        }
+        for (name in names(map_feature_terms))
+          col_annotations[[name]] = map_feature_terms[[name]][rownames(col_annotations)]
+      }
+
+
+      # Impute missing values
       if (impute) {
-        print_tm(self$name, 'Imputing NAs')
         data_table[is.na(data_table)] = zmin
+      }
+
+      # Get the color palette
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      if (reverse_palette) {
+        color_palette = base::rev(color_palette)
       }
 
       # Plot the data
       self$plots$heatmap = heatmaply::heatmaply(x = t(data_table),
                                                 scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                                  low = "blue",
-                                                  mid = "#faf4af",
-                                                  high = "red",
+                                                  low = color_palette[3],
+                                                  mid = color_palette[2],
+                                                  high = color_palette[1],
                                                   midpoint = 0,
-                                                  # limits = c(-col_lim, col_lim)
                                                   limits = c(zmin, zmax)
                                                 ),
-                                                # scale_fill_gradient_fun = ggplot2::scale_fill_gradient(
-                                                #   low = "blue4",
-                                                #   high = "red",
-                                                #   # limits = c(-col_lim, col_lim)
-                                                # ),
                                                 width = width,
                                                 height = height,
                                                 limits = c(zmin, zmax),
                                                 col_side_colors = row_annotations,
+                                                row_side_colors = col_annotations,
                                                 dendrogram = dendrogram_list)
 
     },
 
+    ## Sample correlation plot
+    plot_samples_correlation = function(data_table = self$params$samples_correlation$dataset,
+                                        meta_table = self$tables$raw_meta,
+                                        correlation_method = self$params$samples_correlation$correlation_method,
+                                        use = self$params$samples_correlation$use,
+                                        cluster_cols = self$params$samples_correlation$cluster_cols,
+                                        cluster_rows = self$params$samples_correlation$cluster_rows,
+                                        row_annotations = self$params$samples_correlation$row_annotations,
+                                        col_annotations = self$params$samples_correlation$col_annotations,
+                                        color_palette = self$params$samples_correlation$color_palette,
+                                        reverse_palette = self$params$samples_correlation$reverse_palette,
+                                        width = NULL,
+                                        height = NULL) {
+
+      data_table = self$table_check_convert(data_table)
+
+      # Set the clustering
+      if (cluster_rows & cluster_cols) {
+        dendrogram_list = "both"
+      } else if (cluster_rows) {
+        dendrogram_list = "column" # Because of the transpose, rows => cols
+      } else if (cluster_cols) {
+        dendrogram_list = "row" # Because of the transpose, cols => rows
+      } else {
+        dendrogram_list = "none"
+      }
+
+      data_table = stats::cor(x = t(data_table),
+                              y = NULL,
+                              use = use,
+                              method = correlation_method)
+
+      # diag(data_table) = 0
+
+      # Set zmax and zmin
+      val_list = as.vector(data_table)
+      val_list = na.omit(val_list)
+      val_list = sort(val_list)
+
+      zmax = min(c(abs(min(val_list)), max(val_list)))
+      zmin = -zmax
+
+      # Filter out the data
+      data_table[data_table > zmax] = zmax
+      data_table[data_table < zmin] = zmin
+
+      # Annotations
+      if (!is.null(row_annotations)) {
+        if (length(row_annotations) > 1) {
+          row_annotations = meta_table[, row_annotations]
+          colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
+        } else {
+          row_names = row_annotations
+          row_annotations = as.data.frame(meta_table[, row_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      if (!is.null(col_annotations)) {
+        if (length(col_annotations) > 1) {
+          col_annotations = meta_table[, col_annotations]
+          colnames(col_annotations) = stringr::str_replace_all(colnames(col_annotations), "_", " ")
+        } else {
+          row_names = col_annotations
+          col_annotations = as.data.frame(meta_table[, col_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(col_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      # Save table as heatmap table
+      self$tables$samples_correlation = data_table
+
+      # Get the color palette
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      if (reverse_palette) {
+        color_palette = base::rev(color_palette)
+      }
+
+      # Plot the data
+      self$plots$samples_correlation = heatmaply::heatmaply(x = t(data_table),
+                                                            scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                                                              low = color_palette[3],
+                                                              mid = color_palette[2],
+                                                              high = color_palette[1],
+                                                              midpoint = 0,
+                                                              limits = c(zmin, zmax)
+                                                            ),
+                                                            width = width,
+                                                            height = height,
+                                                            limits = c(zmin, zmax),
+                                                            col_side_colors = row_annotations,
+                                                            row_side_colors = col_annotations,
+                                                            dendrogram = dendrogram_list)
+
+    },
+
+    ## Feature correlation plot
+    plot_feature_correlation = function(data_table = self$params$feature_correlation$dataset,
+                                        meta_table = self$tables$feature_table,
+                                        map_feature_terms = self$params$feature_correlation$map_feature_terms,
+                                        correlation_method = self$params$feature_correlation$correlation_method,
+                                        use = self$params$feature_correlation$use,
+                                        cluster_cols = self$params$feature_correlation$cluster_cols,
+                                        cluster_rows = self$params$feature_correlation$cluster_rows,
+                                        row_annotations = self$params$feature_correlation$row_annotations,
+                                        col_annotations = self$params$feature_correlation$col_annotations,
+                                        roh_threshold = self$params$feature_correlation$roh_threshold,
+                                        top_features = self$params$feature_correlation$top_features,
+                                        color_palette = self$params$feature_correlation$color_palette,
+                                        reverse_palette = self$params$feature_correlation$reverse_palette,
+                                        width = NULL,
+                                        height = NULL) {
+
+      data_table = self$table_check_convert(data_table)
+
+      # Set the clustering
+      if (cluster_rows & cluster_cols) {
+        dendrogram_list = "both"
+      } else if (cluster_rows) {
+        dendrogram_list = "column" # Because of the transpose, rows => cols
+      } else if (cluster_cols) {
+        dendrogram_list = "row" # Because of the transpose, cols => rows
+      } else {
+        dendrogram_list = "none"
+      }
+
+      data_table = stats::cor(x = data_table,
+                              y = NULL,
+                              use = use,
+                              method = correlation_method)
+
+      diag(data_table) = 0
+      max_abs_values = apply(data_table, 1, function(x) max(abs(x), na.rm = T))
+      roh_filter = unname(which(max_abs_values >= roh_threshold))
+      diag(data_table) = 1
+
+      if (length(roh_filter) > top_features) {
+        best_hits = names(sort(rowSums(abs(data_table), na.rm = T), decreasing = T)[1:top_features])
+        roh_filter = which((rownames(data_table) %in% best_hits))
+      }
+      data_table = data_table[roh_filter, roh_filter]
+      meta_table = meta_table[rownames(data_table),]
+
+      # Set zmax and zmin
+      val_list = as.vector(data_table)
+      val_list = na.omit(val_list)
+      val_list = sort(val_list)
+
+      zmax = min(c(abs(min(val_list)), max(val_list)))
+      zmin = -zmax
+
+      # Filter out the data
+      data_table[data_table > zmax] = zmax
+      data_table[data_table < zmin] = zmin
+
+      # Annotations
+      if (!is.null(row_annotations)) {
+        if (length(row_annotations) > 1) {
+          row_annotations = meta_table[, row_annotations]
+          colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
+        } else {
+          row_names = row_annotations
+          row_annotations = as.data.frame(meta_table[, row_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      if (!is.null(col_annotations)) {
+        if (length(col_annotations) > 1) {
+          col_annotations = meta_table[, col_annotations]
+          colnames(col_annotations) = stringr::str_replace_all(colnames(col_annotations), "_", " ")
+        } else {
+          row_names = col_annotations
+          col_annotations = as.data.frame(meta_table[, col_annotations],
+                                          row.names = rownames(meta_table))
+          colnames(col_annotations) = stringr::str_replace_all(row_names, "_", " ")
+        }
+      }
+
+      # Add multivalue annotations
+      if (!is.null(map_feature_terms)) {
+        if (is.null(col_annotations)) {
+          col_annotations = as.data.frame(meta_table[, NULL])
+        }
+        for (name in names(map_feature_terms))
+          col_annotations[[name]] = map_feature_terms[[name]][rownames(col_annotations)]
+      }
+
+      # Save table as heatmap table
+      self$tables$feature_correlation = data_table
+
+      # Get the color palette
+      color_count = colors_switch(color_palette)
+      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      if (reverse_palette) {
+        color_palette = base::rev(color_palette)
+      }
+
+      # Plot the data
+      self$plots$feature_correlation = heatmaply::heatmaply(x = data_table,
+                                                            scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
+                                                              low = color_palette[3],
+                                                              mid = color_palette[2],
+                                                              high = color_palette[1],
+                                                              midpoint = 0,
+                                                              limits = c(zmin, zmax)
+                                                            ),
+                                                            width = width,
+                                                            height = height,
+                                                            limits = c(zmin, zmax),
+                                                            col_side_colors = row_annotations,
+                                                            row_side_colors = col_annotations,
+                                                            dendrogram = dendrogram_list)
+
+    },
+
     ## PCA scores and loading plots
-    plot_pca = function(data_table = self$tables[[self$params$pca$data_table]],
+    plot_pca = function(data_table = self$params$pca$data_table,
                         meta_table = self$tables$raw_meta,
                         feature_table = self$tables$feature_table,
                         sample_groups_col = self$params$pca$sample_groups_col,
@@ -1232,6 +2139,8 @@ Prot_exp = R6::R6Class(
                         return_data = TRUE,
                         width = NULL,
                         height = NULL) {
+
+      data_table = self$table_check_convert(data_table)
 
       alpha_da = as.numeric(alpha_da)
       nPcs= as.numeric(nPcs)
@@ -1296,6 +2205,124 @@ Prot_exp = R6::R6Class(
       self$tables$pca_loadings_table = pca_out$pca_data@loadings
       self$plots$pca_plot = pca_out$fig
 
+    },
+
+    ## Double bond plot
+    plot_doublebonds_single = function(data_table = self$params$db_plot$dataset,
+                                       lipid_class = self$params$db_plot$selected_lipid_class,
+                                       carbon_selection = self$params$db_plot$selected_carbon_chain,
+                                       unsat_selection = self$params$db_plot$selected_unsat,
+                                       group_1 = self$params$db_plot$selected_groups[1],
+                                       width = NULL,
+                                       height = NULL){
+
+      data_table = self$table_check_convert(data_table)
+
+      x_label = carbon_selection
+      y_label = unsat_selection
+      carbon_selection = feature_table_cols_switch(carbon_selection)
+      unsat_selection = feature_table_cols_switch(unsat_selection)
+      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
+      data_table = data_table[selected_rows,]
+      x_lims = c(min(data_table[,carbon_selection]) -1, max(data_table[,carbon_selection]) +1)
+      y_lims = c(min(data_table[,unsat_selection]) -0.5, max(data_table[,unsat_selection]) +1)
+
+      fig = plotly::plot_ly(data_table,
+                            x = data_table[,carbon_selection],
+                            y = data_table[,unsat_selection],
+                            type = "scatter",
+                            mode = "markers",
+                            size = ~averages,
+                            sizes = ~c(5,40),
+                            marker = list(sizemode ='diameter',
+                                          opacity = 0.5,
+                                          sizeref=1
+                            ),
+                            text = data_table$text,
+                            hoverinfo = "text",
+                            width = width,
+                            height = height)
+
+
+      fig = fig %>% layout(
+        title = paste0("Lipids in class ", lipid_class, " - ", group_1),
+        xaxis = list(title = x_label,
+                     range = x_lims
+        ),
+        yaxis = list(title = y_label,
+                     range = y_lims
+        )
+      )
+      self$plots$double_bond_plot = fig
+    },
+
+    plot_doublebonds_double = function(data_table = self$tables$dbplot_table,
+                                       adjustment = self$params$db_plot$adjustment,
+                                       carbon_selection = self$params$db_plot$selected_carbon_chain,
+                                       unsat_selection = self$params$db_plot$selected_unsat,
+                                       lipid_class = self$params$db_plot$selected_lipid_class,
+                                       fc_limits = self$params$db_plot$fc_values,
+                                       pval_limits = self$params$db_plot$pval_values,
+                                       group_1 = self$params$db_plot$selected_groups[1],
+                                       group_2 = self$params$db_plot$selected_groups[2],
+                                       width = NULL,
+                                       height = NULL){
+
+      x_label = carbon_selection
+      y_label = unsat_selection
+      carbon_selection = feature_table_cols_switch(carbon_selection)
+      unsat_selection = feature_table_cols_switch(unsat_selection)
+      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
+      data_table = data_table[selected_rows,]
+      x_lims = c(min(data_table[,carbon_selection]) -1, max(data_table[,carbon_selection]) +1)
+      y_lims = c(min(data_table[,unsat_selection]) -0.5, max(data_table[,unsat_selection]) +1)
+      data_table = data_table[!dplyr::between(data_table[,"log2_fold_change"], fc_limits[1], fc_limits[2]),]
+      data_table = data_table[dplyr::between(data_table[,adjustment], pval_limits[1], pval_limits[2]),]
+      if (nrow(data_table) > 0) {
+        fig = plotly::plot_ly(data_table,
+                              x = data_table[,carbon_selection],
+                              y = data_table[,unsat_selection],
+                              type = "scatter",
+                              mode = "markers",
+                              size = data_table[,adjustment],
+                              sizes = ~c(5,40),
+                              marker = list(color = ~log2_fold_change,
+                                            sizemode ='diameter',
+                                            opacity = 0.5,
+                                            sizeref=1,
+                                            colorscale = 'RdBu',
+                                            cmax = max(abs(data_table[, "log2_fold_change"])),
+                                            cmin = -max(abs(data_table[, "log2_fold_change"])),
+                                            colorbar=list(
+                                              title='Log2(fold change)'
+                                            ),
+                                            line = list(width = 0)
+                              ),
+                              text = data_table$text,
+                              hoverinfo = "text",
+                              width = width,
+                              height = height)
+      } else {
+        fig = plotly::plot_ly(data_table,
+                              x = data_table[,carbon_selection],
+                              y = data_table[,unsat_selection],
+                              type = "scatter",
+                              mode = "markers",
+                              width = width,
+                              height = height)
+      }
+
+      fig = fig %>% layout(
+        legend= list(itemsizing='constant'),
+        title = paste0("Comparison in ", lipid_class, " - ", group_1, " (blue), ", group_2, " (red)"),
+        xaxis = list(title = x_label,
+                     range = x_lims
+        ),
+        yaxis = list(title = y_label,
+                     range = y_lims
+        )
+      )
+      self$plots$double_bond_plot = fig
     },
 
     plot_dot_plot = function(object = self$tables$gsea_object,
@@ -1872,4 +2899,3 @@ Prot_exp = R6::R6Class(
     #------------------------------------------------------------------ END ----
   )
 )
-

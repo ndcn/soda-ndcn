@@ -23,7 +23,7 @@ start_ui = function(id){
             shiny::selectInput(
               inputId = ns('exp_type'),
               label = 'Exp. type',
-              choices = c('Lipidomics', 'Proteomics', 'Transcriptomics'),
+              choices = c('Lipidomics', 'Metabolomics', 'Proteomics', 'Transcriptomics', 'Genomics'),
               width = '100%'
             )
           ),
@@ -205,33 +205,33 @@ start_server = function(id, main_input, main_output, main_session, module_contro
 
       })
 
-      # shiny::observeEvent(input$remove_exp, {
-      #   shiny::req(input$del_exp)
-      #
-      #   for (mod in input$del_exp) {
-      #     print_t(paste0('Removing ', mod))
-      #     exp_id = names(which(module_controler$exp_names == mod))[1]
-      #     purge_module_inputs(id = exp_id, input_object = main_input)
-      #     events = names(session$userData[[paste0('mod_', exp_id)]])
-      #     for (e in events) {
-      #       session$userData[[paste0('mod_', exp_id)]][[e]]$destroy()
-      #     }
-      #     main_output[[exp_id]] = NULL
-      #     module_controler$slot_taken[[exp_id]] = FALSE
-      #     module_controler$module_loaded[[exp_id]] = FALSE
-      #     module_controler$exp_types[[exp_id]] = NA
-      #     module_controler$exp_names[[exp_id]] = NA
-      #     module_controler$exp_r6[[exp_id]] = NA
-      #   }
-      #
-      #   shiny::updateSelectInput(
-      #     inputId = 'del_exp',
-      #     selected = character(0),
-      #     choices = unname(unlist(module_controler$exp_names))
-      #   )
-      #
-      #   shinyjs::enable('add_exp')
-      # })
+      shiny::observeEvent(input$remove_exp, {
+        shiny::req(input$del_exp)
+
+        for (mod in input$del_exp) {
+          print_t(paste0('Removing ', mod))
+          exp_id = names(which(module_controler$exp_names == mod))[1]
+          purge_module_inputs(id = exp_id, input_object = main_input)
+          events = names(session$userData[[paste0('mod_', exp_id)]])
+          for (e in events) {
+            session$userData[[paste0('mod_', exp_id)]][[e]]$destroy()
+          }
+          main_output[[exp_id]] = NULL
+          module_controler$slot_taken[[exp_id]] = FALSE
+          module_controler$module_loaded[[exp_id]] = FALSE
+          module_controler$exp_types[exp_id] = list(NULL)
+          module_controler$exp_names[exp_id] = list(NULL)
+          module_controler$exp_r6[exp_id] = list(NULL)
+        }
+
+        shiny::updateSelectInput(
+          inputId = 'del_exp',
+          selected = character(0),
+          choices = unname(unlist(module_controler$exp_names))
+        )
+
+        shinyjs::enable('add_exp')
+      })
 
       # Switch experiment
 
@@ -253,6 +253,18 @@ start_server = function(id, main_input, main_output, main_session, module_contro
             inputId = 'exp_name',
             value = character(0),
             placeholder = 'lips_1'
+          )
+        } else if (input$exp_type == 'Genomics') {
+          shiny::updateTextInput(
+            inputId = 'exp_name',
+            value = character(0),
+            placeholder = 'geno_1'
+          )
+        } else if (input$exp_type == 'Metabolomics') {
+          shiny::updateTextInput(
+            inputId = 'exp_name',
+            value = character(0),
+            placeholder = 'meta_1'
           )
         }
 

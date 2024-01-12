@@ -1,6 +1,6 @@
 Package: soda
 Title: Simple Omics Data Analysis
-Version: 0.8.55
+Version: 0.9.0
 Authors@R:
   c(person(given = "Yassene",
            family = "Mohammed", 
@@ -16,4 +16,5 @@ Authors@R:
            family = "Olivier-Jimenez",
            email = "d.olivier@lumc.nl",
            role = c("cre", "aut"),
-           comment = c(ORCID = "0000-0002-6363-0857")))
+           comment = c(ORCID = "0000-0002-6363-0857"))
+  )
