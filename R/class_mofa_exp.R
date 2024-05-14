@@ -277,6 +277,10 @@ Mofa_data = R6::R6Class(
     train_model = function(mofa_object = self$mofa_objects$pretrained,
                            outfile = NULL,
                            save_data = FALSE) {
+      # model = MOFA2::run_mofa(object = mofa_object,
+      #                         outfile = outfile,
+      #                         use_basilisk = F,
+      #                         save_data = save_data)
       model = MOFA2::run_mofa(object = mofa_object,
                               outfile = outfile,
                               use_basilisk = T,

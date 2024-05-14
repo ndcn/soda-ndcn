@@ -16,13 +16,16 @@ library(ggpubr)
 library(ggupset)
 library(networkD3)
 library(igraph)
+library(ellipse)
 
 # text
 library(stringr)
+library(markdown)
 
 # Tables
 library(DT)
 library(readxl)
+library(Matrix)
 
 # Colors
 library(grDevices)
@@ -32,6 +35,7 @@ library(RColorBrewer)
 library(stats)
 library(glmnet)
 library(pcaMethods)
+library(scales)
 
 # Omics
 library(org.Hs.eg.db)
@@ -47,10 +51,9 @@ library(reshape2)
 library(dplyr)
 
 # New
-library(scales)
+
+# Use basilisk
 # reticulate::use_condaenv(condaenv = 'mofa_1')
-
-
 
 #------------------------------------------------------------- Setup header ----
 header_ui = function() {
@@ -215,9 +218,9 @@ server = function(input, output, session) {
   # Basic authentification
   res_auth = shinymanager::secure_server(
     check_credentials = shinymanager::check_credentials(db = data.frame(
-      user = c("user1", "user2"),
-      password = c("1234", "monkey"),
-      admin = c(FALSE, FALSE))
+      user = c("user1"),
+      password = c("user1234"),
+      admin = c(FALSE))
     )
   )
 
