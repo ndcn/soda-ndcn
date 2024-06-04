@@ -1,6 +1,6 @@
 Package: soda
 Title: Simple Omics Data Analysis
-Version: 0.9.0
+Version: 0.9.0.9000
 Authors@R:
   c(person(given = "Yassene",
            family = "Mohammed", 
