@@ -107,6 +107,7 @@ class_distribution_events = function(r6, dimensions_obj, color_palette, input, o
       class_distribution_spawn(r6, input$class_distribution_img_format, output)
     },error=function(e){
       print_tm(r6$name, 'Class distribution: ERROR.')
+      print(e)
     },finally={}
     )
   })
@@ -567,6 +568,7 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
         volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
       },error=function(e){
         print_tm(r6$name, 'Volcano plot: ERROR.')
+        print(e)
       },finally={}
       )
 
@@ -898,6 +900,7 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
         heatmap_spawn(r6, input$heatmap_img_format, output)
       },error=function(e){
         print_tm(r6$name, 'Heatmap: ERROR.')
+        print(e)
       },finally={}
       )
     })
