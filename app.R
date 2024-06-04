@@ -209,20 +209,20 @@ body_ui = function() {
 header = header_ui()
 sidebar = sidebar_ui()
 body = body_ui()
-# ui = bs4Dash::dashboardPage(header, sidebar, body)
-ui = shinymanager::secure_app(bs4Dash::dashboardPage(header, sidebar, body))
+ui = bs4Dash::dashboardPage(header, sidebar, body)
+# ui = shinymanager::secure_app(bs4Dash::dashboardPage(header, sidebar, body))
 #------------------------------------------------------------------- Server ----
 
 server = function(input, output, session) {
 
   # Basic authentification
-  res_auth = shinymanager::secure_server(
-    check_credentials = shinymanager::check_credentials(db = data.frame(
-      user = c("user1"),
-      password = c("user1234"),
-      admin = c(FALSE))
-    )
-  )
+  # res_auth = shinymanager::secure_server(
+  #   check_credentials = shinymanager::check_credentials(db = data.frame(
+  #     user = c("user1"),
+  #     password = c("user1234"),
+  #     admin = c(FALSE))
+  #   )
+  # )
 
   options(shiny.maxRequestSize=300*1024^2)
 
