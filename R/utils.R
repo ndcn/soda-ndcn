@@ -1095,28 +1095,46 @@ get_fold_changes = function(data_table, idx_group_1, idx_group_2, used_function,
 }
 
 get_p_val = function(data_table, idx_group_1, idx_group_2, used_function, impute_na = T) {
-
   if (used_function == "Wilcoxon") {
     test_function=function(x,y){
-
-      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
+      
+      if(all(is.na(x)) | all(is.na(y))) {
+        # if one group contains only NA's
+        if(all(is.na(x))) {
+          x <- y
+        }
+        return(stats::wilcox.test(x)$p.value)
+      } else if(sum(!is.na(x)) < 2 | sum(!is.na(y)) < 2) {
+        # if one of the groups doesn't contain enough data
+        return(NA)
+      } else if(all(x == mean(x, na.rm = T), na.rm = TRUE) & all(y == mean(y, na.rm = T), na.rm = TRUE)) {
         return(1)
-      } else{
+      } else {
         return(stats::wilcox.test(x, y)$p.value)
       }
     }
   } else if (used_function == "t-Test") {
     test_function=function(x,y){
-
-      if(all(x==mean(x, na.rm = T))&all(y==mean(y, na.rm = T))) {
+      # if(all(x == mean(x, na.rm = T)) & all(y == mean(y, na.rm = T))) {
+      #   return(1)
+      # } else
+      if(all(is.na(x)) | all(is.na(y))) {
+        # if one group contains only NA's
+        if(all(is.na(x))) {
+          x <- y
+        }
+        return(stats::t.test(x)$p.value)
+      } else if(sum(!is.na(x)) < 2 | sum(!is.na(y)) < 2) {
+        # if one of the groups doesn't contain enough data
+        return(NA)
+      } else if(all(x == mean(x, na.rm = T), na.rm = TRUE) & all(y == mean(y, na.rm = T), na.rm = TRUE)) {
         return(1)
-      } else{
+      } else {
         return(stats::t.test(x, y)$p.value)
       }
     }
-
   }
-
+  
   p_values = apply(data_table, 2, function(column) {
     group1 = column[idx_group_1]
     group2 = column[idx_group_2]

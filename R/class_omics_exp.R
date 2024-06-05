@@ -1214,7 +1214,6 @@ Omics_exp = R6::R6Class(
                                  group_1 = self$params$volcano_plot$group_1,
                                  group_2 = self$params$volcano_plot$group_2) {
 
-
       rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_1]
       rownames_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_2]
       all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
@@ -1225,8 +1224,7 @@ Omics_exp = R6::R6Class(
       # Get the indices for each group
       idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
       idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
-
-
+      
       # Remove empty columns
       dead_features = colnames(data_table)
       data_table = remove_empty_cols(table = data_table)
@@ -1236,7 +1234,6 @@ Omics_exp = R6::R6Class(
         dead_features = which(rownames(volcano_table) %in% dead_features)
         volcano_table = volcano_table[-dead_features,]
       }
-
 
       # Collect fold change and p-values
       volcano_table$fold_change = get_fold_changes(data_table = data_table,
