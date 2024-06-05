@@ -1571,7 +1571,6 @@ Omics_exp = R6::R6Class(
       colnames(plot_table) = group_list
       
       for (c in class_list) {
-        print(c)
         for (g in group_list){
           s = rownames(meta_table)[meta_table[,group_col] %in% g]
           m = mean(as.matrix(table[s, c]))
