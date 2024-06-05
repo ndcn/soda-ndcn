@@ -526,6 +526,8 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   session$userData[[id]]$upload_meta = shiny::observeEvent(input$file_meta, {
     file_path = input$file_meta$datapath
     data_table = soda_read_table(file_path = file_path)
+    # make sure everything is character
+    data_table[] <- lapply(data_table, as.character)
 
     if (ncol(data_table) > 70) {
       print_tm(m, 'ERROR: uploaded file has more than 70 columns, unlikely to be a metadata file')

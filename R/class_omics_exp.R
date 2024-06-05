@@ -1563,7 +1563,7 @@ Omics_exp = R6::R6Class(
       # Produce the class x group table
       samp_list = rownames(table)
       class_list = colnames(table)
-      group_list = as.character(sort(unique(meta_table[,group_col])))
+      group_list = sort(unique(meta_table[,group_col]))
 
       plot_table = data.frame(matrix(data = 0.0,
                                      nrow = length(class_list),
@@ -1611,7 +1611,7 @@ Omics_exp = R6::R6Class(
       data_table = self$table_check_convert(data_table)
 
       # Get sample groups and the list of classes
-      groups = as.character(sort(unique(meta_table[,group_col])))
+      groups = sort(unique(meta_table[,group_col]))
       class_list = colnames(data_table)
 
       x_dim = ceiling(sqrt(length(class_list)))
