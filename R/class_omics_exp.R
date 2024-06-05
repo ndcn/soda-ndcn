@@ -1559,12 +1559,11 @@ Omics_exp = R6::R6Class(
 
       table = self$table_check_convert(table)
 
-
       # Produce the class x group table
       samp_list = rownames(table)
       class_list = colnames(table)
       group_list = sort(unique(meta_table[,group_col]))
-
+      
       plot_table = data.frame(matrix(data = 0.0,
                                      nrow = length(class_list),
                                      ncol = length(group_list)))
@@ -1572,8 +1571,9 @@ Omics_exp = R6::R6Class(
       colnames(plot_table) = group_list
       
       for (c in class_list) {
+        print(c)
         for (g in group_list){
-          s = rownames(meta_table)[meta_table[,group_col] == g]
+          s = rownames(meta_table)[meta_table[,group_col] %in% g]
           m = mean(as.matrix(table[s, c]))
           plot_table[c,g] = m
         }
@@ -1670,7 +1670,7 @@ Omics_exp = R6::R6Class(
           }
 
           # For each class, each group
-          s = rownames(meta_table)[meta_table[, group_col] == g] # Get the samples for the current group
+          s = rownames(meta_table)[meta_table[, group_col] %in% g] # Get the samples for the current group
           d = data_table[s, c] # Get the concentrations for all s samples in the current class c
           m = mean(d) # Get the mean concentration for samples s for class c
 
