@@ -18,28 +18,12 @@ list(params = list(
             terms = c("Gene ontology (ALL)",
                       "Gene ontology (BP)",
                       "Gene ontology (MF)",
-                      "Gene ontology (CC)"),
-            adjustment = c("holm",
-                           "hochberg",
-                           "hommel",
-                           "bonferroni",
-                           "BH",
-                           "BY",
-                           "fdr",
-                           "none")),
+                      "Gene ontology (CC)")),
         over_representation_analysis = list(
             terms = c("Gene ontology (ALL)",
                       "Gene ontology (BP)",
                       "Gene ontology (MF)",
-                      "Gene ontology (CC)"),
-            adjustment = c("holm",
-                           "hochberg",
-                           "hommel",
-                           "bonferroni",
-                           "BH",
-                           "BY",
-                           "fdr",
-                           "none")
+                      "Gene ontology (CC)")
         )
     )
 )

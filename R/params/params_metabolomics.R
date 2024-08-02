@@ -15,11 +15,9 @@ list(params = list(
         )
       ),
         enrichment_analysis = list(
-            terms = NULL,
-            adjustment = NULL),
+            terms = NULL),
         over_representation_analysis = list(
-            terms = NULL,
-            adjustment = NULL
+            terms = NULL
         )
     )
 )

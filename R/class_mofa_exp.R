@@ -1,5 +1,5 @@
 #---------------------------- Class Mofa_data ---------------------------------
-Mofa_data = R6::R6Class(
+Mofa_class = R6::R6Class(
   "Mofa_exp",
   public = list(
 
@@ -15,7 +15,7 @@ Mofa_data = R6::R6Class(
     params = list(
 
       # Number of views / omics
-      views = NULL,
+      omics = NULL,
 
       # Number of factors
       factor_list = NULL,
@@ -23,154 +23,321 @@ Mofa_data = R6::R6Class(
 
       # Explained variance parameters
       explained_variance = list(
-        selected_plot = 1,
+        auto_refresh = F,
+        color_palette = 'Blues',
+        reverse_color_palette = F,
+        title_font_size = 15,
+        y_label_font_size = 0,
+        y_tick_font_size = 15,
+        x_label_font_size = 0,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
         img_format = 'png'
       ),
 
       # Factor plot parameters
       factor_plot = list(
+        auto_refresh = F,
         factors = c(1,2),
-        groups = "all",
-        show_missing = T,
         scale = F,
-        color_by = NULL,
-        shape_by = NULL,
-        color_name = NULL,
-        shape_name = NULL,
-        dot_size = 2,
-        dot_alpha = 1,
-        dodge = F,
-        legend = T,
-        add_violin = F,
-        violin_alpha = NULL
+        groups = NULL,
+        show_missing = F,
+        color_palette = "Spectral",
+        marker_size = 10,
+        opacity = 1,
+        add_violin = T,
+        show_legend = T,
+        violin_alpha = 0.5,
+        title_font_size = 0,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_label_font_size = 20,
+        x_tick_font_size = 0,
+        legend_font_size = 15,
+        img_format = 'png'
       ),
 
-      combined_factors = list(
+      combined_factors_plot = list(
+        auto_refresh = F,
         factors = c(1,2),
+        groups = NULL,
         scale = FALSE,
-        color_by = NULL,
+        show_missing = FALSE,
+        color_palette = "Spectral",
+        marker_size = 10,
+        marker_opacity = 1,
+        area_alpha = 0.5,
+        title_font_size = 0,
+        y_label_font_size = 17,
+        x_label_font_size = 17,
+        y_tick_font_size = 15,
+        x_tick_font_size = 15,
+        legend_font_size = 17,
         img_format = 'png'
       ),
 
       # feature weights plot parameters
       feature_weights = list(
-        views = 1,
+        auto_refresh = F,
+        omics = 1,
         factors = 1,
+        groups = NULL,
         scale = TRUE,
         abs = FALSE,
-        img_format = 'png'
+        color_palette = 'Spectral',
+        reverse_color_palette = T,
+        marker_size = 10,
+        marker_opacity = 1,
+        title_font_size = 17,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_label_font_size = 20,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
+        img_format = 'png',
+        groups_list = NULL
       ),
 
       # Feature top weights parameters
       feature_top_weights = list(
-        views = 1,
-        factor = 1,
-        nfeatures = 10
+        auto_refresh = F,
+        omics = NULL,
+        factors = 1,
+        nfeatures = 50,
+        abs = T,
+        scale = T,
+        sign = 'all',
+        groups = 'sign',
+        color_palette = 'Spectral',
+        reverse_color_palette = F,
+        marker_size = 10,
+        marker_opacity = 1,
+        title_font_size = 10,
+        y_label_font_size = 10,
+        y_tick_font_size = 10,
+        x_label_font_size = 10,
+        x_tick_font_size = 10,
+        legend_font_size = 10,
+        img_format = 'png',
+        groups_list = NULL
       ),
 
       # MOFA heatmap parameters
       mofa_heatmap = list(
+        auto_refresh = F,
         factor = 1,
-        view = 1,
+        omics = NULL,
         features = 50,
-        imputed = FALSE,
-        denoise = FALSE,
-        cluster_cols = TRUE,
-        cluster_rows = TRUE,
-        row_annotations = NULL,
-        max_value = NULL,
-        min_value = NULL,
-        img_format = 'png'
+        feature_annotations = 'None',
+        sample_annotations = 'None',
+        imputed = F,
+        denoise = F,
+        distance_method = 'euclidean',
+        clustering_method = 'ward.D2',
+        p_minkowski = 2,
+        k_clusters_samples = 1,
+        k_clusters_features = 1,
+        center = F,
+        apply_clustering = T,
+        color_palette = 'RdYlBu',
+        reverse_color_palette = T,
+        title_font_size = 20,
+        y_label_font_size = 17,
+        x_label_font_size = 17,
+        x_tick_font_size = 8,
+        y_tick_font_size = 8,
+        img_format = 'png',
+        features_list = NULL
       ),
 
-      # Scatterplot parameters
-      scatterplot = list(
-        view = 1,
+      # Scatter_plot parameters
+      scatter_plot = list(
+        auto_refresh = F,
         factor = 1,
-        features = 6,
+        omics = NULL,
+        features = 4,
+        sign = "all",
+        sample_annotations = NULL,
         add_lm = TRUE,
-        color_by = NULL,
+        imputed = FALSE,
+        color_palette = 'Turbo',
+        reverse_palette = F,
+        marker_size = 10,
+        marker_opacity = 1,
+        show_legend = TRUE,
         img_format = 'png'
       )
 
     ),
     #---------------------------------------------------- Parameter methods ----
-    param_explained_variance = function(selected_plot, img_format) {
-      self$params$explained_variance$selected_plot = selected_plot
+    param_explained_variance = function(auto_refresh, color_palette, reverse_color_palette, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$explained_variance$auto_refresh = auto_refresh
+      self$params$explained_variance$color_palette = color_palette
+      self$params$explained_variance$reverse_color_palette = reverse_color_palette
+      self$params$explained_variance$title_font_size = title_font_size
+      self$params$explained_variance$y_label_font_size = y_label_font_size
+      self$params$explained_variance$y_tick_font_size = y_tick_font_size
+      self$params$explained_variance$x_label_font_size = x_label_font_size
+      self$params$explained_variance$x_tick_font_size = x_tick_font_size
+      self$params$explained_variance$legend_font_size = legend_font_size
       self$params$explained_variance$img_format = img_format
 
     },
 
-    param_feature_weights = function(views, factors, scale, abs, img_format) {
-      self$params$feature_weights$views = views
+    param_factor_plot = function(auto_refresh, factors, scale, groups, show_missing, color_palette, marker_size, opacity, add_violin, show_legend, violin_alpha, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$factor_plot$auto_refresh = auto_refresh
+      self$params$factor_plot$factors = factors
+      self$params$factor_plot$scale = scale
+      self$params$factor_plot$groups = groups
+      self$params$factor_plot$show_missing = show_missing
+      self$params$factor_plot$color_palette = color_palette
+      self$params$factor_plot$marker_size = marker_size
+      self$params$factor_plot$opacity = opacity
+      self$params$factor_plot$add_violin = add_violin
+      self$params$factor_plot$show_legend = show_legend
+      self$params$factor_plot$violin_alpha = violin_alpha
+      self$params$factor_plot$title_font_size = title_font_size
+      self$params$factor_plot$y_label_font_size = y_label_font_size
+      self$params$factor_plot$y_tick_font_size = y_tick_font_size
+      self$params$factor_plot$x_label_font_size = x_label_font_size
+      self$params$factor_plot$x_tick_font_size = x_tick_font_size
+      self$params$factor_plot$legend_font_size = legend_font_size
+      self$params$factor_plot$img_format = img_format
+    },
+
+    param_combined_factors_plot = function(auto_refresh, factors, groups, scale, show_missing, color_palette, marker_size, marker_opacity, area_alpha, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$combined_factors_plot$auto_refresh = auto_refresh
+      self$params$combined_factors_plot$factors = factors
+      self$params$combined_factors_plot$groups = groups
+      self$params$combined_factors_plot$scale = scale
+      self$params$combined_factors_plot$show_missing = show_missing
+      self$params$combined_factors_plot$color_palette = color_palette
+      self$params$combined_factors_plot$marker_size = marker_size
+      self$params$combined_factors_plot$marker_opacity = marker_opacity
+      self$params$combined_factors_plot$area_alpha = area_alpha
+      self$params$combined_factors_plot$title_font_size = title_font_size
+      self$params$combined_factors_plot$y_label_font_size = y_label_font_size
+      self$params$combined_factors_plot$y_tick_font_size = y_tick_font_size
+      self$params$combined_factors_plot$x_label_font_size = x_label_font_size
+      self$params$combined_factors_plot$x_tick_font_size = x_tick_font_size
+      self$params$combined_factors_plot$legend_font_size = legend_font_size
+      self$params$combined_factors_plot$img_format = img_format
+    },
+
+    param_feature_weights = function(auto_refresh, omics, factors, groups, scale, abs, color_palette, reverse_color_palette, marker_size, marker_opacity, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$feature_weights$auto_refresh = auto_refresh
+      self$params$feature_weights$omics = omics
       self$params$feature_weights$factors = factors
+      self$params$feature_weights$groups = groups
       self$params$feature_weights$scale = scale
       self$params$feature_weights$abs = abs
+      self$params$feature_weights$color_palette = color_palette
+      self$params$feature_weights$reverse_color_palette = reverse_color_palette
+      self$params$feature_weights$marker_size = marker_size
+      self$params$feature_weights$marker_opacity = marker_opacity
+      self$params$feature_weights$title_font_size = title_font_size
+      self$params$feature_weights$y_label_font_size = y_label_font_size
+      self$params$feature_weights$y_tick_font_size = y_tick_font_size
+      self$params$feature_weights$x_label_font_size = x_label_font_size
+      self$params$feature_weights$x_tick_font_size = x_tick_font_size
+      self$params$feature_weights$legend_font_size = legend_font_size
       self$params$feature_weights$img_format = img_format
     },
 
-    param_mofa_heatmap = function(factor, view, features, imputed, denoise, cluster_cols,
-                                  cluster_rows, row_annotations, max_value, min_value, img_format) {
+
+    param_feature_top_weights = function(auto_refresh, omics, factors, nfeatures, abs, scale, sign, groups, color_palette, reverse_color_palette, marker_size, marker_opacity, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$feature_top_weights$auto_refresh = auto_refresh
+      self$params$feature_top_weights$omics = omics
+      self$params$feature_top_weights$factors = factors
+      self$params$feature_top_weights$nfeatures = nfeatures
+      self$params$feature_top_weights$abs = abs
+      self$params$feature_top_weights$scale = scale
+      self$params$feature_top_weights$sign = sign
+      self$params$feature_top_weights$groups = groups
+      self$params$feature_top_weights$color_palette = color_palette
+      self$params$feature_top_weights$reverse_color_palette = reverse_color_palette
+      self$params$feature_top_weights$marker_size = marker_size
+      self$params$feature_top_weights$marker_opacity = marker_opacity
+      self$params$feature_top_weights$title_font_size = title_font_size
+      self$params$feature_top_weights$y_label_font_size = y_label_font_size
+      self$params$feature_top_weights$y_tick_font_size = y_tick_font_size
+      self$params$feature_top_weights$x_label_font_size = x_label_font_size
+      self$params$feature_top_weights$x_tick_font_size = x_tick_font_size
+      self$params$feature_top_weights$legend_font_size = legend_font_size
+      self$params$feature_top_weights$img_format = img_format
+    },
+
+    param_mofa_heatmap = function(auto_refresh, factor, omics, features, feature_annotations, sample_annotations, imputed, denoise, distance_method, clustering_method, p_minkowski, k_clusters_samples, k_clusters_features, center, apply_clustering, color_palette, reverse_color_palette, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, img_format) {
+      self$params$mofa_heatmap$auto_refresh = auto_refresh
       self$params$mofa_heatmap$factor = factor
-      self$params$mofa_heatmap$view = view
+      self$params$mofa_heatmap$omics = omics
       self$params$mofa_heatmap$features = features
+      self$params$mofa_heatmap$feature_annotations = feature_annotations
+      self$params$mofa_heatmap$sample_annotations = sample_annotations
       self$params$mofa_heatmap$imputed = imputed
       self$params$mofa_heatmap$denoise = denoise
-      self$params$mofa_heatmap$cluster_cols = cluster_cols
-      self$params$mofa_heatmap$cluster_rows = cluster_rows
-      self$params$mofa_heatmap$row_annotations = row_annotations
-      self$params$mofa_heatmap$max_value = max_value
-      self$params$mofa_heatmap$min_value = min_value
+      self$params$mofa_heatmap$distance_method = distance_method
+      self$params$mofa_heatmap$clustering_method = clustering_method
+      self$params$mofa_heatmap$p_minkowski = p_minkowski
+      self$params$mofa_heatmap$k_clusters_samples = k_clusters_samples
+      self$params$mofa_heatmap$k_clusters_features = k_clusters_features
+      self$params$mofa_heatmap$center = center
+      self$params$mofa_heatmap$apply_clustering = apply_clustering
+      self$params$mofa_heatmap$color_palette = color_palette
+      self$params$mofa_heatmap$reverse_color_palette = reverse_color_palette
+      self$params$mofa_heatmap$title_font_size = title_font_size
+      self$params$mofa_heatmap$y_label_font_size = y_label_font_size
+      self$params$mofa_heatmap$y_tick_font_size = y_tick_font_size
+      self$params$mofa_heatmap$x_label_font_size = x_label_font_size
+      self$params$mofa_heatmap$x_tick_font_size = x_tick_font_size
       self$params$mofa_heatmap$img_format = img_format
     },
 
-    param_combined_factors = function(factors, scale, color_by, img_format) {
-      self$params$combined_factors$factors = factors
-      self$params$combined_factors$scale = scale
-      self$params$combined_factors$color_by = color_by
-      self$params$combined_factors$img_format = img_format
+
+    param_scatter_plot = function(auto_refresh, factor, omics, features, sign, sample_annotations, add_lm, imputed, color_palette, reverse_palette, marker_size, marker_opacity, show_legend, img_format) {
+      self$params$scatter_plot$auto_refresh = auto_refresh
+      self$params$scatter_plot$factor = factor
+      self$params$scatter_plot$omics = omics
+      self$params$scatter_plot$features = features
+      self$params$scatter_plot$sign = sign
+      self$params$scatter_plot$sample_annotations = sample_annotations
+      self$params$scatter_plot$add_lm = add_lm
+      self$params$scatter_plot$imputed = imputed
+      self$params$scatter_plot$color_palette = color_palette
+      self$params$scatter_plot$reverse_palette = reverse_palette
+      self$params$scatter_plot$marker_size = marker_size
+      self$params$scatter_plot$marker_opacity = marker_opacity
+      self$params$scatter_plot$show_legend = show_legend
+      self$params$scatter_plot$img_format = img_format
     },
 
-    param_scatterplot = function(view, factor, features, add_lm, color_by, img_format) {
-      self$params$scatterplot$view = view
-      self$params$scatterplot$factor = factor
-      self$params$scatterplot$features = features
-      self$params$scatterplot$add_lm = add_lm
-      self$params$scatterplot$color_by = color_by
-      self$params$scatterplot$img_format = img_format
-    },
 
-    param_factor_plot = function(factors, color_by, scale, dodge, add_violin, img_format) {
-      self$params$factor_plot$factors = factors
-      self$params$factor_plot$color_by = color_by
-      self$params$factor_plot$scale = scale
-      self$params$factor_plot$dodge = dodge
-      self$params$factor_plot$add_violin = add_violin
-      self$params$factor_plot$img_format = img_format
-    },
 
     #---------------------------------------------------------------- Plots ----
 
     plots = list(
       explained_variance = NULL,
       factor_plot = NULL,
-      combined_factors = NULL,
+      combined_factors_plot = NULL,
       feature_weights = NULL,
       feature_top_weights = NULL,
       mofa_heatmap = NULL,
-      scatterplot = NULL
+      scatter_plot = NULL
     ),
 
     #--------------------------------------------------------------- Tables ----
 
     tables = list(
-      metadata = NULL,
       omics_tables = list(),
+      sample_tables = list(),
+      feature_tables = list(),
+      sample_metadata = NULL,
       explained_variance = NULL,
-      combined_factors = NULL,
+      combined_factors_plot = NULL,
       feature_weights = NULL,
+      feature_top_weights = NULL,
       mofa_heatmap = NULL,
-      scatterplot = NULL
+      scatter_plot = NULL
     ),
 
 
@@ -180,43 +347,76 @@ Mofa_data = R6::R6Class(
       model = NULL
     ),
 
+    #-------------------------------------------------------- Table methods ----
+
+    add_data = function(name, data_table) {
+      colnames(data_table) = paste0(colnames(data_table), '_', name)
+      self$tables$omics_tables[[name]] = data_table
+    },
+
+    add_sample_meta = function(name, sample_meta) {
+      self$tables$sample_tables[[name]] = sample_meta
+    },
+
+    add_feature_data = function(name, feature_data) {
+      rownames(feature_data) = paste0(rownames(feature_data), '_', name)
+      self$tables$feature_tables[[name]] = feature_data
+    },
+
+    clean_datasets = function() {
+      omics_names = names(self$tables$omics_tables)
+      intersected_samples = list()
+      sample_counts = c()
+
+      for (name in omics_names) {
+        intersected_samples[[name]] = rownames(self$tables$sample_tables[[name]])
+        sample_counts = c(sample_counts, nrow(self$tables$sample_tables[[name]]))
+      }
+
+      intersected_samples = base::Reduce(intersect, intersected_samples)
+
+      # More than 2 shared samples should be provided
+      if (length(intersected_samples) < 3) {
+        base::stop('Less than 3 shared samples')
+      }
+
+      # Warning for mismatched samples
+      if (base::min(sample_counts) != base::max(sample_counts)) {
+        base::warning(paste0("Different samples provided: keeping only ", length(intersected_samples)," shared samples."))
+      }
+
+      # Filter the tables
+      for (name in omics_names) {
+        self$tables$omics_tables[[name]] = remove_empty_cols(self$tables$omics_tables[[name]][intersected_samples,])
+        self$tables$sample_tables[[name]] = self$tables$sample_tables[[name]][intersected_samples,]
+      }
+
+      # Merge the sample annotations
+      merged_sample_annotations = self$tables$sample_tables[[1]]
+      for (name in omics_names[2:length(omics_names)]) {
+        next_table = self$tables$sample_tables[[name]]
+        diff = dplyr::setdiff(colnames(next_table), colnames(merged_sample_annotations))
+        if (length(diff) > 0) {
+          merged_sample_annotations = base::cbind(merged_sample_annotations, next_table[,diff, drop = F])
+        }
+      }
+
+      self$tables$sample_metadata = merged_sample_annotations
+
+    },
+
     #-------------------------------------------------------------- Methods ----
     create_mofa_object = function(matrix_list = self$tables$omics_tables,
                                   groups = NULL) {
-      if (!is.null(groups )) {
+      if (!is.null(groups)) {
         groups = gsub("/", "-", groups)
       }
+
+      matrix_list = base::lapply(matrix_list, base::t)
+
       MOFAobject = MOFA2::create_mofa(data = matrix_list,
                                       groups = groups)
-      self$params$views = 1:length(matrix_list)
-      self$mofa_objects$pretrained = MOFAobject
-    },
-
-    get_example_data = function(n_views = 2,
-                                n_samples = 200,
-                                n_features = 1000,
-                                n_factors = 10) {
-
-      # Load data
-      data = MOFA2::make_example_data(
-        n_views = n_views,
-        n_samples = n_samples,
-        n_features = n_features,
-        n_factors = n_factors
-      )[[1]]
-
-      self$params$views = 1:2
-
-      # Create MOFA object
-      MOFAobject = MOFA2::create_mofa(data)
-
-
-      sample_metadata = data.frame(
-        sample = MOFA2::samples_names(MOFAobject)[[1]],
-        condition = sample(c("A","B"), size = n_samples, replace = T),
-        age = sample(1:100, size = n_samples, replace = T)
-      )
-      self$tables$metadata = sample_metadata
+      self$params$omics = names(matrix_list)
       self$mofa_objects$pretrained = MOFAobject
     },
 
@@ -224,7 +424,7 @@ Mofa_data = R6::R6Class(
                             scale_views = F,
                             scale_groups = F,
                             center_groups = T,
-                            likelihoods = "gaussian",
+                            likelihoods = base::rep("gaussian", length(self$params$omics)),
                             num_factors = 15,
                             spikeslab_factors = F,
                             spikeslab_weights = F,
@@ -236,6 +436,12 @@ Mofa_data = R6::R6Class(
                             freqELBO = 5,
                             stochastic = F,
                             weight_views = F) {
+
+      # checks
+      if (length(likelihoods) != length(self$params$omics)){
+        stop("Not as many likelihoods provided as omics experiments")
+      }
+
       # Retrieve all options
       data_opts = MOFA2::get_default_data_options(pretrained)
       model_opts = MOFA2::get_default_model_options(pretrained)
@@ -247,8 +453,6 @@ Mofa_data = R6::R6Class(
       data_opts$center_groups = center_groups
 
       # Set model options
-      likelihoods = base::rep(likelihoods, length(data_opts$views))
-      names(likelihoods) = data_opts$views
       model_opts$likelihoods = likelihoods
       model_opts$num_factors = num_factors
       model_opts$spikeslab_factors = spikeslab_factors
@@ -276,11 +480,13 @@ Mofa_data = R6::R6Class(
 
     train_model = function(mofa_object = self$mofa_objects$pretrained,
                            outfile = NULL,
-                           save_data = FALSE) {
+                           save_data = FALSE,
+                           seed = 1) {
       # model = MOFA2::run_mofa(object = mofa_object,
       #                         outfile = outfile,
       #                         use_basilisk = F,
       #                         save_data = save_data)
+      base::set.seed(seed)
       model = MOFA2::run_mofa(object = mofa_object,
                               outfile = outfile,
                               use_basilisk = T,
@@ -301,11 +507,11 @@ Mofa_data = R6::R6Class(
     },
 
     add_metadata_to_mofa = function(model = self$mofa_objects$model,
-                            metadata = data.frame(t(self$tables$metadata))) {
+                                    sample_metadata = self$tables$sample_metadata) {
 
-      metadata['sample'] = rownames(metadata)
-      MOFA2::samples_metadata(model) = metadata
-      meta_cols = colnames(metadata)
+      sample_metadata['sample'] = rownames(sample_metadata)
+      MOFA2::samples_metadata(model) = sample_metadata
+      meta_cols = colnames(sample_metadata)
 
       self$params$sample_metadata = meta_cols
       self$mofa_objects$model = model
@@ -315,497 +521,340 @@ Mofa_data = R6::R6Class(
 
     # Plot explained variance
     plot_explained_variance = function(model = self$mofa_objects$model,
-                                       x = "view",
-                                       y = "factor",
-                                       plot_total = TRUE,
-                                       selected_plot = 1,
-                                       split_by = NA,
-                                       use_cache = TRUE,
+                                       color_palette = self$params$explained_variance$color_palette,
+                                       reverse_color_palette = self$params$explained_variance$reverse_color_palette,
+                                       title_font_size = self$params$explained_variance$title_font_size,
+                                       y_label_font_size = self$params$explained_variance$y_label_font_size,
+                                       y_tick_font_size = self$params$explained_variance$y_tick_font_size,
+                                       x_label_font_size = self$params$explained_variance$x_label_font_size,
+                                       x_tick_font_size = self$params$explained_variance$x_tick_font_size,
+                                       legend_font_size = self$params$explained_variance$legend_font_size,
                                        width = NULL,
                                        height = NULL) {
 
-      selected_plot = as.numeric(selected_plot)
+      data_table = model@cache$variance_explained$r2_per_factor$group1
 
-      if (is.na(split_by)) {
-        split_by = setdiff(c("view", "factor", "group"), c(x, y, split_by))
-      }
-      if ((use_cache) & .hasSlot(model, "cache") && ("variance_explained" %in%
-                                                      names(model@cache))) {
-        r2_list <- model@cache$variance_explained
-      } else {
-        r2_list <- MOFA2::calculate_variance_explained(model, factors = factors,
-                                                       ...)
-      }
+      # Sort
+      data_table = data_table[base::names(base::sort(base::rowSums(data_table), decreasing = F)),
+                              base::names(base::sort(base::colSums(data_table), decreasing = F))]
 
-      data_table = r2_list$r2_per_factor$group1
-      max_col = which.max(apply(data_table, 2, max))
-      data_table = data_table[order(data_table[,max_col], decreasing = F),]
+      plot = plot_mofa_explained_variance(data_table = data_table,
+                                          color_palette = color_palette,
+                                          reverse_color_palette = reverse_color_palette,
+                                          title_font_size = title_font_size,
+                                          y_label_font_size = y_label_font_size,
+                                          y_tick_font_size = y_tick_font_size,
+                                          x_label_font_size = x_label_font_size,
+                                          x_tick_font_size = x_tick_font_size,
+                                          legend_font_size = legend_font_size,
+                                          width = width,
+                                          height = height)
 
-      if (selected_plot == 1) {
-        fig = heatmaply::heatmaply(data_table,
-                                   dendrogram = 'none',
-                                   Rowv = F,
-                                   Colv = F,
-                                   trace = 'none',
-                                   grid_gap = 1,
-                                   scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                     low = "gray",
-                                     high = "blue",
-                                     midpoint = max(data_table)/2,
-                                     limits = c(0, max(data_table))
-                                   ),
-                                   width = width,
-                                   height = height
-        )
-
-      } else if (selected_plot == 2) {
-        data_table = as.data.frame(colSums(data_table))
-        fig = plotly::plot_ly(
-          x = rownames(data_table),
-          y = data_table[,1],
-          type = "bar"
-        )
-        fig = fig %>% layout(yaxis = list(title = 'Variance explained (%)'),
-                             width = width,
-                             height = height)
-      }
-      self$plots$explained_variance = fig
+      self$plots$explained_variance = plot
       self$tables$explained_variance = data_table
     },
 
     # Factor plot
     plot_factor_plot = function(model = self$mofa_objects$model,
-                                factors = c(1,2),
-                                groups = "all",
-                                show_missing = T,
-                                scale = F,
-                                color_by = NULL,
-                                shape_by = NULL,
-                                color_name = NULL,
-                                shape_name = NULL,
-                                dot_size = 2,
-                                dot_alpha = 1,
-                                dodge = F,
-                                add_violin = F,
-                                violin_alpha = NULL,
+                                sample_metadata = self$tables$sample_metadata,
+                                factors = self$params$factor_plot$factors,
+                                scale = self$params$factor_plot$scale,
+                                groups = self$params$factor_plot$groups,
+                                show_missing = self$params$factor_plot$show_missing,
+                                color_palette = self$params$factor_plot$color_palette,
+                                marker_size = self$params$factor_plot$marker_size,
+                                opacity = self$params$factor_plot$opacity,
+                                add_violin = self$params$factor_plot$add_violin,
+                                show_legend = self$params$factor_plot$show_legend,
+                                violin_alpha = self$params$factor_plot$violin_alpha,
+                                title_font_size = self$params$factor_plot$title_font_size,
+                                y_label_font_size = self$params$factor_plot$y_label_font_size,
+                                y_tick_font_size = self$params$factor_plot$y_tick_font_size,
+                                x_label_font_size = self$params$factor_plot$x_label_font_size,
+                                x_tick_font_size = self$params$factor_plot$x_tick_font_size,
+                                legend_font_size = self$params$factor_plot$legend_font_size,
                                 width = NULL,
                                 height = NULL) {
 
       factors = as.numeric(factors)
 
-      if (add_violin) {violin_alpha = 0.25}
-
-      plot = MOFA2::plot_factor(object = model,
-                                factor = factors,
-                                show_missing = show_missing,
+      output = plot_factor_plot(model = model,
+                                sample_metadata = sample_metadata,
+                                factors = factors,
                                 scale = scale,
-                                color_by = color_by,
-                                shape_by = shape_by,
-                                color_name = color_name,
-                                shape_name = shape_name,
-                                dot_size = dot_size,
-                                dot_alpha = dot_alpha,
-                                dodge = dodge,
-                                legend = T,
+                                groups = groups,
+                                show_missing = show_missing,
+                                color_palette = color_palette,
+                                marker_size = marker_size,
+                                opacity = opacity,
                                 add_violin = add_violin,
-                                violin_alpha = violin_alpha)
+                                show_legend = show_legend,
+                                violin_alpha = violin_alpha,
+                                title_font_size = title_font_size,
+                                y_label_font_size = y_label_font_size,
+                                y_tick_font_size = y_tick_font_size,
+                                x_label_font_size = x_label_font_size,
+                                x_tick_font_size = x_tick_font_size,
+                                legend_font_size = legend_font_size,
+                                width = width,
+                                height = height)
 
-      plot = plotly::ggplotly(plot)
-
-      self$plots$factor_plot = plot
+      self$plots$factor_plot = output$plot
+      self$tables$factor_plot = output$table
     },
 
     # Combnined factors
-    plot_combined_factors = function(model = self$mofa_objects$model,
-                                     factors = self$params$combined_factors$factors,
-                                     scale = self$params$combined_factors$scale,
-                                     color_by = self$params$combined_factors$color_by,
-                                     width = NULL,
-                                     height = NULL) {
+
+    plot_combined_factors_plot = function(model = self$mofa_objects$model,
+                                          sample_metadata = self$tables$sample_metadata,
+                                          factors = self$params$combined_factors_plot$factors,
+                                          groups = self$params$combined_factors_plot$groups,
+                                          scale = self$params$combined_factors_plot$scale,
+                                          show_missing = self$params$combined_factors_plot$show_missing,
+                                          color_palette = self$params$combined_factors_plot$color_palette,
+                                          marker_size = self$params$combined_factors_plot$marker_size,
+                                          marker_opacity = self$params$combined_factors_plot$marker_opacity,
+                                          area_alpha = self$params$combined_factors_plot$area_alpha,
+                                          title_font_size = self$params$combined_factors_plot$title_font_size,
+                                          y_label_font_size = self$params$combined_factors_plot$y_label_font_size,
+                                          y_tick_font_size = self$params$combined_factors_plot$y_tick_font_size,
+                                          x_label_font_size = self$params$combined_factors_plot$x_label_font_size,
+                                          x_tick_font_size = self$params$combined_factors_plot$x_tick_font_size,
+                                          legend_font_size = self$params$combined_factors_plot$legend_font_size,
+                                          width = NULL,
+                                          height = NULL) {
       factors = as.numeric(factors)
-      if (length(factors) < 2) {
-        stop("At least 2 factors should be selected.")
-      }
-      if (color_by == "") {
-        color_by = NULL
-      }
-      factors <- MOFA2:::.check_and_get_factors(model, factors)
-      Z <- MOFA2::get_factors(model, factors = factors, groups = "all",
-                              as.data.frame = TRUE)
-      Z <- Z[stats::complete.cases(Z), ]
 
-      factors <- MOFA2:::.check_and_get_factors(model, factors)
-      Z <- MOFA2::get_factors(model, factors = factors, groups = "all",
-                              as.data.frame = TRUE)
-      color_by <- MOFA2:::.set_colorby(model, color_by)
-      Z <- Z[complete.cases(Z), ]
-      df <- merge(Z, color_by, by = "sample")
-      df <- tidyr::spread(df, key = "factor", value = "value")
+      out = plot_combined_factors_plot(model = model,
+                                       factors = factors,
+                                       sample_metadata = sample_metadata,
+                                       groups = groups,
+                                       scale = scale,
+                                       show_missing = show_missing,
+                                       color_palette = color_palette,
+                                       marker_size = marker_size,
+                                       marker_opacity = marker_opacity,
+                                       area_alpha = area_alpha,
+                                       title_font_size = title_font_size,
+                                       y_label_font_size = y_label_font_size,
+                                       y_tick_font_size = y_tick_font_size,
+                                       x_label_font_size = x_label_font_size,
+                                       x_tick_font_size = x_tick_font_size,
+                                       legend_font_size = legend_font_size,
+                                       width = width,
+                                       height = height)
 
-      if (length(unique(df$color_by)) > nrow(df)/2) {
-        print('Less than two samples per group, removing groups')
-        df$color_by = 1
-      }
-
-      if (scale) {
-        for (factor in factors) {
-          df[[factor]] <- df[[factor]]/max(abs(df[[factor]]))
-        }
-      }
-
-      step = 1/length(factors)
-      x = step/2
-      y = 0.99
-      i = 1
-      annotations = c()
-      for (factor in factors) {
-        tmp_ann = list(
-          x = x,
-          y = y,
-          text = factor,
-          xref = "paper",
-          yref = "paper",
-          xanchor = "center",
-          yanchor = "bottom",
-          showarrow = FALSE)
-        annotations[[i]] = tmp_ann
-        i = i + 1
-        x = x + step
-      }
-
-      x = -0.04
-      y = step/3
-
-      for (factor in rev(factors)) {
-        tmp_ann = list(
-          x = x,
-          y = y,
-          text = factor,
-          xref = "paper",
-          yref = "paper",
-          xanchor = "center",
-          yanchor = "bottom",
-          showarrow = FALSE,
-          textangle=-90)
-        annotations[[i]] = tmp_ann
-        i = i + 1
-        y = y + step
-      }
-
-      groups = unique(as.character(df$color_by))
-      color_map = setNames(sample(colors(), length(unique(df$color_by))), unique(df$color_by))
-      cleared_groups = c()
-      plot_list = list()
-      j = 1
-      for (factor_1 in factors) {
-        for (factor_2 in factors) {
-          if (factor_1 == factor_2) {
-            fig = plotly::plot_ly()
-            for (group in groups) {
-              if (group %in% cleared_groups) {
-                first_bool = F
-              } else {
-                first_bool = T
-                cleared_groups = c(cleared_groups, group)
-              }
-              grp_bool = df$color_by == group
-              density_data = density(df[grp_bool, factor_1])
-              kept <- seq(1, length(density_data$x), by = 10)
-              fig <- fig %>% add_trace(x = density_data$x[kept],
-                                       y = density_data$y[kept],
-                                       type = 'scatter',
-                                       mode = 'lines',
-                                       fill = 'tozeroy',
-                                       name = group,
-                                       color = color_map[group],
-                                       legendgroup=group,
-                                       showlegend = first_bool)
-              fig = fig %>% layout(xaxis= list(tickfont = list(size = 8)),
-                                   yaxis = list(tickfont = list(size = 8)))
-            }
-            plot_list[[j]] = plotly::plotly_build(fig)
-            j = j + 1
-          } else {
-            fig = plotly::plot_ly()
-            for (group in groups) {
-              if (group %in% cleared_groups) {
-                first_bool = F
-              } else {
-                first_bool = T
-                cleared_groups = c(cleared_groups, group)
-              }
-              grp_bool = df$color_by == group
-              fig <- fig %>% add_trace(x = df[[factor_1]][grp_bool],
-                                       y = df[[factor_2]][grp_bool],
-                                       type = 'scatter',
-                                       name = group,
-                                       color = color_map[group],
-                                       legendgroup=group,
-                                       showlegend = first_bool)
-              fig = fig %>% layout(xaxis= list(tickfont = list(size = 8)),
-                                   yaxis = list(tickfont = list(size = 8)))
-            }
-            plot_list[[j]] = plotly::plotly_build(fig)
-            j = j + 1
-          }
-        }
-      }
-      fig = subplot(plot_list, nrows = length(factors), margin = 0.035, titleX = TRUE)
-      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
-                           annotations = annotations)
-      self$plots$combined_factors = fig
-      self$tables$combined_factors = df
+      self$plots$combined_factors_plot = out$plot
+      self$tables$combined_factors_plot = out$table
     },
 
     # Feature weights
     plot_feature_weights = function(model = self$mofa_objects$model,
-                                    views = self$params$feature_weights$views,
+                                    omics = self$params$feature_weights$omics,
                                     factors = self$params$feature_weights$factors,
+                                    groups = self$params$feature_weights$groups,
                                     scale = self$params$feature_weights$scale,
                                     abs = self$params$feature_weights$abs,
+                                    color_palette = self$params$feature_weights$color_palette,
+                                    reverse_color_palette = self$params$feature_weights$reverse_color_palette,
+                                    marker_size = self$params$feature_weights$marker_size,
+                                    marker_opacity = self$params$feature_weights$marker_opacity,
+                                    title_font_size = self$params$feature_weights$title_font_size,
+                                    y_label_font_size = self$params$feature_weights$y_label_font_size,
+                                    y_tick_font_size = self$params$feature_weights$y_tick_font_size,
+                                    x_label_font_size = self$params$feature_weights$x_label_font_size,
+                                    x_tick_font_size = self$params$feature_weights$x_tick_font_size,
+                                    legend_font_size = self$params$feature_weights$legend_font_size,
                                     width = NULL,
                                     height = NULL) {
 
-      views = as.numeric(views)
       factors = as.numeric(factors)
+      feature_metadata = self$tables$feature_tables[[omics]]
 
-      views <- MOFA2:::.check_and_get_views(model, views)
-      factors <- MOFA2:::.check_and_get_factors(model, factors)
-      W <- get_weights(model, views = views, factors = factors,
-                       as.data.frame = TRUE)
+      out = plot_feature_weights(model = model,
+                                 omics = omics,
+                                 feature_metadata = feature_metadata,
+                                 factors = factors,
+                                 groups = groups,
+                                 scale = scale,
+                                 abs = abs,
+                                 color_palette = color_palette,
+                                 reverse_color_palette = reverse_color_palette,
+                                 marker_size = marker_size,
+                                 marker_opacity = marker_opacity,
+                                 title_font_size = title_font_size,
+                                 y_label_font_size = y_label_font_size,
+                                 y_tick_font_size = y_tick_font_size,
+                                 x_label_font_size = x_label_font_size,
+                                 x_tick_font_size = x_tick_font_size,
+                                 legend_font_size = legend_font_size,
+                                 width = width,
+                                 height = height)
 
-      if (scale && sum(W$value > 0) > 0) {
-        W$value <- W$value/max(abs(W$value))
-      }
 
-      if (abs) {
-        W$value <- abs(W$value)
-        plot_range = c(-0.1,max(abs(W$value)) + 0.1)
-      } else {
-        plot_range = c(-max(abs(W$value)) -0.1 ,max(abs(W$value)+0.1))
-      }
-
-      W$rank = base::rank(W$value)
-
-      fig = plotly::plot_ly(x = W$value,
-                            y = W$rank,
-                            text = W$feature,
-                            width = width,
-                            height = height)
-      fig = fig %>% layout(title = paste0(views, ', ', factors),
-                           xaxis = list(range = plot_range,
-                                        title = 'Weight'),
-                           yaxis = list(title = 'Rank'))
-
-      self$tables$feature_weights = W
-      self$plots$feature_weights = fig
+      self$tables$feature_weights = out$table
+      self$plots$feature_weights = out$plot
 
     },
 
     # Feature top weights
     plot_feature_top_weights = function(model = self$mofa_objects$model,
-                                        view = 1,
-                                        factors = 1,
-                                        nfeatures = 10,
-                                        abs = TRUE,
-                                        scale = TRUE,
-                                        sign = "all") {
+                                        omics = self$params$feature_top_weights$omics,
+                                        factors = self$params$feature_top_weights$factors,
+                                        nfeatures = self$params$feature_top_weights$nfeatures,
+                                        abs = self$params$feature_top_weights$abs,
+                                        scale = self$params$feature_top_weights$scale,
+                                        sign = self$params$feature_top_weights$sign,
+                                        groups = self$params$feature_top_weights$groups,
+                                        color_palette = self$params$feature_top_weights$color_palette,
+                                        reverse_color_palette = self$params$feature_top_weights$reverse_color_palette,
+                                        marker_size = self$params$feature_top_weights$marker_size,
+                                        marker_opacity = self$params$feature_top_weights$marker_opacity,
+                                        title_font_size = self$params$feature_top_weights$title_font_size,
+                                        y_label_font_size = self$params$feature_top_weights$y_label_font_size,
+                                        y_tick_font_size = self$params$feature_top_weights$y_tick_font_size,
+                                        x_label_font_size = self$params$feature_top_weights$x_label_font_size,
+                                        x_tick_font_size = self$params$feature_top_weights$x_tick_font_size,
+                                        legend_font_size = self$params$feature_top_weights$legend_font_size,
+                                        width = NULL,
+                                        height = NULL) {
 
-      plot = MOFA2::plot_top_weights(object = model,
-                                     view = view,
+      factors = as.numeric(factors)
+      feature_table = self$tables$feature_tables[[omics]]
+      rownames(feature_table) = stringr::str_replace(rownames(feature_table), paste0('_', omics), '')
+
+      out = plot_feature_top_weights(model = model,
+                                     omics = omics,
+                                     feature_table = feature_table,
                                      factors = factors,
                                      nfeatures = nfeatures,
                                      abs = abs,
                                      scale = scale,
-                                     sign = sign)
+                                     sign = sign,
+                                     groups = groups,
+                                     color_palette = color_palette,
+                                     reverse_color_palette = reverse_color_palette,
+                                     marker_size = marker_size,
+                                     marker_opacity = marker_opacity,
+                                     title_font_size = title_font_size,
+                                     y_label_font_size = y_label_font_size,
+                                     y_tick_font_size = y_tick_font_size,
+                                     x_label_font_size = x_label_font_size,
+                                     x_tick_font_size = x_tick_font_size,
+                                     legend_font_size = legend_font_size,
+                                     width = width,
+                                     height = height)
 
-      self$plots$feature_top_weights = plot
+
+      self$plots$feature_top_weights = out$plot
+      self$tables$feature_top_weights = out$table
     },
 
     # MOFA Heatmap
     plot_mofa_heatmap = function(model = self$mofa_objects$model,
-                                 meta_table = t(self$tables$metadata),
-                                 factor = 1,
-                                 view = 1,
-                                 features = 50,
-                                 imputed = FALSE,
-                                 denoise = FALSE,
-                                 cluster_cols = TRUE,
-                                 cluster_rows = TRUE,
-                                 row_annotations = NULL,
-                                 max_value = NULL,
-                                 min_value = NULL,
+                                 factor = self$params$mofa_heatmap$factor,
+                                 omics = self$params$mofa_heatmap$omics,
+                                 features = self$params$mofa_heatmap$features,
+                                 feature_annotations = self$params$mofa_heatmap$feature_annotations,
+                                 sample_annotations = self$params$mofa_heatmap$sample_annotations,
+                                 imputed = self$params$mofa_heatmap$imputed,
+                                 denoise = self$params$mofa_heatmap$denoise,
+                                 distance_method = self$params$mofa_heatmap$distance_method,
+                                 clustering_method = self$params$mofa_heatmap$clustering_method,
+                                 p_minkowski = self$params$mofa_heatmap$p_minkowski,
+                                 k_clusters_samples = self$params$mofa_heatmap$k_clusters_samples,
+                                 k_clusters_features = self$params$mofa_heatmap$k_clusters_features,
+                                 center = self$params$mofa_heatmap$center,
+                                 apply_clustering = self$params$mofa_heatmap$apply_clustering,
+                                 color_palette = self$params$mofa_heatmap$color_palette,
+                                 reverse_color_palette = self$params$mofa_heatmap$reverse_color_palette,
+                                 title_font_size = self$params$mofa_heatmap$title_font_size,
+                                 y_label_font_size = self$params$mofa_heatmap$y_label_font_size,
+                                 y_tick_font_size = self$params$mofa_heatmap$y_tick_font_size,
+                                 x_label_font_size = self$params$mofa_heatmap$x_label_font_size,
+                                 x_tick_font_size = self$params$mofa_heatmap$x_tick_font_size,
                                  width = NULL,
                                  height = NULL) {
 
 
       factor = as.numeric(factor)
-      view = as.numeric(view)
       features = as.numeric(features)
 
-      if (!is.null(min_value)){
-        if (min_value == "") {
-          min_value = NULL
-        } else {
-          min_value = as.numeric(min_value)
-        }
-      }
+      samples_annotation_table = self$tables$sample_tables[[omics]]
+      features_annotation_table = self$tables$feature_tables[[omics]]
 
-      if (!is.null(max_value)){
-        if (max_value == "") {
-          max_value = NULL
-        } else {
-          max_value = as.numeric(max_value)
-        }
-      }
-
-
-      groups = "all"
-
-      groups <- MOFA2:::.check_and_get_groups(model, groups)
-      factor <- MOFA2:::.check_and_get_factors(model, factor)
-      view <- MOFA2:::.check_and_get_views(model, view)
-      W <- do.call(rbind, MOFA2::get_weights(model, views = view, factors = factor,
-                                             as.data.frame = FALSE))
-
-      Z <- lapply(MOFA2::get_factors(model)[groups], function(z) as.matrix(z[,factor]))
-      Z <- do.call(rbind, Z)[, 1]
-      Z <- Z[!is.na(Z)]
-
-      if (isTRUE(denoise)) {
-        data <- MOFA2::predict(model, views = view, groups = groups)[[1]]
-      } else {
-        if (isTRUE(imputed)) {
-          data <- MOFA2::get_imputed_data(model, view, groups)[[1]]
-        }
-        else {
-          data <- MOFA2::get_data(model, views = view, groups = groups)[[1]]
-        }
-      }
-
-      if (is(data, "list")) {
-        data <- do.call(cbind, data)
-      }
-      if (is(features, "numeric")) {
-        if (length(features) == 1) {
-          features <- rownames(W)[tail(order(abs(W)), n = features)]
-        } else {
-          features <- rownames(W)[order(-abs(W))[features]]
-        }
-        features <- names(W[features, ])[order(W[features, ])]
-      } else if (is(features, "character")) {
-        stopifnot(all(features %in% features_names(model)[[view]]))
-      }else {
-        stop("Features need to be either a numeric or character vector")
-      }
-
-      data <- data[features, ]
-      data <- data[, names(Z)]
-      data <- data[, apply(data, 2, function(x) !all(is.na(x)))]
-      order_samples <- names(sort(Z, decreasing = TRUE))
-      order_samples <- order_samples[order_samples %in% colnames(data)]
-      data <- data[, order_samples]
-
-      if (!is.null(max_value)) {
-        data[data >= max_value] = max_value
-      }
-
-      if (!is.null(min_value)) {
-        data[data <= min_value] = min_value
-      }
+      out_data = plot_mofa_heatmap(model = self$mofa_objects$model,
+                                   omics = omics,
+                                   samples_annotation_table = samples_annotation_table,
+                                   features_annotation_table = features_annotation_table,
+                                   factor = factor,
+                                   features = features,
+                                   feature_annotations = feature_annotations,
+                                   sample_annotations = sample_annotations,
+                                   imputed = imputed,
+                                   denoise = denoise,
+                                   distance_method = distance_method,
+                                   clustering_method = clustering_method,
+                                   p_minkowski = p_minkowski,
+                                   k_clusters_samples = k_clusters_samples,
+                                   k_clusters_features = k_clusters_features,
+                                   center = center,
+                                   apply_clustering = apply_clustering,
+                                   color_palette = color_palette,
+                                   reverse_color_palette = reverse_color_palette,
+                                   title_font_size = title_font_size,
+                                   y_label_font_size = y_label_font_size,
+                                   y_tick_font_size = y_tick_font_size,
+                                   x_label_font_size = x_label_font_size,
+                                   x_tick_font_size = x_tick_font_size,
+                                   width = width,
+                                   height = height)
 
 
-      # Annotations
-      if (!is.null(row_annotations)) {
-        if (length(row_annotations) > 1) {
-          row_annotations = meta_table[, row_annotations]
-          colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
-        } else {
-          row_names = row_annotations
-          row_annotations = as.data.frame(meta_table[, row_annotations],
-                                          row.names = rownames(meta_table))
-          colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
-        }
-      }
-
-
-      # Set the clustering
-      if (cluster_rows & cluster_cols) {
-        dendrogram_list = "both"
-      } else if (cluster_rows) {
-        dendrogram_list = "column" # Because of the transpose, rows => cols
-      } else if (cluster_cols) {
-        dendrogram_list = "row" # Because of the transpose, cols => rows
-      } else {
-        dendrogram_list = "none"
-      }
-
-      plot = heatmaply::heatmaply(x = data,
-                                 scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                   low = "blue",
-                                   mid = "#faf4af",
-                                   high = "red",
-                                   midpoint = ((max(data, na.rm = T) - min(data, na.rm = T))/2) + min(data, na.rm = T),
-                                   limits = c(min(data, na.rm = T), max(data, na.rm = T))
-                                 ),
-                                 width = width,
-                                 height = height,
-                                 limits = c(min(data, na.rm = T), max(data, na.rm = T)),
-                                 col_side_colors = row_annotations,
-                                 dendrogram = dendrogram_list)
-
-      self$plots$mofa_heatmap = plot
-      self$tables$mofa_heatmap = data
+      self$plots$mofa_heatmap = out_data$plot
+      self$tables$mofa_heatmap = out_data$table
 
     },
 
-    # Scatterplot
-    plot_scatterplot = function(model = self$mofa_objects$model,
-                                factor = 1,
-                                view = 1,
-                                groups = "all",
-                                features = 10,
-                                sign = "all",
-                                color_by = "group",
-                                legend = TRUE,
-                                alpha = 1,
-                                shape_by = NULL,
-                                stroke = NULL,
-                                dot_size = 2.5,
-                                text_size = NULL,
-                                add_lm = TRUE,
-                                lm_per_group = TRUE,
-                                imputed = FALSE,
-                                width = NULL,
-                                height = NULL) {
+    # Scatter plot
+    plot_scatter_plot = function(model = self$mofa_objects$model,
+                                 factor = self$params$scatter_plot$factor,
+                                 omics = self$params$scatter_plot$omics,
+                                 features = self$params$scatter_plot$features,
+                                 sign = self$params$scatter_plot$sign,
+                                 sample_annotations = self$params$scatter_plot$sample_annotations,
+                                 add_lm = self$params$scatter_plot$add_lm,
+                                 imputed = self$params$scatter_plot$imputed,
+                                 color_palette = self$params$scatter_plot$color_palette,
+                                 reverse_palette = self$params$scatter_plot$reverse_palette,
+                                 marker_size = self$params$scatter_plot$marker_size,
+                                 marker_opacity = self$params$scatter_plot$marker_opacity,
+                                 show_legend = self$params$scatter_plot$show_legend,
+                                 width = NULL,
+                                 height = NULL) {
 
-      if (!is.null(color_by)) {
-        if (color_by == ""){
-          color_by = NULL
-        }
-      }
-
-      view = as.numeric(view)
       factor = as.numeric(factor)
       features = as.numeric(features)
-      plot = MOFA2::plot_data_scatter(object = model,
-                                      factor = factor,
-                                      view = view,
-                                      groups = groups,
-                                      features = features,
-                                      sign = sign,
-                                      color_by = color_by,
-                                      legend = legend,
-                                      alpha = alpha,
-                                      shape_by = shape_by,
-                                      stroke = stroke,
-                                      dot_size = dot_size,
-                                      text_size = text_size,
-                                      add_lm = add_lm,
-                                      lm_per_group = lm_per_group,
-                                      imputed = imputed)
-      plot = plotly::ggplotly(plot)
-      self$plots$scatterplot = plot
+
+      out_data = plot_mofa_scatter_plot(model = model,
+                                        factor = factor,
+                                        omics = omics,
+                                        features = features,
+                                        sign = sign,
+                                        sample_annotations = sample_annotations,
+                                        show_legend = show_legend,
+                                        marker_size = marker_size,
+                                        marker_opacity = marker_opacity,
+                                        add_lm = add_lm,
+                                        imputed = imputed,
+                                        fixed_axes = F,
+                                        color_palette = color_palette,
+                                        reverse_palette = reverse_palette,
+                                        width = width,
+                                        height = height)
+
+      self$plots$scatter_plot = out_data$plot
+      self$tables$scatter_plot = out_data$table
     }
 
 

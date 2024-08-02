@@ -4,19 +4,29 @@ start_ui = function(id){
   ns = shiny::NS(id)
   shiny::tagList(
     shiny::fluidRow(
-      shiny::h1('iSODA - integrated Simple Omics Data Analysis')
+      shiny::column(
+        width = 6,
+        shiny::h1('iSODA - integrated Simple Omics Data Analysis')
+      ),
+      shiny::column(
+        width = 1,
+      ),
+      shiny::column(
+        width = 5,
+        shiny::h3('Example datasets'),
+      )
+
     ),
     shiny::fluidRow(
       shiny::column(
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
         width = 6,
-        shiny::h3('Start by creating some experiments:'),
         shiny::fluidRow(
           shiny::column(
             width = 6,
             shiny::selectInput(
               inputId = ns('exp_type'),
-              label = 'Exp. type',
+              label = 'Omics type',
               choices = c('Lipidomics', 'Metabolomics', 'Proteomics', 'Transcriptomics', 'Genomics'),
               width = '100%'
             )
@@ -33,7 +43,7 @@ start_ui = function(id){
             width = 6,
             shiny::textInput(
               inputId = ns('exp_name'),
-              label = 'Exp. name',
+              label = 'Name',
               placeholder = 'lips_1',
               width = '100%'
             )
@@ -41,72 +51,72 @@ start_ui = function(id){
         ),
         shiny::fluidRow(
           shiny::column(
-            width = 6,
+            width = 12,
             shinyWidgets::actionBttn(
               inputId = ns('add_exp'),
-              label = "Add exp.",
+              label = "Add Omics",
               style = "material-flat",
               color = 'success',
               block = T,
               icon = icon("check")
             )
-          ),
-          shiny::column(
-            width = 6,
-            shinyWidgets::actionBttn(
-              inputId = ns('remove_exp'),
-              label = 'Remove exp.',
-              style = "material-flat",
-              color = 'danger',
-              block = T,
-              icon = icon("x")
-            )
           )
-        ),
-        shiny::fluidRow(
-          shiny::column(
-            width = 12,
-            shiny::br(),
-            shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-            shiny::h3('... or try out iSODA with example datasets!'),
-            shiny::br(),
-            shiny::fluidRow(
-              shiny::column(
-                width = 4,
-                shinyWidgets::actionBttn(
-                  inputId = ns('add_lipidomics_ex'),
-                  label = "Lipidomics",
-                  style = "pill",
-                  color = 'primary',
-                  block = T,
-                  icon = icon("upload")
-                )
-              ),
-              shiny::column(
-                width = 4,
-                shinyWidgets::actionBttn(
-                  inputId = ns('add_proteomics_ex'),
-                  label = "Proteomics",
-                  style = "pill",
-                  color = 'primary',
-                  block = T,
-                  icon = icon("upload")
-                )
-              ),
-              shiny::column(
-                width = 4,
-                shinyWidgets::actionBttn(
-                  inputId = ns('add_transcriptomics_ex'),
-                  label = "Transcriptomics",
-                  style = "pill",
-                  color = 'primary',
-                  block = T,
-                  icon = icon("upload")
-                )
-              )
-            )
-          )
+          # shiny::column(
+          #   width = 6,
+          #   shinyWidgets::actionBttn(
+          #     inputId = ns('remove_exp'),
+          #     label = 'Remove exp.',
+          #     style = "material-flat",
+          #     color = 'danger',
+          #     block = T,
+          #     icon = icon("x")
+          #   )
+          # )
         )
+        # shiny::fluidRow(
+        #   shiny::column(
+        #     width = 12,
+        #     shiny::br(),
+        #     shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        #     shiny::h3('... or try out iSODA with example datasets!'),
+        #     shiny::br(),
+        #     shiny::fluidRow(
+        #       shiny::column(
+        #         width = 4,
+        #         shinyWidgets::actionBttn(
+        #           inputId = ns('add_lipidomics_ex'),
+        #           label = "Lipidomics",
+        #           style = "pill",
+        #           color = 'primary',
+        #           block = T,
+        #           icon = icon("upload")
+        #         )
+        #       ),
+        #       shiny::column(
+        #         width = 4,
+        #         shinyWidgets::actionBttn(
+        #           inputId = ns('add_proteomics_ex'),
+        #           label = "Proteomics",
+        #           style = "pill",
+        #           color = 'primary',
+        #           block = T,
+        #           icon = icon("upload")
+        #         )
+        #       ),
+        #       shiny::column(
+        #         width = 4,
+        #         shinyWidgets::actionBttn(
+        #           inputId = ns('add_transcriptomics_ex'),
+        #           label = "Transcriptomics",
+        #           style = "pill",
+        #           color = 'primary',
+        #           block = T,
+        #           icon = icon("upload")
+        #         )
+        #       )
+        #     )
+        #   )
+        # )
       ),
       shiny::column(
         width = 1
@@ -114,26 +124,23 @@ start_ui = function(id){
       shiny::column(
         width = 5,
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-        shiny::h3('What is iSODA?'),
-        shiny::p('iSODA is designed to analyze and visualize preprocessed omics data.
-                 Currently available omic experiments are lipidomics, proteomics
-                 and transcriptomics.'),
-        shiny::p("Start using iSODA by creating an experiment by defining an experiment
-                 type and an optional experiment name, then pressing ADD EXP.
-                 The new experiment will then be accessible through the sidebar.
-                  iSODA is currently limited to a maximum of 6 simultaneous
-                 experiments."),
-        #Made a mistake creating an experiment? You can select one or multiple experiments
-        #in Delete exp. and remove them by pressing REMOVE EXP.
-        shiny::p('The general workflow consists in uploading a metadata and a data
-                  table: samples and rows, descriptors/features as columns. The
-                  metadata table contains all types of data describing each sample
-                  and the data table contains only numeric data.'),
-        shiny::p('Samples and features are then be filtered and imputed according
-                 to user set parameters.'),
-        shiny::p('Finally, data can be analyzed and visualized via interactive
-                 plots, and even further analysed with geneset enrichment, over-representation
-                 analysis and multiomics integration if the data allows it.')
+        shiny::h5('CellMiner multi-omics dataset'),
+        shiny::fluidRow(
+          shiny::downloadButton(
+            outputId = ns("dl_cellminer_data"),
+            label = "CellMiner.zip",
+            style = "width:100%;"
+          )
+        ),
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::h5('LTP-KO lipidomics dataset'),
+        shiny::fluidRow(
+          shiny::downloadButton(
+            outputId = ns("dl_ltp_ko_data"),
+            label = "LTP_KO.zip",
+            style = "width:100%;"
+          )
+        ),
       )
     )
   )
@@ -171,13 +178,24 @@ start_server = function(id, main_input, main_output, main_session, module_contro
 
         slot  = names(module_controler$slot_taken)[!sapply(module_controler$slot_taken, base::isTRUE)][1]
         exp_type = input$exp_type
-        main_output[[slot]] = bs4Dash::renderMenu({
-          bs4Dash::sidebarMenu(
-            bs4Dash::menuItem(text = exp_name,
-                              tabName = slot,
-                              icon = icon(tolower(substr(exp_type, 1, 1))))
+
+        main_output[[slot]] = shiny::renderUI({
+          bs4Dash::bs4SidebarMenuItem(
+            text = exp_name,
+            tabName = slot,
+            icon = shiny::icon("circle")
           )
         })
+
+
+        # main_output[[slot]] = bs4Dash::renderMenu({
+        #   bs4Dash::bs4SidebarMenu(
+        #     bs4Dash::bs4SidebarMenuItem(
+        #       text = exp_name,
+        #       tabName = slot
+        #     )
+        #   )
+        # })
 
         module_controler$slot_taken[[slot]] = TRUE
         module_controler$exp_names[[slot]] = exp_name
@@ -269,6 +287,22 @@ start_server = function(id, main_input, main_output, main_session, module_contro
 
       })
 
+      # Download CellMiner data
+      output$dl_cellminer_data = downloadHandler(
+        filename = function(){"CellMiner.zip"},
+        content = function(file) {
+          file.copy("./tests/datasets/CellMiner.zip", file)
+        },
+        contentType = "application/zip"
+      )
+      # Download LTP-KO data
+      output$dl_ltp_ko_data = downloadHandler(
+        filename = function(){"LTP_KO.zip"},
+        content = function(file) {
+          file.copy("./tests/datasets/LTP_KO.zip", file)
+        },
+        contentType = "application/zip"
+      )
     }
   )
 }

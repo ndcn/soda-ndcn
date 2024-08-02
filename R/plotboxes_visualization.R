@@ -1,6 +1,279 @@
+#------------------------------------------------------- Dendrogram ----
+
+dendrogram_generate = function(r6, dimensions_obj, input) {
+  print_tm(r6$name, "Dendrogram: generating plot.")
+
+  if (input$dendrogram_plotbox$maximized){
+    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
+    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+  } else {
+    width = dimensions_obj$xpx * dimensions_obj$x_plot
+    height = dimensions_obj$ypx * dimensions_obj$y_plot
+  }
+
+  r6$plot_dendrogram(width = width,
+                     height = height)
+}
+
+
+dendrogram_spawn = function(r6, format, output) {
+  print_tm(r6$name, "Dendrogram: spawning plot.")
+  output$dendrogram_plot = plotly::renderPlotly({
+    r6$plots$dendrogram
+    plotly::config(r6$plots$dendrogram, toImageButtonOptions = list(format= format,
+                                                                    filename= timestamped_module_name(r6, 'dendrogram'),
+                                                                    height= NULL,
+                                                                    width= NULL,
+                                                                    scale= 1))
+  })
+}
+
+
+dendrogram_ui = function(dimensions_obj, session) {
+
+  get_plotly_box(id = "dendrogram",
+                 label = "Dendrogram",
+                 dimensions_obj = dimensions_obj,
+                 session = session)
+
+}
+
+
+dendrogram_server = function(r6, output, session) {
+
+  ns = session$ns
+
+  # Generate UI
+  output$dendrogram_sidebar_ui = shiny::renderUI({
+    shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('dendrogram_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$dendrogram$auto_refresh,
+        right = TRUE,
+        status = "success"
+      ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("dendrogram_dataset"),
+        label = "Select table",
+        choices = r6$hardcoded_settings$dendrogram$datasets,
+        selected = r6$params$dendrogram$dataset,
+        width = '100%'
+      ),
+      shiny::selectizeInput(
+        inputId = ns("dendrogram_annotations"),
+        label = "Select sample annotation(s)",
+        choices = colnames(r6$tables$raw_meta),
+        selected = r6$params$dendrogram$annotations,
+        multiple = TRUE,
+        width = '100%'
+      ),
+      ## Data settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("dendrogram_distance_method"),
+        label = "Distance method",
+        choices = c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski"),
+        selected = r6$params$dendrogram$distance_method,
+        multiple = F
+      ),
+
+      shiny::numericInput(
+        inputId = ns("dendrogram_p"),
+        label = "Minkowski distance power",
+        value = r6$params$dendrogram$p,
+        width = '100%'
+      ),
+
+      shiny::selectInput(
+        inputId = ns("dendrogram_clustering_method"),
+        label = "Clustering method",
+        choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"),
+        selected = r6$params$dendrogram$clustering_method,
+        multiple = F
+      ),
+      shiny::numericInput(
+        inputId = ns('dendrogram_k_clusters'),
+        label = "K clusters",
+        value = r6$params$dendrogram$k_clusters,
+        width = '100%'
+      ),
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectizeInput(
+        inputId = ns('dendrogram_color_palette'),
+        label = "Color palette(s)",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
+        selected = r6$params$dendrogram$color_palette,
+        multiple = TRUE,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("dendrogram_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$dendrogram$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("dendrogram_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$dendrogram$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("dendrogram_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$dendrogram$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("dendrogram_img_format"),
+        label = "Image format",
+        choices = c("png", "svg", "jpeg", "webp"),
+        selected = r6$params$dendrogram$img_format,
+        width = "100%"),
+      shiny::actionButton(
+        inputId = ns('dendrogram_push_clusters'),
+        label = 'Push clusters to meta',
+        width = '100%'
+      ),
+      shiny::downloadButton(
+        outputId = ns("download_dendrogram_table"),
+        label = "Download associated table",
+        style = "width:100%;"
+      )
+    )
+  })
+
+}
+
+dendrogram_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$dendrogram_sidebar)
+  monitor_refresh = shiny::reactive(input$dendrogram_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Dendrogram",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = dendrogram_generate,
+             spawn_function = dendrogram_spawn,
+             img_format = input$dendrogram_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
+
+  # Generate the plot
+  shiny::observeEvent(
+    c(input$dendrogram_dataset,
+      input$dendrogram_annotations,
+      input$dendrogram_distance_method,
+      input$dendrogram_p,
+      input$dendrogram_clustering_method,
+      input$dendrogram_k_clusters,
+      input$dendrogram_color_palette,
+      input$dendrogram_y_label_font_size,
+      input$dendrogram_y_tick_font_size,
+      input$dendrogram_x_tick_font_size,
+      input$dendrogram_img_format),
+    {
+
+      r6$param_dendrogram(auto_refresh = input$dendrogram_auto_refresh,
+                          dataset = input$dendrogram_dataset,
+                          annotations = input$dendrogram_annotations,
+                          distance_method = input$dendrogram_distance_method,
+                          p = input$dendrogram_p,
+                          clustering_method = input$dendrogram_clustering_method,
+                          k_clusters = input$dendrogram_k_clusters,
+                          color_palette = input$dendrogram_color_palette,
+                          y_label_font_size = input$dendrogram_y_label_font_size,
+                          y_tick_font_size = input$dendrogram_y_tick_font_size,
+                          x_tick_font_size = input$dendrogram_x_tick_font_size,
+                          img_format = input$dendrogram_img_format)
+
+      if (!input$dendrogram_auto_refresh) {
+        r6$params$dendrogram$auto_refresh = input$dendrogram_auto_refresh
+        return()
+      }
+
+      try_plot(prefix = "Dendrogram",
+               r6 = r6,
+               dimensions_obj = dimensions_obj,
+               gen_function = dendrogram_generate,
+               spawn_function = dendrogram_spawn,
+               img_format = input$dendrogram_img_format,
+               input = input,
+               output = output,
+               session = session)
+
+    })
+
+  # Push k clusters to meta
+  shiny::observeEvent(input$dendrogram_push_clusters,{
+    if ('k_clusters' %in% colnames(r6$tables$dendrogram)){
+      k_clusters = r6$tables$dendrogram[rownames(r6$tables$raw_meta), 'k_clusters']
+      r6$tables$raw_meta$dendro_clusters = k_clusters
+      print_tm(r6$name, "Dendrogram: pushed clusters to the metadata")
+    } else {
+      print_tm(r6$name, "Dendrogram: no clusters to be pushed")
+    }
+  })
+
+  # Download associated table
+  output$download_dendrogram_table = shiny::downloadHandler(
+    filename = function(){timestamped_name("dendrogram_table.csv")},
+    content = function(file_name){
+      write.csv(r6$tables$dendrogram, file_name)
+    }
+  )
+
+  # Expanded boxes
+  dendrogram_proxy = plotly::plotlyProxy(outputId = "dendrogram_plot",
+                                         session = session)
+
+  shiny::observeEvent(input$dendrogram_plotbox,{
+    if (input$dendrogram_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = dendrogram_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
+                                     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
+                                ))
+    } else {
+      plotly::plotlyProxyInvoke(p = dendrogram_proxy,
+                                method = "relayout",
+                                list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
+                                     height = dimensions_obj$ypx * dimensions_obj$y_plot
+                                ))
+    }
+  })
+
+}
+
+
 #------------------------------------------------------- Class distribution ----
 
-class_distribution_generate = function(r6, colour_list, dimensions_obj, input) {
+class_distribution_generate = function(r6, dimensions_obj, input) {
   print_tm(r6$name, "Class distribution: generating plot.")
 
   if (input$class_distribution_plotbox$maximized){
@@ -21,7 +294,7 @@ class_distribution_spawn = function(r6, format, output) {
   output$class_distribution_plot = plotly::renderPlotly({
     r6$plots$class_distribution
     plotly::config(r6$plots$class_distribution, toImageButtonOptions = list(format= format,
-                                                                            filename= timestamped_name('class_distribution'),
+                                                                            filename= timestamped_module_name(r6, 'class_distribution'),
                                                                             height= NULL,
                                                                             width= NULL,
                                                                             scale= 1))
@@ -40,13 +313,20 @@ class_distribution_ui = function(dimensions_obj, session) {
 
 
 class_distribution_server = function(r6, output, session) {
-
   ns = session$ns
 
-  print_tm(r6$name, "Class distribution : START.")
   # Generate UI
   output$class_distribution_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('class_distribution_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$class_distribution$auto_refresh,
+        right = TRUE,
+        status = "success"
+      ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("class_distribution_dataset"),
         label = "Select table",
@@ -59,7 +339,8 @@ class_distribution_server = function(r6, output, session) {
         choices = colnames(r6$tables$raw_meta),
         selected = r6$params$class_distribution$group_col
       ),
-
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectizeInput(
         inputId = ns('class_distribution_color_palette'),
         label = "Color palette",
@@ -67,11 +348,61 @@ class_distribution_server = function(r6, output, session) {
                     'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
                     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
                     'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
-                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
         selected = r6$params$class_distribution$color_palette,
         multiple = FALSE
       ),
-
+      shiny::numericInput(
+        inputId = ns("class_distribution_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$class_distribution$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_distribution_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$class_distribution$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_distribution_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$class_distribution$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_distribution_x_label_font_size"),
+        label = 'x-axis label font size',
+        value = r6$params$class_distribution$x_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_distribution_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$class_distribution$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_distribution_legend_font_size"),
+        label = 'Legend font size',
+        value = r6$params$class_distribution$legend_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("class_distribution_img_format"),
@@ -91,24 +422,64 @@ class_distribution_server = function(r6, output, session) {
 
 class_distribution_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$class_distribution_sidebar)
+  monitor_refresh = shiny::reactive(input$class_distribution_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Class distribution",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = class_distribution_generate,
+             spawn_function = class_distribution_spawn,
+             img_format = input$class_distribution_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
 
   # Generate the plot
-  shiny::observeEvent(c(input$class_distribution_dataset, input$class_distribution_metacol, input$class_distribution_color_palette, input$class_distribution_img_format), {
-    print_tm(r6$name, "Class distribution: Updating params...")
+  shiny::observeEvent(
+    c(input$class_distribution_dataset,
+      input$class_distribution_metacol,
+      input$class_distribution_color_palette,
+      input$class_distribution_title_font_size,
+      input$class_distribution_y_label_font_size,
+      input$class_distribution_y_tick_font_size,
+      input$class_distribution_x_label_font_size,
+      input$class_distribution_x_tick_font_size,
+      input$class_distribution_legend_font_size,
+      input$class_distribution_img_format), {
 
-    r6$param_class_distribution(dataset = input$class_distribution_dataset,
-                                group_col = input$class_distribution_metacol,
-                                color_palette = input$class_distribution_color_palette,
-                                img_format = input$class_distribution_img_format)
+        r6$param_class_distribution(auto_refresh = input$class_distribution_auto_refresh,
+                                    dataset = input$class_distribution_dataset,
+                                    group_col = input$class_distribution_metacol,
+                                    color_palette = input$class_distribution_color_palette,
+                                    title_font_size = input$class_distribution_title_font_size,
+                                    y_label_font_size = input$class_distribution_y_label_font_size,
+                                    y_tick_font_size = input$class_distribution_y_tick_font_size,
+                                    x_label_font_size = input$class_distribution_x_label_font_size,
+                                    x_tick_font_size = input$class_distribution_x_tick_font_size,
+                                    legend_font_size = input$class_distribution_legend_font_size,
+                                    img_format = input$class_distribution_img_format)
 
-    base::tryCatch({
-      class_distribution_generate(r6, color_palette, dimensions_obj, input)
-      class_distribution_spawn(r6, input$class_distribution_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'Class distribution: ERROR.')
-    },finally={}
-    )
+        if (!input$class_distribution_auto_refresh) {
+          return()
+        }
+
+    try_plot(prefix = "Class distribution",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = class_distribution_generate,
+             spawn_function = class_distribution_spawn,
+             img_format = input$class_distribution_img_format,
+             input = input,
+             output = output,
+             session = session)
+
   })
 
   # Download associated table
@@ -144,7 +515,7 @@ class_distribution_events = function(r6, dimensions_obj, color_palette, input, o
 
 #--------------------------------------------------------- Class comparison ----
 
-class_comparison_generate = function(r6, colour_list, dimensions_obj, input) {
+class_comparison_generate = function(r6, dimensions_obj, input) {
   print_tm(r6$name, "Class comparison: generating plot.")
 
   if (input$class_comparison_plotbox$maximized){
@@ -163,7 +534,7 @@ class_comparison_spawn = function(r6, format, output) {
   output$class_comparison_plot = plotly::renderPlotly({
     r6$plots$class_comparison
     plotly::config(r6$plots$class_comparison, toImageButtonOptions = list(format= format,
-                                                                          filename= timestamped_name('class_comparison'),
+                                                                          filename= timestamped_module_name(r6, 'class_comparison'),
                                                                           height= NULL,
                                                                           width= NULL,
                                                                           scale= 1))
@@ -180,11 +551,18 @@ class_comparison_ui = function(dimensions_obj, session) {
 class_comparison_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "Class comparison: START.")
 
   output$class_comparison_sidebar_ui = shiny::renderUI({
     shiny::tagList(
-
+      shinyWidgets::materialSwitch(
+        inputId = ns('class_comparison_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$class_comparison$auto_refresh,
+        right = TRUE,
+        status = "success"
+      ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("class_comparison_dataset"),
         label = "Select table",
@@ -197,6 +575,8 @@ class_comparison_server = function(r6, output, session) {
         choices = colnames(r6$tables$raw_meta),
         selected = r6$params$class_comparison$group_col
       ),
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectizeInput(
         inputId = ns('class_comparison_color_palette'),
         label = "Color palette",
@@ -204,10 +584,53 @@ class_comparison_server = function(r6, output, session) {
                     'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
                     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
                     'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
-                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
         selected = r6$params$class_comparison$color_palette,
         multiple = FALSE
       ),
+      shiny::numericInput(
+        inputId = ns("class_comparison_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$class_comparison$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_comparison_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$class_comparison$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_comparison_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$class_comparison$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_comparison_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$class_comparison$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("class_comparison_legend_font_size"),
+        label = 'Legend font size',
+        value = r6$params$class_comparison$legend_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("class_comparison_img_format"),
@@ -225,23 +648,63 @@ class_comparison_server = function(r6, output, session) {
 }
 class_comparison_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
-  # Generate the plot
-  shiny::observeEvent(c(input$class_comparison_dataset, input$class_comparison_metacol, input$class_comparison_color_palette, input$class_comparison_img_format), {
-    print_tm(r6$name, "Class comparison: Updating params...")
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$class_comparison_sidebar)
+  monitor_refresh = shiny::reactive(input$class_comparison_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Class comparison",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = class_comparison_generate,
+             spawn_function = class_comparison_spawn,
+             img_format = input$class_comparison_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
 
-    r6$param_class_comparison(dataset = input$class_comparison_dataset,
+  # Generate the plot
+  shiny::observeEvent(
+    c(input$class_comparison_dataset,
+      input$class_comparison_metacol,
+      input$class_comparison_color_palette,
+      input$class_comparison_title_font_size,
+      input$class_comparison_y_label_font_size,
+      input$class_comparison_y_tick_font_size,
+      input$class_comparison_x_tick_font_size,
+      input$class_comparison_legend_font_size,
+      input$class_comparison_img_format
+      ),
+    {
+
+    r6$param_class_comparison(auto_refresh = input$class_comparison_auto_refresh,
+                              dataset = input$class_comparison_dataset,
                               group_col = input$class_comparison_metacol,
                               color_palette = input$class_comparison_color_palette,
+                              title_font_size = input$class_comparison_title_font_size,
+                              y_label_font_size = input$class_comparison_y_label_font_size,
+                              y_tick_font_size = input$class_comparison_y_tick_font_size,
+                              x_tick_font_size = input$class_comparison_x_tick_font_size,
+                              legend_font_size = input$class_comparison_legend_font_size,
                               img_format = input$class_comparison_img_format)
 
-    base::tryCatch({
-      class_comparison_generate(r6, color_palette, dimensions_obj, input)
-      class_comparison_spawn(r6, input$class_comparison_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'Class comparison: error, missing data.')
-    },finally={}
-    )
+      if (!input$class_comparison_auto_refresh) {
+        return()
+      }
 
+    try_plot(prefix = "Class comparison",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = class_comparison_generate,
+             spawn_function = class_comparison_spawn,
+             img_format = input$class_comparison_img_format,
+             input = input,
+             output = output,
+             session = session)
 
   })
 
@@ -280,7 +743,7 @@ class_comparison_events = function(r6, dimensions_obj, color_palette, input, out
 
 #------------------------------------------------------------- Volcano plot ----
 
-volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
+volcano_plot_generate = function(r6, dimensions_obj, input) {
   print_tm(r6$name, "Volcano plot: generating plot.")
 
   if (input$volcano_plot_plotbox$maximized){
@@ -291,7 +754,7 @@ volcano_plot_generate = function(r6, colour_list, dimensions_obj, input) {
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$get_volcano_table(data_table = table_switch(input$volcano_plot_tables, r6))
+  r6$get_volcano_table()
 
   r6$plot_volcano(width = width,
                   height = height)
@@ -304,7 +767,7 @@ volcano_plot_spawn = function(r6, format, output) {
   output$volcano_plot_plot = plotly::renderPlotly({
     r6$plots$volcano_plot
     plotly::config(r6$plots$volcano_plot, toImageButtonOptions = list(format= format,
-                                                                      filename= timestamped_name('volcano_plot'),
+                                                                      filename= timestamped_module_name(r6, 'volcano_plot'),
                                                                       height= NULL,
                                                                       width= NULL,
                                                                       scale= 1))
@@ -324,7 +787,6 @@ volcano_plot_ui = function(dimensions_obj, session) {
 volcano_plot_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "Volcano plot: START.")
 
   # Set UI
   output$volcano_plot_sidebar_ui = shiny::renderUI({
@@ -336,23 +798,25 @@ volcano_plot_server = function(r6, output, session) {
         right = TRUE,
         status = "success"
       ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
-        inputId = ns("volcano_plot_tables"),
+        inputId = ns("volcano_plot_data_table"),
         label = "Select data table",
         choices = r6$hardcoded_settings$volcano_plot$datasets,
-        selected = r6$params$volcano_plot$data_table
+        selected = r6$params$volcano_plot_comparison$data_table
       ),
       shiny::selectInput(
         inputId = ns("volcano_plot_metacol"),
         label = "Select group column",
         choices = colnames(r6$tables$raw_meta),
-        selected = r6$params$volcano_plot$group_col
+        selected = r6$params$volcano_plot_comparison$group_col
       ),
       shiny::selectizeInput(
         inputId = ns("volcano_plot_metagroup"),
         label = "Select two groups to compare",
-        choices = unique(r6$tables$raw_meta[,r6$params$volcano_plot$group_col]),
-        selected = c(r6$params$volcano_plot$group_1, r6$params$volcano_plot$group_2),
+        choices = unique(r6$tables$raw_meta[,r6$params$volcano_plot_comparison$group_col]),
+        selected = c(r6$params$volcano_plot_comparison$group_1, r6$params$volcano_plot_comparison$group_2),
         multiple = TRUE
       ),
 
@@ -375,38 +839,6 @@ volcano_plot_server = function(r6, output, session) {
         label = 'Keep only significant data',
         value = r6$params$volcano_plot$keep_significant
       ),
-      shiny::selectizeInput(
-        inputId = ns('volcano_plot_color_palette'),
-        label = "Feature metadata colors",
-        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
-                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
-                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
-                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
-                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
-        selected = r6$params$volcano_plot$color_palette,
-        multiple = FALSE
-      ),
-      shiny::selectizeInput(
-        inputId = ns("volcano_plot_function"),
-        label = "FC function",
-        choices = c("median", "mean"),
-        selected = r6$params$volcano_plot$selected_function,
-        multiple = FALSE
-      ),
-      shiny::selectizeInput(
-        inputId = ns("volcano_plot_test"),
-        label = "Select test",
-        choices = c("Wilcoxon", "t-Test"),
-        selected = r6$params$volcano_plot$selected_test,
-        multiple = FALSE
-      ),
-      shiny::selectizeInput(
-        inputId = ns("volcano_plot_adjustment"),
-        label = "Select adjustment",
-        choices = c("None", "BH"),
-        selected = r6$params$volcano_plot$adjustment,
-        multiple = FALSE
-      ),
       shiny::selectInput(
         inputId = ns("volcano_plot_displayed_plot"),
         label = 'Displayed plot',
@@ -414,27 +846,72 @@ volcano_plot_server = function(r6, output, session) {
         selected = r6$params$volcano_plot$displayed_plot,
         width = '100%'
       ),
-      shiny::textInput(
+      ## Data settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectizeInput(
+        inputId = ns("volcano_plot_function"),
+        label = "FC function",
+        choices = c("median", "mean"),
+        selected = r6$params$volcano_plot_comparison$fc_function,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
+        inputId = ns("volcano_plot_statistical_test"),
+        label = "Statistical test",
+        choices = c("Wilcoxon", "t-Test"),
+        selected = r6$params$volcano_plot_comparison$statistical_test,
+        multiple = FALSE
+      ),
+      shiny::selectizeInput(
+        inputId = ns("volcano_plot_adjustment_method"),
+        label = "Adjustement method",
+        choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+        selected = r6$params$volcano_plot_comparison$adjustment_method,
+        multiple = FALSE
+      ),
+      shiny::numericInput(
         inputId = ns("volcano_plot_p_val_threshold"),
         label = 'p-value threshold',
         value = r6$params$volcano_plot$p_val_threshold,
+        step = 0.01,
         width = '100%'
       ),
-
-      shiny::textInput(
+      shiny::numericInput(
         inputId = ns("volcano_plot_fc_threshold"),
         label = 'FC threshold',
         value = r6$params$volcano_plot$fc_threshold,
+        step = 0.1,
         width = '100%'
       ),
-
-      shiny::textInput(
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectizeInput(
+        inputId = ns('volcano_plot_color_palette'),
+        label = "Feature metadata colors",
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
+        selected = r6$params$volcano_plot$color_palette,
+        multiple = FALSE
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('volcano_plot_reverse_palette'),
+        label = 'Reverse palette',
+        value = r6$params$volcano_plot$reverse_palette,
+        right = TRUE,
+        status = "primary"
+      ),
+      shiny::numericInput(
         inputId = ns("volcano_plot_marker_size"),
         label = 'Marker size',
         value = r6$params$volcano_plot$marker_size,
+        step = 1,
         width = '100%'
       ),
-
       shiny::sliderInput(
         inputId = ns("volcano_plot_opacity"),
         label = 'Opacity',
@@ -444,12 +921,55 @@ volcano_plot_server = function(r6, output, session) {
         step = 0.1,
         width = '100%'
       ),
-      shiny::actionButton(
-        inputId = ns("volcano_feature_select"),
-        label = "Save selection",
-        width = "100%"
+      shiny::numericInput(
+        inputId = ns("volcano_plot_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$volcano_plot$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
       ),
-
+      shiny::numericInput(
+        inputId = ns("volcano_plot_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$volcano_plot$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("volcano_plot_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$volcano_plot$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("volcano_plot_x_label_font_size"),
+        label = 'x-axis label font size',
+        value = r6$params$volcano_plot$x_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("volcano_plot_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$volcano_plot$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("volcano_plot_legend_font_size"),
+        label = 'Legend font size',
+        value = r6$params$volcano_plot$legend_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("volcano_plot_img_format"),
@@ -457,18 +977,15 @@ volcano_plot_server = function(r6, output, session) {
         choices = c("png", "svg", "jpeg", "webp"),
         selected = r6$params$volcano_plot$img_format,
         width = "100%"),
-
-      shiny::fluidRow(
-        shiny::downloadButton(
-          outputId = ns("download_volcano_table"),
-          label = "Download associated table",
-          style = "width:50%;"
-        ),
-        shiny::downloadButton(
-          outputId = ns("download_volcano_subtable"),
-          label = "Download selection",
-          style = "width:50%;"
-        )
+      shiny::actionButton(
+        inputId = ns('volcano_plot_push_expression'),
+        label = 'Push expression to meta',
+        width = '100%'
+      ),
+      shiny::downloadButton(
+        outputId = ns("download_volcano_table"),
+        label = "Download associated table",
+        style = "width:100%;"
       )
     )
   })
@@ -476,9 +993,27 @@ volcano_plot_server = function(r6, output, session) {
 
 volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$volcano_plot_sidebar)
+  monitor_refresh = shiny::reactive(input$volcano_plot_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Volcano plot",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = volcano_plot_generate,
+             spawn_function = volcano_plot_spawn,
+             img_format = input$volcano_plot_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
+
   # auto-update selected groups
   shiny::observeEvent(input$volcano_plot_metacol,{
-    # r6$params$volcano_plot$group_column = input$volcano_plot_metacol
     shiny::updateSelectizeInput(
       inputId = "volcano_plot_metagroup",
       session = session,
@@ -508,29 +1043,29 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
 
   shiny::observeEvent(
     c(shiny::req(length(input$volcano_plot_metagroup) == 2),
-      input$volcano_plot_auto_refresh,
-      input$volcano_plot_tables,
-      input$volcano_plot_function,
-      input$volcano_plot_adjustment,
-      input$volcano_plot_test,
-      input$volcano_plot_displayed_plot,
+      input$volcano_plot_data_table,
+      input$volcano_plot_metagroup,
       input$volcano_plot_feature_metadata,
       input$volcano_plot_annotation_terms,
       input$volcano_plot_keep_significant,
-      input$volcano_plot_color_palette,
+      input$volcano_plot_displayed_plot,
+      input$volcano_plot_function,
+      input$volcano_plot_statistical_test,
+      input$volcano_plot_adjustment_method,
       input$volcano_plot_p_val_threshold,
       input$volcano_plot_fc_threshold,
+      input$volcano_plot_color_palette,
+      input$volcano_plot_reverse_palette,
       input$volcano_plot_marker_size,
       input$volcano_plot_opacity,
+      input$volcano_plot_title_font_size,
+      input$volcano_plot_y_label_font_size,
+      input$volcano_plot_y_tick_font_size,
+      input$volcano_plot_x_label_font_size,
+      input$volcano_plot_x_tick_font_size,
+      input$volcano_plot_legend_font_size,
       input$volcano_plot_img_format
     ),{
-
-      if (!input$volcano_plot_auto_refresh) {
-        r6$params$volcano_plot$auto_refresh = input$volcano_plot_auto_refresh
-        return()
-      }
-
-      print_tm(r6$name, "Volcano plot: Updating params...")
 
       # Is the column multivalue?
       if (input$volcano_plot_feature_metadata %in% names(r6$tables$feature_list)) {
@@ -544,60 +1079,64 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
         feature_metadata = input$volcano_plot_feature_metadata
       }
 
+      r6$param_volcano_plot_comparison(data_table = input$volcano_plot_data_table,
+                                       group_col = input$volcano_plot_metacol,
+                                       group_1 = input$volcano_plot_metagroup[1],
+                                       group_2 = input$volcano_plot_metagroup[2],
+                                       fc_function = input$volcano_plot_function,
+                                       statistical_test = input$volcano_plot_statistical_test,
+                                       adjustment_method = input$volcano_plot_adjustment_method)
+
       r6$param_volcano_plot(auto_refresh = input$volcano_plot_auto_refresh,
-                            data_table = input$volcano_plot_tables,
-                            adjustment = input$volcano_plot_adjustment,
-                            group_col = input$volcano_plot_metacol,
-                            group_1 = input$volcano_plot_metagroup[1],
-                            group_2 = input$volcano_plot_metagroup[2],
                             feature_metadata = feature_metadata,
                             keep_significant = input$volcano_plot_keep_significant,
-                            color_palette = input$volcano_plot_color_palette,
                             displayed_plot = input$volcano_plot_displayed_plot,
                             p_val_threshold = input$volcano_plot_p_val_threshold,
                             fc_threshold = input$volcano_plot_fc_threshold,
                             marker_size = input$volcano_plot_marker_size,
                             opacity = input$volcano_plot_opacity,
-                            selected_function = input$volcano_plot_function,
-                            selected_test = input$volcano_plot_test,
+                            title_font_size = input$volcano_plot_title_font_size,
+                            y_label_font_size = input$volcano_plot_y_label_font_size,
+                            y_tick_font_size = input$volcano_plot_y_tick_font_size,
+                            x_label_font_size = input$volcano_plot_x_label_font_size,
+                            x_tick_font_size = input$volcano_plot_x_tick_font_size,
+                            legend_font_size = input$volcano_plot_legend_font_size,
+                            color_palette = input$volcano_plot_color_palette,
+                            reverse_palette = input$volcano_plot_reverse_palette,
                             img_format = input$volcano_plot_img_format)
 
-      base::tryCatch({
-        volcano_plot_generate(r6, color_palette, dimensions_obj, input)
-        volcano_plot_spawn(r6, input$volcano_plot_img_format, output)
-      },error=function(e){
-        print_tm(r6$name, 'Volcano plot: ERROR.')
-      },finally={}
-      )
+      if (!input$volcano_plot_auto_refresh) {
+        r6$params$volcano_plot$auto_refresh = input$volcano_plot_auto_refresh
+        return()
+      }
+
+      try_plot(prefix = "Volcano plot",
+               r6 = r6,
+               dimensions_obj = dimensions_obj,
+               gen_function = volcano_plot_generate,
+               spawn_function = volcano_plot_spawn,
+               img_format = input$volcano_plot_img_format,
+               input = input,
+               output = output,
+               session = session)
 
 
     })
 
+  # Push expression to meta
+  shiny::observeEvent(input$volcano_plot_push_expression,{
+    r6$push_volcano_to_meta()
+    # r6$tables$feature_table$volcano_plot_expression = "None"
+    # r6$tables$feature_table[rownames(r6$tables$volcano_plot), "volcano_plot_expression"] = r6$tables$volcano_plot[, "expression"]
+    print_tm(r6$name, "Volcano plot: pushed expression to the metadata")
 
-
-  # Save selection
-  shiny::observeEvent(input$volcano_feature_select, {
-    print_tm(r6$name, "Volcano plot: saving selection.")
-    volcano_selection = plotly::event_data(
-      "plotly_selected"
-    )
-    if (is.null(volcano_selection)){
-      print_tm(r6$name, "Brushed points appear here (double-click to clear)")
-    }else {
-      r6$slice_volcano_table(
-        x = volcano_selection[3][[1]],
-        y = volcano_selection[4][[1]],
-        x_col = "log2_fold_change",
-        y_col = adjustment_switch(input$volcano_plot_adjustment)
-      )
-    }
   })
 
   # Export volcano table
   output$download_volcano_table = shiny::downloadHandler(
-    filename = function(){timestamped_name("volcano_table.csv")},
+    filename = function(){timestamped_name("volcano_plot.csv")},
     content = function(file_name){
-      write.csv(r6$tables$volcano_table, file_name)
+      write.csv(r6$tables$volcano_plot, file_name)
     }
   )
 
@@ -630,8 +1169,8 @@ volcano_plot_events = function(r6, dimensions_obj, color_palette, input, output,
 
 }
 
-#----------------------------------------------------------------- Heat map ----
-heatmap_generate = function(r6, colour_list, dimensions_obj, input) {
+#------------------------------------------------------------------ Heatmap ----
+heatmap_generate = function(r6, dimensions_obj, input) {
   print_tm(r6$name, "Heatmap: generating plot.")
 
   if (input$heatmap_plotbox$maximized){
@@ -651,7 +1190,7 @@ heatmap_spawn = function(r6, format, output) {
   output$heatmap_plot = plotly::renderPlotly({
     r6$plots$heatmap
     plotly::config(r6$plots$heatmap, toImageButtonOptions = list(format= format,
-                                                                 filename= timestamped_name('heatmap'),
+                                                                 filename= timestamped_module_name(r6, 'heatmap'),
                                                                  height= NULL,
                                                                  width= NULL,
                                                                  scale= 1))
@@ -672,7 +1211,6 @@ heatmap_ui = function(dimensions_obj, session) {
 heatmap_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "Heatmap: START.")
 
   output$heatmap_sidebar_ui = shiny::renderUI({
     shiny::tagList(
@@ -683,46 +1221,14 @@ heatmap_server = function(r6, output, session) {
         right = TRUE,
         status = "success"
       ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("heatmap_dataset"),
         label = "Select dataset",
         choices = r6$hardcoded_settings$heatmap$datasets,
         selected = r6$params$heatmap$dataset
       ),
-
-      shiny::fluidRow(
-        shiny::column(
-          width = 4,
-          shinyWidgets::switchInput(inputId = ns("heatmap_impute"),
-                                    label = "Impute missing",
-                                    value = r6$params$heatmap$impute,
-                                    onLabel = 'YES',
-                                    offLabel = 'NO',
-                                    labelWidth = '150px'
-          )
-        ),
-        shiny::column(
-          width = 4,
-          shinyWidgets::switchInput(inputId = ns("heatmap_cluster_samples"),
-                                    label = "Cluster samples",
-                                    value = r6$params$heatmap$cluster_samples,
-                                    onLabel = 'YES',
-                                    offLabel = 'NO',
-                                    labelWidth = '150px'
-                                    )
-        ),
-        shiny::column(
-          width = 4,
-          shinyWidgets::switchInput(inputId = ns("heatmap_cluster_features"),
-                                    label = "Cluster features",
-                                    value = r6$params$heatmap$cluster_features,
-                                    onLabel = 'YES',
-                                    offLabel = 'NO',
-                                    labelWidth = '150px'
-          )
-        )
-      ),
-
       shiny::selectizeInput(
         inputId = ns("heatmap_map_rows"),
         label = "Map sample data",
@@ -753,8 +1259,63 @@ heatmap_server = function(r6, output, session) {
         choices = NULL,
         selected = r6$params$heatmap$map_feature_terms
       ),
-
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+
+      shiny::selectInput(
+        inputId = ns("heatmap_distance_method"),
+        label = "Distance method",
+        choices = c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski"),
+        selected = r6$params$heatmap$distance_method,
+        multiple = F
+      ),
+
+      shiny::selectInput(
+        inputId = ns("heatmap_clustering_method"),
+        label = "Clustering method",
+        choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"),
+        selected = r6$params$heatmap$clustering_method,
+        multiple = F
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('heatmap_center'),
+        label = 'Center scale to 0',
+        value = r6$params$heatmap$center,
+        right = TRUE,
+        status = "primary"
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('heatmap_impute_min'),
+        label = 'Impute to min.',
+        value = r6$params$heatmap$impute_min,
+        right = TRUE,
+        status = "primary"
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('heatmap_apply_clustering'),
+        label = 'Apply clustering',
+        value = r6$params$heatmap$apply_clustering,
+        right = TRUE,
+        status = "primary"
+      ),
+      shiny::numericInput(
+        inputId = ns('heatmap_k_clusters_samples'),
+        label = 'K clusters samples',
+        value = r6$params$heatmap$k_clusters_samples,
+        min = 1,
+        max = NA,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns('heatmap_k_clusters_features'),
+        label = 'K clusters features',
+        value = r6$params$heatmap$k_clusters_features,
+        min = 1,
+        max = NA,
+        step = 1,
+        width = '100%'
+      ),
       shiny::fluidRow(
         shiny::column(
           width = 6,
@@ -762,10 +1323,14 @@ heatmap_server = function(r6, output, session) {
         ),
         shiny::column(
           width = 6,
-          shinyWidgets::switchInput(inputId = ns("heatmap_apply_da"),
-                                    label = "Apply",
-                                    value = r6$params$heatmap$apply_da,
-                                    disabled = r6$params$heatmap$lock_da)
+
+          shinyWidgets::materialSwitch(
+            inputId = ns('heatmap_apply_da'),
+            label = 'Apply',
+            value = r6$params$heatmap$apply_da,
+            right = TRUE,
+            status = "primary"
+          )
         )
       ),
       shiny::fluidRow(
@@ -790,6 +1355,15 @@ heatmap_server = function(r6, output, session) {
         )
       ),
 
+      shiny::numericInput(
+        inputId = ns("heatmap_seed_da"),
+        label = 'DA seed',
+        value = r6$params$heatmap$seed_da,
+        step= 1,
+        width = '100%'
+      ),
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns('heatmap_colors_palette'),
         label = 'Color palette',
@@ -797,7 +1371,9 @@ heatmap_server = function(r6, output, session) {
                     'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
                     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
                     'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
-                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
         selected = r6$params$heatmap$color_palette,
         width = '100%'
       ),
@@ -808,6 +1384,47 @@ heatmap_server = function(r6, output, session) {
         right = TRUE,
         status = "primary"
       ),
+      shiny::numericInput(
+        inputId = ns("heatmap_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$heatmap$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("heatmap_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$heatmap$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("heatmap_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$heatmap$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("heatmap_x_label_font_size"),
+        label = 'x-axis label font size',
+        value = r6$params$heatmap$x_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("heatmap_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$heatmap$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("heatmap_img_format"),
@@ -815,6 +1432,16 @@ heatmap_server = function(r6, output, session) {
         choices = c("png", "svg", "jpeg", "webp"),
         selected = r6$params$heatmap$img_format,
         width = "100%"),
+      shiny::actionButton(
+        inputId = ns('heatmap_push_sample_clusters'),
+        label = 'Push sample clusters to meta',
+        width = '100%'
+      ),
+      shiny::actionButton(
+        inputId = ns('heatmap_push_feature_clusters'),
+        label = 'Push feature clusters to meta',
+        width = '100%'
+      ),
       shiny::downloadButton(
         outputId = ns("download_heatmap_table"),
         label = "Download associated table",
@@ -825,6 +1452,25 @@ heatmap_server = function(r6, output, session) {
 }
 
 heatmap_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$heatmap_sidebar)
+  monitor_refresh = shiny::reactive(input$heatmap_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Heatmap",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = heatmap_generate,
+             spawn_function = heatmap_spawn,
+             img_format = input$heatmap_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
 
   shiny::observeEvent(input$heatmap_multival_cols, {
     if (input$heatmap_multival_cols %in% names(r6$tables$feature_list)) {
@@ -845,26 +1491,30 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
   })
 
   shiny::observeEvent(
-    c(input$heatmap_auto_refresh,
+    c(input$heatmap_distance_method,
+      input$heatmap_clustering_method,
       input$heatmap_dataset,
-      input$heatmap_impute,
-      input$heatmap_cluster_samples,
-      input$heatmap_cluster_features,
+      input$heatmap_center,
+      input$heatmap_impute_min,
+      input$heatmap_apply_clustering,
+      input$heatmap_k_clusters_samples,
+      input$heatmap_k_clusters_features,
       input$heatmap_map_rows,
       input$heatmap_map_cols,
       input$heatmap_multival_terms,
       input$heatmap_group_col_da,
       input$heatmap_apply_da,
       input$heatmap_alpha_da,
+      input$heatmap_seed_da,
       input$heatmap_colors_palette,
       input$heatmap_reverse_palette,
+      input$heatmap_title_font_size,
+      input$heatmap_y_label_font_size,
+      input$heatmap_y_tick_font_size,
+      input$heatmap_x_label_font_size,
+      input$heatmap_x_tick_font_size,
       input$heatmap_img_format
     ),{
-
-      if (!input$heatmap_auto_refresh) {
-        r6$params$heatmap$auto_refresh = input$heatmap_auto_refresh
-        return()
-      }
 
       # Feature annotation terms
       if (length(input$heatmap_multival_terms) > 0) {
@@ -875,13 +1525,15 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
         map_feature_terms = NULL
       }
 
-      print_tm(r6$name, "Heatmap: Updating params...")
-
       r6$param_heatmap(auto_refresh = input$heatmap_auto_refresh,
                        dataset = input$heatmap_dataset,
-                       impute = input$heatmap_impute,
-                       cluster_samples = input$heatmap_cluster_samples,
-                       cluster_features = input$heatmap_cluster_features,
+                       distance_method = input$heatmap_distance_method,
+                       clustering_method = input$heatmap_clustering_method,
+                       impute = input$heatmap_impute_min,
+                       center = input$heatmap_center,
+                       apply_clustering = input$heatmap_apply_clustering,
+                       k_clusters_samples = input$heatmap_k_clusters_samples,
+                       k_clusters_features = input$heatmap_k_clusters_features,
                        map_sample_data = input$heatmap_map_rows,
                        map_feature_data = input$heatmap_map_cols,
                        map_feature_terms = map_feature_terms,
@@ -889,25 +1541,62 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
                        group_column_da = input$heatmap_group_col_da,
                        apply_da = input$heatmap_apply_da,
                        alpha_da = input$heatmap_alpha_da,
+                       seed_da = input$heatmap_seed_da,
                        color_palette = input$heatmap_colors_palette,
                        reverse_palette = input$heatmap_reverse_palette,
+                       title_font_size = input$heatmap_title_font_size,
+                       y_label_font_size = input$heatmap_y_label_font_size,
+                       y_tick_font_size = input$heatmap_y_tick_font_size,
+                       x_label_font_size = input$heatmap_x_label_font_size,
+                       x_tick_font_size = input$heatmap_x_tick_font_size,
                        img_format = input$heatmap_img_format)
 
-      base::tryCatch({
-        heatmap_generate(r6, color_palette, dimensions_obj, input)
-        heatmap_spawn(r6, input$heatmap_img_format, output)
-      },error=function(e){
-        print_tm(r6$name, 'Heatmap: ERROR.')
-      },finally={}
-      )
-    })
+      if (!input$heatmap_auto_refresh) {
+        r6$params$heatmap$auto_refresh = input$heatmap_auto_refresh
+        return()
+      }
+
+      try_plot(prefix = "Heatmap",
+               r6 = r6,
+               dimensions_obj = dimensions_obj,
+               gen_function = heatmap_generate,
+               spawn_function = heatmap_spawn,
+               img_format = input$heatmap_img_format,
+               input = input,
+               output = output,
+               session = session)
+
+    }
+  )
+
+  # Push k clusters features to meta
+  shiny::observeEvent(input$heatmap_push_sample_clusters,{
+    if ('k_clusters_heatmap' %in% colnames(r6$tables$heatmap$sample_clusters)){
+      r6$tables$raw_meta$k_clusters_heatmap = "None"
+      r6$tables$raw_meta[rownames(r6$tables$heatmap$sample_clusters), 'k_clusters_heatmap'] = r6$tables$heatmap$sample_clusters$k_clusters_heatmap
+      print_tm(r6$name, "Heatmap: pushed feature clusters to the metadata")
+    } else {
+      print_tm(r6$name, "Heatmap: no clusters to be pushed")
+    }
+  })
+
+  # Push k clusters features to meta
+  shiny::observeEvent(input$heatmap_push_feature_clusters,{
+    if ('k_clusters_heatmap' %in% colnames(r6$tables$heatmap$feature_clusters)){
+      r6$tables$feature_table$k_clusters_heatmap = "None"
+      r6$tables$feature_table[rownames(r6$tables$heatmap$feature_clusters), 'k_clusters_heatmap'] = r6$tables$heatmap$feature_clusters$k_clusters_heatmap
+      print_tm(r6$name, "Heatmap: pushed feature clusters to the metadata")
+    } else {
+      print_tm(r6$name, "Heatmap: no clusters to be pushed")
+    }
+  })
 
 
   # Download associated table
   output$download_heatmap_table = shiny::downloadHandler(
     filename = function(){timestamped_name("heatmap_table.csv")},
     content = function(file_name){
-      write.csv(r6$tables$heatmap_table, file_name)
+      write.csv(r6$tables$heatmap$data_table, file_name)
     }
   )
 
@@ -934,7 +1623,7 @@ heatmap_events = function(r6, dimensions_obj, color_palette, input, output, sess
 }
 
 #------------------------------------------------------ Samples correlation ----
-samples_correlation_generate = function(r6, colour_list, dimensions_obj, input) {
+samples_correlation_generate = function(r6, dimensions_obj, input) {
   print_tm(r6$name, "Samples correlation: generating plot.")
 
   if (input$samples_correlation_plotbox$maximized){
@@ -954,7 +1643,7 @@ samples_correlation_spawn = function(r6, format, output) {
   output$samples_correlation_plot = plotly::renderPlotly({
     r6$plots$samples_correlation
     plotly::config(r6$plots$samples_correlation, toImageButtonOptions = list(format= format,
-                                                                             filename= timestamped_name('samples_correlation'),
+                                                                             filename= timestamped_module_name(r6, 'samples_correlation'),
                                                                              height= NULL,
                                                                              width= NULL,
                                                                              scale= 1))
@@ -975,7 +1664,6 @@ samples_correlation_ui = function(dimensions_obj, session) {
 samples_correlation_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "Samples correlation: START.")
 
   output$samples_correlation_sidebar_ui = shiny::renderUI({
     shiny::tagList(
@@ -986,48 +1674,14 @@ samples_correlation_server = function(r6, output, session) {
         right = TRUE,
         status = "success"
       ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("samples_correlation_dataset"),
         label = "Select dataset",
         choices = r6$hardcoded_settings$samples_correlation$datasets,
         selected = r6$params$samples_correlation$dataset
       ),
-
-      shiny::selectInput(
-        inputId = ns("samples_correlation_correlation_method"),
-        label = "Correlation method",
-        choices = c("pearson", "kendall", "spearman"),
-        selected = r6$params$samples_correlation$correlation_method
-      ),
-      shiny::selectInput(
-        inputId = ns("samples_correlation_use"),
-        label = "Data completeness",
-        choices = c("everything", "all.obs", "complete.obs", "na.or.complete", "pairwise.complete.obs"),
-        selected = r6$params$samples_correlation$use
-      ),
-      shiny::fluidRow(
-        shiny::column(
-          width = 6,
-          shinyWidgets::switchInput(inputId = ns("samples_correlation_cluster_rows"),
-                                    label = "Cluster rows",
-                                    value = r6$params$samples_correlation$cluster_rows,
-                                    onLabel = 'YES',
-                                    offLabel = 'NO',
-                                    labelWidth = '150px'
-          )
-        ),
-        shiny::column(
-          width = 6,
-          shinyWidgets::switchInput(inputId = ns("samples_correlation_cluster_cols"),
-                                    label = "Cluster columns",
-                                    value = r6$params$samples_correlation$cluster_cols,
-                                    onLabel = 'YES',
-                                    offLabel = 'NO',
-                                    labelWidth = '150px'
-          )
-        )
-      ),
-
       shiny::selectizeInput(
         inputId = ns("samples_correlation_map_rows"),
         label = "Map data on rows",
@@ -1042,6 +1696,63 @@ samples_correlation_server = function(r6, output, session) {
         choices = colnames(r6$tables$raw_meta),
         selected = r6$params$samples_correlation$col_annotations
       ),
+      ## Data settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns("samples_correlation_correlation_method"),
+        label = "Correlation method",
+        choices = c("pearson", "spearman"),
+        selected = r6$params$samples_correlation$correlation_method
+      ),
+      shiny::selectInput(
+        inputId = ns("samples_correlation_use"),
+        label = "Data completeness",
+        choices = c("everything", "all.obs", "complete.obs", "na.or.complete", "pairwise.complete.obs"),
+        selected = r6$params$samples_correlation$use
+      ),
+
+
+      shiny::selectInput(
+        inputId = ns("samples_correlation_distance_method"),
+        label = "Distance method",
+        choices = c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski"),
+        selected = r6$params$samples_correlation$distance_method,
+        multiple = F
+      ),
+
+      shiny::selectInput(
+        inputId = ns("samples_correlation_clustering_method"),
+        label = "Clustering method",
+        choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"),
+        selected = r6$params$samples_correlation$clustering_method,
+        multiple = F
+      ),
+
+      shiny::numericInput(
+        inputId = ns('samples_correlation_k_clusters'),
+        label = "K clusters",
+        value = r6$params$samples_correlation$k_clusters,
+        step = 1,
+        width = '100%'
+      ),
+
+      shinyWidgets::materialSwitch(
+        inputId = ns('samples_correlation_apply_clustering'),
+        label = 'Apply clustering',
+        value = r6$params$samples_correlation$apply_clustering,
+        right = TRUE,
+        status = "primary"
+      ),
+
+      shinyWidgets::materialSwitch(
+        inputId = ns('samples_correlation_center'),
+        label = 'Center',
+        value = r6$params$samples_correlation$center,
+        right = TRUE,
+        status = "primary"
+      ),
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns('samples_correlation_colors_palette'),
         label = 'Color palette',
@@ -1049,7 +1760,9 @@ samples_correlation_server = function(r6, output, session) {
                     'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
                     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
                     'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
-                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
         selected = r6$params$samples_correlation$color_palette,
         width = '100%'
       ),
@@ -1060,6 +1773,47 @@ samples_correlation_server = function(r6, output, session) {
         right = TRUE,
         status = "primary"
       ),
+      shiny::numericInput(
+        inputId = ns("samples_correlation_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$samples_correlation$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("samples_correlation_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$samples_correlation$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("samples_correlation_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$samples_correlation$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("samples_correlation_x_label_font_size"),
+        label = 'x-axis label font size',
+        value = r6$params$samples_correlation$x_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("samples_correlation_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$samples_correlation$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("samples_correlation_img_format"),
@@ -1067,6 +1821,11 @@ samples_correlation_server = function(r6, output, session) {
         choices = c("png", "svg", "jpeg", "webp"),
         selected = r6$params$samples_correlation$img_format,
         width = "100%"),
+      shiny::actionButton(
+        inputId = ns('samples_correlation_push_clusters'),
+        label = 'Push clusters to meta',
+        width = '100%'
+      ),
       shiny::downloadButton(
         outputId = ns("download_samples_correlation_table"),
         label = "Download associated table",
@@ -1078,32 +1837,65 @@ samples_correlation_server = function(r6, output, session) {
 
 samples_correlation_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$samples_correlation_sidebar)
+  monitor_refresh = shiny::reactive(input$samples_correlation_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Samples correlation",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = samples_correlation_generate,
+             spawn_function = samples_correlation_spawn,
+             img_format = input$samples_correlation_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
+
   shiny::observeEvent(
-    c(input$samples_correlation_auto_refresh,
-      input$samples_correlation_dataset,
+    c(input$samples_correlation_dataset,
       input$samples_correlation_correlation_method,
       input$samples_correlation_use,
-      input$samples_correlation_cluster_rows,
-      input$samples_correlation_cluster_cols,
+      input$samples_correlation_distance_method,
+      input$samples_correlation_clustering_method,
+      input$samples_correlation_k_clusters,
+      input$samples_correlation_apply_clustering,
+      input$samples_correlation_center,
       input$samples_correlation_map_rows,
       input$samples_correlation_map_cols,
       input$samples_correlation_colors_palette,
       input$samples_correlation_reverse_palette,
+      input$samples_correlation_title_font_size,
+      input$samples_correlation_y_label_font_size,
+      input$samples_correlation_y_tick_font_size,
+      input$samples_correlation_x_label_font_size,
+      input$samples_correlation_x_tick_font_size,
+      input$samples_correlation_legend_font_size,
       input$samples_correlation_img_format
     ),{
-
-      print_tm(r6$name, "Samples correlation: Updating params...")
 
       r6$param_samples_correlation(auto_refresh = input$samples_correlation_auto_refresh,
                                    dataset = input$samples_correlation_dataset,
                                    correlation_method = input$samples_correlation_correlation_method,
                                    use = input$samples_correlation_use,
-                                   cluster_rows = input$samples_correlation_cluster_rows,
-                                   cluster_cols = input$samples_correlation_cluster_cols,
+                                   distance_method = input$samples_correlation_distance_method,
+                                   clustering_method = input$samples_correlation_clustering_method,
+                                   k_clusters = input$samples_correlation_k_clusters,
+                                   apply_clustering = input$samples_correlation_apply_clustering,
+                                   center = input$samples_correlation_center,
                                    row_annotations = input$samples_correlation_map_rows,
                                    col_annotations = input$samples_correlation_map_cols,
                                    color_palette = input$samples_correlation_colors_palette,
                                    reverse_palette = input$samples_correlation_reverse_palette,
+                                   title_font_size = input$samples_correlation_title_font_size,
+                                   y_label_font_size = input$samples_correlation_y_label_font_size,
+                                   y_tick_font_size = input$samples_correlation_y_tick_font_size,
+                                   x_label_font_size = input$samples_correlation_x_label_font_size,
+                                   x_tick_font_size = input$samples_correlation_x_tick_font_size,
                                    img_format = input$samples_correlation_img_format)
 
       if (!input$samples_correlation_auto_refresh) {
@@ -1111,15 +1903,28 @@ samples_correlation_events = function(r6, dimensions_obj, color_palette, input, 
         return()
       }
 
-      base::tryCatch({
-        samples_correlation_generate(r6, color_palette, dimensions_obj, input)
-        samples_correlation_spawn(r6, input$samples_correlation_img_format, output)
-      },error=function(e){
-        print_tm(r6$name, 'Samples correlation: ERROR.')
-      },finally={}
-      )
+      try_plot(prefix = "Samples correlation",
+               r6 = r6,
+               dimensions_obj = dimensions_obj,
+               gen_function = samples_correlation_generate,
+               spawn_function = samples_correlation_spawn,
+               img_format = input$samples_correlation_img_format,
+               input = input,
+               output = output,
+               session = session)
+
     })
 
+  # Push k clusters to meta
+  shiny::observeEvent(input$samples_correlation_push_clusters,{
+    if ('k_clusters' %in% colnames(r6$tables$samples_correlation_clusters)){
+      k_clusters = r6$tables$samples_correlation_clusters[rownames(r6$tables$raw_meta), 'k_clusters']
+      r6$tables$raw_meta$correlation_clusters = k_clusters
+      print_tm(r6$name, "Samples correlation: pushed clusters to the metadata")
+    } else {
+      print_tm(r6$name, "Samples correlation: no clusters to be pushed")
+    }
+  })
 
   # Download associated table
   output$download_samples_correlation_table = shiny::downloadHandler(
@@ -1152,7 +1957,7 @@ samples_correlation_events = function(r6, dimensions_obj, color_palette, input, 
 }
 
 #------------------------------------------------------ Feature correlation ----
-feature_correlation_generate = function(r6, colour_list, dimensions_obj, input) {
+feature_correlation_generate = function(r6, dimensions_obj, input) {
   print_tm(r6$name, "Feature correlation: generating plot.")
 
   if (input$feature_correlation_plotbox$maximized){
@@ -1172,7 +1977,7 @@ feature_correlation_spawn = function(r6, format, output) {
   output$feature_correlation_plot = plotly::renderPlotly({
     r6$plots$feature_correlation
     plotly::config(r6$plots$feature_correlation, toImageButtonOptions = list(format= format,
-                                                                             filename= timestamped_name('feature_correlation'),
+                                                                             filename= timestamped_module_name(r6, 'feature_correlation'),
                                                                              height= NULL,
                                                                              width= NULL,
                                                                              scale= 1))
@@ -1193,7 +1998,6 @@ feature_correlation_ui = function(dimensions_obj, session) {
 feature_correlation_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "Feature correlation: START.")
 
   output$feature_correlation_sidebar_ui = shiny::renderUI({
     shiny::tagList(
@@ -1213,7 +2017,7 @@ feature_correlation_server = function(r6, output, session) {
       shiny::selectInput(
         inputId = ns("feature_correlation_correlation_method"),
         label = "Correlation method",
-        choices = c("pearson", "kendall", "spearman"),
+        choices = c("pearson", "spearman"),
         selected = r6$params$feature_correlation$correlation_method
       ),
       shiny::selectInput(
@@ -1222,27 +2026,45 @@ feature_correlation_server = function(r6, output, session) {
         choices = c("everything", "all.obs", "complete.obs", "na.or.complete", "pairwise.complete.obs"),
         selected = r6$params$feature_correlation$use
       ),
-      shiny::fluidRow(
-        shiny::column(
-          width = 6,
-          shinyWidgets::switchInput(inputId = ns("feature_correlation_cluster_rows"),
-                                    label = "Cluster rows",
-                                    value = r6$params$feature_correlation$cluster_rows,
-                                    onLabel = 'YES',
-                                    offLabel = 'NO',
-                                    labelWidth = '150px'
-          )
-        ),
-        shiny::column(
-          width = 6,
-          shinyWidgets::switchInput(inputId = ns("feature_correlation_cluster_cols"),
-                                    label = "Cluster cols",
-                                    value = r6$params$feature_correlation$cluster_cols,
-                                    onLabel = 'YES',
-                                    offLabel = 'NO',
-                                    labelWidth = '150px'
-          )
-        )
+
+      shiny::selectInput(
+        inputId = ns("feature_correlation_distance_method"),
+        label = "Distance method",
+        choices = c("euclidean", "maximum", "manhattan", "canberra", "binary", "minkowski"),
+        selected = r6$params$feature_correlation$distance_method,
+        multiple = F
+      ),
+
+      shiny::selectInput(
+        inputId = ns("feature_correlation_clustering_method"),
+        label = "Clustering method",
+        choices = c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", "centroid"),
+        selected = r6$params$feature_correlation$clustering_method,
+        multiple = F
+      ),
+
+      shiny::numericInput(
+        inputId = ns('feature_correlation_k_clusters'),
+        label = "K clusters",
+        value = r6$params$feature_correlation$k_clusters,
+        step = 1,
+        width = '100%'
+      ),
+
+      shinyWidgets::materialSwitch(
+        inputId = ns('feature_correlation_apply_clustering'),
+        label = 'Apply clustering',
+        value = r6$params$feature_correlation$apply_clustering,
+        right = TRUE,
+        status = "primary"
+      ),
+
+      shinyWidgets::materialSwitch(
+        inputId = ns('feature_correlation_center'),
+        label = 'Center',
+        value = r6$params$feature_correlation$center,
+        right = TRUE,
+        status = "primary"
       ),
 
       shiny::selectizeInput(
@@ -1288,7 +2110,7 @@ feature_correlation_server = function(r6, output, session) {
       shiny::sliderInput(inputId = ns("feature_correlation_top_features"),
                          label = "Top features",
                          min = 50,
-                         max = 500,
+                         max = 1000,
                          value = r6$params$feature_correlation$top_features,
                          step = 1,
                          width = "100%"),
@@ -1299,7 +2121,9 @@ feature_correlation_server = function(r6, output, session) {
                     'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
                     'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
                     'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
-                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3'),
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
         selected = r6$params$feature_correlation$color_palette,
         width = '100%'
       ),
@@ -1310,6 +2134,47 @@ feature_correlation_server = function(r6, output, session) {
         right = TRUE,
         status = "primary"
       ),
+      shiny::numericInput(
+        inputId = ns("feature_correlation_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$feature_correlation$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("feature_correlation_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$feature_correlation$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("feature_correlation_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$feature_correlation$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("feature_correlation_x_label_font_size"),
+        label = 'x-axis label font size',
+        value = r6$params$feature_correlation$x_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("feature_correlation_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$feature_correlation$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("feature_correlation_img_format"),
@@ -1317,6 +2182,11 @@ feature_correlation_server = function(r6, output, session) {
         choices = c("png", "svg", "jpeg", "webp"),
         selected = r6$params$feature_correlation$img_format,
         width = "100%"),
+      shiny::actionButton(
+        inputId = ns('feature_correlation_push_clusters'),
+        label = 'Push clusters to meta',
+        width = '100%'
+      ),
       shiny::downloadButton(
         outputId = ns("download_feature_correlation_table"),
         label = "Download associated table",
@@ -1327,6 +2197,25 @@ feature_correlation_server = function(r6, output, session) {
 }
 
 feature_correlation_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$feature_correlation_sidebar)
+  monitor_refresh = shiny::reactive(input$feature_correlation_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Feature correlation",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = feature_correlation_generate,
+             spawn_function = feature_correlation_spawn,
+             img_format = input$feature_correlation_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
 
   shiny::observeEvent(input$feature_correlation_multival_cols, {
     if (input$feature_correlation_multival_cols %in% names(r6$tables$feature_list)) {
@@ -1347,12 +2236,14 @@ feature_correlation_events = function(r6, dimensions_obj, color_palette, input, 
   })
 
   shiny::observeEvent(
-    c(input$feature_correlation_auto_refresh,
-      input$feature_correlation_dataset,
+    c(input$feature_correlation_dataset,
       input$feature_correlation_correlation_method,
       input$feature_correlation_use,
-      input$feature_correlation_cluster_rows,
-      input$feature_correlation_cluster_cols,
+      input$feature_correlation_distance_method,
+      input$feature_correlation_clustering_method,
+      input$feature_correlation_k_clusters,
+      input$feature_correlation_apply_clustering,
+      input$feature_correlation_center,
       input$feature_correlation_map_rows,
       input$feature_correlation_map_cols,
       input$feature_correlation_multival_terms,
@@ -1360,13 +2251,13 @@ feature_correlation_events = function(r6, dimensions_obj, color_palette, input, 
       input$feature_correlation_top_features,
       input$feature_correlation_colors_palette,
       input$feature_correlation_reverse_palette,
+      input$feature_correlation_title_font_size,
+      input$feature_correlation_y_label_font_size,
+      input$feature_correlation_y_tick_font_size,
+      input$feature_correlation_x_label_font_size,
+      input$feature_correlation_x_tick_font_size,
       input$feature_correlation_img_format
     ),{
-
-      if (!input$feature_correlation_auto_refresh) {
-        r6$params$feature_correlation$auto_refresh = input$feature_correlation_auto_refresh
-        return()
-      }
 
       # Feature annotation terms
       if (length(input$feature_correlation_multival_terms) > 0) {
@@ -1377,32 +2268,57 @@ feature_correlation_events = function(r6, dimensions_obj, color_palette, input, 
         map_feature_terms = NULL
       }
 
-      print_tm(r6$name, "Feature correlation: Updating params...")
-
       r6$param_feature_correlation(auto_refresh = input$feature_correlation_auto_refresh,
                                    dataset = input$feature_correlation_dataset,
                                    multival_cols = input$feature_correlation_multival_cols,
                                    map_feature_terms = map_feature_terms,
                                    correlation_method = input$feature_correlation_correlation_method,
                                    use = input$feature_correlation_use,
-                                   cluster_cols = input$feature_correlation_cluster_cols,
-                                   cluster_rows = input$feature_correlation_cluster_rows,
+                                   distance_method = input$feature_correlation_distance_method,
+                                   clustering_method = input$feature_correlation_clustering_method,
+                                   k_clusters = input$feature_correlation_k_clusters,
+                                   apply_clustering = input$feature_correlation_apply_clustering,
+                                   center = input$feature_correlation_center,
                                    row_annotations = input$feature_correlation_map_rows,
                                    col_annotations = input$feature_correlation_map_cols,
                                    roh_threshold = input$feature_correlation_roh_threshold,
                                    top_features = input$feature_correlation_top_features,
                                    color_palette = input$feature_correlation_colors_palette,
                                    reverse_palette = input$feature_correlation_reverse_palette,
+                                   title_font_size = input$feature_correlation_title_font_size,
+                                   y_label_font_size = input$feature_correlation_y_label_font_size,
+                                   y_tick_font_size = input$feature_correlation_y_tick_font_size,
+                                   x_label_font_size = input$feature_correlation_x_label_font_size,
+                                   x_tick_font_size = input$feature_correlation_x_tick_font_size,
                                    img_format = input$feature_correlation_img_format)
 
-      base::tryCatch({
-        feature_correlation_generate(r6, color_palette, dimensions_obj, input)
-        feature_correlation_spawn(r6, input$feature_correlation_img_format, output)
-      },error=function(e){
-        print_tm(r6$name, 'Feature correlation: ERROR.')
-      },finally={}
-      )
+      if (!input$feature_correlation_auto_refresh) {
+        r6$params$feature_correlation$auto_refresh = input$feature_correlation_auto_refresh
+        return()
+      }
+
+      try_plot(prefix = "Feature correlation",
+               r6 = r6,
+               dimensions_obj = dimensions_obj,
+               gen_function = feature_correlation_generate,
+               spawn_function = feature_correlation_spawn,
+               img_format = input$feature_correlation_img_format,
+               input = input,
+               output = output,
+               session = session)
+
     })
+
+  # Push k clusters to meta
+  shiny::observeEvent(input$feature_correlation_push_clusters,{
+    if ('k_clusters' %in% colnames(r6$tables$feature_correlation_clusters)){
+      r6$tables$feature_table$correlation_clusters = "None"
+      r6$tables$feature_table[rownames(r6$tables$feature_correlation_clusters), 'correlation_clusters'] = r6$tables$feature_correlation_clusters$k_clusters
+      print_tm(r6$name, "Feature correlation: pushed clusters to the metadata")
+    } else {
+      print_tm(r6$name, "Feature correlation: no clusters to be pushed")
+    }
+  })
 
 
   # Download associated table
@@ -1437,7 +2353,7 @@ feature_correlation_events = function(r6, dimensions_obj, color_palette, input, 
 
 #---------------------------------------------------------------------- PCA ----
 
-pca_generate = function(r6, colour_list, dimensions_obj, input) {
+pca_generate = function(r6, dimensions_obj, input) {
   print_tm(r6$name, "PCA: generating plot.")
 
   if (input$pca_plotbox$maximized){
@@ -1458,7 +2374,7 @@ pca_spawn = function(r6, format, output) {
   output$pca_plot = plotly::renderPlotly({
     r6$plots$pca_plot
     plotly::config(r6$plots$pca_plot, toImageButtonOptions = list(format= format,
-                                                                  filename= timestamped_name('pca_plot'),
+                                                                  filename= timestamped_module_name(r6, 'pca_plot'),
                                                                   height= NULL,
                                                                   width= NULL,
                                                                   scale= 1))
@@ -1477,7 +2393,6 @@ pca_ui = function(dimensions_obj, session) {
 pca_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "PCA: START.")
 
   output$pca_sidebar_ui = shiny::renderUI({
     shiny::tagList(
@@ -1488,6 +2403,8 @@ pca_server = function(r6, output, session) {
         right = TRUE,
         status = "success"
       ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("pca_data_table"),
         label = "Select dataset",
@@ -1513,7 +2430,22 @@ pca_server = function(r6, output, session) {
         selected = NULL,
         multiple = TRUE
       ),
+      shiny::selectInput(
+        inputId = ns('pca_displayed_plots'),
+        label = 'Displayed plot',
+        choices = c('both', 'scores', 'loadings', 'variance'),
+        selected = r6$params$pca$displayed_plots,
+        width = '100%'
+      ),
+      ## Data settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shinyWidgets::materialSwitch(
+        inputId = ns('pca_impute_median'),
+        label = 'Impute to median',
+        value = r6$params$pca$impute_median,
+        right = TRUE,
+        status = "primary"
+      ),
       shiny::fluidRow(
         shiny::column(
           width = 6,
@@ -1521,11 +2453,19 @@ pca_server = function(r6, output, session) {
         ),
         shiny::column(
           width = 6,
-          shinyWidgets::switchInput(inputId = ns("pca_apply_da"),
-                                    label = "Apply",
-                                    value = r6$params$pca$apply_da,
-                                    width = "100%")
+          shinyWidgets::materialSwitch(
+            inputId = ns('pca_apply_da'),
+            label = 'Apply',
+            value = r6$params$pca$apply_da,
+            right = TRUE,
+            status = "primary")
         )
+      ),
+      shiny::selectInput(
+        inputId = ns("pca_sample_groups_da"),
+        label = "DA sample group",
+        choices = colnames(r6$tables$raw_meta),
+        selected = r6$params$pca$sample_groups_da
       ),
       shiny::sliderInput(inputId = ns("pca_alpha_da"),
                          label = "Alpha",
@@ -1534,6 +2474,14 @@ pca_server = function(r6, output, session) {
                          value = r6$params$pca$alpha_da,
                          step = 0.01,
                          width = "100%"),
+
+      shiny::numericInput(
+        inputId = ns("pca_seed_da"),
+        label = 'DA seed',
+        value = r6$params$pca$seed_da,
+        step= 1,
+        width = '100%'
+      ),
       shiny::selectInput(
         inputId = ns('pca_method'),
         label = 'PCA method',
@@ -1541,22 +2489,25 @@ pca_server = function(r6, output, session) {
         selected = r6$params$pca$pca_method,
         width = '100%'
       ),
-      shiny::textInput(
+      shiny::numericInput(
         inputId = ns('pca_npcs'),
         label = 'Number of PCs',
         value = r6$params$pca$nPcs,
+        step = 1,
         width = '100%'
       ),
-      shiny::textInput(
+      shiny::numericInput(
         inputId = ns('pca_displayed_pc_1'),
         label = 'Displayed PC (1)',
         value = r6$params$pca$displayed_pc_1,
+        step = 1,
         width = '100%'
       ),
-      shiny::textInput(
+      shiny::numericInput(
         inputId = ns('pca_displayed_pc_2'),
         label = 'Displayed PC (2)',
         value = r6$params$pca$displayed_pc_2,
+        step = 1,
         width = '100%'
       ),
       shinyWidgets::prettySwitch(
@@ -1564,13 +2515,8 @@ pca_server = function(r6, output, session) {
         label = 'Complete observations',
         value = r6$params$pca$completeObs
       ),
-      shiny::selectInput(
-        inputId = ns('pca_displayed_plots'),
-        label = 'Displayed plot',
-        choices = c('both', 'scores', 'loadings', 'variance'),
-        selected = r6$params$pca$displayed_plots,
-        width = '100%'
-      ),
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns('pca_colors_palette'),
         label = 'Color palette',
@@ -1582,6 +2528,71 @@ pca_server = function(r6, output, session) {
         selected = r6$params$pca$colors_palette,
         width = '100%'
       ),
+      shiny::numericInput(
+        inputId = ns("pca_marker_size"),
+        label = 'Marker size',
+        value = r6$params$pca$marker_size,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::sliderInput(
+        inputId = ns("pca_opacity"),
+        label = 'Opacity',
+        min = 0.1,
+        max = 1.0,
+        value = r6$params$pca$opacity,
+        step = 0.1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("pca_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$pca$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("pca_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$pca$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("pca_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$pca$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("pca_x_label_font_size"),
+        label = 'x-axis label font size',
+        value = r6$params$pca$x_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("pca_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$pca$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("pca_legend_font_size"),
+        label = 'Legend font size',
+        value = r6$params$pca$legend_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::fluidRow(
         shiny::selectInput(
@@ -1608,6 +2619,25 @@ pca_server = function(r6, output, session) {
 
 pca_events = function(r6, dimensions_obj, color_palette, input, output, session) {
 
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$pca_sidebar)
+  monitor_refresh = shiny::reactive(input$pca_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "PCA",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = pca_generate,
+             spawn_function = pca_spawn,
+             img_format = input$pca_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
+
   shiny::observeEvent(input$pca_feature_group, {
     if (input$pca_feature_group %in% names(r6$tables$feature_list)) {
       shiny::updateSelectizeInput(
@@ -1627,13 +2657,15 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
   })
 
   shiny::observeEvent(c(
-    input$pca_auto_refresh,
     input$pca_data_table,
     input$pca_sample_groups_col,
     input$pca_feature_group,
     input$pca_plot_annotation_terms,
+    input$pca_impute_median,
     input$pca_apply_da,
+    input$pca_sample_groups_da,
     input$pca_alpha_da,
+    input$pca_seed_da,
     input$pca_method,
     input$pca_npcs,
     input$pca_displayed_pc_1,
@@ -1641,14 +2673,15 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
     input$pca_completeObs,
     input$pca_displayed_plots,
     input$pca_colors_palette,
+    input$pca_marker_size,
+    input$pca_opacity,
+    input$pca_title_font_size,
+    input$pca_y_label_font_size,
+    input$pca_y_tick_font_size,
+    input$pca_x_label_font_size,
+    input$pca_x_tick_font_size,
+    input$pca_legend_font_size,
     input$pca_img_format),{
-
-      if (!input$pca_auto_refresh) {
-        r6$params$pca$auto_refresh = input$pca_auto_refresh
-        return()
-      }
-
-      print_tm(r6$name, "PCA: Updating params...")
 
       # Is the column multivalue?
       if (input$pca_feature_group %in% names(r6$tables$feature_list)) {
@@ -1667,8 +2700,11 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
                  data_table = input$pca_data_table,
                  sample_groups_col = input$pca_sample_groups_col,
                  feature_groups_col = feature_metadata,
+                 impute_median = input$pca_impute_median,
                  apply_da = input$pca_apply_da,
+                 sample_groups_da = input$pca_sample_groups_da,
                  alpha_da = input$pca_alpha_da,
+                 seed_da = input$pca_seed_da,
                  pca_method = input$pca_method,
                  nPcs = input$pca_npcs,
                  displayed_pc_1 = input$pca_displayed_pc_1,
@@ -1676,16 +2712,30 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
                  completeObs = input$pca_completeObs,
                  displayed_plots = input$pca_displayed_plots,
                  colors_palette = input$pca_colors_palette,
+                 marker_size = input$pca_marker_size,
+                 opacity = input$pca_opacity,
+                 title_font_size = input$pca_title_font_size,
+                 y_label_font_size = input$pca_y_label_font_size,
+                 y_tick_font_size = input$pca_y_tick_font_size,
+                 x_label_font_size = input$pca_x_label_font_size,
+                 x_tick_font_size = input$pca_x_tick_font_size,
+                 legend_font_size = input$pca_legend_font_size,
                  img_format = input$pca_img_format)
 
+    if (!input$pca_auto_refresh) {
+      r6$params$pca$auto_refresh = input$pca_auto_refresh
+      return()
+    }
 
-    base::tryCatch({
-      pca_generate(r6, color_palette, dimensions_obj, input)
-      pca_spawn(r6, input$pca_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'PCA: ERROR.')
-    },finally={}
-    )
+    try_plot(prefix = "PCA",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = pca_generate,
+             spawn_function = pca_spawn,
+             img_format = input$pca_img_format,
+             input = input,
+             output = output,
+             session = session)
 
   })
 
@@ -1728,33 +2778,9 @@ pca_events = function(r6, dimensions_obj, color_palette, input, output, session)
 
 
 #-------------------------------------------------------- Double bonds plot ----
-double_bonds_generate_single = function(r6, colour_list, dimensions_obj, input) {
+double_bonds_plot_generate = function(r6, dimensions_obj, input, session) {
   print_tm(r6$name, "Double bonds plot: generating plot.")
-
-  if (input$double_bonds_plotbox$maximized) {
-    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-  } else {
-    width = dimensions_obj$xpx * dimensions_obj$x_plot
-    height = dimensions_obj$ypx * dimensions_obj$y_plot
-  }
-  r6$get_dbplot_table_single(data_table = table_switch(input$double_bonds_dataset, r6),
-                             dbplot_table = r6$tables$feature_table,
-                             col_group = input$double_bonds_metacol,
-                             used_function = input$double_bonds_function,
-                             group_1 = input$double_bonds_metagroup[1])
-
-  r6$plot_doublebonds_single(lipid_class = input$double_bonds_class,
-                             carbon_selection = input$double_bonds_carbon_select,
-                             unsat_selection = input$double_bonds_unsat_select,
-                             group_1 = input$double_bonds_metagroup[1],
-                             width = width,
-                             height = height)
-}
-
-double_bonds_generate_double = function(r6, colour_list, dimensions_obj, input, session) {
-  print_tm(r6$name, "Double bonds plot: generating plot.")
-  if (input$double_bonds_plotbox$maximized) {
+  if (input$double_bonds_plot_plotbox$maximized) {
     width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
     height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
   } else {
@@ -1762,85 +2788,19 @@ double_bonds_generate_double = function(r6, colour_list, dimensions_obj, input, 
     height = dimensions_obj$ypx * dimensions_obj$y_plot
   }
 
-  r6$get_dbplot_table_double(data_table = table_switch(input$double_bonds_dataset, r6),
-                             dbplot_table = r6$tables$feature_table,
-                             col_group = input$double_bonds_metacol,
-                             used_function =  input$double_bonds_function,
-                             test = input$double_bonds_test,
-                             group_1 = input$double_bonds_metagroup[1],
-                             group_2 = input$double_bonds_metagroup[2])
+  r6$get_double_bonds_table()
+  r6$plot_double_bonds_plot(width = width,
+                            height = height)
 
-  selected_rows = rownames(r6$tables$dbplot_table)[r6$tables$dbplot_table["lipid_class"] == input$double_bonds_class]
 
-  fc_limits = round(max(abs(r6$tables$dbplot_table[selected_rows, "log2_fold_change"])), 1) + 1
-  r6$params$db_plot$fc_range = c(-fc_limits, fc_limits)
-  if (fc_limits > 1) {
-    r6$params$db_plot$fc_values = c(-1, 1)
-  } else {
-    r6$params$db_plot$fc_values = c(0, 0)
-  }
-
-  r6$params$db_plot$pval_range = c(0, round(max(r6$tables$dbplot_table[selected_rows, adjustment_switch(input$double_bonds_plot_adjustment)]), 1) + 1)
-  r6$params$db_plot$pval_values = c(0, round(max(r6$tables$dbplot_table[selected_rows, adjustment_switch(input$double_bonds_plot_adjustment)]), 1) + 1)
-
-  shiny::updateSliderInput(
-    session = session,
-    inputId = "log2_fc_slider",
-    min = r6$params$db_plot$fc_range[1],
-    max = r6$params$db_plot$fc_range[2],
-    value = r6$params$db_plot$fc_values,
-  )
-
-  shiny::updateSliderInput(
-    session = session,
-    inputId = "min_log10_bh_pval_slider",
-    max = r6$params$db_plot$pval_range[2],
-    value = r6$params$db_plot$pval_values
-  )
-
-  r6$plot_doublebonds_double(lipid_class = input$double_bonds_class,
-                             carbon_selection = input$double_bonds_carbon_select,
-                             unsat_selection = input$double_bonds_unsat_select,
-                             adjustment = adjustment_switch(input$double_bonds_plot_adjustment),
-                             fc_limits = input$log2_fc_slider,
-                             pval_limits = input$min_log10_bh_pval_slider,
-                             group_1 = input$double_bonds_metagroup[1],
-                             group_2 = input$double_bonds_metagroup[2],
-                             width = width,
-                             height = height)
 }
 
-
-double_bonds_generate_double_sliders = function(r6, colour_list, dimensions_obj, input) {
-  print_tm(r6$name, "Double bonds plot: generating plot.")
-  if (input$double_bonds_plotbox$maximized) {
-    width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full
-    height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
-  } else {
-    width = dimensions_obj$xpx * dimensions_obj$x_plot
-    height = dimensions_obj$ypx * dimensions_obj$y_plot
-  }
-
-  r6$plot_doublebonds_double(lipid_class = input$double_bonds_class,
-                             carbon_selection = input$double_bonds_carbon_select,
-                             unsat_selection = input$double_bonds_unsat_select,
-                             adjustment = adjustment_switch(input$double_bonds_plot_adjustment),
-                             fc_limits = input$log2_fc_slider,
-                             pval_limits = input$min_log10_bh_pval_slider,
-                             group_1 = input$double_bonds_metagroup[1],
-                             group_2 = input$double_bonds_metagroup[2],
-                             width = width,
-                             height = height)
-}
-
-
-
-double_bonds_spawn = function(r6, format, output) {
+double_bonds_plot_spawn = function(r6, format, output) {
   print_tm(r6$name, "Double bonds plot: spawning plot.")
-  output$double_bonds_plot = plotly::renderPlotly({
-    r6$plots$double_bond_plot
-    plotly::config(r6$plots$double_bond_plot, toImageButtonOptions = list(format= format,
-                                                                          filename= timestamped_name('double_bond_plot'),
+  output$double_bonds_plot_plot = plotly::renderPlotly({
+    r6$plots$double_bonds_plot
+    plotly::config(r6$plots$double_bonds_plot, toImageButtonOptions = list(format= format,
+                                                                          filename= timestamped_module_name(r6, 'double_bonds_plot'),
                                                                           height= NULL,
                                                                           width= NULL,
                                                                           scale= 1))
@@ -1849,9 +2809,9 @@ double_bonds_spawn = function(r6, format, output) {
 
 
 
-double_bonds_ui = function(dimensions_obj, session) {
+double_bonds_plot_ui = function(dimensions_obj, session) {
 
-  get_plotly_box(id = "double_bonds",
+  get_plotly_box(id = "double_bonds_plot",
                  label = "Double bonds plot",
                  dimensions_obj = dimensions_obj,
                  session = session)
@@ -1859,100 +2819,225 @@ double_bonds_ui = function(dimensions_obj, session) {
 }
 
 
-double_bonds_server = function(r6, output, session) {
+double_bonds_plot_server = function(r6, output, session) {
 
   ns = session$ns
-  print_tm(r6$name, "Double bonds plot: START.")
 
-  output$double_bonds_sidebar_ui = shiny::renderUI({
+  output$double_bonds_plot_sidebar_ui = shiny::renderUI({
     shiny::tagList(
+      shinyWidgets::materialSwitch(
+        inputId = ns('double_bonds_plot_auto_refresh'),
+        label = 'Auto-refresh',
+        value = r6$params$double_bonds_plot$auto_refresh,
+        right = TRUE,
+        status = "success"
+      ),
+      ## Input settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
-        inputId = ns("double_bonds_dataset"),
+        inputId = ns("double_bonds_plot_dataset"),
         label = "Select data table",
-        choices = r6$hardcoded_settings$db_plot$datasets,
-        selected = r6$params$db_plot$dataset
+        choices = r6$hardcoded_settings$double_bonds_plot$datasets,
+        selected = r6$params$double_bonds_comparison$data_table,
+        width = '100%'
       ),
       shiny::selectInput(
-        inputId = ns("double_bonds_metacol"),
-        label = "Select group column",
+        inputId = ns('double_bonds_plot_group_col'),
+        label = "Group column",
         choices = colnames(r6$tables$raw_meta),
-        selected = r6$params$db_plot$group_column
+        selected = r6$params$double_bonds_comparison$group_col,
+        multiple = FALSE,
+        width = '100%'
+      ),
+      shiny::selectInput(
+        inputId = ns('double_bonds_plot_groups'),
+        label = "Select two groups",
+        # choices = unique(r6$tables$raw_meta[,input$double_bonds_plot_group_col]),
+        choices = NULL,
+        selected = c(r6$params$double_bonds_comparison$group_1, r6$params$double_bonds_comparison$group_2),
+        multiple = TRUE,
+        width = '100%'
       ),
       shiny::selectizeInput(
-        inputId = ns("double_bonds_metagroup"),
-        label = "Select group(s)",
-        choices = unique(r6$tables$raw_meta[,r6$params$db_plot$group_column]),
-        selected = r6$params$db_plot$selected_groups,
-        multiple = TRUE
-      ),
-      shiny::selectizeInput(
-        inputId = ns("double_bonds_class"),
-        label = "Select lipid class",
-        choices = unique(r6$tables$feature_table$lipid_class),
-        selected = r6$params$db_plot$selected_lipid_class,
-        multiple = FALSE
-      ),
-      shiny::selectizeInput(
-        inputId = ns("double_bonds_carbon_select"),
+        inputId = ns("double_bonds_plot_selected_carbon_chain"),
         label = "Carbon count",
         choices = c('Carbon count (chain 1)', 'Carbon count (chain 2)', 'Carbon count (sum)'),
-        selected = r6$params$db_plot$selected_carbon_chain,
-        multiple = FALSE
+        selected = r6$params$double_bonds_plot$selected_carbon_chain,
+        multiple = FALSE,
+        width = '100%'
       ),
       shiny::selectizeInput(
-        inputId = ns("double_bonds_unsat_select"),
-        label = "Unsaturation count",
+        inputId = ns("double_bonds_plot_selected_unsat"),
+        label = "Double bonds count",
         choices = c('Double bonds (chain 1)', 'Double bonds (chain 2)', 'Double bonds (sum)'),
-        selected = r6$params$db_plot$selected_unsat,
-        multiple = FALSE
+        selected = r6$params$double_bonds_plot$selected_unsat,
+        multiple = FALSE,
+        width = '100%'
       ),
       shiny::selectizeInput(
-        inputId = ns("double_bonds_function"),
-        label = "FC function",
-        choices = c("median", "mean"),
-        selected = r6$params$db_plot$selected_function,
-        multiple = FALSE
+        inputId = ns("double_bonds_plot_selected_lipid_class"),
+        label = "Lipid class",
+        choices = sort(unique(r6$tables$feature_table$`Lipid class`)),
+        selected = r6$params$double_bonds_plot$selected_lipid_class,
+        multiple = FALSE,
+        width = '100%'
       ),
-      shiny::selectizeInput(
-        inputId = ns("double_bonds_test"),
-        label = "Select test",
-        choices = c("Wilcoxon", "t-Test"),
-        selected = r6$params$db_plot$selected_test,
-        multiple = FALSE
+      ## Data settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns('double_bonds_plot_fc_function'),
+        label = 'Fold change calculation',
+        choices = c('mean', 'median'),
+        selected = r6$params$double_bonds_comparison$fc_function,
+        multiple = F,
+        width = '100%'
       ),
-      shiny::selectizeInput(
-        inputId = ns("double_bonds_plot_adjustment"),
-        label = "Select adjustment",
-        choices = c("None", "Benjamini-Hochberg"),
-        selected = r6$params$db_plot$adjustment,
-        multiple = FALSE
+      shiny::selectInput(
+        inputId = ns('double_bonds_plot_statistical_test'),
+        label = 'Statistical test',
+        choices = c('t-Test', 'Wilcoxon'),
+        selected = r6$params$double_bonds_comparison$statistical_test,
+        multiple = F,
+        width = '100%'
+      ),
+      shiny::selectInput(
+        inputId = ns('double_bonds_plot_adjustment_method'),
+        label = 'Adjustment method',
+        choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+        selected = r6$params$double_bonds_comparison$adjustment_method,
+        multiple = F,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_min_fc"),
+        label = 'Min abs(fold change)',
+        value = r6$params$double_bonds_plot$min_fc,
+        min = 0,
+        max = NA,
+        step = 0.1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_max_pval"),
+        label = 'Max p-value',
+        value = r6$params$double_bonds_plot$max_pval,
+        min = 0,
+        max = 1,
+        step = 0.01,
+        width = '100%'
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('double_bonds_plot_remove_missing_pval'),
+        label = 'Remove_missing pval',
+        value = r6$params$double_bonds_plot$remove_missing_pval,
+        right = TRUE,
+        status = "primary"
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('double_bonds_plot_remove_infitive_fc'),
+        label = 'Remove infitive FC',
+        value = r6$params$double_bonds_plot$remove_infitive_fc,
+        right = TRUE,
+        status = "primary"
+      ),
+      ## Aesthetic settings
+      shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+      shiny::selectInput(
+        inputId = ns('double_bonds_plot_color_palette'),
+        label = 'Color palette',
+        choices = c('Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys', 'Oranges',
+                    'OrRd', 'PuBu', 'PuBuGn', 'PuRd', 'Purples', 'RdPu', 'Reds',
+                    'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd', 'BrBG', 'PiYG', 'PRGn',
+                    'PuOr', 'RdBu', 'RdGy', 'RdYlBu', 'RdYlGn', 'Spectral', 'Accent',
+                    'Dark2', 'Paired', 'Pastel1', 'Pastel2', 'Set1', 'Set2', 'Set3',
+                    'Viridis', 'Magma', 'Inferno', 'Plasma', 'Cividis', 'Rocket', 'Mako', 'Turbo',
+                    'plotly_1', 'plotly_2', 'ggplot2'),
+        selected = r6$params$double_bonds_plot$color_palette,
+        width = '100%'
+      ),
+      shinyWidgets::materialSwitch(
+        inputId = ns('double_bonds_plot_reverse_palette'),
+        label = 'Reverse palette',
+        value = r6$params$double_bonds_plot$reverse_palette,
+        right = TRUE,
+        status = "primary"
+      ),
+      shiny::numericInput(
+        inputId = ns('double_bonds_plot_marker_size'),
+        label = 'Marker size',
+        value = r6$params$double_bonds_plot$marker_size,
+        min = 0.1,
+        max = NA,
+        step = 0.1,
+        width = '100%'
       ),
       shiny::sliderInput(
-        inputId = ns("log2_fc_slider"),
-        label = "Coloring : Log2(Fold change) (exlude)",
-        min = r6$params$db_plot$fc_range[1],
-        max = r6$params$db_plot$fc_range[2],
-        value = r6$params$db_plot$fc_values,
-        step = 0.1
+        inputId = ns('double_bonds_plot_marker_opacity'),
+        label = 'Marker opacity',
+        value = r6$params$double_bonds_plot$marker_opacity,
+        min = 0,
+        max = 1,
+        step = 0.1,
+        width = '100%'
       ),
-      shiny::sliderInput(
-        inputId = ns("min_log10_bh_pval_slider"),
-        label = "Size : -Log10(p-value)",
-        min = r6$params$db_plot$pval_range[1],
-        max = r6$params$db_plot$pval_range[2],
-        value = r6$params$db_plot$pval_values,
-        step = 0.1
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_title_font_size"),
+        label = 'Title font size',
+        value = r6$params$double_bonds_plot$title_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
       ),
-
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_y_label_font_size"),
+        label = 'y-axis label font size',
+        value = r6$params$double_bonds_plot$y_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_y_tick_font_size"),
+        label = 'y-axis tick font size',
+        value = r6$params$double_bonds_plot$y_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_x_label_font_size"),
+        label = 'x-axis label font size',
+        value = r6$params$double_bonds_plot$x_label_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_x_tick_font_size"),
+        label = 'x-axis tick font size',
+        value = r6$params$double_bonds_plot$x_tick_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      shiny::numericInput(
+        inputId = ns("double_bonds_plot_legend_font_size"),
+        label = 'Legend font size',
+        value = r6$params$double_bonds_plot$legend_font_size,
+        min = 0,
+        step = 1,
+        width = '100%'
+      ),
+      ## Output settings
       shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
       shiny::selectInput(
         inputId = ns("double_bonds_plot_img_format"),
         label = "Image format",
         choices = c("png", "svg", "jpeg", "webp"),
-        selected = r6$params$db_plot$img_format,
+        selected = r6$params$double_bonds_plot$img_format,
         width = "100%"),
       shiny::downloadButton(
-        outputId = ns("download_double_bond_table"),
+        outputId = ns("download_double_bonds_plot_table"),
         label = "Download associated table",
         style = "width:100%;"
       )
@@ -1960,105 +3045,136 @@ double_bonds_server = function(r6, output, session) {
   })
 }
 
-db_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+double_bonds_plot_events = function(r6, dimensions_obj, color_palette, input, output, session) {
+
+  # Sidebar refresh
+  monitor_sidebar = shiny::reactive(input$double_bonds_plot_sidebar)
+  monitor_refresh = shiny::reactive(input$double_bonds_plot_auto_refresh)
+  shiny::observe({
+    if (is.null(monitor_sidebar())) {return()}
+    if (is.null(monitor_refresh())) {return()}
+    if (monitor_sidebar()) {return()}
+    if (monitor_refresh()) {return()}
+    try_plot(prefix = "Double bonds plot",
+             r6 = r6,
+             dimensions_obj = dimensions_obj,
+             gen_function = double_bonds_plot_generate,
+             spawn_function = double_bonds_plot_spawn,
+             img_format = input$double_bonds_plot_img_format,
+             input = input,
+             output = output,
+             session = session)
+  })
 
   # Group col selection
-  shiny::observeEvent(input$double_bonds_metacol,{
-    shiny::updateSelectizeInput(
-      inputId = "double_bonds_metagroup",
+  shiny::observeEvent(input$double_bonds_plot_group_col,{
+    shiny::updateSelectInput(
+      inputId = "double_bonds_plot_groups",
       session = session,
-      choices = unique(r6$tables$raw_meta[,input$double_bonds_metacol]),
-      selected = unique(r6$tables$raw_meta[,input$double_bonds_metacol])[c(1,2)]
+      choices = unique(r6$tables$raw_meta[,input$double_bonds_plot_group_col]),
+      selected = unique(r6$tables$raw_meta[,input$double_bonds_plot_group_col])[c(1,2)]
     )
   })
+  # Double bonds plot
+  shiny::observeEvent(
+    c(input$double_bonds_plot_dataset,
+      input$double_bonds_plot_groups,
+      input$double_bonds_plot_selected_carbon_chain,
+      input$double_bonds_plot_selected_unsat,
+      input$double_bonds_plot_selected_lipid_class,
+      input$double_bonds_plot_fc_function,
+      input$double_bonds_plot_statistical_test,
+      input$double_bonds_plot_adjustment_method,
+      input$double_bonds_plot_min_fc,
+      input$double_bonds_plot_max_pval,
+      input$double_bonds_plot_remove_missing_pval,
+      input$double_bonds_plot_remove_infitive_fc,
+      input$double_bonds_plot_color_palette,
+      input$double_bonds_plot_reverse_palette,
+      input$double_bonds_plot_marker_size,
+      input$double_bonds_plot_marker_opacity,
+      input$double_bonds_plot_title_font_size,
+      input$double_bonds_plot_y_label_font_size,
+      input$double_bonds_plot_y_tick_font_size,
+      input$double_bonds_plot_x_label_font_size,
+      input$double_bonds_plot_x_tick_font_size,
+      input$double_bonds_plot_legend_font_size,
+      input$double_bonds_plot_img_format
+      ),
+    {
+    shiny::req(length(input$double_bonds_plot_groups) == 2)
 
-  # Double bonds plot SINGLE
-  shiny::observeEvent(c(shiny::req(length(input$double_bonds_metagroup) == 1), input$double_bonds_class, input$double_bonds_dataset, input$double_bonds_function, input$double_bonds_plot_img_format, input$double_bonds_carbon_select, input$double_bonds_unsat_select), {
+      r6$param_double_bonds_comparison(
+        data_table = input$double_bonds_plot_dataset,
+        group_col = input$double_bonds_plot_group_col,
+        group_1 = input$double_bonds_plot_groups[1],
+        group_2 = input$double_bonds_plot_groups[2],
+        fc_function = input$double_bonds_plot_fc_function,
+        statistical_test = input$double_bonds_plot_statistical_test,
+        adjustment_method = input$double_bonds_plot_adjustment_method
+      )
+      r6$param_double_bonds_plot(
+        auto_refresh = input$double_bonds_plot_auto_refresh,
+        carbon_selection = input$double_bonds_plot_selected_carbon_chain,
+        unsat_selection = input$double_bonds_plot_selected_unsat,
+        lipid_class = input$double_bonds_plot_selected_lipid_class,
+        min_fc = input$double_bonds_plot_min_fc,
+        max_pval = input$double_bonds_plot_max_pval,
+        remove_missing_pval = input$double_bonds_plot_remove_missing_pval,
+        remove_infitive_fc = input$double_bonds_plot_remove_infitive_fc,
+        color_palette = input$double_bonds_plot_color_palette,
+        reverse_palette = input$double_bonds_plot_reverse_palette,
+        marker_size = input$double_bonds_plot_marker_size,
+        marker_opacity = input$double_bonds_plot_marker_opacity,
+        title_font_size = input$double_bonds_plot_title_font_size,
+        y_label_font_size = input$double_bonds_plot_y_label_font_size,
+        y_tick_font_size = input$double_bonds_plot_y_tick_font_size,
+        x_label_font_size = input$double_bonds_plot_x_label_font_size,
+        x_tick_font_size = input$double_bonds_plot_x_tick_font_size,
+        legend_font_size = input$double_bonds_plot_legend_font_size,
+        img_format = input$double_bonds_plot_img_format
+      )
 
-    print_tm(r6$name, "Double bonds plot single: Updating params...")
+      if (!input$double_bonds_plot_auto_refresh) {
+        r6$params$double_bonds_plot$auto_refresh = input$double_bonds_plot_auto_refresh
+        return()
+      }
 
-    r6$params$db_plot$dataset = input$double_bonds_dataset
-    r6$params$db_plot$group_column = input$double_bonds_metacol
-    r6$params$db_plot$selected_groups = input$double_bonds_metagroup
-    r6$params$db_plot$selected_lipid_class = input$double_bonds_class
-    r6$params$db_plot$selected_carbon_chain = input$double_bonds_carbon_select
-    r6$params$db_plot$selected_unsat = input$double_bonds_unsat_select
-    r6$params$db_plot$selected_function = input$double_bonds_function
-    r6$params$db_plot$img_format = input$double_bonds_plot_img_format
-
-
-    base::tryCatch({
-      double_bonds_generate_single(r6, color_palette, dimensions_obj, input)
-      double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'Double bonds plot: error, missing data.')
-    },finally={}
-    )
-
-  })
-
-  # Double bonds plot DOUBLE : Non-slider events
-  shiny::observeEvent(c(input$double_bonds_dataset, input$double_bonds_metagroup, input$double_bonds_class, input$double_bonds_function, input$double_bonds_plot_adjustment, input$double_bonds_test, input$double_bonds_plot_img_format, input$double_bonds_carbon_select, input$double_bonds_unsat_select),{
-    shiny::req(length(input$double_bonds_metagroup) == 2)
-
-    print_tm(r6$name, "Double bonds plot non-sliders: Updating params...")
-    r6$params$db_plot$dataset = input$double_bonds_dataset
-    r6$params$db_plot$group_column = input$double_bonds_metacol
-    r6$params$db_plot$selected_groups = input$double_bonds_metagroup
-    r6$params$db_plot$selected_lipid_class = input$double_bonds_class
-    r6$params$db_plot$selected_carbon_chain = input$double_bonds_carbon_select
-    r6$params$db_plot$selected_unsat = input$double_bonds_unsat_select
-    r6$params$db_plot$selected_function = input$double_bonds_function
-    r6$params$db_plot$adjustment = input$double_bonds_plot_adjustment
-    r6$params$db_plot$selected_test = input$double_bonds_test
-    r6$params$db_plot$img_format = input$double_bonds_plot_img_format
-
-
-    base::tryCatch({
-      double_bonds_generate_double(r6, colour_list, dimensions_obj, input, session)
-      double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
-    },error=function(e){
-      print_tm(r6$name, 'Double bonds plot: error, missing data.')
-    },finally={}
-    )
+      try_plot(prefix = "Double bonds plot",
+               r6 = r6,
+               dimensions_obj = dimensions_obj,
+               gen_function = double_bonds_plot_generate,
+               spawn_function = double_bonds_plot_spawn,
+               img_format = input$double_bonds_plot_img_format,
+               input = input,
+               output = output,
+               session = session)
 
 
 
-  })
-
-  # Double bonds plot DOUBLE : Slider events
-  shiny::observeEvent(c(input$log2_fc_slider, input$min_log10_bh_pval_slider),{
-    shiny::req(length(input$double_bonds_metagroup) == 2)
-
-    print_tm(r6$name, "Double bonds plot sliders: Updating params...")
-    r6$params$db_plot$fc_values = input$log2_fc_slider
-    r6$params$db_plot$pval_values = input$min_log10_bh_pval_slider
-
-    double_bonds_generate_double_sliders(r6, colour_list, dimensions_obj, input)
-    double_bonds_spawn(r6, input$double_bonds_plot_img_format, output)
   })
 
   # Download associated tables
-  output$download_double_bond_table = shiny::downloadHandler(
-    filename = function(){timestamped_name("double_bond_table.csv")},
+  output$download_double_bonds_plot_table = shiny::downloadHandler(
+    filename = function(){timestamped_name("double_bonds_plot_table.csv")},
     content = function(file_name){
-      write.csv(r6$tables$dbplot_table, file_name)
+      write.csv(r6$tables$double_bonds_plot, file_name)
     }
   )
 
   # Expanded boxes
-  double_bonds_proxy = plotly::plotlyProxy(outputId = "double_bonds_plot",
+  double_bonds_plot_proxy = plotly::plotlyProxy(outputId = "double_bonds_plot_plot",
                                            session = session)
 
-  shiny::observeEvent(input$double_bonds_plotbox,{
-    if (input$double_bonds_plotbox$maximized) {
-      plotly::plotlyProxyInvoke(p = double_bonds_proxy,
+  shiny::observeEvent(input$double_bonds_plot_plotbox,{
+    if (input$double_bonds_plot_plotbox$maximized) {
+      plotly::plotlyProxyInvoke(p = double_bonds_plot_proxy,
                                 method = "relayout",
                                 list(width = dimensions_obj$xpx_total * dimensions_obj$x_plot_full,
                                      height = dimensions_obj$ypx_total * dimensions_obj$y_plot_full
                                 ))
     } else {
-      plotly::plotlyProxyInvoke(p = double_bonds_proxy,
+      plotly::plotlyProxyInvoke(p = double_bonds_plot_proxy,
                                 method = "relayout",
                                 list(width = dimensions_obj$xpx * dimensions_obj$x_plot,
                                      height = dimensions_obj$ypx * dimensions_obj$y_plot

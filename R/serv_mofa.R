@@ -1,122 +1,3 @@
-#----------------------------------------------------------- MOFA utilities ----
-
-mofa_plotbox_switch_ui = function(selection_list){
-  ui_functions = c()
-  for (plot in selection_list) {
-    ui_functions = c(ui_functions, switch(EXPR = plot,
-                                          "select_explained_variance" = explained_variance_ui,
-                                          "select_factor_plot" = factor_plot_ui,
-                                          "select_combined_factors" = combined_factors_ui,
-                                          "select_feature_weights" = feature_weights_ui,
-                                          "select_feature_top_weights" = feature_top_weights_ui,
-                                          "select_mofa_heatmap" = mofa_heatmap_ui,
-                                          "select_scatterplot" = scatterplot_ui)
-    )
-  }
-  return(ui_functions)
-}
-
-mofa_plotbox_switch_server = function(selection_list){
-  server_functions = c()
-  for (plot in selection_list) {
-    server_functions = c(server_functions, switch(EXPR = plot,
-                                                  "select_explained_variance" = explained_variance_server,
-                                                  "select_factor_plot" = factor_plot_server,
-                                                  "select_combined_factors" = combined_factors_server,
-                                                  "select_feature_weights" = feature_weights_server,
-                                                  "select_feature_top_weights" = feature_top_weights_server,
-                                                  "select_mofa_heatmap" = mofa_heatmap_server,
-                                                  "select_scatterplot" = scatterplot_server)
-    )
-  }
-  return(server_functions)
-}
-
-mofa_plot_one = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-
-mofa_plot_two = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session),
-        ui_functions[[2]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-mofa_plot_three = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session),
-        ui_functions[[2]](dimensions_obj, session),
-        ui_functions[[3]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-mofa_plot_four = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = mofa_plotbox_switch_ui(selection_list = selection_list)
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session),
-        ui_functions[[2]](dimensions_obj, session),
-        ui_functions[[3]](dimensions_obj, session),
-        ui_functions[[4]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = mofa_plotbox_switch_server(selection_list = input$show_plots_mofa)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-
-
-
-
-
-
-
-
-
 #------------------------------------------------------------------ MOFA UI ----
 mofa_ui = function(id) {
   ns = shiny::NS(id)
@@ -130,161 +11,121 @@ mofa_ui = function(id) {
         shiny::column(
           width=12,
 
-          # Modules box
+          # Modules table
+          shiny::br(),
           bs4Dash::box(
-            id = ns('module_box'),
+            id = ns('module_table_box'),
             title = 'Available data',
             width = 12,
-            shiny::tagList(
-              # shiny::fluidRow(
-              #   DTOutput("module_table")
-              # ),
-              shiny::fluidRow(
-                shiny::uiOutput(
-                  outputId = ns('exp_1_data')
-                )
-              ),
-              shiny::fluidRow(
-                shiny::uiOutput(
-                  outputId = ns('exp_2_data')
-                )
-              ),
-              shiny::fluidRow(
-                shiny::uiOutput(
-                  outputId = ns('exp_3_data')
-                )
-              ),
-              shiny::fluidRow(
-                shiny::uiOutput(
-                  outputId = ns('exp_4_data')
-                )
-              ),
-              shiny::fluidRow(
-                shiny::uiOutput(
-                  outputId = ns('exp_5_data')
-                )
-              ),
-              shiny::fluidRow(
-                shiny::uiOutput(
-                  outputId = ns('exp_6_data')
-                ),
-              )
-            ),
-            collapsible = T,
-            collapsed  = F,
-            maximizable = F,
-            headerBorder = T
+            DT::dataTableOutput(outputId = ns("modules_table"))
+
           )
         )
       ),
-      shiny::fluidRow(
-        shiny::column(
-          width = 4,
-          shiny::h3("Data options"),
+      bs4Dash::box(
+        id = ns('mofa_options_box'),
+        title = 'Options',
+        width = 12,
+        collapsed = T,
+        shiny::fluidRow(
 
-          shiny::fluidRow(
-            shiny::column(
-              width = 4,
-              shinyWidgets::prettySwitch(inputId = ns("data_scale_views"),
-                                         label = "Scale views",
-                                         value = FALSE,
-                                         fill = TRUE, status = "primary")
-            ),
-            shiny::column(
-              width = 4,
-              shinyWidgets::prettySwitch(inputId = ns("data_scale_groups"),
-                                         label = "Scale groups",
-                                         value = FALSE,
-                                         fill = TRUE, status = "primary")
-            ),
-            shiny::column(
-              width = 4,
-              shinyWidgets::prettySwitch(inputId = ns("data_center_groups"),
-                                         label = "Center groups",
-                                         value = TRUE,
-                                         fill = TRUE, status = "primary")
+          shiny::column(
+            width = 4,
+            shiny::h3("Data options"),
+
+            shiny::fluidRow(
+              shiny::column(
+                width = 6,
+                shinyWidgets::prettySwitch(inputId = ns("data_scale_views"),
+                                           label = "Scale views",
+                                           value = FALSE,
+                                           fill = TRUE, status = "primary")
+              ),
+              shiny::column(
+                width = 6,
+                shinyWidgets::prettySwitch(inputId = ns("data_scale_groups"),
+                                           label = "Scale groups",
+                                           value = FALSE,
+                                           fill = TRUE, status = "primary")
+              ),
+              shiny::numericInput(
+                inputId = ns('mofa_seed'),
+                label = 'Seed',
+                value = 1,
+                min = 1,
+                step = 1,
+                width = '80%'
+              )
             )
           ),
+          shiny::column(
+            width = 4,
+            shiny::h3("Model options"),
 
-
-
-
-        ),
-        shiny::column(
-          width = 4,
-          shiny::h3("Model options"),
-
-          shiny::fluidRow(
-            shiny::column(
-              width = 6,
-              shiny::selectInput(inputId = ns("model_likelihoods"),
-                                 label = "Select likelihood",
-                                 choices = c("gaussian", "poisson", "bernoulli"),
-                                 selected = "gaussian",
-                                 width = "100%"),
-              shinyWidgets::prettySwitch(inputId = ns("model_spikeslab_factors"),
-                                         label = "Spikeslab factors",
-                                         value = FALSE,
-                                         fill = TRUE, status = "primary"),
-              shinyWidgets::prettySwitch(inputId = ns("model_ard_factors"),
-                                         label = "ARD factors",
-                                         value = FALSE,
-                                         fill = TRUE, status = "primary")
-            ),
-            shiny::column(
-              width = 6,
-              shiny::textInput(inputId = ns("model_num_factors"),
-                               label = "Number of factors",
-                               value = 6,
-                               width = "100%"),
-              shinyWidgets::prettySwitch(inputId = ns("model_spikeslab_weights"),
-                                         label = "Spikeslab weights",
-                                         value = TRUE,
-                                         fill = TRUE, status = "primary"),
-              shinyWidgets::prettySwitch(inputId = ns("model_ard_weights"),
-                                         label = "ARD weights",
-                                         value = TRUE,
-                                         fill = TRUE, status = "primary")
+            shiny::fluidRow(
+              shiny::numericInput(
+                inputId = ns("model_num_factors"),
+                label = "Number of factors",
+                value = 6,
+                min = 1,
+                width = "100%"
+              ),
+              shiny::column(
+                width = 6,
+                shinyWidgets::prettySwitch(inputId = ns("model_spikeslab_factors"),
+                                           label = "Spikeslab factors",
+                                           value = FALSE,
+                                           fill = TRUE, status = "primary"),
+                shinyWidgets::prettySwitch(inputId = ns("model_ard_factors"),
+                                           label = "ARD factors",
+                                           value = FALSE,
+                                           fill = TRUE, status = "primary")
+              ),
+              shiny::column(
+                width = 6,
+                shinyWidgets::prettySwitch(inputId = ns("model_spikeslab_weights"),
+                                           label = "Spikeslab weights",
+                                           value = TRUE,
+                                           fill = TRUE, status = "primary"),
+                shinyWidgets::prettySwitch(inputId = ns("model_ard_weights"),
+                                           label = "ARD weights",
+                                           value = TRUE,
+                                           fill = TRUE, status = "primary")
+              )
             )
-          )
-        ),
+          ),
+          shiny::column(
+            width = 4,
+            shiny::h3("Training options"),
 
-
-        shiny::column(
-          width = 4,
-          shiny::h3("Training options"),
-
-          shiny::fluidRow(
-            shiny::column(
-              width = 6,
-              shiny::textInput(inputId = ns("training_iterations"),
-                               label = "Max iterations",
-                               value = 1000,
-                               width = "100%"),
-              shiny::textInput(inputId = ns("training_start_elbo"),
-                               label = "startELBO",
-                               value = 1,
-                               width = "100%"),
-              shinyWidgets::prettySwitch(inputId = ns("training_stochastic"),
-                                         label = "Stochastic",
-                                         value = FALSE,
-                                         fill = TRUE, status = "primary")
-            ),
-            shiny::column(
-              width = 6,
-              shiny::selectInput(inputId = ns("training_convergence_mode"),
-                                 label = "Convergence mode",
-                                 choices = c("fast", "medium", "slow"),
-                                 selected = "fast",
-                                 width = "100%"),
-              shiny::textInput(inputId = ns("training_freq_elbo"),
-                               label = "freqELBO",
-                               value = 5,
-                               width = "100%"),
-              shinyWidgets::prettySwitch(inputId = ns("training_weight_views"),
-                                         label = "Weight views",
-                                         value = FALSE,
-                                         fill = TRUE, status = "primary")
+            shiny::fluidRow(
+              shiny::column(
+                width = 6,
+                shiny::numericInput(inputId = ns("training_iterations"),
+                                    label = "Max iterations",
+                                    value = 1000,
+                                    width = "100%"),
+                shiny::numericInput(inputId = ns("training_start_elbo"),
+                                    label = "startELBO",
+                                    value = 1,
+                                    width = "100%"),
+                shinyWidgets::prettySwitch(inputId = ns("training_stochastic"),
+                                           label = "Stochastic",
+                                           value = FALSE,
+                                           fill = TRUE, status = "primary")
+              ),
+              shiny::column(
+                width = 6,
+                shiny::selectInput(inputId = ns("training_convergence_mode"),
+                                   label = "Convergence mode",
+                                   choices = c("fast", "medium", "slow"),
+                                   selected = "fast",
+                                   width = "100%"),
+                shiny::numericInput(inputId = ns("training_freq_elbo"),
+                                    label = "freqELBO",
+                                    value = 5,
+                                    width = "100%")
+              )
             )
           )
         )
@@ -292,24 +133,20 @@ mofa_ui = function(id) {
       shiny::fluidRow(
         shiny::column(
           width = 12,
-          shiny::br(),
-          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           shiny::br()
         ),
         shiny::column(width = 3),
         shiny::column(
           width = 6,
-          shinyWidgets::actionBttn(
-            inputId = ns("run_mofa"),
-            label = "Go!",
-            color = "success",
-            style = "material-flat",
-            icon = icon("sliders"),
-            block = TRUE
+          shiny::actionButton(
+            inputId = ns('run_mofa'),
+            label = "Run MOFA",
+            icon = icon("play"),
+            style ="color: #fff; background-color: #00A86B; border-color: #00A86B",
+            width = '100%'
           )
         ),
         shiny::column(width = 3)
-
       )
     ),
     shiny::tabPanel(
@@ -345,98 +182,94 @@ mofa_ui = function(id) {
 
 
 #-------------------------------------------------------------- MOFA server ----
-mofa_server = function(id, r6, module_controler) {
+mofa_server = function(id, r6, module_controler, main_input) {
   shiny::moduleServer(
     id,
     function(input, output, session) {
       ns = session$ns
 
-      # Omics modules loaded
-      shiny::observe({
-        if (!is.null(module_controler$exp_r6$exp_1)) {
-          output$exp_1_data = shiny::renderUI({
-            shiny::fluidRow(
-              shiny::checkboxInput(
-                inputId = ns('select_exp_1'),
-                label = NULL
-              ),
-              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_1$name)),
-              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_1$type)),
-              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_1$tables$raw_data))))
-            )
-          })
-        }
 
-        if (!is.null(module_controler$exp_r6$exp_2)) {
-          output$exp_2_data = shiny::renderUI({
-            shiny::fluidRow(
-              shiny::checkboxInput(
-                inputId = ns('select_exp_2'),
-                label = NULL
-              ),
-              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_2$name)),
-              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_2$type)),
-              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_2$tables$raw_data))))
-            )
-          })
-        }
+      input_modules = shiny::reactiveValues(
+        table = NULL,
+        uuids = NULL,
+        idx_list = NULL
+      )
 
-        if (!is.null(module_controler$exp_r6$exp_3)) {
-          output$exp_3_data = shiny::renderUI({
-            shiny::fluidRow(
-              shiny::checkboxInput(
-                inputId = ns('select_exp_3'),
-                label = NULL
-              ),
-              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_3$name)),
-              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_3$type)),
-              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_3$tables$raw_data))))
-            )
-          })
-        }
 
-        if (!is.null(module_controler$exp_r6$exp_4)) {
-          output$exp_4_data = shiny::renderUI({
-            shiny::fluidRow(
-              shiny::checkboxInput(
-                inputId = ns('select_exp_4'),
-                label = NULL
-              ),
-              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_4$name)),
-              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_4$type)),
-              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_4$tables$raw_data))))
-            )
-          })
-        }
+      # Omics modules loaded (in table)
+      session$userData[[id]]$snf_observe = shiny::observe({
 
-        if (!is.null(module_controler$exp_r6$exp_5)) {
-          output$exp_5_data = shiny::renderUI({
-            shiny::fluidRow(
-              shiny::checkboxInput(
-                inputId = ns('select_exp_5'),
-                label = NULL
-              ),
-              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_5$name)),
-              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_5$type)),
-              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_5$tables$raw_data))))
-            )
-          })
-        }
+        shiny::req(main_input$main_sidebar)
+        if (main_input$main_sidebar == "mofa_tab") {
 
-        if (!is.null(module_controler$exp_r6$exp_6)) {
-          output$exp_6_data = shiny::renderUI({
-            shiny::fluidRow(
-              shiny::checkboxInput(
-                inputId = ns('select_exp_6'),
-                label = NULL
-              ),
-              shiny::p(paste0(' Name: ', module_controler$exp_r6$exp_6$name)),
-              shiny::p(paste0(' Type: ', module_controler$exp_r6$exp_6$type)),
-              shiny::p(paste0(' Samples: ', as.character(nrow(module_controler$exp_r6$exp_6$tables$raw_data))))
-            )
-          })
-        }
+          run = NULL
+          exp_name = NULL
+          exp_type = NULL
+          sample_count = NULL
+          table_select_list = NULL
+          likelihood_list = NULL
+          uuid_list = NULL
+          idx_list = NULL
 
+          for (i in 1:length(module_controler$exp_r6)){
+            if (!is.null(module_controler$exp_r6[[i]]$tables$raw_data)) {
+
+              name = module_controler$exp_r6[[i]]$name
+              uuid = generate_id()
+              run = c(run,
+                      base::sprintf(
+                        '<input id="%s-modSelected-%s" type="checkbox" class="shiny-input-checkbox" checked/>',
+                        id, uuid
+                      )
+              )
+              exp_name = c(exp_name, name)
+              exp_type = c(exp_type,  module_controler$exp_r6[[i]]$type)
+              sample_count = c(sample_count, nrow(module_controler$exp_r6[[i]]$tables$raw_meta))
+              table_select_list = c(table_select_list,
+                                    base::sprintf(
+                                      '<select id="%s-modTable-%s" class="shiny-input-select"><option value="Raw data table">Raw data table</option><option value="Total normalized table">Total normalized table</option><option value="Z-scored table" selected>Z-scored table</option><option value="Z-scored total normalized table">Z-scored total normalized table</option></select>',
+                                      id, uuid
+                                    )
+              )
+              likelihood_list = c(likelihood_list,
+                                    base::sprintf(
+                                      '<select id="%s-modLikelihood-%s" class="shiny-input-select"><option value="gaussian" selected>gaussian</option><option value="poisson">poisson</option><option value="bernoulli">bernoulli</option></select>',
+                                      id, uuid
+                                    )
+              )
+              uuid_list = c(uuid_list, uuid)
+              idx_list = c(idx_list, i)
+            }
+          }
+
+
+          m = base::data.frame(
+            "Run" = run,
+            "Name" = exp_name,
+            "Type" = exp_type,
+            "Samples" = sample_count,
+            "Table" = table_select_list,
+            "Likelihood" = likelihood_list
+          )
+
+          input_modules$table = m
+          input_modules$uuids = uuid_list
+          input_modules$idx_list = idx_list
+
+
+          output$modules_table = DT::renderDataTable(
+            m, escape = FALSE, selection = 'none', server = FALSE,
+            options = list(dom = 't', paging = FALSE, ordering = FALSE), rownames= FALSE,
+            callback = JS("table.rows().every(function() {
+          var $this = $(this.node());
+          $this.attr('id', this.data()[0]);
+          $this.addClass('shiny-input-checkbox');
+          $this.addClass('shiny-input-select');
+        });
+        Shiny.unbindAll(table.table().node());
+        Shiny.bindAll(table.table().node());")
+          )
+        }
       })
 
       # Start MOFA
@@ -444,101 +277,102 @@ mofa_server = function(id, r6, module_controler) {
 
         # Disable button while running
         shinyjs::disable("run_mofa")
+        waiter::waiter_show(
+          id = ns("run_mofa"),
+          html = spin_circle(),
+          color = "#00A86B"
+        )
+
+        # Check on experiment counts
+        if (length(input_modules$idx_list) < 2) {
+          waiter::waiter_hide(id = ns("run_mofa"))
+          shinyjs::enable("run_mofa")
+          print_tme(m = id, e = 'Upload more than one experiment.')
+        }
+        print_tm(r6$name, "MOFA: starting...")
 
         r6$tables$metadata = NULL
         r6$tables$omics_tables = list()
 
-        if (!is.null(module_controler$exp_r6$exp_1)) {
-          if (input$select_exp_1) {
-            print('selected exp 1')
-            r6$tables$omics_tables[[module_controler$exp_r6$exp_1$name]] = t(module_controler$exp_r6$exp_1$tables$raw_data)
-            if (is.null(r6$tables$metadata)) {
-              r6$tables$metadata = t(module_controler$exp_r6$exp_1$tables$raw_meta)
+        m = input_modules$table
+        uuids = input_modules$uuids
+        idx_list = input_modules$idx_list
+        likelihoods = list()
+
+        base::withCallingHandlers({
+          for (i in base::seq_len(nrow(m))) {
+            uuid = uuids[i]
+            idx = idx_list[i]
+
+            if (input[[paste0("modSelected-", uuid)]]) {
+              exp_name = module_controler$exp_r6[[idx]]$name
+              exp_type = module_controler$exp_r6[[idx]]$type
+              exp_table_name = input[[paste0("modTable-", uuid)]]
+              likelihoods[[exp_name]] = input[[paste0("modLikelihood-", uuid)]]
+              data_table = module_controler$exp_r6[[idx]]$table_switch_local(exp_table_name)
+              sample_meta = module_controler$exp_r6[[idx]]$tables$raw_meta
+              feature_meta = module_controler$exp_r6[[idx]]$tables$feature_table
+              r6$add_data(name = exp_name,
+                          data_table = data_table)
+              r6$add_sample_meta(name = exp_name,
+                                 sample_meta = sample_meta)
+              r6$add_feature_data(name = exp_name,
+                                  feature_data = feature_meta)
+              print_tm(r6$name, paste0('Added ',exp_name, ' (', exp_type, ')'))
             }
           }
+          r6$clean_datasets()
+
+        },warning = function(w){
+          print_tmw(r6$name, w)
+        }, error=function(e){
+          waiter::waiter_hide(id = ns("run_mofa"))
+          shinyjs::enable("run_mofa")
+          print_tme(r6$name, e)
         }
-
-        if (!is.null(module_controler$exp_r6$exp_2)) {
-          if (input$select_exp_2) {
-            print('selected exp 2')
-            r6$tables$omics_tables[[module_controler$exp_r6$exp_2$name]] = t(module_controler$exp_r6$exp_2$tables$raw_data)
-            if (is.null(r6$tables$metadata)) {
-              r6$tables$metadata = t(module_controler$exp_r6$exp_2$tables$raw_meta)
-            }
-          }
+        )
+        # Check if only a single dataset was selected
+        if (length(r6$tables$omics_tables) < 2) {
+          waiter::waiter_hide(id = ns("run_mofa"))
+          shinyjs::enable("run_mofa")
+          print_tme(m = id, e = 'Select more than one experiment.')
         }
-
-        if (!is.null(module_controler$exp_r6$exp_3)) {
-          if (input$select_exp_3) {
-            print('selected exp 3')
-            r6$tables$omics_tables[[module_controler$exp_r6$exp_3$name]] = t(module_controler$exp_r6$exp_3$tables$raw_data)
-            if (is.null(r6$tables$metadata)) {
-              r6$tables$metadata = t(module_controler$exp_r6$exp_3$tables$raw_meta)
-            }
-          }
-        }
-
-        if (!is.null(module_controler$exp_r6$exp_4)) {
-          if (input$select_exp_4) {
-            print('selected exp 4')
-            r6$tables$omics_tables[[module_controler$exp_r6$exp_4$name]] = t(module_controler$exp_r6$exp_4$tables$raw_data)
-            if (is.null(r6$tables$metadata)) {
-              r6$tables$metadata = t(module_controler$exp_r6$exp_4$tables$raw_meta)
-            }
-          }
-        }
-
-        if (!is.null(module_controler$exp_r6$exp_5)) {
-          if (input$select_exp_5) {
-            print('selected exp 5')
-            r6$tables$omics_tables[[module_controler$exp_r6$exp_5$name]] = t(module_controler$exp_r6$exp_5$tables$raw_data)
-            if (is.null(r6$tables$metadata)) {
-              r6$tables$metadata = t(module_controler$exp_r6$exp_5$tables$raw_meta)
-            }
-          }
-        }
-
-        if (!is.null(module_controler$exp_r6$exp_6)) {
-          if (input$select_exp_6) {
-            print('selected exp 6')
-            r6$tables$omics_tables[[module_controler$exp_r6$exp_6$name]] = t(module_controler$exp_r6$exp_6$tables$raw_data)
-            if (is.null(r6$tables$metadata)) {
-              r6$tables$metadata = t(module_controler$exp_r6$exp_6$tables$raw_meta)
-            }
-          }
-        }
-
-        print(names(r6$tables$omics_tables))
-
-        r6$create_mofa_object()
-
-        print_t("MOFA: training model...")
-        r6$prepare_mofa(scale_views = input$data_scale_views,
-                        scale_groups = input$data_scale_groups,
-                        center_groups = input$data_center_groups,
-                        likelihoods = input$model_likelihoods,
-                        num_factors = as.numeric(input$model_num_factors),
-                        spikeslab_factors = input$model_spikeslab_factors,
-                        spikeslab_weights = input$model_spikeslab_weights,
-                        ard_factors = input$model_ard_factors,
-                        ard_weights = input$model_ard_weights,
-                        maxiter = as.numeric(input$training_iterations),
-                        convergence_mode = input$training_convergence_mode,
-                        startELBO = as.numeric(input$training_start_elbo),
-                        freqELBO = as.numeric(input$training_freq_elbo),
-                        stochastic = input$training_stochastic,
-                        weight_views = input$training_weight_views)
-        r6$train_model(mofa_object = r6$mofa_objects$pretrained,
-                       outfile = base::file.path("./models", timestamped_name("model.hdf5")),
-                       save_data = T)
-        r6$add_metadata_to_mofa()
+        base::withCallingHandlers({
+          r6$create_mofa_object()
+          print_tm(r6$name, "MOFA: training model...")
+          r6$prepare_mofa(scale_views = input$data_scale_views,
+                          scale_groups = input$data_scale_groups,
+                          likelihoods = likelihoods,
+                          num_factors = as.numeric(input$model_num_factors),
+                          spikeslab_factors = input$model_spikeslab_factors,
+                          spikeslab_weights = input$model_spikeslab_weights,
+                          ard_factors = input$model_ard_factors,
+                          ard_weights = input$model_ard_weights,
+                          maxiter = as.numeric(input$training_iterations),
+                          convergence_mode = input$training_convergence_mode,
+                          startELBO = as.numeric(input$training_start_elbo),
+                          freqELBO = as.numeric(input$training_freq_elbo),
+                          stochastic = input$training_stochastic)
+          r6$train_model(mofa_object = r6$mofa_objects$pretrained,
+                         outfile = base::file.path("./models", timestamped_name("model.hdf5")),
+                         save_data = T,
+                         seed = input$mofa_seed)
+          r6$add_metadata_to_mofa()
+        },warning = function(w){
+          print_tmw(r6$name, w)
+        }, error=function(e){
+          waiter::waiter_hide(id = ns("run_mofa"))
+          shinyjs::enable("run_mofa")
+          print_tme(r6$name, e)
+        })
 
 
-
-
-        print_t("MOFA: model ready.")
+        print_tm(r6$name, "MOFA: model ready.")
 
         # Enable button
+        waiter::waiter_hide(
+          id = ns("run_mofa")
+        )
         shinyjs::enable("run_mofa")
       })
 
@@ -564,11 +398,11 @@ mofa_server = function(id, r6, module_controler) {
       # # Plotting events
       explained_variance_events(r6, dimensions_obj, color_palette, input, output, session)
       factor_plot_events(r6, dimensions_obj, color_palette, input, output, session)
-      combined_factors_events(r6, dimensions_obj, color_palette, input, output, session)
+      combined_factors_plot_events(r6, dimensions_obj, color_palette, input, output, session)
       feature_weights_events(r6, dimensions_obj, color_palette, input, output, session)
       feature_top_weights_events(r6, dimensions_obj, color_palette, input, output, session)
       mofa_heatmap_events(r6, dimensions_obj, color_palette, input, output, session)
-      scatterplot_events(r6, dimensions_obj, r6_settings, input, output, session)
+      scatter_plot_events(r6, dimensions_obj, r6_settings, input, output, session)
 
 
       # Plot selection
@@ -590,7 +424,6 @@ mofa_server = function(id, r6, module_controler) {
         }
 
         # Plots selected: 1 to 4
-        print_t(paste0("MOFA plot selection: ", paste(input$show_plots_mofa, collapse = ", ")))
         if (length(input$show_plots_mofa) == 1) {
           mofa_plot_one(r6 = r6,
                         dimensions_obj = dimensions_obj,
@@ -649,7 +482,7 @@ mofa_server = function(id, r6, module_controler) {
       })
 
       session$userData[[id]]$clear_plots = shiny::observeEvent(input$clear_plots, {
-        print_t("Clearing plots")
+        print_tm(r6$name, "Clearing plots")
         shinyWidgets::updateCheckboxGroupButtons(
           session = session,
           inputId = "show_plots_mofa",
