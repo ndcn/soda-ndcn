@@ -5,6 +5,8 @@ library(bs4Dash)
 library(shinyWidgets)
 library(shinybrowser)
 library(shinymanager)
+library(spsComps)
+library(waiter)
 
 # Plotting
 library(ggplot2)
@@ -20,6 +22,8 @@ library(ellipse)
 
 # text
 library(stringr)
+library(stringi)
+library(markdown)
 
 # Tables
 library(DT)
@@ -29,6 +33,7 @@ library(Matrix)
 # Colors
 library(grDevices)
 library(RColorBrewer)
+library(viridisLite)
 
 # Statistics
 library(stats)
@@ -38,18 +43,23 @@ library(scales)
 
 # Omics
 library(org.Hs.eg.db)
+library(ggtree) # devtools::install_github("YuLab-SMU/ggtree")
 library(clusterProfiler)
 library(enrichplot)
 library(ggridges)
 library(MOFA2)
 library(basilisk)
 library(SNFtool)
+library(sva)
 
 # General
 library(reshape2)
 library(dplyr)
+library(xfun)
+library(R6)
 
 # New
+library(ggdendro)
 
 # Use basilisk
 # reticulate::use_condaenv(condaenv = 'mofa_1')
@@ -62,7 +72,7 @@ header_ui = function() {
 
   # Extract and capitalise name
   name = stringr::str_split(desc[1,1], ":")[[1]][2]
-  name = toupper(trimws(name))
+  name = trimws(name)
 
   # Extract version
   version = gsub("[^0-9.-]", "", desc[3,1])
@@ -73,14 +83,16 @@ header_ui = function() {
 #------------------------------------------------------------ Setup sidebar ----
 
 sidebar_ui = function() {
-  bs4Dash::dashboardSidebar(
-    bs4Dash::sidebarMenu(
+  bs4Dash::bs4DashSidebar(
+    bs4Dash::bs4SidebarMenu(
+      id = "main_sidebar",
 
-      # Start menu
-      bs4Dash::menuItem(
-        text = "Start",
+      # Single-omics menu
+      bs4Dash::bs4SidebarMenuItem(
+        text = "Single-omics",
         tabName = "start",
-        icon = shiny::icon("list")),
+        icon = shiny::icon("list")
+        ),
 
       bs4Dash::sidebarMenuOutput("exp_1"),
       bs4Dash::sidebarMenuOutput("exp_2"),
@@ -89,37 +101,43 @@ sidebar_ui = function() {
       bs4Dash::sidebarMenuOutput("exp_5"),
       bs4Dash::sidebarMenuOutput("exp_6"),
 
-      bs4Dash::menuItem(
-        text = "MOFA",
-        tabName = "mofa_tab",
-        icon = shiny::icon("m")
+      bs4Dash::bs4SidebarMenuItem(
+        text = "Multi-omics",
+        tabName = "multi_omics",
+        icon = shiny::icon("list"),
+        bs4Dash::bs4SidebarMenuSubItem(
+          text = "MOFA",
+          tabName = "mofa_tab",
+          icon = shiny::icon("circle")
+        ),
+        bs4Dash::bs4SidebarMenuSubItem(
+          text = "SNF",
+          tabName = "snf_tab",
+          icon = shiny::icon("circle")
+        )
       ),
 
-      bs4Dash::menuItem(
-        text = "SNF",
-        tabName = "snf_tab",
-        icon = shiny::icon("s")
-      ),
-
-      bs4Dash::menuItem(
-        text = "About",
-        tabName = "about",
-        icon = shiny::icon("question")
-      ),
-
-      bs4Dash::menuItem(
+      bs4Dash::bs4SidebarMenuItem(
         text = "Help",
         tabName = "help",
         icon = shiny::icon("question"),
-        bs4Dash::menuSubItem(
-          text = 'Start',
+        bs4Dash::bs4SidebarMenuSubItem(
+          text = "Logs",
+          tabName = "logs_tab"
+        ),
+        bs4Dash::bs4SidebarMenuSubItem(
+          text = "About",
+          tabName = "about"
+        ),
+        bs4Dash::bs4SidebarMenuSubItem(
+          text = 'Input files',
           tabName = 'help_start',
         ),
-        bs4Dash::menuSubItem(
+        bs4Dash::bs4SidebarMenuSubItem(
           text = 'Single omics',
           tabName = 'help_single_omics',
         ),
-        bs4Dash::menuSubItem(
+        bs4Dash::bs4SidebarMenuSubItem(
           text = 'Multi-omics',
           tabName = 'help_multi_omics',
         )
@@ -136,6 +154,7 @@ body_ui = function() {
     # Detect UI functions
     shinyjs::useShinyjs(),
     shinybrowser::detect(),
+    waiter::autoWaiter(html = spin_3k(), color = "rgba(255, 255, 255, 0)"),
 
     bs4Dash::tabItems(
 
@@ -186,6 +205,11 @@ body_ui = function() {
       ),
 
       bs4Dash::tabItem(
+        tabName = "logs_tab",
+        logs_ui(id = "logs")
+      ),
+
+      bs4Dash::tabItem(
         tabName = "about",
         about_ui(id = 'mod_about')
       ),
@@ -198,6 +222,11 @@ body_ui = function() {
       bs4Dash::tabItem(
         tabName = "help_single_omics",
         help_single_omics_ui(id = 'mod_help_single_omics')
+      ),
+
+      bs4Dash::tabItem(
+        tabName = "help_multi_omics",
+        help_multi_omics_ui(id = 'mod_help_multi_omics')
       )
 
     )
@@ -208,20 +237,21 @@ body_ui = function() {
 header = header_ui()
 sidebar = sidebar_ui()
 body = body_ui()
-# ui = bs4Dash::dashboardPage(header, sidebar, body)
-ui = shinymanager::secure_app(bs4Dash::dashboardPage(header, sidebar, body))
+
+ui = bs4Dash::dashboardPage(header, sidebar, body)
+
 #------------------------------------------------------------------- Server ----
 
 server = function(input, output, session) {
 
-  # Basic authentification
-  res_auth = shinymanager::secure_server(
-    check_credentials = shinymanager::check_credentials(db = data.frame(
-      user = c("user1"),
-      password = c("user1234"),
-      admin = c(FALSE))
-    )
-  )
+  # Create logfile
+  log_file <<- paste0("./logs/", get_day_time_code(), ".log")
+  if (!base::file.exists("./logs/")) {
+    base::dir.create("./logs/")
+  }
+  if (!base::file.exists("./models/")) {
+    base::dir.create("./models/")
+  }
 
   options(shiny.maxRequestSize=300*1024^2)
 
@@ -284,18 +314,22 @@ server = function(input, output, session) {
     )
   )
 
-  mofa_data = Mofa_data$new(
+  mofa_exp = Mofa_class$new(
     name = "mofa_1"
   )
 
-  snf_data = Snf_data$new(
+  snf_exp = Snf_class$new(
     name = "snf_1"
   )
 
+
+
   start_server(id = 'mod_start', main_input = input, main_output = output, main_session = session, module_controler = module_controler)
   about_server(id = 'mod_about', main_output = output)
+  logs_server(id = "logs", main_input = input, main_output = output)
   help_start_server(id = 'mod_help_start', main_output = output)
   help_single_omics_server(id = 'mod_help_single_omics', main_output = output)
+  help_multi_omics_server(id = 'mod_help_multi_omics', main_output = output)
 
 
   # Single omics modules
@@ -314,10 +348,10 @@ server = function(input, output, session) {
   })
 
   # MOFA module
-  mofa_server("mofa", r6 = mofa_data, module_controler = module_controler)
+  mofa_server("mofa", r6 = mofa_exp, module_controler = module_controler, main_input = input)
 
   # SNF module
-  snf_server("snf", r6 = snf_data, module_controler = module_controler)
+  snf_server("snf", r6 = snf_exp, module_controler = module_controler, main_input = input)
 
   # Example datasets
   shiny::observeEvent(input[['mod_start-add_lipidomics_ex']],{
