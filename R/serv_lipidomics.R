@@ -1,236 +1,8 @@
-#----------------------------------------------------- Lipidomics utilities ----
-
-plotbox_switch_ui_lips = function(selection_list){
-  ui_functions = c()
-  for (plot in selection_list) {
-    ui_functions = c(ui_functions, switch(EXPR = plot,
-                                          "select_class_distribution" = class_distribution_ui,
-                                          "select_class_comparison" = class_comparison_ui,
-                                          "select_volcano_plot" = volcano_plot_ui,
-                                          "select_heatmap" = heatmap_ui,
-                                          "select_samples_correlation" = samples_correlation_ui,
-                                          "select_feature_correlation" = feature_correlation_ui,
-                                          "select_pca" = pca_ui,
-                                          "select_double_bond_plot" = double_bonds_ui
-    )
-    )
-  }
-  return(ui_functions)
-}
-
-plotbox_switch_server_lips = function(selection_list){
-  server_functions = c()
-  for (plot in selection_list) {
-    server_functions = c(server_functions, switch(EXPR = plot,
-                                                  "select_class_distribution" = class_distribution_server,
-                                                  "select_class_comparison" = class_comparison_server,
-                                                  "select_volcano_plot" = volcano_plot_server,
-                                                  "select_heatmap" = heatmap_server,
-                                                  "select_samples_correlation" = samples_correlation_server,
-                                                  "select_feature_correlation" = feature_correlation_server,
-                                                  "select_pca" = pca_server,
-                                                  "select_double_bond_plot" = double_bonds_server
-    )
-    )
-  }
-  return(server_functions)
-}
-
-plot_one_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
-
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-
-plot_two_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session),
-        ui_functions[[2]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-plot_three_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session),
-        ui_functions[[2]](dimensions_obj, session),
-        ui_functions[[3]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-plot_four_lips = function(r6, dimensions_obj, selection_list, input, output, session) {
-  ns = session$ns
-  ui_functions = plotbox_switch_ui_lips(selection_list = selection_list)
-  output$plotbox_field = shiny::renderUI({
-    shiny::fluidRow(
-      shiny::tagList(
-        ui_functions[[1]](dimensions_obj, session),
-        ui_functions[[2]](dimensions_obj, session),
-        ui_functions[[3]](dimensions_obj, session),
-        ui_functions[[4]](dimensions_obj, session)
-      )
-    )
-  })
-
-  plot_servers = plotbox_switch_server_lips(selection_list = input$showPlots)
-  for (server_function in plot_servers) {
-    server_function(r6, output, session)
-  }
-}
-
-
-reset_sample_filters = function(input, session, r6) {
-  # Set all checkboxes to False
-  shinyWidgets::updateCheckboxGroupButtons(
-    session = session,
-    inputId = "non_samples_selection",
-    selected = character(0)
-  )
-
-  # Set manual row selection to None and update
-  shiny::updateSelectizeInput(
-    session = session,
-    inputId = "selection_manual",
-    choices = rownames(r6$tables$meta_filtered),
-    selected = character(0)
-  )
-
-
-  # Set the metacolumn value to None and update
-  shiny::updateSelectInput(
-    session = session,
-    inputId = "exclusion_meta_val",
-    choices = unique(r6$tables$meta_filtered[,input$exclusion_meta_col]),
-    selected = character(0)
-  )
-
-  # Set metadata row exclusion to None
-  shiny::updateSelectizeInput(
-    session = session,
-    inputId = "exclusion_meta_row",
-    selected = character(0)
-  )
-}
-
-update_sample_filters = function(input, session, r6) {
-  # Update input for the manual exclusion
-  shiny::updateSelectizeInput(
-    session = session,
-    inputId = "selection_manual",
-    choices = rownames(r6$tables$raw_meta)
-  )
-
-  # Update available groups to filter
-  if (input$exclusion_meta_col != "") {
-    shiny::updateSelectInput(
-      session = session,
-      inputId = "exclusion_meta_val",
-      choices = unique(r6$tables$raw_meta[,input$exclusion_meta_col]),
-      selected = character(0)
-    )
-  }
-}
-
-update_lipid_filters = function(input, session, r6, prog_bars = T) {
-  # Update class selection
-  shiny::updateSelectizeInput(
-    session = session,
-    inputId = "class_selection",
-    choices = unique(r6$tables$feature_table$lipid_class),
-    selected = character(0)
-  )
-
-  # Update manual selection
-  shiny::updateSelectizeInput(
-    session = session,
-    inputId = "manual_selection",
-    # choices = remaining_cols,
-    choices = colnames(r6$tables$raw_data),
-    selected = character(0)
-  )
-
-  if (prog_bars) {
-    shinyWidgets::updateProgressBar(
-      session = session,
-      id = "col_count_bar",
-      value = ncol(r6$tables$raw_data),
-      total = ncol(r6$tables$imp_data)
-    )
-
-    shinyWidgets::updateProgressBar(
-      session = session,
-      id = "row_count_bar_data",
-      value = nrow(r6$tables$raw_data),
-      total = nrow(r6$tables$imp_data)
-    )
-  }
-
-
-}
-
-sample_row_selection = function(input, r6) {
-  # Initialise selection
-  selected_rows = c()
-
-  # Get blank rows
-  if ("Blanks" %in% input$non_samples_selection){
-    selected_rows = c(selected_rows, r6$indices$rownames_blanks)
-  }
-
-  # Get QC rows
-  if ("QCs" %in% input$non_samples_selection){
-    selected_rows = c(selected_rows, r6$indices$rownames_qcs)
-  }
-
-  # Get Pool rows
-  if ("Pools" %in% input$non_samples_selection){
-    selected_rows = c(selected_rows, r6$indices$rownames_pools)
-  }
-
-  # Add metadata and manual exclusions
-  selected_rows = c(selected_rows,input$exclusion_meta_row,input$selection_manual)
-  selected_rows = sort(unique(selected_rows))
-
-  return(selected_rows)
-}
-
 #-------------------------------------------------------- Lipidomics server ----
 
 lipidomics_server = function(id, ns, input, output, session, module_controler) {
+
+  print(paste0('SERVER START: ', id))
 
   # Extract some values and update the module controler
   r6 = module_controler$exp_r6[[stringr::str_replace(id, 'mod_', '')]]
@@ -242,24 +14,36 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   output$omics_ui = shiny::renderUI({
     bs4Dash::tabsetPanel(
       id = ns('skeleton_ui'),
-      type = "tabs",
-      shiny::tabPanel(
-        title = "Sample annotations",
-        shiny::uiOutput(
-          outputId = ns('up_metadata_ui')
-        )
-      ),
+      type = "pills",
+
       shiny::tabPanel(
         title = "Data",
-        shiny::uiOutput(
-          outputId = ns('up_data_ui')
+        id = ns('data_supertab'),
+
+        bs4Dash::tabsetPanel(
+          id = ns('data_tab'),
+          type = "tabs",
+
+          shiny::tabPanel(
+            title = "Sample annotations",
+            shiny::uiOutput(
+              outputId = ns('up_metadata_ui')
+            )
+          ),
+          shiny::tabPanel(
+            title = "Measurement data",
+            shiny::uiOutput(
+              outputId = ns('up_data_ui')
+            )
+          ),
+          shiny::tabPanel(
+            title = "Feature annotations",
+            shiny::uiOutput(
+              outputId = ns('up_feature_metadata_ui')
+            )
+          )
         )
-      ),
-      shiny::tabPanel(
-        title = "Feature annotations",
-        shiny::uiOutput(
-          outputId = ns('up_feature_metadata_ui')
-        )
+
       ),
       shiny::tabPanel(
         title = "Interactive visualization",
@@ -385,20 +169,39 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
           shiny::column(
             width = 6,
             # Select ID column
-            shiny::selectInput(inputId = ns("select_id_meta"), choices = NULL, label = "Sample IDs", multiple = F, width = "100%"),
+            shiny::selectInput(
+              inputId = ns("select_id_meta"),
+              choices = NULL,
+              label = "Sample IDs",
+              multiple = F,
+              width = "100%"),
 
             # Select group column
-            shiny::selectInput(inputId = ns("select_group_col"), choices = NULL, label = "Group column", multiple = F, width = "100%"),
-            shiny::span(textOutput(outputId = ns("found_groups")))
+            shiny::selectInput(
+              inputId = ns("select_group_col"),
+              choices = NULL,
+              label = "Group column",
+              multiple = F,
+              width = "100%"),
 
           ),
           shiny::column(
             width = 6,
             # Select sample type column
-            shiny::selectInput(inputId = ns("select_type_col"), choices = NULL, label = "Type column", multiple = F, width = "100%"),
+            shiny::selectInput(
+              inputId = ns("select_type_col"),
+              choices = NULL,
+              label = "Type column",
+              multiple = F,
+              width = "100%"),
 
             # Select batch column
-            shiny::selectInput(inputId = ns("select_batch_col"), choices = NULL, label = "Batch column", multiple = F, width = "100%"),
+            shiny::selectInput(
+              inputId = ns("select_batch_col"),
+              choices = NULL,
+              label = "Batch column",
+              multiple = F,
+              width = "100%"),
 
             shiny::span(textOutput(outputId = ns("found_batches")))
           )
@@ -560,10 +363,21 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       choices = colnames(r6$tables$imp_meta),
       selected = colnames(r6$tables$imp_meta)[2]
     )
+
+    # Batch regex & default
+    default_batch = grep(pattern = "batch",
+                         x = colnames(r6$tables$imp_meta),
+                         ignore.case = TRUE)
+    if (length(default_batch) == 0) {
+      default_batch = "None"
+    } else {
+      default_batch = colnames(r6$tables$imp_meta)[default_batch]
+    }
+
     shiny::updateSelectInput(
       inputId = 'select_batch_col',
-      choices = colnames(r6$tables$imp_meta),
-      selected = colnames(r6$tables$imp_meta)[4]
+      choices = c('None', colnames(r6$tables$imp_meta)),
+      selected = default_batch
     )
     shinyjs::disable("file_meta")
   })
@@ -584,7 +398,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     if (r6$preloaded_data) {return()}
     print_tm(m, 'Setting ID column')
     if (length(r6$tables$imp_meta[,input$select_id_meta]) == length(unique(r6$tables$imp_meta[,input$select_id_meta]))) {
-      r6$indices$id_col_meta = input$select_id_meta
+      r6$set_indexed_meta(id_col = input$select_id_meta)
       r6$set_raw_meta()
       update_sample_filters(input = input, session = session, r6 = r6)
 
@@ -612,119 +426,123 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
   # Group col selection
-  session$userData[[id]]$select_group_col = shiny::observeEvent(c(input$select_group_col, input$selection_drop, input$selection_keep, input$reset_meta), {
-    shiny::req(r6$tables$raw_meta)
-    if (r6$preloaded_data) {return()}
+  session$userData[[id]]$select_group_col = shiny::observeEvent(c(
+    input$select_group_col,
+    input$selection_drop,
+    input$selection_keep,
+    input$reset_meta),
+    {
 
-    print_tm(m, 'Setting group column')
-    data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
-    r6$indices$group_col = input$select_group_col
-    groups = unique_na_rm(r6$tables$imp_meta[, input$select_group_col])
-    freq = data.frame(table(base::factor(na.omit(data_table[, input$select_group_col]), levels = groups)))
-    names(freq) = c("value", "count")
+      shiny::req(r6$tables$indexed_meta)
 
-    output$group_distribution_preview = shiny::renderPlot(
-      ggplot2::ggplot(data = freq, aes(x = value, y = count)) +
-        geom_bar(stat = "identity", fill="blue")+
-        geom_text(aes(label=count), vjust=0.5, hjust = -0.5, size=6)+
-        xlab(NULL) +
-        ylab(NULL) +
-        ylim(0,max(freq$count)+10) +
-        theme_minimal() +
-        coord_flip() +
-        labs(title = 'Groups distribution')+
-        theme(
-          plot.title = element_text(size=17, hjust = 0.5),
-          axis.text.x = element_text(size = 15),
-          axis.text.y = element_text(size = 15)
-        )
-    )
-  })
+      meta_table = table_switch(table_name = input$select_meta_table, r6 = r6)
+      if (input$select_meta_table == 'Imported metadata table') {
+        rownames(meta_table) = meta_table[,input$select_id_meta]
+      }
+
+      r6$set_group_column(group_column = input$select_group_col)
+
+      groups = unique_na_rm(r6$tables$indexed_meta[, input$select_group_col])
+      freq = data.frame(table(base::factor(na.omit(meta_table[, input$select_group_col]), levels = groups)))
+      names(freq) = c("value", "count")
+
+      output$group_distribution_preview = shiny::renderPlot(
+        ggplot2::ggplot(data = freq, aes(x = value, y = count)) +
+          geom_bar(stat = "identity", fill="blue")+
+          geom_text(aes(label=count), vjust=0.5, hjust = -0.5, size=6)+
+          xlab(NULL) +
+          ylab(NULL) +
+          ylim(0,max(freq$count)+10) +
+          theme_minimal() +
+          coord_flip() +
+          labs(title = 'Groups distribution')+
+          theme(
+            plot.title = element_text(size=17, hjust = 0.5),
+            axis.text.x = element_text(size = 15),
+            axis.text.y = element_text(size = 15)
+          )
+      )
+    })
 
   # Batch col selection
   session$userData[[id]]$select_batch_col = shiny::observeEvent(input$select_batch_col, {
-    shiny::req(r6$tables$imp_meta)
-    if (r6$preloaded_data) {return()}
-    print_tm(m, 'Setting batch column')
-    r6$indices$batch_col = input$select_batch_col
+    shiny::req(r6$tables$indexed_meta)
+    r6$set_batch_column(batch_column = input$select_batch_col)
   })
 
   # Type col selection
-  session$userData[[id]]$select_type_col = shiny::observeEvent(c(input$select_type_col, input$blank_pattern, input$qc_pattern, input$pool_pattern, input$select_id_meta), {
-    shiny::req(c(r6$tables$imp_meta, input$blank_pattern, input$qc_pattern, input$pool_pattern))
-    if ((input$select_type_col != "") & (!is.null(input$blank_pattern)) & (!is.null(input$qc_pattern)) & (!is.null(input$pool_pattern))) {
-      r6$indices$type_col = input$select_type_col
-      type_vector = r6$tables$imp_meta[, input$select_type_col]
-      blank_idx = grep(pattern = input$blank_pattern,
-                       x = type_vector,
-                       ignore.case = TRUE)
-      qc_idx = grep(pattern = input$qc_pattern,
-                    x = type_vector,
-                    ignore.case = TRUE)
-      pool_idx = grep(pattern = input$pool_pattern,
-                      x = type_vector,
-                      ignore.case = TRUE)
+  session$userData[[id]]$select_type_col = shiny::observeEvent(c(
+      input$select_type_col,
+      input$blank_pattern,
+      input$qc_pattern,
+      input$pool_pattern),
+    {
+      shiny::req(c(
+        r6$tables$indexed_meta,
+        input$select_type_col,
+        input$blank_pattern,
+        input$qc_pattern,
+        input$pool_pattern))
 
-      sample_idx = 1:nrow(r6$tables$imp_meta)
-      sample_idx = setdiff(sample_idx, c(blank_idx, qc_idx, pool_idx))
+      if (input$select_type_col == "") {return()}
 
-      r6$indices$idx_blanks = blank_idx
-      r6$indices$idx_qcs = qc_idx
-      r6$indices$idx_pools = pool_idx
-      r6$indices$idx_samples = sample_idx
+      r6$set_type_column(type_column = input$select_type_col)
+      r6$set_blank_indices(blank_pattern = input$blank_pattern)
+      r6$set_qc_indices(qc_pattern = input$qc_pattern)
+      r6$set_pool_indices(pool_pattern = input$pool_pattern)
+      r6$set_sample_indices()
 
-      r6$indices$rownames_blanks = r6$tables$imp_meta[blank_idx, input$select_id_meta]
-      r6$indices$rownames_qcs = r6$tables$imp_meta[qc_idx, input$select_id_meta]
-      r6$indices$rownames_pools = r6$tables$imp_meta[pool_idx, input$select_id_meta]
-      r6$indices$rownames_samples = r6$tables$imp_meta[sample_idx, input$select_id_meta]
-    }
-  })
+    })
 
 
 
-  # Type col selection
-  session$userData[[id]]$select_type_col = shiny::observeEvent(c(input$select_type_col, input$blank_pattern, input$qc_pattern, input$pool_pattern, input$select_id_meta, input$select_meta_table, input$selection_drop, input$selection_keep, input$reset_meta), {
-    shiny::req(r6$tables$raw_meta)
-    if (r6$preloaded_data) {return()}
-    print_tm(m, 'Updating type plot.')
+  # Updating the type plots
+  session$userData[[id]]$select_type_col = shiny::observeEvent(c(
+    input$select_type_col,
+    input$blank_pattern,
+    input$qc_pattern,
+    input$pool_pattern,
+    input$select_id_meta,
+    input$select_meta_table,
+    input$selection_drop,
+    input$selection_keep,
+    input$reset_meta),
+    {
+      shiny::req(r6$tables$raw_meta)
 
-    data_table = table_switch(table_name = input$select_meta_table, r6 = r6)
-    if (input$select_meta_table == 'Imported metadata table') {
-      blank_idx = intersect(rownames(data_table), r6$indices$idx_blanks)
-      qc_idx = intersect(rownames(data_table), r6$indices$idx_qcs)
-      pool_idx = intersect(rownames(data_table), r6$indices$idx_pools)
-      sample_idx = intersect(rownames(data_table), r6$indices$idx_samples)
-    } else {
-      blank_idx = intersect(rownames(data_table), r6$indices$rownames_blanks)
-      qc_idx = intersect(rownames(data_table), r6$indices$rownames_qcs)
-      pool_idx = intersect(rownames(data_table), r6$indices$rownames_pools)
-      sample_idx = intersect(rownames(data_table), r6$indices$rownames_samples)
-    }
+      meta_table = table_switch(table_name = input$select_meta_table, r6 = r6)
+      if (input$select_meta_table == 'Imported metadata table') {
+        rownames(meta_table) = meta_table[,input$select_id_meta]
+      }
 
-    data_table[, input$select_type_col] = 'Samples'
-    data_table[blank_idx, input$select_type_col] = 'Blanks'
-    data_table[qc_idx, input$select_type_col] = 'QCs'
-    data_table[pool_idx, input$select_type_col] = 'Pools'
+      index_blanks = rownames(meta_table)[rownames(meta_table) %in% r6$indices$index_blanks]
+      index_qcs = rownames(meta_table)[rownames(meta_table) %in% r6$indices$index_qcs]
+      index_pools = rownames(meta_table)[rownames(meta_table) %in% r6$indices$index_pools]
 
-    freq_table = data.frame(table(base::factor(data_table[, input$select_type_col], levels = c('Pools', 'QCs', 'Blanks', 'Samples'))))
-    names(freq_table) = c("value", "count")
+      meta_table[, 'type_distribution'] = 'Samples'
+      meta_table[index_blanks, 'type_distribution'] = 'Blanks'
+      meta_table[index_qcs, 'type_distribution'] = 'QCs'
+      meta_table[index_pools, 'type_distribution'] = 'Pools'
 
-    output$type_distribution_preview = shiny::renderPlot(
-      ggplot2::ggplot(data = freq_table, aes(x = value, y = count)) +
-        geom_bar(stat = "identity", fill="blue")+
-        geom_text(aes(label=count), vjust=-0.5, hjust = 0.5, size=6)+
-        xlab(NULL) +
-        ylab(NULL) +
-        ylim(0,max(freq_table$count)+10) +
-        theme_minimal() +
-        labs(title = 'Type distribution')+
-        theme(
-          plot.title = element_text(size=17, hjust = 0.5),
-          axis.text.x = element_text(size = 15),
-          axis.text.y = element_text(size = 15)
-        )
-    )
-  })
+      freq_table = data.frame(table(base::factor(meta_table[, 'type_distribution'], levels = c('Pools', 'QCs', 'Blanks', 'Samples'))))
+      names(freq_table) = c("value", "count")
+
+      output$type_distribution_preview = shiny::renderPlot(
+        ggplot2::ggplot(data = freq_table, aes(x = value, y = count)) +
+          geom_bar(stat = "identity", fill="blue")+
+          geom_text(aes(label=count), vjust=-0.5, hjust = 0.5, size=6)+
+          xlab(NULL) +
+          ylab(NULL) +
+          ylim(0,max(freq_table$count)+10) +
+          theme_minimal() +
+          labs(title = 'Type distribution')+
+          theme(
+            plot.title = element_text(size=17, hjust = 0.5),
+            axis.text.x = element_text(size = 15),
+            axis.text.y = element_text(size = 15)
+          )
+      )
+    })
 
 
   # Update the metadata value once a metadata column is selected
@@ -766,6 +584,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   # Reset button
   session$userData[[id]]$reset_meta = shiny::observeEvent(input$reset_meta, {
     print_tm(m, 'Reseting metadata table')
+    r6$reset_sample_exclusion()
     r6$set_raw_meta()
     update_sample_filters(input = input, session = session, r6 = r6)
   })
@@ -773,11 +592,15 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   # Drop button
   session$userData[[id]]$selection_drop = shiny::observeEvent(input$selection_drop, {
     print_tm(m, 'Dropping selected samples')
-    selected_rows = sample_row_selection(input = input, r6 = r6)
-    if (!is.null(selected_rows)){
-      r6$tables$raw_meta = drop_rows(data_table = r6$tables$raw_meta,
-                                     rows = selected_rows)
-    }
+
+    r6$exclude_samples(manual_selection = c(input$exclusion_meta_row, input$selection_manual),
+                       select_blanks = base::ifelse("Blanks" %in% input$non_samples_selection, T, F),
+                       select_qcs = base::ifelse("QCs" %in% input$non_samples_selection, T, F),
+                       select_pools = base::ifelse("Pools" %in% input$non_samples_selection, T, F),
+                       exclude = TRUE)
+
+    r6$set_raw_meta()
+
     reset_sample_filters(input = input, session = session, r6 = r6)
     update_sample_filters(input = input, session = session, r6 = r6)
   })
@@ -785,11 +608,15 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   # Keep button
   session$userData[[id]]$selection_keep = shiny::observeEvent(input$selection_keep, {
     print_tm(m, 'Keeping selected samples')
-    selected_rows = sample_row_selection(input = input, r6 = r6)
-    if (!is.null(selected_rows)){
-      r6$tables$raw_meta = keep_rows(data_table = r6$tables$raw_meta,
-                                     rows = selected_rows)
-    }
+
+    r6$exclude_samples(manual_selection = c(input$exclusion_meta_row, input$selection_manual),
+                       select_blanks = base::ifelse("Blanks" %in% input$non_samples_selection, T, F),
+                       select_qcs = base::ifelse("QCs" %in% input$non_samples_selection, T, F),
+                       select_pools = base::ifelse("Pools" %in% input$non_samples_selection, T, F),
+                       exclude = F)
+
+    r6$set_raw_meta()
+
     reset_sample_filters(input = input, session = session, r6 = r6)
     update_sample_filters(input = input, session = session, r6 = r6)
   })
@@ -927,106 +754,102 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         shiny::selectInput(inputId = ns("select_id_data"), choices = NULL, label = "Sample IDs", multiple = F, width = "100%"),
 
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
+        shiny::selectInput(
+          inputId = ns('operation_order'),
+          label = "Pre-analysis Selection and Order",
+          choices = c("Imputation", "Batch correction", "Filtering"),
+          selected = c("Imputation", "Batch correction", "Filtering"),
+          multiple = T,
+          width = "100%"
+        ),
+
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
         shiny::fluidRow(
-          shiny::column(
-            width = 4,
-            shiny::h3("Imputation")
-          ),
-          shiny::column(
-            width = 3,
-            shinyWidgets::switchInput(
-              inputId = ns("apply_imputation"),
-              label = "Apply",
-              onLabel = "Y",
-              offLabel = "N",
-              value = F,
-              labelWidth = "80px"
-            )
-          ),
-          shiny::column(
-            width = 5,
-            shinyWidgets::switchInput(
-              inputId = ns("impute_before"),
-              label = "Before filtering",
-              onLabel = "Y",
-              offLabel = "N",
-              value = T,
-              labelWidth = "120px"
-            )
+          shiny::selectInput(
+            inputId = ns('batch_effect_correction'),
+            label = "Batch effect correction",
+            choices = c('None', 'No controls', 'Pool', 'QC'),
+            selected = "None",
+            multiple = FALSE,
+            width = '100%'
           )
         ),
+
+        shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
         shiny::fluidRow(
-          shiny::column(
-            width = 6,
-            shiny::selectizeInput(inputId = ns("na_imputation"),
-                                  choices = c('minimum', 'mean', 'median', 'max'),
-                                  selected = "median",
-                                  label = 'Imputation method',
-                                  multiple = F,
-                                  width = "100%")
-          ),
-          shiny::column(
-            width = 6,
-            shiny::sliderInput(
-              inputId = ns('imputation_min_values'),
-              label = 'Minimum values',
-              min = 0,
-              max = 1,
-              value = 0.6,
-              step = 0.05,
-              width = '100%'
-            )
-          )
+          shiny::selectizeInput(inputId = ns("na_imputation"),
+                                choices = c('None', 'minimum', 'mean', 'median', 'max'),
+                                selected = "None",
+                                label = 'Imputation method',
+                                multiple = F,
+                                width = "100%")
         ),
 
         # Blank and group filtering
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
         shiny::fluidRow(
           shiny::column(
-            width = 8,
-            shiny::h3("Blank & Group filtering")
-          ),
-          shiny::column(
-            width = 4,
-            shinyWidgets::switchInput(
-              inputId = ns("apply_filtering"),
-              label = "Apply",
-              onLabel = "Yes",
-              offLabel = "No",
-              value = T,
-              labelWidth = "80px"
-            )
+            width = 12,
+            shiny::h6("Filtering")
           )
         ),
 
         shiny::fluidRow(
-          shiny::textInput(inputId = ns("blank_multiplier"), label = 'Blank multiplier', value = 2, width = "100%")
+          shiny::numericInput(
+            inputId = ns("blank_multiplier"),
+            label = 'Blank multiplier',
+            value = 2,
+            min = 0,
+            step = 0.5,
+            width = "100%")
         ),
 
         shiny::fluidRow(
           # Sample threshold
           shiny::column(
             width = 6,
-            shiny::sliderInput(inputId = ns("sample_threshold"), label = "Sample threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%")
+            shiny::sliderInput(
+              inputId = ns("sample_threshold"),
+              label = "Sample threshold",
+              value = 0.8,
+              min = 0,
+              max = 1,
+              step = 0.05,
+              width = "100%")
           ),
           # Group threshold
           shiny::column(
             width = 6,
-            shiny::sliderInput(inputId = ns("group_threshold"), label = "Group threshold", value = 0.8, min = 0, max = 1, step = 0.05, width = "100%")
+            shiny::sliderInput(
+              inputId = ns("group_threshold"),
+              label = "Group threshold",
+              value = 0.8,
+              min = 0,
+              max = 1,
+              step = 0.05,
+              width = "100%")
           )
         ),
 
         # Normalisation
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-        shiny::h3("Normalise to column"),
         shiny::selectizeInput(inputId = ns("normalise_to_col"),
-                              label = NULL,
-                              choices = character(0),
+                              label = "Normalise to column",
+                              choices = "None",
                               width = "100%"),
 
         # Manual filtering
         shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
-        shiny::h3("Manual filtering"),
+        shiny::h6("Manual filtering"),
+        shiny::fluidRow(
+          shiny::selectizeInput(
+            inputId = ns('feature_col_selection'),
+            label = "Column selection",
+            choices = NULL,
+            multiple = F,
+            width = "100%"
+          )
+        ),
         shiny::fluidRow(
           shiny::column(
             width = 6,
@@ -1067,7 +890,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     r6$tables$imp_data = data_table
     # Preview table
     output$data_preview_table = renderDataTable({
-      DT::datatable(data_table, options = list(paging = TRUE))
+      DT::datatable(utils::head(data_table[,1:100]), options = list(paging = TRUE))
     })
 
     if (input$table_box_data$collapsed) {
@@ -1087,8 +910,8 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     # Update normalise to column
     shiny::updateSelectInput(
       inputId = 'normalise_to_col',
-      choices = colnames(r6$tables$raw_meta),
-      selected = character(0)
+      choices = c("None", colnames(r6$tables$raw_meta)),
+      selected = "None"
     )
 
     shinyjs::disable("file_data")
@@ -1124,7 +947,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     }
 
     output$data_preview_table = renderDataTable({
-      DT::datatable(data_table, options = list(paging = TRUE))
+      DT::datatable(utils::head(data_table[,1:100]), options = list(paging = TRUE))
     })
 
   })
@@ -1137,17 +960,20 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     if (r6$preloaded_data) {return()}
     print_tm(m, 'Setting ID column')
     if (length(r6$tables$imp_data[,input$select_id_data]) == length(unique(r6$tables$imp_data[,input$select_id_data]))) {
-      r6$indices$id_col_data = input$select_id_data
-      r6$get_blank_table()
-      r6$set_raw_data(apply_imputation = input$apply_imputation,
-                      impute_before = input$impute_before,
-                      apply_filtering = input$apply_filtering,
-                      imputation_function = input$na_imputation,
-                      val_threshold = as.numeric(input$imputation_min_values),
-                      blank_multiplier = as.numeric(input$blank_multiplier),
-                      sample_threshold = as.numeric(input$sample_threshold),
-                      group_threshold = as.numeric(input$group_threshold),
-                      norm_col = input$normalise_to_col)
+
+      try_method(r6 = r6,
+                 method_name = "set_indexed_data",
+                 id_col = input$select_id_data)
+
+      try_method(r6 = r6,
+                 method_name = "set_raw_data",
+                 operation_order = input$operation_order,
+                 blank_multiplier = input$blank_multiplier,
+                 sample_threshold = input$sample_threshold,
+                 group_threshold = input$group_threshold,
+                 imputation_method = input$na_imputation,
+                 batch_effect_correction = input$batch_effect_correction,
+                 norm_col = input$normalise_to_col)
 
       r6$derive_data_tables()
 
@@ -1157,12 +983,12 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         selected = 'Raw data table'
       )
 
-      # Update class selection
+      # Update column selection
       shiny::updateSelectizeInput(
         session = session,
-        inputId = "class_selection",
-        choices = unique(r6$tables$feature_table$lipid_class),
-        selected = character(0)
+        inputId = "feature_col_selection",
+        choices = colnames(r6$tables$feature_table),
+        selected = colnames(r6$tables$feature_table)[1]
       )
 
       # Update manual selection
@@ -1185,13 +1011,25 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     }
   })
 
+  # Feature selection
+  session$userData[[id]]$manual_feature_selection = shiny::observeEvent(input$feature_col_selection, {
+    shiny::req(input$feature_col_selection)
+    # Update class selection
+    shiny::updateSelectizeInput(
+      session = session,
+      inputId = "class_selection",
+      choices = unique(r6$tables$feature_table[, input$feature_col_selection]),
+      selected = character(0)
+    )
+
+  })
+
   # Feature filters
   session$userData[[id]]$row_col_data = shiny::observeEvent(
-    c(input$apply_imputation,
-      input$impute_before,
+    c(input$operation_order,
+      input$batch_effect_correction,
       input$na_imputation,
       input$imputation_min_values,
-      input$apply_filtering,
       input$blank_multiplier,
       input$sample_threshold,
       input$group_threshold,
@@ -1204,15 +1042,15 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         shiny::req(r6$tables$raw_data)
         if (r6$preloaded_data) {return()}
         print_tm(m, 'Updating data tables')
-        r6$set_raw_data(apply_imputation = input$apply_imputation,
-                        impute_before = input$impute_before,
-                        apply_filtering = input$apply_filtering,
-                        imputation_function = input$na_imputation,
-                        val_threshold = as.numeric(input$imputation_min_values),
-                        blank_multiplier = as.numeric(input$blank_multiplier),
-                        sample_threshold = as.numeric(input$sample_threshold),
-                        group_threshold = as.numeric(input$group_threshold),
-                        norm_col = input$normalise_to_col)
+        try_method(r6 = r6,
+                   method_name = "set_raw_data",
+                   operation_order = input$operation_order,
+                   blank_multiplier = input$blank_multiplier,
+                   sample_threshold = input$sample_threshold,
+                   group_threshold = input$group_threshold,
+                   imputation_method = input$na_imputation,
+                   batch_effect_correction = input$batch_effect_correction,
+                   norm_col = input$normalise_to_col)
 
         r6$derive_data_tables()
 
@@ -1228,7 +1066,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         shiny::updateSelectizeInput(
           session = session,
           inputId = "class_selection",
-          choices = unique(r6$tables$feature_table$lipid_class),
           selected = character(0)
         )
 
@@ -1260,7 +1097,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
           )
         }
         output$data_preview_table = renderDataTable({
-          DT::datatable(data_table, options = list(paging = TRUE))
+          DT::datatable(utils::head(data_table[,1:100]), options = list(paging = TRUE))
         })
       })
 
@@ -1268,7 +1105,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   session$userData[[id]]$feature_drop = shiny::observeEvent(input$drop_cols,{
     shiny::req(r6$tables$feature_table)
     print_tm(m, 'Dropping features')
-    selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table$lipid_class %in% input$class_selection)]
+    selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table[,input$feature_col_selection] %in% input$class_selection)]
     selected_species = unique(c(selected_species, input$manual_selection))
     r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
     r6$indices$excluded_cols = c(r6$indices$excluded_cols, selected_species)
@@ -1286,7 +1123,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     shiny::updateSelectizeInput(
       session = session,
       inputId = "class_selection",
-      choices = unique(r6$tables$feature_table$lipid_class),
       selected = character(0)
     )
 
@@ -1318,13 +1154,12 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   session$userData[[id]]$keep_cols = shiny::observeEvent(input$keep_cols,{
     shiny::req(r6$tables$feature_table)
     print_tm(m, 'Keeping features')
-    selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table$lipid_class %in% input$class_selection)]
+    selected_species = rownames(r6$tables$feature_table)[which(r6$tables$feature_table[,input$feature_col_selection] %in% input$class_selection)]
     selected_species = unique(c(selected_species, input$manual_selection))
     selected_species = colnames(r6$tables$raw_data)[!(colnames(r6$tables$raw_data) %in% selected_species)]
     r6$indices$excluded_cols = c(r6$indices$excluded_cols, selected_species)
 
     r6$tables$raw_data = drop_cols(data_table = r6$tables$raw_data, cols = selected_species)
-
     r6$derive_data_tables()
 
     if (input$select_data_table %in% c('Imported data table', 'Raw data table')) {
@@ -1338,7 +1173,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     shiny::updateSelectizeInput(
       session = session,
       inputId = "class_selection",
-      choices = unique(r6$tables$feature_table$lipid_class),
       selected = character(0)
     )
 
@@ -1578,7 +1412,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Preview all / subset switch
   session$userData[[id]]$enrichment_upload_button = shiny::observeEvent(input$enrichment_upload_button, {
-    print('upload enrichment table')
     shinyjs::disable("enrichment_upload_button")
 
     table_name = input$enrich_name_add
@@ -1710,7 +1543,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
   # Remove annotations table
   session$userData[[id]]$remove_annotations_table = shiny::observeEvent(c(input$remove_annotations_table) , {
-    print(input$annotations_table_select)
     r6$tables$external_enrichment_tables[[input$annotations_table_select]] = NULL
     if (length(r6$tables$external_enrichment_tables[[input$annotations_table_select]]) > 0) {
       shiny::updateSelectInput(
@@ -1749,114 +1581,138 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     }
   )
 
-
-
-
   #------------------------------------------ Functional analysis rendering ----
   output$functional_analysis_ui = shiny::renderUI({
 
     bs4Dash::tabsetPanel(
       id = ns('functional_analysis_subui'),
-      type = "pills",
+      type = "tabs",
       shiny::tabPanel(
         title = "Functional comparison",
 
         shiny::tagList(
           shiny::fluidRow(
             shiny::column(
-              width = 12,
-              shiny::h4('Data preparation'),
-            )
-          ),
-          shiny::fluidRow(
-            shiny::column(
-              width= 4,
+              width = 4,
+              shiny::h4('Sample selection'),
               shiny::selectInput(
                 inputId = ns('gseaprep_table_select'),
                 label = 'Select table',
                 choices = NULL,
-                width = '100%'
-              )
-            ),
-            shiny::column(
-              width= 4,
+                width = '90%'
+              ),
               shiny::selectInput(
                 inputId = ns('gseaprep_group_col'),
                 label = 'Group column',
                 choices = NULL,
-                width = '100%'
-              )
-            ),
-            shiny::column(
-              width = 4,
+                width = '90%'
+              ),
               shiny::selectInput(
                 inputId = ns('gseaprep_groups'),
                 label = 'Select two groups',
                 choices = NULL,
-                width = '100%',
+                width = '90%',
                 multiple = T
               )
-            )
-          ),
-          shiny::fluidRow(
-            shiny::column(
-              width = 4,
-              shiny::selectInput(
-                inputId = ns('gseaprep_method'),
-                label = 'FC method',
-                choices = c('median', 'mean'),
-                selected = 'mean',
-                width = '100%'
-              )
             ),
             shiny::column(
-              width = 4,
-              shiny::selectInput(
-                inputId = ns('gseaprep_test'),
-                label = 'Test',
-                choices = c('Wilcoxon', 't-Test'),
-                selected = 't-Test',
-                width = '100%'
-              )
-            ),
-            shiny::column(
-              width = 4,
-              shiny::selectInput(
-                inputId = ns('gseaprep_adjustment'),
-                label = 'Adjustment',
-                choices = c('None', 'Benjamini-Hochberg'),
-                selected = 'Benjamini-Hochberg',
-                width = '100%'
-              )
-            )
-          ),
-          shiny::fluidRow(
-            shiny::column(
-              width = 12,
-              shiny::sliderInput(
-                inputId = ns('gseaprep_pval'),
-                label = 'p-value cutoff (Features, only for ORA)',
-                min = 0.01,
-                max = 0.9,
-                value = 0.05,
-                step = 0.01,
-                width = '100%'
+              width = 8,
+              shiny::h4('Feature selection'),
+              shiny::fluidRow(
+                shiny::column(
+                  width = 4,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_test'),
+                    label = 'Statistical test',
+                    choices = c('Wilcoxon', 't-Test'),
+                    selected = 't-Test',
+                    width = '100%'
+                  )
+                ),
+                shiny::column(
+                  width = 4,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_adjustment'),
+                    label = 'Adjustment',
+                    choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                    selected = 'BH',
+                    width = '100%'
+                  )
+                ),
+                shiny::column(
+                  width = 4,
+                  shiny::selectInput(
+                    inputId = ns('gseaprep_method'),
+                    label = 'FC calculation',
+                    choices = c('median', 'mean'),
+                    selected = 'mean',
+                    width = '100%'
+                  )
+                )
               ),
-              shiny::hr(style = "border-top: 1px solid #7d7d7d;")
+              shinyWidgets::radioGroupButtons(
+                inputId = ns('fa_feature_selection'),
+                label = NULL,
+                choices = c('Statistical selection (ORA only, EA: all features)', 'User selection'),
+                status = "info",
+                justified = TRUE
+              ),
+              shiny::fluidRow(
+                shiny::column(
+                  width = 6,
+                  shiny::numericInput(
+                    inputId = ns('gseaprep_pval'),
+                    label = "ORA p-value cut-off",
+                    value = 0.05,
+                    min = 0,
+                    max = 0.99,
+                    step = 0.01,
+                    width = '100%'
+                  ),
+                  shiny::numericInput(
+                    inputId = ns('or_fc_threshold'),
+                    label = 'ORA fold change cut-off',
+                    value = 2,
+                    min = 0,
+                    step = 0.05,
+                    width = '100%'
+                  )
+                ),
+                shiny::column(
+                  width = 6,
+                  shiny::selectInput(
+                    inputId = ns('fa_feature_col'),
+                    label = "Feature annotations column",
+                    choices = NULL,
+                    width = '100%'
+                  ),
+                  shiny::selectizeInput(
+                    inputId = ns("fa_feature_values"),
+                    label = "Group(s) to keep",
+                    choices = NULL,
+                    multiple = TRUE,
+                    width = '100%'
+                  )
+                )
+              )
             )
           ),
+          shiny::hr(style = "border-top: 1px solid #7d7d7d;"),
           shiny::fluidRow(
             shiny::column(
               width = 6,
               shiny::h4('Enrichment analysis'),
 
-              shinyWidgets::actionBttn(
+              shiny::actionButton(
                 inputId = ns('run_gsea'),
-                label = "Run GSEA",
-                style = "material-flat",
-                color = 'success',
-                block = T,
-                icon = icon("play")
+                label = "Run EA",
+                icon = icon("play"),
+                style ="color: #fff; background-color: #00A86B; border-color: #00A86B",
+                width = '100%'
+              ),
+
+              shiny::fluidRow(
+                shiny::br()
               ),
 
               bs4Dash::box(
@@ -1870,7 +1726,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
                       width = 6,
                       shiny::selectInput(
                         inputId = ns('gsea_go'),
-                        label = 'Terms',
+                        label = 'Feature sets',
                         choices = r6$hardcoded_settings$enrichment_analysis$terms,
                         selected = NULL,
                         width = '100%'
@@ -1880,9 +1736,9 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
                       width = 6,
                       shiny::selectInput(
                         inputId = ns('gsea_adjustment'),
-                        label = 'Adjustment',
-                        choices = r6$hardcoded_settings$enrichment_analysis$adjustment,
-                        selected = NULL,
+                        label = 'Adjustment (feature sets)',
+                        choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                        selected = "BH",
                         width = '100%'
                       )
                     )
@@ -1890,27 +1746,26 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
                   shiny::fluidRow(
                     shiny::column(
-                      width = 4,
-                      shiny::textInput(
-                        inputId = ns('gsea_min_size'),
-                        label = 'Min. geneset size',
-                        value = 3
+                      width = 6,
+                      shiny::numericInput(
+                        inputId = ns('ea_min_size'),
+                        label = 'Min. feature set size',
+                        value = 3,
+                        min = 1,
+                        max = NA,
+                        step = 5,
+                        width = '100%'
                       )
                     ),
                     shiny::column(
-                      width = 4,
-                      shiny::textInput(
-                        inputId = ns('gsea_max_size'),
-                        label = 'Max. geneset size',
-                        value = 800
-                      )
-                    ),
-                    shiny::column(
-                      width = 4,
-                      shiny::textInput(
-                        inputId = ns('gsea_showcat'),
-                        label = 'Show category',
-                        value = 200,
+                      width = 6,
+                      shiny::numericInput(
+                        inputId = ns('ea_max_size'),
+                        label = 'Max. feature set size',
+                        value = 800,
+                        min = 1,
+                        max = NA,
+                        step = 50,
                         width = '100%'
                       )
                     )
@@ -1918,12 +1773,25 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
                   shiny::sliderInput(
                     inputId = ns('gsea_pval'),
-                    label = 'p-value cutoff (terms)',
+                    label = 'p-value cutoff (feature sets)',
                     min = 0.01,
                     max = 0.9,
                     value = 0.05,
                     step = 0.01,
                     width = '100%'
+                  )
+                ),
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 12,
+                    shiny::numericInput(
+                      inputId = ns('ea_seed'),
+                      label = "Seed",
+                      value = 1,
+                      min = 1,
+                      step = 1,
+                      width = '100%'
+                    )
                   )
                 ),
 
@@ -1937,15 +1805,17 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
             shiny::column(
               width = 6,
               shiny::h4('Over representation analysis'),
+
+              shiny::actionButton(
+                inputId = ns('run_ora'),
+                label = "Run ORA",
+                icon = icon("play"),
+                style ="color: #fff; background-color: #00A86B; border-color: #00A86B",
+                width = '100%'
+              ),
+
               shiny::fluidRow(
-                shinyWidgets::actionBttn(
-                  inputId = ns('run_or'),
-                  label = "Run ORA",
-                  style = "material-flat",
-                  color = 'success',
-                  block = T,
-                  icon = icon("play")
-                )
+                shiny::br()
               ),
 
               bs4Dash::box(
@@ -1958,7 +1828,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
                     width = 6,
                     shiny::selectInput(
                       inputId = ns('or_go_ont'),
-                      label = 'Terms',
+                      label = 'Feature sets',
                       choices = r6$hardcoded_settings$over_representation_analysis$terms,
                       selected = NULL,
                       width = '100%'
@@ -1968,38 +1838,35 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
                     width = 6,
                     shiny::selectInput(
                       inputId = ns('or_pval_adjustment'),
-                      label = 'Adjustment',
-                      choices = r6$hardcoded_settings$over_representation_analysis$adjustment,
-                      selected = NULL,
+                      label = 'Adjustment (feature sets)',
+                      choices = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"),
+                      selected = "BH",
                       width = '100%'
                     )
                   )
                 ),
                 shiny::fluidRow(
                   shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('or_min_gssize'),
-                      label = 'Min. geneset size',
+                    width = 6,
+                    shiny::numericInput(
+                      inputId = ns('ora_min_gssize'),
+                      label = 'Min. feature set size',
                       value = 10,
+                      min = 1,
+                      max = NA,
+                      step = 5,
                       width = '100%'
                     )
                   ),
                   shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('or_max_gssize'),
-                      label = 'Max. geneset size',
+                    width = 6,
+                    shiny::numericInput(
+                      inputId = ns('ora_max_gssize'),
+                      label = 'Max. feature set size',
                       value = 500,
-                      width = '100%'
-                    )
-                  ),
-                  shiny::column(
-                    width = 4,
-                    shiny::textInput(
-                      inputId = ns('or_fc_threshold'),
-                      label = 'FC cutoff',
-                      value = 2,
+                      min = 1,
+                      max = NA,
+                      step = 50,
                       width = '100%'
                     )
                   )
@@ -2009,7 +1876,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
                     width = 6,
                     shiny::sliderInput(
                       inputId = ns('or_pval_cutoff'),
-                      label = 'p-value cutoff (terms)',
+                      label = 'p-value cutoff (feature sets)',
                       min = 0.01,
                       max = 0.9,
                       value = 0.05,
@@ -2021,11 +1888,24 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
                     width = 6,
                     shiny::sliderInput(
                       inputId = ns('or_qval_cutoff'),
-                      label = 'q-value cutoff (terms)',
+                      label = 'q-value cutoff (feature sets)',
                       min = 0.01,
                       max = 0.9,
                       value = 0.05,
                       step = 0.01,
+                      width = '100%'
+                    )
+                  )
+                ),
+                shiny::fluidRow(
+                  shiny::column(
+                    width = 12,
+                    shiny::numericInput(
+                      inputId = ns('ora_seed'),
+                      label = "Seed",
+                      value = 1,
+                      min = 1,
+                      step = 1,
                       width = '100%'
                     )
                   )
@@ -2073,6 +1953,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     )
   })
 
+  # Entering FA tab observe
   shiny::observe({
     shiny::req(input$skeleton_ui)
     if (input$skeleton_ui == "Functional analysis") {
@@ -2090,17 +1971,61 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
       )
 
       shiny::updateSelectInput(
+        inputId = 'fa_feature_col',
+        choices = colnames(r6$tables$feature_table)
+      )
+
+      shiny::updateSelectInput(
         inputId = 'gsea_go',
-        choices = unique(c(r6$hardcoded_settings$enrichment_analysis$terms, names(r6$tables$feature_list)))
+        choices = unique(c(r6$hardcoded_settings$enrichment_analysis$terms, colnames(r6$tables$feature_table)))
       )
 
       shiny::updateSelectInput(
         inputId = 'or_go_ont',
-        choices = unique(c(r6$hardcoded_settings$over_representation_analysis$terms, names(r6$tables$feature_list)))
+        choices = unique(c(r6$hardcoded_settings$over_representation_analysis$terms, colnames(r6$tables$feature_table)))
       )
 
     }
   })
+
+  # Entering Feature tab observe
+  shiny::observe({
+    shiny::req(input$skeleton_ui)
+    if (input$skeleton_ui == "Data") {
+      shiny::updateSelectizeInput(
+        inputId = 'feature_col_selection',
+        choices = colnames(r6$tables$feature_table)
+      )
+
+    }
+  })
+
+
+  # Radio button detect
+  session$userData[[id]]$fa_feature_selection_detect = shiny::observeEvent(input$fa_feature_selection, {
+    if (input$fa_feature_selection == 'Statistical selection (ORA only, EA: all features)') {
+      shinyjs::disable("fa_feature_col")
+      shinyjs::disable("fa_feature_values")
+      shinyjs::enable("or_fc_threshold")
+      shinyjs::enable("gseaprep_pval")
+
+    } else if (input$fa_feature_selection == 'User selection') {
+      shinyjs::enable("fa_feature_col")
+      shinyjs::enable("fa_feature_values")
+      shinyjs::disable("or_fc_threshold")
+      shinyjs::disable("gseaprep_pval")
+    }
+  })
+
+  # Update groups to keep
+  session$userData[[id]]$fa_feature_col_detect = shiny::observeEvent(input$fa_feature_col, {
+    shiny::req(input$fa_feature_col)
+    shiny::updateSelectizeInput(
+      inputId = "fa_feature_values",
+      choices = unique(r6$tables$feature_table[,input$fa_feature_col])
+    )
+  })
+
 
   #----------------------------------------------- Visualize data rendering ----
   output$visualize_data_ui = shiny::renderUI({
@@ -2157,6 +2082,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
 
   color_palette = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 11, name = 'Spectral'))(40)
   # Plotting events
+  dendrogram_events(r6, dimensions_obj, color_palette, input, output, session)
   class_distribution_events(r6, dimensions_obj, color_palette, input, output, session)
   class_comparison_events(r6, dimensions_obj, color_palette, input, output, session)
   volcano_plot_events(r6, dimensions_obj, color_palette, input, output, session)
@@ -2164,7 +2090,8 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   samples_correlation_events(r6, dimensions_obj, color_palette, input, output, session)
   feature_correlation_events(r6, dimensions_obj, color_palette, input, output, session)
   pca_events(r6, dimensions_obj, color_palette, input, output, session)
-  db_plot_events(r6, dimensions_obj, color_palette, input, output, session)
+  double_bonds_plot_events(r6, dimensions_obj, color_palette, input, output, session)
+
   session$userData[[id]]$showPlots = shiny::observeEvent(input$showPlots,{
 
     # Update x dimensions in px and bs, and y in px
@@ -2183,7 +2110,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     }
 
     # Display plot boxes
-    print_tm(m, paste0("Plot selection: ", paste(input$showPlots, collapse = ", ")))
     if (length(input$showPlots) == 1) {
       plot_one_lips(r6 = r6,
                     dimensions_obj = dimensions_obj,
@@ -2253,7 +2179,7 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   })
 
 
-  #------------------------------------------- Geneset enrichment rendering ----
+  #------------------------------------------ Enrichment analysis rendering ----
 
   output$geneset_enrichment_ui = shiny::renderUI({
     shiny::tagList(
@@ -2284,31 +2210,56 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     )
   })
 
-  #---------------------------------------------- Geneset enrichment server ----
+  #--------------------------------------------- Enrichment analysis server ----
 
   session$userData[[id]]$select_feature_type = shiny::observeEvent(input$select_feature_type, {
     if (r6$preloaded_data) {return()}
-    print_tm(m, paste0('GSEA: feature ID type set to ', input$select_feature_type))
+    print_tm(m, paste0('FA: feature ID type set to ', input$select_feature_type))
     r6$indices$feature_id_type = input$select_feature_type
   })
 
 
   session$userData[[id]]$run_gsea = shiny::observeEvent(input$run_gsea, {
     shiny::req(length(input$gseaprep_groups) == 2)
-    print_tm(m, "GSEA started")
+    print_tm(m, "EA started")
     shinyjs::disable("run_gsea")
+    waiter::waiter_show(
+      id = ns("run_gsea"),
+      html = spin_circle(),
+      color = "#00A86B"
+    )
+
+    if (input$fa_feature_selection == 'Statistical selection (ORA only, EA: all features)') {
+      input_table = table_switch(input$gseaprep_table_select, r6)
+      selected_features = NULL
+    } else if (input$fa_feature_selection == 'User selection') {
+      if (length(input$fa_feature_values) == 0) {
+        print_tme(m, 'User selection filtering selected, but not feature groups selected.')
+        waiter::waiter_hide(
+          id = ns("run_gsea")
+        )
+        shinyjs::enable("run_gsea")
+        return()
+      }
+      input_table = table_switch(input$gseaprep_table_select, r6)
+      selected_features = rownames(r6$tables$feature_table)[which(r6$tables$feature_table[, input$fa_feature_col] %in% input$fa_feature_values)]
+      input_table = input_table[,selected_features]
+    }
 
     base::tryCatch({
-      r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
-                       group_col = input$gseaprep_group_col,
-                       group_1 = input$gseaprep_groups[1],
-                       group_2 = input$gseaprep_groups[2],
-                       used_function = input$gseaprep_method,
-                       test = input$gseaprep_test,
-                       context = 'gsea')
+      r6$get_ea_feature_table(data_table = input_table,
+                              group_col = input$gseaprep_group_col,
+                              group_1 = input$gseaprep_groups[1],
+                              group_2 = input$gseaprep_groups[2],
+                              fc_function = input$gseaprep_method,
+                              statistical_test = input$gseaprep_test,
+                              adjustment_method = input$gseaprep_adjustment)
 
-      if (input$gsea_go %in% c('ALL', 'BP', 'MF', 'CC')) {
-        ont = input$gsea_go
+
+
+
+      if (input$gsea_go %in% c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)')) {
+        ont = gene_ontology_switch(input$gsea_go)
         custom_col = NULL
       } else if(input$gsea_go == "") {
         ont = NULL
@@ -2317,53 +2268,76 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         ont = NULL
         custom_col = input$gsea_go
       }
-      r6$get_gsea_object(ont = ont,
-                         custom_col = custom_col,
-                         minGSSize = as.numeric(input$gsea_min_size),
-                         maxGSSize = as.numeric(input$gsea_max_size),
-                         p_value_cutoff = input$gsea_pval,
-                         verbose = TRUE,
-                         OrgDb = "org.Hs.eg.db",
-                         pAdjustMethod = input$gsea_adjustment,
-                         termsim_showcat = as.numeric(input$gsea_showcat))
+
+      r6$get_ea_object(custom_col = custom_col,
+                       selected_features = selected_features,
+                       ont = ont,
+                       minGSSize = input$ea_min_size,
+                       maxGSSize = input$ea_max_size,
+                       terms_p_value_cutoff = input$gsea_pval,
+                       terms_pAdjustMethod = input$gsea_adjustment,
+                       seed = input$ea_seed)
 
 
-      if (nrow(r6$tables$gsea_object@result) == 0) {
-        print_tm(m, "GSEA failed: no term enriched under specific pvalueCutoff")
+      results = nrow(r6$tables$ea_object)
+      if (results == 0) {
+        print_tm(m, "EA failed: no term enriched under specific pvalueCutoff")
       } else {
-        print_tm(m, "GSEA finished")
+        print_tm(m, paste0("EA successful: ", results, ' terms.'))
       }
     },error=function(e){
-      print_tm(r6$name, 'GSEA failed.')
+      print_tm(r6$name, paste0('EA failed: ', e))
     },finally={}
     )
-
+    waiter::waiter_hide(
+      id = ns("run_gsea")
+    )
     shinyjs::enable("run_gsea")
   })
 
-  session$userData[[id]]$run_or = shiny::observeEvent(input$run_or, {
+  #------------------------------------ Over representation analysis server ----
+
+  session$userData[[id]]$run_ora = shiny::observeEvent(input$run_ora, {
     shiny::req(length(input$gseaprep_groups) == 2)
-    print_tm(m, "OR started")
-    shinyjs::disable("run_or")
+    print_tm(m, "ORA started")
+    shinyjs::disable("run_ora")
+    waiter::waiter_show(
+      id = ns("run_ora"),
+      html = spin_circle(),
+      color = "#00A86B"
+    )
 
-
-
-
+    if (input$fa_feature_selection == 'Statistical selection (ORA only, EA: all features)') {
+      input_table = table_switch(input$gseaprep_table_select, r6)
+      selected_features = NULL
+    } else if (input$fa_feature_selection == 'User selection') {
+      if (length(input$fa_feature_values) == 0) {
+        print_tme(m, 'User selection filtering selected, but not feature groups selected.')
+        waiter::waiter_hide(
+          id = ns("run_ora")
+        )
+        shinyjs::enable("run_ora")
+        return()
+      }
+      input_table = table_switch(input$gseaprep_table_select, r6)
+      selected_features = rownames(r6$tables$feature_table)[which(r6$tables$feature_table[, input$fa_feature_col] %in% input$fa_feature_values)]
+    }
 
     base::tryCatch({
 
-      r6$get_prot_list(data_table = table_switch(input$gseaprep_table_select, r6),
-                       group_col = input$gseaprep_group_col,
-                       group_1 = input$gseaprep_groups[1],
-                       group_2 = input$gseaprep_groups[2],
-                       used_function = input$gseaprep_method,
-                       test = input$gseaprep_test,
-                       context = 'ora')
+      r6$get_ora_feature_table(data_table = input_table,
+                               group_col = input$gseaprep_group_col,
+                               group_1 = input$gseaprep_groups[1],
+                               group_2 = input$gseaprep_groups[2],
+                               fc_function = input$gseaprep_method,
+                               statistical_test = input$gseaprep_test,
+                               adjustment_method = input$gseaprep_adjustment)
 
-      if (input$or_go_ont %in% c('ALL', 'BP', 'MF', 'CC')) {
-        ont = input$or_go_ont
+
+      if (input$or_go_ont %in% c('Gene ontology (ALL)', 'Gene ontology (BP)', 'Gene ontology (MF)', 'Gene ontology (CC)')) {
+        ont = gene_ontology_switch(input$or_go_ont)
         custom_col = NULL
-      } else if(input$or_go_ont == "") {
+      } else if (input$or_go_ont == "") {
         ont = NULL
         custom_col = NULL
       } else {
@@ -2371,35 +2345,41 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
         custom_col = input$or_go_ont
       }
 
-      r6$over_representation_analysis(custom_col = custom_col,
-                                      ont = ont,
-                                      pval_cutoff_features = input$gseaprep_pval,
-                                      padjust_features = input$gseaprep_adjustment,
-                                      pval_cutoff = input$or_pval_cutoff,
-                                      pAdjustMethod = input$or_pval_adjustment,
-                                      fc_threshold = as.numeric(input$or_fc_threshold),
-                                      qval_cutoff = input$or_qval_cutoff,
-                                      minGSSize = as.numeric(input$or_min_gssize),
-                                      maxGSSize = as.numeric(input$or_max_gssize))
+      r6$get_ora_object(custom_col = custom_col,
+                        selected_features = selected_features,
+                        pval_cutoff_features = input$gseaprep_pval,
+                        padjust_features = input$gseaprep_adjustment,
+                        pval_cutoff = input$or_pval_cutoff,
+                        pAdjustMethod = input$or_pval_adjustment,
+                        fc_threshold = input$or_fc_threshold,
+                        ont = ont,
+                        qval_cutoff = input$or_qval_cutoff,
+                        minGSSize = input$ora_min_gssize,
+                        maxGSSize  = input$ora_max_gssize,
+                        seed = input$ora_seed)
 
-      if (!is.null(r6$tables$go_enrich)) {
-        results = nrow(r6$tables$go_enrich@result)
+      if (!is.null(r6$tables$ora_object)) {
+        results = nrow(r6$tables$ora_object)
         if (results == 0) {
           print_tm(m, 'WARNING: no over-representation under selected parameters')
         } else {
           print_tm(m, paste0('Over-representation successful: ', results, ' terms'))
         }
-        print_tm(m, "OR finished")
+        print_tm(m, "ORA finished")
       } else {
         print_tm(m, 'No over represented features, returning.')
       }
 
     },error=function(e){
-      print_tm(r6$name, 'ORA failed.')
+      print_tm(r6$name, paste0('ORA failed: ', e))
     },finally={}
     )
 
-    shinyjs::enable("run_or")
+
+    waiter::waiter_hide(
+      id = ns("run_ora")
+    )
+    shinyjs::enable("run_ora")
 
   })
 
@@ -2420,14 +2400,14 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   )
 
   # Plot selection
-  prot_dot_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
-  prot_ridge_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
-  prot_cnet_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
-  prot_emap_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  ea_dot_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  ea_ridge_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  ea_cnet_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
+  ea_emap_plot_events(r6, dimensions_obj_gsea, color_palette, input, output, session)
 
   # Plot selection
   session$userData[[id]]$show_plots_gsea = shiny::observeEvent(input$show_plots_gsea, {
-    shiny::req(r6$tables$gsea_object)
+    shiny::req(r6$tables$ea_object)
 
     # Update x dimensions in px and bs, and y in px
     if (length(input$show_plots_gsea) < 2) {
@@ -2445,7 +2425,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     }
 
     # Plots selected: 1 to 4
-    print_tm(m, paste0("Plot selection: ", paste(input$show_plots_gsea, collapse = ", ")))
     if (length(input$show_plots_gsea) == 1) {
       plot_one_prot_gsea(r6 = r6,
                          dimensions_obj = dimensions_obj_gsea,
@@ -2563,14 +2542,14 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
   )
 
   # Plot selection
-  prot_or_dot_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
-  prot_or_bar_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
-  prot_or_cnet_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
-  prot_or_emap_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  ora_dot_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  ora_bar_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  ora_cnet_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
+  ora_emap_plot_events(r6, dimensions_obj_or, color_palette, input, output, session)
 
   # Plot selection
   session$userData[[id]]$show_plots_or = shiny::observeEvent(input$show_plots_or, {
-    shiny::req(r6$tables$go_enrich)
+    shiny::req(r6$tables$ora_object)
 
     # Update x dimensions in px and bs, and y in px
     if (length(input$show_plots_or) < 2) {
@@ -2588,7 +2567,6 @@ lipidomics_server = function(id, ns, input, output, session, module_controler) {
     }
 
     # Plots selected: 1 to 4
-    print_tm(m, paste0("Plot selection: ", paste(input$show_plots_or, collapse = ", ")))
     if (length(input$show_plots_or) == 1) {
       plot_one_prot_or(r6 = r6,
                        dimensions_obj = dimensions_obj_or,

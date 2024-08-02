@@ -50,50 +50,94 @@ Omics_exp = R6::R6Class(
 
     #----------------------------------------------------------- Parameters ----
     params = list(
+
+      # Dendrogram parameters
+      dendrogram = list(
+        auto_refresh = F,
+        dataset = 'Z-scored table',
+        annotations = NULL,
+        distance_method = "euclidean",
+        p = 2,
+        clustering_method = "ward.D2",
+        k_clusters = 1,
+        color_palette = "Spectral",
+        x_tick_font_size = 0,
+        y_label_font_size = 12,
+        y_tick_font_size = 15,
+        img_format = "png"
+      ),
+
       # Class distribution parameters
       class_distribution = list(
+        auto_refresh = F,
         dataset = 'Class table total normalized',
         group_col = NULL,
         color_palette = 'Spectral',
+        title_font_size = 0,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_label_font_size = 0,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
         img_format = "png"
       ),
 
       # Class comparison parameters
       class_comparison = list(
+        auto_refresh = F,
         dataset = 'Class table total normalized',
         group_col = NULL,
         color_palette = 'Spectral',
+        title_font_size = 16,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
         img_format = "png"
+      ),
+
+      volcano_plot_comparison = list(
+        data_table = 'Total normalized table',
+        group_col = NULL,
+        group_1 = NULL,
+        group_2 = NULL,
+        fc_function = 'mean',
+        statistical_test = 't-Test',
+        adjustment_method = 'none'
       ),
 
       # Volcano plot parameters self$params$volcano_plot$
       volcano_plot = list(
         auto_refresh = T,
-        data_table = 'Total normalized table',
-        adjustment = "BH",
-        group_col = NULL,
-        group_1 = NULL,
-        group_2 = NULL,
         feature_metadata = 'None',
         keep_significant = F,
         displayed_plot = 'main',
         p_val_threshold = 0.05,
         fc_threshold = 2,
-        marker_size = 6,
+        marker_size = 10,
         opacity = 1,
         color_palette = 'Spectral',
-        selected_function = "mean",
-        selected_test = "t-Test",
+        reverse_palette = F,
+        title_font_size = 16,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_label_font_size = 20,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
         img_format = "png"
       ),
 
       # Heatmap parameters self$params$heatmap$
       heatmap = list(
-        auto_refresh = T,
+        auto_refresh = F,
         dataset = 'Z-scored total normalized table',
-        impute = T,
-        cluster_samples = T,
-        cluster_features = T,
+        distance_method = "euclidian",
+        clustering_method = "ward.D2",
+        impute_min = T,
+        center = F,
+        apply_clustering = T,
+        k_clusters_samples = 1,
+        k_clusters_features = 1,
         map_sample_data = NULL,
         map_feature_data = NULL,
         map_feature_terms = NULL,
@@ -101,186 +145,379 @@ Omics_exp = R6::R6Class(
         group_column_da = NULL,
         apply_da = T,
         alpha_da = 0.8,
-        lock_da = T,
+        seed_da = 1,
         color_palette = 'RdYlBu',
-        reverse_palette = F,
+        reverse_palette = T,
+        title_font_size = 0,
+        y_label_font_size = 17,
+        x_label_font_size = 17,
+        x_tick_font_size = 0,
+        y_tick_font_size = 0,
         img_format = "png"
       ),
 
       # samples correlation parameters self$params$samples_correlation$
       samples_correlation = list(
-        auto_refresh = T,
+        auto_refresh = F,
         dataset = 'Z-scored total normalized table',
         correlation_method = "pearson",
         use = 'pairwise.complete.obs',
-        cluster_cols = T,
-        cluster_rows = T,
+        distance_method = "euclidian",
+        clustering_method = "ward.D2",
+        k_clusters = 1,
+        apply_clustering = T,
+        center = F,
         row_annotations = 'Group_type',
         col_annotations = 'Group_type',
         color_palette = 'RdYlBu',
-        reverse_palette = F,
+        reverse_palette = T,
+        title_font_size = 0,
+        y_label_font_size = 0,
+        y_tick_font_size = 0,
+        x_label_font_size = 0,
+        x_tick_font_size = 0,
         img_format = "png"
       ),
 
       # feature_correlation parameters self$params$feature_correlation$
       feature_correlation = list(
-        auto_refresh = T,
+        auto_refresh = F,
         dataset = 'Z-scored total normalized table',
         multival_cols = 'None',
         map_feature_terms = NULL,
         correlation_method = "pearson",
         use = 'pairwise.complete.obs',
-        cluster_cols = T,
-        cluster_rows = T,
+        distance_method = "euclidian",
+        clustering_method = "ward.D2",
+        k_clusters = 1,
+        apply_clustering = T,
+        center = F,
         row_annotations = NULL,
         col_annotations = NULL,
         roh_threshold = 0.95,
-        top_features = 300,
+        top_features = 400,
         color_palette = 'RdYlBu',
-        reverse_palette = F,
+        reverse_palette = T,
+        title_font_size = 0,
+        y_label_font_size = 0,
+        y_tick_font_size = 0,
+        x_label_font_size = 0,
+        x_tick_font_size = 0,
         img_format = "png"
       ),
 
       # PCA parameters self$params$pca$
       pca = list(
-        auto_refresh = T,
-        data_table = 'z_scored_total_norm_data',
+        auto_refresh = F,
+        data_table = 'Z-scored total normalized table',
         sample_groups_col = NULL,
         feature_groups_col = NULL,
+        impute_median = FALSE,
         apply_da = FALSE,
+        sample_groups_da = NULL,
         alpha_da = 0.8,
-        pca_method = 'svd',
-        nPcs = 10,
+        seed_da = 1,
+        pca_method = 'nipals',
+        nPcs = 2,
         displayed_pc_1 = 1,
         displayed_pc_2 = 2,
         completeObs = F,
-        displayed_plots = 'both',
+        displayed_plots = 'scores',
         colors_palette = 'Spectral',
+        marker_size = 10,
+        opacity = 1,
+        title_font_size = 16,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_label_font_size = 20,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
         img_format = "png"
       ),
 
-
-      # Double bonds parameters self$params$db_plot$
-      db_plot = list(
-        dataset = "Total normalized table",
-        adjustment = "Benjamini-Hochberg",
-        group_column = NULL,
-        selected_groups = NULL,
-        selected_lipid_class = NULL,
-        selected_carbon_chain = 'Carbon count (chain 1)',
-        selected_unsat = 'Double bonds (chain 1)',
-        selected_function = "mean",
-        selected_test = "T-test",
-        fc_range = c(-5, 5),
-        fc_values = c(-1, 1),
-        pval_range = c(0, 5),
-        pval_values = c(1, 5),
-        img_format = "png"
-      ),
-
-      #GSEA parameters self$params$gsea
-      gsea = list(
-        data_table = NULL,
-        meta_table = NULL,
+      double_bonds_comparison = list(
+        data_table = "Total normalized table",
         group_col = NULL,
-        groups = NULL,
-        used_function = NULL,
-        test = NULL,
-        p_value_cutoff_prep = NULL,
-        prot_list = NULL,
-        ont = NULL,
-        minGSSize = NULL,
-        maxGSSize = NULL,
-        p_value_cutoff = NULL,
-        verbose = NULL,
-        OrgDb = NULL,
-        pAdjustMethod = NULL,
-        termsim_method = NULL,
-        termsim_showcat = NULL
+        group_1 = NULL,
+        group_2 = NULL,
+        fc_function = 'mean',
+        statistical_test = 't-Test',
+        adjustment_method = 'none'
       ),
 
-      # Over representation analysis parameters self$params$overrepresentation
-      overrepresentation = list(
+      double_bonds_plot = list(
+        auto_refresh = F,
+        carbon_selection = "Carbon count (chain 1)",
+        unsat_selection = "Double bonds (chain 1)",
+        lipid_class = "CE",
+        min_fc = 0,
+        max_pval = 1,
+        remove_missing_pval = T,
+        remove_infitive_fc = T,
+        color_palette = 'RdBu',
+        reverse_palette = T,
+        marker_size = 1,
+        marker_opacity = 0.5,
+        title_font_size = 16,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_label_font_size = 20,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
+        img_format = "png"
+      ),
+
+      ea_selection = list(
+        table = "Total normalized table",
+        group_col = NULL,
+        group_1 = NULL,
+        group_2 = NULL,
+        fc_function = "mean",
+        statistical_test = "t-Test",
+        adjustment_method = "none"
+      ),
+
+      ea_process = list(
+        custom_col = NULL,
+        selected_features = NULL,
+        ont = "ALL",
+        minGSSize = 3,
+        maxGSSize = 800,
+        terms_p_value_cutoff = 0.05,
+        terms_pAdjustMethod = "none",
+        verbose = TRUE,
+        OrgDb = "org.Hs.eg.db",
+        seed = 1
+      ),
+
+      ora_selection = list(
+        group_col = NULL,
+        group_1 = NULL,
+        group_2 = NULL,
+        fc_function = "mean",
+        statistical_test = "t-Test",
+        adjustment_method = "none"
+      ),
+
+
+      ora_process = list(
+        custom_col = NULL,
+        selected_features = NULL,
         pval_cutoff_features = 0.05,
-        padjust_features = "Benjamini-Hochberg",
+        padjust_features = "none",
         pval_cutoff = 0.05,
-        pAdjustMethod = "BH",
+        pAdjustMethod = "none",
         fc_threshold = 2,
-        ont = "Gene ontology (ALL)",
+        ont = "ALL",
         qval_cutoff = 0.05,
         minGSSize = 10,
-        maxGSSize = 500
+        maxGSSize  = 500,
+        seed = 1
       ),
 
-      # Dot plot parameters self$params$dot_plot
-      dot_plot = list(
-        showCategory = 10,
+      # Dot plot parameters self$params$ea_dot_plot
+      ea_dot_plot = list(
+        auto_refresh = F,
+        x = "GeneRatio",
+        y = "ID",
+        color = "p.adjust",
+        show_categories = 10,
+        size = "GeneCount",
+        order_by = "GeneRatio",
+        reverse_order = F,
         mode = "Both",
+        marker_opacity = 0.5,
+        color_palette = "RdYlBu",
+        reverse_palette = F,
+        show_legend = T,
+        legend_size = 14,
+        size_ref = 3,
+        yaxis_word_split = 0,
+        title_size = 20,
+        xlabel_size = 15,
+        xtick_size = 15,
+        ytick_size = 15,
+        img_format = "png"
+      ),
+
+      # Dot plot parameters self$params$ora_dot_plot
+      ora_dot_plot = list(
+        auto_refresh = F,
+        x = "GeneRatio",
+        y = "ID",
+        color = "p.adjust",
+        show_categories = 10,
+        size = "GeneCount",
+        order_by = "GeneRatio",
+        reverse_order = F,
+        marker_opacity = 0.5,
+        color_palette = "RdYlBu",
+        reverse_palette = F,
+        show_legend = T,
+        size_ref = 0.1,
+        legend_size = 14,
+        yaxis_word_split = 0,
+        title_size = 25,
+        xlabel_size = 15,
+        xtick_size = 15,
+        ytick_size = 15,
         img_format = "png"
       ),
 
       # Ridge plot parameters self$params$ridge_plot
-      ridge_plot = list(
-        showCategory = 30,
+      ea_ridge_plot = list(
+        auto_refresh = F,
+        show_category = 50,
+        fill="p.adjust",
+        core_enrichment = TRUE,
+        color_palette = "Spectral",
+        reverse_palette = FALSE,
+        displayed_label = "ID",
+        orderBy = "NES",
+        decreasing = FALSE,
+        title_font_size = 0,
+        yaxis_word_split = 0,
+        y_label_font_size = 0,
+        y_tick_font_size = 13,
+        x_label_font_size = 18,
+        x_tick_font_size = 15,
+        legend_font_size = 12,
         img_format = "png"
       ),
 
-      # CNET plot parameters self$params$cnet_plot
-      cnet_plot = list(
-        showCategory = 3,
-        displayed_labels = 'IDs and Description',
-        enable_physics = TRUE
+      # CNET plot parameters self$params$ea_cnet_plot
+      ea_cnet_plot = list(
+        auto_refresh = F,
+        show_category = 10,
+        displayed_labels = 'ID' ,
+        set_node_annotations = "None",
+        feature_node_annotations = "Log2(fold change)",
+        set_node_color_palette = "Purples",
+        reverse_set_palette = F,
+        feature_node_color_palette = "RdYlBu",
+        reverse_feature_palette = T,
+        label_font_size = 40,
+        static_network = T,
+        solver = "barnesHut",
+        gravitationalConstant = -10000 ,
+        nodeDistance = 500,
+        centralGravity = 0.3,
+        springLength = 800,
+        springConstant = 0.01,
+        img_format = "png"
       ),
 
-      # eMap plot parameters self$params$emap_plot
-      emap_plot = list(
-        showCategory = 20,
-        color = "p.adjust" ,
-        size = "Count",
+      # Over representation CNET plot parameters self$params$ora_cnet_plot
+      ora_cnet_plot = list(
+        auto_refresh = F,
+        show_category = 10,
+        displayed_labels = 'ID' ,
+        set_node_annotations = "None",
+        feature_node_annotations = "Log2(fold change)",
+        set_node_color_palette = "Purples",
+        reverse_set_palette = F,
+        feature_node_color_palette = "RdYlBu",
+        reverse_feature_palette = T,
+        label_font_size = 40,
+        static_network = T,
+        solver = "barnesHut",
+        gravitationalConstant = -10000 ,
+        nodeDistance = 500,
+        centralGravity = 0.3,
+        springLength = 800,
+        springConstant = 0.01,
+        img_format = "png"
+      ),
+
+
+      # ea emap plot parameters self$params$ea_emap_plot
+      ea_emap_plot = list(
+        auto_refresh = F,
+        show_category = 50,
+        color = "p.adjust",
+        size = "GeneCount",
+        displayed_labels = 'ID and Description',
+        mode = "Both",
         score_threshold = 0.2,
-        similarity_score = 'JC',
-        edge_magnifier = 1,
-        node_magnifier = 0.1,
-        enable_physics = FALSE
-      ),
-
-      # Over representation dot plot parameters self$params$or_dot_plot
-      or_dot_plot = list(
-        showCategory = 10,
+        similarity_score = "JC",
+        node_color_palette = "RdYlBu",
+        reverse_node_palette = F,
+        edge_width = "Similarity score",
+        edge_color = "Similarity score",
+        edge_color_palette = "Blues",
+        reverse_edge_palette = F,
+        edge_magnifier = 5,
+        node_magnifier = 0.2,
+        label_font_size = 40,
+        static_network = F,
+        solver = "repulsion",
+        gravitationalConstant = -8000,
+        nodeDistance = 100,
+        centralGravity = 0.2,
+        springLength = 200,
+        springConstant = 0.05,
         img_format = "png"
       ),
 
-      # Over representation bar plot parameters self$params$or_bar_plot
-      or_bar_plot = list(
-        x = 'Count',
-        color = 'p.adjust',
-        showCategory = 10,
-        img_format = "png"
-      ),
-
-      # Over representation CNET plot parameters self$params$or_cnet_plot
-      or_cnet_plot = list(
-        showCategory = 3,
-        displayed_labels = 'IDs and Description',
-        enable_physics = TRUE
-      ),
-
-      # Over representation eMap plot parameters self$params$or_emap_plot
-      or_emap_plot = list(
-        showCategory = 20,
-        color = "p.adjust" ,
-        size = "Count",
+      # ora emap plot parameters self$params$ora_emap_plot
+      ora_emap_plot = list(
+        auto_refresh = F,
+        show_category = 50,
+        color = "p.adjust",
+        size = "GeneCount",
+        displayed_labels = 'ID and Description',
         score_threshold = 0.2,
-        similarity_score = 'JC',
-        edge_magnifier = 1,
-        node_magnifier = 0.1,
-        enable_physics = FALSE
+        similarity_score = "JC",
+        node_color_palette = "RdYlBu",
+        reverse_node_palette = F,
+        edge_width = "Similarity score",
+        edge_color = "Similarity score",
+        edge_color_palette = "Blues",
+        reverse_edge_palette = F,
+        edge_magnifier = 5,
+        node_magnifier = 2,
+        label_font_size = 40,
+        static_network = F,
+        solver = "repulsion",
+        gravitationalConstant = -8000,
+        nodeDistance = 100,
+        centralGravity = 0.2,
+        springLength = 200,
+        springConstant = 0.05,
+        img_format = "png"
+      ),
+
+      # Over representation bar plot parameters self$params$ora_bar_plot
+      ora_bar_plot = list(
+        auto_refresh = F,
+        x = "GeneRatio",
+        color = "p.adjust",
+        show_category = 40,
+        displayed_label = "Description",
+        order_by = "GeneRatio",
+        order_decreasing = F,
+        color_palette = 'RdYlBu',
+        reverse_palette = F,
+        title_font_size = 0,
+        yaxis_word_split = 0,
+        y_label_font_size = 0,
+        y_tick_font_size = 13,
+        x_label_font_size = 15,
+        x_tick_font_size = 13,
+        legend_font_size = 10,
+        img_format = "png"
       )
 
     ),
 
     hardcoded_settings = list(
 
+      dendrogram = list(
+        datasets = list(
+          'Z-scored table',
+          'Z-scored total normalized table'
+        )
+      ),
       volcano_plot = list(
         datasets = list(
           "Raw data table",
@@ -297,8 +534,6 @@ Omics_exp = R6::R6Class(
       ),
       samples_correlation = list(
         datasets = list(
-          "Raw data table",
-          "Total normalized table",
           'Z-scored table',
           'Z-scored total normalized table'
         )
@@ -318,7 +553,7 @@ Omics_exp = R6::R6Class(
           'Z-scored total normalized table'
         )
       ),
-      db_plot = list(
+      double_bonds_plot = list(
         datasets = list(
           "Raw data table",
           "Class normalized table",
@@ -330,15 +565,13 @@ Omics_exp = R6::R6Class(
         terms = c('Gene ontology (ALL)',
                   'Gene ontology (BP)',
                   'Gene ontology (MF)',
-                  'Gene ontology (CC)'),
-        adjustment = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")
+                  'Gene ontology (CC)')
       ),
       over_representation_analysis = list(
         terms = c('Gene ontology (ALL)',
                   'Gene ontology (BP)',
                   'Gene ontology (MF)',
-                  'Gene ontology (CC)'),
-        adjustment = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")
+                  'Gene ontology (CC)')
       )
     ),
 
@@ -349,21 +582,31 @@ Omics_exp = R6::R6Class(
     indices = list(
       id_col_meta = NA,
       id_col_data = NA,
-      type_col = NA,
-      group_col = NA,
-      batch_col = NA,
+      type_col = NA, # Deprecated
+      group_col = NA, # Deprecated
+      batch_col = NA, # Deprecated
 
-      idx_blanks = NULL,
-      idx_qcs = NULL,
-      idx_pools = NULL,
-      idx_samples = NULL,
+      type_column = NA,
+      group_column = NA,
+      batch_column = NA,
 
-      rownames_blanks = NULL,
-      rownames_qcs = NULL,
-      rownames_pools = NULL,
-      rownames_samples = NULL,
+      idx_blanks = NULL, # Deprecated
+      idx_qcs = NULL, # Deprecated
+      idx_pools = NULL, # Deprecated
+      idx_samples = NULL, # Deprecated
 
-      excluded_cols = NULL,
+      rownames_blanks = NULL, # Deprecated
+      rownames_qcs = NULL, # Deprecated
+      rownames_pools = NULL, # Deprecated
+      rownames_samples = NULL, # Deprecated
+
+      index_blanks = NULL,
+      index_qcs = NULL,
+      index_pools = NULL,
+      index_samples = NULL,
+
+      excluded_samples = NULL,
+      excluded_features = NULL,
 
       feature_id_type = NULL
     ),
@@ -379,6 +622,8 @@ Omics_exp = R6::R6Class(
       raw_data = NULL,
 
       blank_table = NULL,
+      qc_table = NULL,
+      pool_table = NULL,
 
       #Feature tables
       imp_feature_table = NULL,
@@ -411,11 +656,14 @@ Omics_exp = R6::R6Class(
       class_table_z_scored_total_norm = NULL,
 
       # Plot tables
+      dendrogram = NULL,
       class_distribution_table = NULL,
       volcano_table = NULL,
-      heatmap_table = NULL,
+      heatmap = NULL,
       samples_correlation = NULL,
+      samples_correlation_clusters = NULL,
       feature_correlation = NULL,
+      feature_correlation_clusters = NULL,
       pca_scores_table = NULL,
       pca_loadings_table = NULL,
       dbplot_table = NULL,
@@ -424,7 +672,13 @@ Omics_exp = R6::R6Class(
       gsea_prot_list = NULL,
       ora_prot_list = NULL,
       gsea_object = NULL,
-      go_enrich = NULL
+      go_enrich = NULL,
+
+      # Functional analysis tables
+      ea_dot_plot = NULL,
+      ora_dot_plot = NULL,
+      ea_ridge_plot = NULL,
+      ora_bar_plot = NULL
 
 
     ),
@@ -468,6 +722,7 @@ Omics_exp = R6::R6Class(
     plots = list(
 
       # Interactive visualization
+      dendrogram = NULL,
       class_distribution = NULL,
       class_comparison = NULL,
       volcano_plot = NULL,
@@ -478,14 +733,16 @@ Omics_exp = R6::R6Class(
       double_bond_plot = NULL,
 
       # Functional analysis plots
-      dotplot = NULL,
+      ea_dot_plot = NULL,
+      ora_dot_plot = NULL,
+      ea_ridge_plot = NULL,
+
       ridgeplot = NULL,
-      emap_plot = NULL,
+      ea_emap_plot = NULL,
       cnetplot = NULL,
-      or_dotplot = NULL,
-      or_emap_plot = NULL,
+      ora_emap_plot = NULL,
       or_cnetplot = NULL,
-      or_barplot = NULL
+      ora_bar_plot = NULL
     ),
 
     #---------------------------------------------------- Parameter methods ----
@@ -496,29 +753,60 @@ Omics_exp = R6::R6Class(
       base::dput(parameter_file, file = file_name)
     },
 
-    param_class_distribution = function(dataset, group_col, color_palette, img_format) {
+    param_dendrogram = function(auto_refresh, dataset, annotations, distance_method, p, clustering_method, k_clusters, color_palette, x_tick_font_size, y_label_font_size, y_tick_font_size, img_format) {
+      self$params$dendrogram$auto_refresh = auto_refresh
+      self$params$dendrogram$dataset = dataset
+      self$params$dendrogram$annotations = annotations
+      self$params$dendrogram$distance_method = distance_method
+      self$params$dendrogram$p = p
+      self$params$dendrogram$clustering_method = clustering_method
+      self$params$dendrogram$k_clusters = k_clusters
+      self$params$dendrogram$color_palette = color_palette
+      self$params$dendrogram$x_tick_font_size = x_tick_font_size
+      self$params$dendrogram$y_label_font_size = y_label_font_size
+      self$params$dendrogram$y_tick_font_size = y_tick_font_size
+      self$params$dendrogram$img_format = img_format
+    },
+
+    param_class_distribution = function(auto_refresh, dataset, group_col, color_palette, title_font_size, y_label_font_size, y_tick_font_size, x_label_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$class_distribution$auto_refresh = auto_refresh
       self$params$class_distribution$dataset = dataset
       self$params$class_distribution$group_col = group_col
       self$params$class_distribution$color_palette = color_palette
+      self$params$class_distribution$title_font_size = title_font_size
+      self$params$class_distribution$y_label_font_size = y_label_font_size
+      self$params$class_distribution$y_tick_font_size = y_tick_font_size
+      self$params$class_distribution$x_label_font_size = x_label_font_size
+      self$params$class_distribution$x_tick_font_size = x_tick_font_size
+      self$params$class_distribution$legend_font_size = legend_font_size
       self$params$class_distribution$img_format = img_format
     },
 
-    param_class_comparison = function(dataset, group_col, color_palette, img_format) {
+    param_class_comparison = function(auto_refresh, dataset, group_col, color_palette, title_font_size, y_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$class_comparison$auto_refresh = auto_refresh
       self$params$class_comparison$dataset = dataset
       self$params$class_comparison$group_col = group_col
       self$params$class_comparison$color_palette = color_palette
+      self$params$class_comparison$title_font_size = title_font_size
+      self$params$class_comparison$y_label_font_size = y_label_font_size
+      self$params$class_comparison$y_tick_font_size = y_tick_font_size
+      self$params$class_comparison$x_tick_font_size = x_tick_font_size
+      self$params$class_comparison$legend_font_size = legend_font_size
       self$params$class_comparison$img_format = img_format
     },
 
-    param_volcano_plot = function(auto_refresh, data_table, adjustment, group_col, group_1, group_2, feature_metadata, keep_significant, displayed_plot,
-                                  p_val_threshold, fc_threshold, marker_size, opacity, color_palette, selected_function, selected_test, img_format) {
+    param_volcano_plot_comparison = function(data_table, group_col, group_1, group_2, fc_function, statistical_test, adjustment_method) {
+      self$params$volcano_plot_comparison$data_table = data_table
+      self$params$volcano_plot_comparison$group_col = group_col
+      self$params$volcano_plot_comparison$group_1 = group_1
+      self$params$volcano_plot_comparison$group_2 = group_2
+      self$params$volcano_plot_comparison$fc_function = fc_function
+      self$params$volcano_plot_comparison$statistical_test = statistical_test
+      self$params$volcano_plot_comparison$adjustment_method = adjustment_method
+    },
 
+    param_volcano_plot = function(auto_refresh, feature_metadata, keep_significant, displayed_plot, p_val_threshold, fc_threshold, marker_size, opacity, color_palette, reverse_palette, title_font_size, y_label_font_size, y_tick_font_size, x_label_font_size, x_tick_font_size, legend_font_size, img_format) {
       self$params$volcano_plot$auto_refresh = auto_refresh
-      self$params$volcano_plot$data_table = data_table
-      self$params$volcano_plot$adjustment = adjustment
-      self$params$volcano_plot$group_col = group_col
-      self$params$volcano_plot$group_1 = group_1
-      self$params$volcano_plot$group_2 = group_2
       self$params$volcano_plot$feature_metadata = feature_metadata
       self$params$volcano_plot$keep_significant = keep_significant
       self$params$volcano_plot$displayed_plot = displayed_plot
@@ -527,18 +815,26 @@ Omics_exp = R6::R6Class(
       self$params$volcano_plot$marker_size = marker_size
       self$params$volcano_plot$opacity = opacity
       self$params$volcano_plot$color_palette = color_palette
-      self$params$volcano_plot$selected_function = selected_function
-      self$params$volcano_plot$selected_test = selected_test
+      self$params$volcano_plot$reverse_palette = reverse_palette
+      self$params$volcano_plot$title_font_size = title_font_size
+      self$params$volcano_plot$y_label_font_size = y_label_font_size
+      self$params$volcano_plot$y_tick_font_size = y_tick_font_size
+      self$params$volcano_plot$x_label_font_size = x_label_font_size
+      self$params$volcano_plot$x_tick_font_size = x_tick_font_size
+      self$params$volcano_plot$legend_font_size = legend_font_size
       self$params$volcano_plot$img_format = img_format
-
     },
 
-    param_heatmap = function(auto_refresh, dataset, impute, cluster_samples, cluster_features, map_sample_data, map_feature_data, map_feature_terms, multival_cols, group_column_da, apply_da, alpha_da, color_palette, reverse_palette, img_format) {
+    param_heatmap = function(auto_refresh, dataset, distance_method, clustering_method, impute_min, center, apply_clustering, k_clusters_samples, k_clusters_features, map_sample_data, map_feature_data, map_feature_terms, multival_cols, group_column_da, apply_da, alpha_da, seed_da, color_palette, reverse_palette, title_font_size, y_label_font_size, x_label_font_size, x_tick_font_size, y_tick_font_size, img_format) {
       self$params$heatmap$auto_refresh = auto_refresh
       self$params$heatmap$dataset = dataset
-      self$params$heatmap$impute = impute
-      self$params$heatmap$cluster_samples = cluster_samples
-      self$params$heatmap$cluster_features = cluster_features
+      self$params$heatmap$distance_method = distance_method
+      self$params$heatmap$clustering_method = clustering_method
+      self$params$heatmap$impute_min = impute_min
+      self$params$heatmap$center = center
+      self$params$heatmap$apply_clustering = apply_clustering
+      self$params$heatmap$k_clusters_samples = k_clusters_samples
+      self$params$heatmap$k_clusters_features = k_clusters_features
       self$params$heatmap$map_sample_data = map_sample_data
       self$params$heatmap$map_feature_data = map_feature_data
       self$params$heatmap$map_feature_terms = map_feature_terms
@@ -546,26 +842,40 @@ Omics_exp = R6::R6Class(
       self$params$heatmap$group_column_da = group_column_da
       self$params$heatmap$apply_da = apply_da
       self$params$heatmap$alpha_da = alpha_da
+      self$params$heatmap$seed_da = seed_da
       self$params$heatmap$color_palette = color_palette
       self$params$heatmap$reverse_palette = reverse_palette
+      self$params$heatmap$title_font_size = title_font_size
+      self$params$heatmap$y_label_font_size = y_label_font_size
+      self$params$heatmap$x_label_font_size = x_label_font_size
+      self$params$heatmap$x_tick_font_size = x_tick_font_size
+      self$params$heatmap$y_tick_font_size = y_tick_font_size
       self$params$heatmap$img_format = img_format
     },
 
-    param_samples_correlation = function(auto_refresh, dataset, correlation_method, use, cluster_rows, cluster_cols, row_annotations, col_annotations, color_palette, reverse_palette, img_format) {
+    param_samples_correlation = function(auto_refresh, dataset, correlation_method, use, distance_method, clustering_method, k_clusters, apply_clustering, center, row_annotations, col_annotations, color_palette, reverse_palette, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, img_format) {
       self$params$samples_correlation$auto_refresh = auto_refresh
       self$params$samples_correlation$dataset = dataset
       self$params$samples_correlation$correlation_method = correlation_method
       self$params$samples_correlation$use = use
-      self$params$samples_correlation$cluster_rows = cluster_rows
-      self$params$samples_correlation$cluster_cols = cluster_cols
+      self$params$samples_correlation$distance_method = distance_method
+      self$params$samples_correlation$clustering_method = clustering_method
+      self$params$samples_correlation$k_clusters = k_clusters
+      self$params$samples_correlation$apply_clustering = apply_clustering
+      self$params$samples_correlation$center = center
       self$params$samples_correlation$row_annotations = row_annotations
       self$params$samples_correlation$col_annotations = col_annotations
       self$params$samples_correlation$color_palette = color_palette
       self$params$samples_correlation$reverse_palette = reverse_palette
+      self$params$samples_correlation$title_font_size = title_font_size
+      self$params$samples_correlation$y_label_font_size = y_label_font_size
+      self$params$samples_correlation$y_tick_font_size = y_tick_font_size
+      self$params$samples_correlation$x_label_font_size = x_label_font_size
+      self$params$samples_correlation$x_tick_font_size = x_tick_font_size
       self$params$samples_correlation$img_format = img_format
     },
 
-    param_feature_correlation = function(auto_refresh, dataset, multival_cols, map_feature_terms, correlation_method, use, cluster_cols, cluster_rows, row_annotations, col_annotations, roh_threshold, top_features, color_palette, reverse_palette, img_format) {
+    param_feature_correlation = function(auto_refresh, dataset, multival_cols, map_feature_terms, correlation_method, use, distance_method, clustering_method, k_clusters, apply_clustering, center, row_annotations, col_annotations, roh_threshold, top_features, color_palette, reverse_palette, title_font_size, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, img_format) {
 
       self$params$feature_correlation$auto_refresh = auto_refresh
       self$params$feature_correlation$dataset = dataset
@@ -573,24 +883,35 @@ Omics_exp = R6::R6Class(
       self$params$feature_correlation$map_feature_terms = map_feature_terms
       self$params$feature_correlation$correlation_method = correlation_method
       self$params$feature_correlation$use = use
-      self$params$feature_correlation$cluster_cols = cluster_cols
-      self$params$feature_correlation$cluster_rows = cluster_rows
+      self$params$feature_correlation$distance_method = distance_method
+      self$params$feature_correlation$clustering_method = clustering_method
+      self$params$feature_correlation$k_clusters = k_clusters
+      self$params$feature_correlation$apply_clustering = apply_clustering
+      self$params$feature_correlation$center = center
       self$params$feature_correlation$row_annotations = row_annotations
       self$params$feature_correlation$col_annotations = col_annotations
       self$params$feature_correlation$roh_threshold = roh_threshold
       self$params$feature_correlation$top_features = top_features
       self$params$feature_correlation$color_palette = color_palette
       self$params$feature_correlation$reverse_palette = reverse_palette
+      self$params$feature_correlation$title_font_size = title_font_size
+      self$params$feature_correlation$y_label_font_size = y_label_font_size
+      self$params$feature_correlation$y_tick_font_size = y_tick_font_size
+      self$params$feature_correlation$x_label_font_size = x_label_font_size
+      self$params$feature_correlation$x_tick_font_size = x_tick_font_size
       self$params$feature_correlation$img_format = img_format
     },
 
-    param_pca = function(auto_refresh, data_table, sample_groups_col, feature_groups_col, apply_da, alpha_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, img_format) {
+    param_pca = function(auto_refresh, data_table, sample_groups_col, feature_groups_col, impute_median, apply_da, sample_groups_da, alpha_da, seed_da, pca_method, nPcs, displayed_pc_1, displayed_pc_2, completeObs, displayed_plots, colors_palette, marker_size, opacity, title_font_size, y_label_font_size, y_tick_font_size, x_label_font_size, x_tick_font_size, legend_font_size, img_format) {
       self$params$pca$auto_refresh = auto_refresh
       self$params$pca$data_table = data_table
       self$params$pca$sample_groups_col = sample_groups_col
       self$params$pca$feature_groups_col = feature_groups_col
+      self$params$pca$impute_median = impute_median
       self$params$pca$apply_da = apply_da
+      self$params$pca$sample_groups_da = sample_groups_da
       self$params$pca$alpha_da = alpha_da
+      self$params$pca$seed_da = seed_da
       self$params$pca$pca_method = pca_method
       self$params$pca$nPcs = nPcs
       self$params$pca$displayed_pc_1 = displayed_pc_1
@@ -598,250 +919,615 @@ Omics_exp = R6::R6Class(
       self$params$pca$completeObs = completeObs
       self$params$pca$displayed_plots = displayed_plots
       self$params$pca$colors_palette = colors_palette
+      self$params$pca$marker_size = marker_size
+      self$params$pca$opacity = opacity
+      self$params$pca$title_font_size = title_font_size
+      self$params$pca$y_label_font_size = y_label_font_size
+      self$params$pca$y_tick_font_size = y_tick_font_size
+      self$params$pca$x_label_font_size = x_label_font_size
+      self$params$pca$x_tick_font_size = x_tick_font_size
+      self$params$pca$legend_font_size = legend_font_size
       self$params$pca$img_format = img_format
 
     },
 
-    param_db_plot = function(dataset, adjustment, group_column, selected_groups, selected_lipid_class,
-                             selected_carbon_chain, selected_unsat, selected_function,
-                             selected_test, fc_range, fc_values, pval_range,
-                             pval_values, img_format) {
+    param_double_bonds_comparison = function(data_table, group_col, group_1, group_2, fc_function, statistical_test, adjustment_method) {
+      self$params$double_bonds_comparison$data_table = data_table
+      self$params$double_bonds_comparison$group_col = group_col
+      self$params$double_bonds_comparison$group_1 = group_1
+      self$params$double_bonds_comparison$group_2 = group_2
+      self$params$double_bonds_comparison$fc_function = fc_function
+      self$params$double_bonds_comparison$statistical_test = statistical_test
+      self$params$double_bonds_comparison$adjustment_method = adjustment_method
+    },
 
-      self$params$db_plot$dataset = dataset
-      self$params$db_plot$adjustment = adjustment
-      self$params$db_plot$group_column = group_column
-      self$params$db_plot$selected_groups = selected_groups
-      self$params$db_plot$selected_lipid_class = selected_lipid_class
-      self$params$db_plot$selected_carbon_chain = selected_carbon_chain
-      self$params$db_plot$selected_unsat = selected_unsat
-      self$params$db_plot$selected_function = selected_function
-      self$params$db_plot$selected_test = selected_test
-      self$params$db_plot$fc_range = fc_range
-      self$params$db_plot$fc_values = fc_values
-      self$params$db_plot$pval_range = pval_range
-      self$params$db_plot$pval_values = pval_values
-      self$params$db_plot$img_format = img_format
+    param_double_bonds_plot = function(auto_refresh, carbon_selection, unsat_selection, lipid_class, min_fc, max_pval, remove_missing_pval, remove_infitive_fc, color_palette, reverse_palette, marker_size, marker_opacity, title_font_size, y_label_font_size, y_tick_font_size, x_label_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$double_bonds_plot$auto_refresh = auto_refresh
+      self$params$double_bonds_plot$selected_carbon_chain = carbon_selection
+      self$params$double_bonds_plot$selected_unsat = unsat_selection
+      self$params$double_bonds_plot$selected_lipid_class = lipid_class
+      self$params$double_bonds_plot$min_fc = min_fc
+      self$params$double_bonds_plot$max_pval = max_pval
+      self$params$double_bonds_plot$remove_missing_pval = remove_missing_pval
+      self$params$double_bonds_plot$remove_infitive_fc = remove_infitive_fc
+      self$params$double_bonds_plot$color_palette = color_palette
+      self$params$double_bonds_plot$reverse_palette = reverse_palette
+      self$params$double_bonds_plot$marker_size = marker_size
+      self$params$double_bonds_plot$marker_opacity = marker_opacity
+      self$params$double_bonds_plot$title_font_size = title_font_size
+      self$params$double_bonds_plot$y_label_font_size = y_label_font_size
+      self$params$double_bonds_plot$y_tick_font_size = y_tick_font_size
+      self$params$double_bonds_plot$x_label_font_size = x_label_font_size
+      self$params$double_bonds_plot$x_tick_font_size = x_tick_font_size
+      self$params$double_bonds_plot$legend_font_size = legend_font_size
+      self$params$double_bonds_plot$img_format = img_format
+    },
+
+    param_ea_selection = function(table, group_col, group_1, group_2, fc_function, statistical_test, adjustment_method) {
+      self$params$ea_selection$table = table
+      self$params$ea_selection$group_col = group_col
+      self$params$ea_selection$group_1 = group_1
+      self$params$ea_selection$group_2 = group_2
+      self$params$ea_selection$fc_function = fc_function
+      self$params$ea_selection$statistical_test = statistical_test
+      self$params$ea_selection$adjustment_method = adjustment_method
+    },
+
+    param_ea_process = function(custom_col, selected_features, ont, minGSSize, maxGSSize, terms_p_value_cutoff, terms_pAdjustMethod, verbose, OrgDb, seed) {
+      self$params$ea_process$custom_col = custom_col
+      self$params$ea_process$selected_features = selected_features
+      self$params$ea_process$ont = ont
+      self$params$ea_process$minGSSize = minGSSize
+      self$params$ea_process$maxGSSize = maxGSSize
+      self$params$ea_process$terms_p_value_cutoff = terms_p_value_cutoff
+      self$params$ea_process$terms_pAdjustMethod = terms_pAdjustMethod
+      self$params$ea_process$verbose = verbose
+      self$params$ea_process$OrgDb = OrgDb
+      self$params$ea_process$seed = seed
+    },
+
+    param_ora_selection = function(group_col, group_1, group_2, fc_function, statistical_test, adjustment_method) {
+      self$params$ora_selection$group_col = group_col
+      self$params$ora_selection$group_1 = group_1
+      self$params$ora_selection$group_2 = group_2
+      self$params$ora_selection$fc_function = fc_function
+      self$params$ora_selection$statistical_test = statistical_test
+      self$params$ora_selection$adjustment_method = adjustment_method
+    },
+
+    param_ora_process = function(custom_col, selected_features, pval_cutoff_features, padjust_features, pval_cutoff, pAdjustMethod, fc_threshold, ont, qval_cutoff, minGSSize, maxGSSize, seed) {
+      self$params$ora_process$custom_col = custom_col
+      self$params$ora_process$selected_features = selected_features
+      self$params$ora_process$pval_cutoff_features = pval_cutoff_features
+      self$params$ora_process$padjust_features = padjust_features
+      self$params$ora_process$pval_cutoff = pval_cutoff
+      self$params$ora_process$pAdjustMethod = pAdjustMethod
+      self$params$ora_process$fc_threshold = fc_threshold
+      self$params$ora_process$ont = ont
+      self$params$ora_process$qval_cutoff = qval_cutoff
+      self$params$ora_process$minGSSize = minGSSize
+      self$params$ora_process$maxGSSize = maxGSSize
+      self$params$ora_process$seed = seed
+    },
+
+    param_ea_dot_plot = function(auto_refresh, x, y, color, show_categories, size, order_by, reverse_order, mode, marker_opacity, color_palette, reverse_palette, show_legend, legend_size, size_ref, yaxis_word_split, title_size, xlabel_size, xtick_size, ytick_size, img_format) {
+      self$params$ea_dot_plot$auto_refresh= auto_refresh
+      self$params$ea_dot_plot$x = x
+      self$params$ea_dot_plot$y = y
+      self$params$ea_dot_plot$color = color
+      self$params$ea_dot_plot$show_categories = show_categories
+      self$params$ea_dot_plot$size = size
+      self$params$ea_dot_plot$order_by = order_by
+      self$params$ea_dot_plot$reverse_order = reverse_order
+      self$params$ea_dot_plot$mode = mode
+      self$params$ea_dot_plot$marker_opacity = marker_opacity
+      self$params$ea_dot_plot$color_palette = color_palette
+      self$params$ea_dot_plot$reverse_palette = reverse_palette
+      self$params$ea_dot_plot$show_legend = show_legend
+      self$params$ea_dot_plot$legend_size = legend_size
+      self$params$ea_dot_plot$size_ref = size_ref
+      self$params$ea_dot_plot$yaxis_word_split = yaxis_word_split
+      self$params$ea_dot_plot$title_size = title_size
+      self$params$ea_dot_plot$xlabel_size = xlabel_size
+      self$params$ea_dot_plot$xtick_size = xtick_size
+      self$params$ea_dot_plot$ytick_size = ytick_size
+      self$params$ea_dot_plot$img_format = img_format
+    },
+
+    param_ora_dot_plot = function(auto_refresh, x, y, color, show_categories, size, order_by, reverse_order, marker_opacity, color_palette, reverse_palette, show_legend, size_ref, legend_size, yaxis_word_split, title_size, xlabel_size, xtick_size, ytick_size, img_format) {
+      self$params$ora_dot_plot$auto_refresh= auto_refresh
+      self$params$ora_dot_plot$x = x
+      self$params$ora_dot_plot$y = y
+      self$params$ora_dot_plot$color = color
+      self$params$ora_dot_plot$show_categories = show_categories
+      self$params$ora_dot_plot$size = size
+      self$params$ora_dot_plot$order_by = order_by
+      self$params$ora_dot_plot$reverse_order = reverse_order
+      self$params$ora_dot_plot$marker_opacity = marker_opacity
+      self$params$ora_dot_plot$color_palette = color_palette
+      self$params$ora_dot_plot$reverse_palette = reverse_palette
+      self$params$ora_dot_plot$show_legend = show_legend
+      self$params$ora_dot_plot$size_ref = size_ref
+      self$params$ora_dot_plot$legend_size = legend_size
+      self$params$ora_dot_plot$yaxis_word_split = yaxis_word_split
+      self$params$ora_dot_plot$title_size = title_size
+      self$params$ora_dot_plot$xlabel_size = xlabel_size
+      self$params$ora_dot_plot$xtick_size = xtick_size
+      self$params$ora_dot_plot$ytick_size = ytick_size
+      self$params$ora_dot_plot$img_format = img_format
+    },
+
+    param_ea_ridge_plot = function(auto_refresh, show_category, fill, core_enrichment, color_palette, reverse_palette, displayed_label, orderBy, decreasing, title_font_size, yaxis_word_split, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$ea_ridge_plot$auto_refresh= auto_refresh
+      self$params$ea_ridge_plot$show_category = show_category
+      self$params$ea_ridge_plot$fill = fill
+      self$params$ea_ridge_plot$core_enrichment = core_enrichment
+      self$params$ea_ridge_plot$color_palette = color_palette
+      self$params$ea_ridge_plot$reverse_palette = reverse_palette
+      self$params$ea_ridge_plot$displayed_label = displayed_label
+      self$params$ea_ridge_plot$orderBy = orderBy
+      self$params$ea_ridge_plot$decreasing = decreasing
+      self$params$ea_ridge_plot$title_font_size = title_font_size
+      self$params$ea_ridge_plot$yaxis_word_split = yaxis_word_split
+      self$params$ea_ridge_plot$y_label_font_size = y_label_font_size
+      self$params$ea_ridge_plot$y_tick_font_size = y_tick_font_size
+      self$params$ea_ridge_plot$x_label_font_size = x_label_font_size
+      self$params$ea_ridge_plot$x_tick_font_size = x_tick_font_size
+      self$params$ea_ridge_plot$legend_font_size = legend_font_size
+      self$params$ea_ridge_plot$img_format = img_format
+    },
+
+    param_ea_cnet_plot = function(auto_refresh, show_category, displayed_labels, set_node_annotations, feature_node_annotations, set_node_color_palette, reverse_set_palette, feature_node_color_palette, reverse_feature_palette, label_font_size, static_network, solver, gravitationalConstant, nodeDistance, centralGravity, springLength, springConstant, img_format) {
+      self$params$ea_cnet_plot$auto_refresh= auto_refresh
+      self$params$ea_cnet_plot$show_category = show_category
+      self$params$ea_cnet_plot$displayed_labels = displayed_labels
+      self$params$ea_cnet_plot$set_node_annotations = set_node_annotations
+      self$params$ea_cnet_plot$feature_node_annotations = feature_node_annotations
+      self$params$ea_cnet_plot$set_node_color_palette = set_node_color_palette
+      self$params$ea_cnet_plot$reverse_set_palette = reverse_set_palette
+      self$params$ea_cnet_plot$feature_node_color_palette = feature_node_color_palette
+      self$params$ea_cnet_plot$reverse_feature_palette = reverse_feature_palette
+      self$params$ea_cnet_plot$label_font_size = label_font_size
+      self$params$ea_cnet_plot$static_network = static_network
+      self$params$ea_cnet_plot$solver = solver
+      self$params$ea_cnet_plot$gravitationalConstant = gravitationalConstant
+      self$params$ea_cnet_plot$nodeDistance = nodeDistance
+      self$params$ea_cnet_plot$centralGravity = centralGravity
+      self$params$ea_cnet_plot$springLength = springLength
+      self$params$ea_cnet_plot$springConstant = springConstant
+      self$params$ea_cnet_plot$img_format = img_format
+    },
+
+    param_ora_cnet_plot = function(auto_refresh, show_category, displayed_labels, set_node_annotations, feature_node_annotations, set_node_color_palette, reverse_set_palette, feature_node_color_palette, reverse_feature_palette, label_font_size, static_network, solver, gravitationalConstant, nodeDistance, centralGravity, springLength, springConstant, img_format) {
+      self$params$ora_cnet_plot$auto_refresh= auto_refresh
+      self$params$ora_cnet_plot$show_category = show_category
+      self$params$ora_cnet_plot$displayed_labels = displayed_labels
+      self$params$ora_cnet_plot$set_node_annotations = set_node_annotations
+      self$params$ora_cnet_plot$feature_node_annotations = feature_node_annotations
+      self$params$ora_cnet_plot$set_node_color_palette = set_node_color_palette
+      self$params$ora_cnet_plot$reverse_set_palette = reverse_set_palette
+      self$params$ora_cnet_plot$feature_node_color_palette = feature_node_color_palette
+      self$params$ora_cnet_plot$reverse_feature_palette = reverse_feature_palette
+      self$params$ora_cnet_plot$label_font_size = label_font_size
+      self$params$ora_cnet_plot$static_network = static_network
+      self$params$ora_cnet_plot$solver = solver
+      self$params$ora_cnet_plot$gravitationalConstant = gravitationalConstant
+      self$params$ora_cnet_plot$nodeDistance = nodeDistance
+      self$params$ora_cnet_plot$centralGravity = centralGravity
+      self$params$ora_cnet_plot$springLength = springLength
+      self$params$ora_cnet_plot$springConstant = springConstant
+      self$params$ora_cnet_plot$img_format = img_format
+    },
+
+    param_ea_emap_plot = function(auto_refresh, show_category, color, size, displayed_labels, mode, score_threshold, similarity_score, node_color_palette, reverse_node_palette, edge_width, edge_color, edge_color_palette, reverse_edge_palette, edge_magnifier, node_magnifier, label_font_size, static_network, solver, gravitationalConstant, nodeDistance, centralGravity, springLength, springConstant, img_format) {
+      self$params$ea_emap_plot$auto_refresh= auto_refresh
+      self$params$ea_emap_plot$show_category = show_category
+      self$params$ea_emap_plot$color = color
+      self$params$ea_emap_plot$size = size
+      self$params$ea_emap_plot$displayed_labels = displayed_labels
+      self$params$ea_emap_plot$mode = mode
+      self$params$ea_emap_plot$score_threshold = score_threshold
+      self$params$ea_emap_plot$similarity_score = similarity_score
+      self$params$ea_emap_plot$node_color_palette = node_color_palette
+      self$params$ea_emap_plot$reverse_node_palette = reverse_node_palette
+      self$params$ea_emap_plot$edge_width = edge_width
+      self$params$ea_emap_plot$edge_color = edge_color
+      self$params$ea_emap_plot$edge_color_palette = edge_color_palette
+      self$params$ea_emap_plot$reverse_edge_palette = reverse_edge_palette
+      self$params$ea_emap_plot$edge_magnifier = edge_magnifier
+      self$params$ea_emap_plot$node_magnifier = node_magnifier
+      self$params$ea_emap_plot$label_font_size = label_font_size
+      self$params$ea_emap_plot$static_network = static_network
+      self$params$ea_emap_plot$solver = solver
+      self$params$ea_emap_plot$gravitationalConstant = gravitationalConstant
+      self$params$ea_emap_plot$nodeDistance = nodeDistance
+      self$params$ea_emap_plot$centralGravity = centralGravity
+      self$params$ea_emap_plot$springLength = springLength
+      self$params$ea_emap_plot$springConstant = springConstant
+      self$params$ea_emap_plot$img_format = img_format
+    },
+
+    param_ora_emap_plot = function(auto_refresh, show_category, color, size, displayed_labels, score_threshold, similarity_score, node_color_palette, reverse_node_palette, edge_width, edge_color, edge_color_palette, reverse_edge_palette, edge_magnifier, node_magnifier, label_font_size, static_network, solver, gravitationalConstant, nodeDistance, centralGravity, springLength, springConstant, img_format) {
+      self$params$ora_emap_plot$auto_refresh= auto_refresh
+      self$params$ora_emap_plot$show_category = show_category
+      self$params$ora_emap_plot$color = color
+      self$params$ora_emap_plot$size = size
+      self$params$ora_emap_plot$displayed_labels = displayed_labels
+      self$params$ora_emap_plot$score_threshold = score_threshold
+      self$params$ora_emap_plot$similarity_score = similarity_score
+      self$params$ora_emap_plot$node_color_palette = node_color_palette
+      self$params$ora_emap_plot$reverse_node_palette = reverse_node_palette
+      self$params$ora_emap_plot$edge_width = edge_width
+      self$params$ora_emap_plot$edge_color = edge_color
+      self$params$ora_emap_plot$edge_color_palette = edge_color_palette
+      self$params$ora_emap_plot$reverse_edge_palette = reverse_edge_palette
+      self$params$ora_emap_plot$edge_magnifier = edge_magnifier
+      self$params$ora_emap_plot$node_magnifier = node_magnifier
+      self$params$ora_emap_plot$label_font_size = label_font_size
+      self$params$ora_emap_plot$static_network = static_network
+      self$params$ora_emap_plot$solver = solver
+      self$params$ora_emap_plot$gravitationalConstant = gravitationalConstant
+      self$params$ora_emap_plot$nodeDistance = nodeDistance
+      self$params$ora_emap_plot$centralGravity = centralGravity
+      self$params$ora_emap_plot$springLength = springLength
+      self$params$ora_emap_plot$springConstant = springConstant
+      self$params$ora_emap_plot$img_format = img_format
+    },
+
+    param_ora_bar_plot = function(auto_refresh, x, color, show_category, displayed_label, order_by, order_decreasing, color_palette, reverse_palette, title_font_size, yaxis_word_split, y_label_font_size, x_label_font_size, y_tick_font_size, x_tick_font_size, legend_font_size, img_format) {
+      self$params$ora_bar_plot$auto_refresh= auto_refresh
+      self$params$ora_bar_plot$x = x
+      self$params$ora_bar_plot$color = color
+      self$params$ora_bar_plot$show_category = show_category
+      self$params$ora_bar_plot$displayed_label = displayed_label
+      self$params$ora_bar_plot$order_by = order_by
+      self$params$ora_bar_plot$order_decreasing = order_decreasing
+      self$params$ora_bar_plot$color_palette = color_palette
+      self$params$ora_bar_plot$reverse_palette = reverse_palette
+      self$params$ora_bar_plot$title_font_size = title_font_size
+      self$params$ora_bar_plot$yaxis_word_split = yaxis_word_split
+      self$params$ora_bar_plot$y_label_font_size = y_label_font_size
+      self$params$ora_bar_plot$y_tick_font_size = y_tick_font_size
+      self$params$ora_bar_plot$x_label_font_size = x_label_font_size
+      self$params$ora_bar_plot$x_tick_font_size = x_tick_font_size
+      self$params$ora_bar_plot$legend_font_size = legend_font_size
+      self$params$ora_bar_plot$img_format = img_format
+    },
+
+    #------------------------------------------------------ Indices methods ----
+
+    set_type_column = function(type_column,
+                               indexed_meta = self$tables$indexed_meta) {
+
+      if (is.null(indexed_meta)) {
+        base::stop('Define an ID column before proceeding')
+      }
+
+      if (!(type_column %in% colnames(indexed_meta))) {
+        base::stop('Selected type column does not exist')
+      }
+
+      if (base::any(base::is.na(indexed_meta[,type_column]))) {
+        base::stop('Column for sample types cannot contain missing values')
+      }
+
+      self$indices$type_column = type_column
 
     },
 
-    param_gsea = function(data_table, meta_table, group_col, groups, used_function, test,
-                          p_value_cutoff_prep, prot_list, ont, minGSSize, maxGSSize, p_value_cutoff,
-                          verbose, OrgDb, pAdjustMethod, termsim_method, termsim_showcat) {
-      self$params$gsea$data_table = data_table
-      self$params$gsea$meta_table = meta_table
-      self$params$gsea$group_col = group_col
-      self$params$gsea$groups = groups
-      self$params$gsea$used_function = used_function
-      self$params$gsea$test = test
-      self$params$gsea$p_value_cutoff_prep = p_value_cutoff_prep
-      self$params$gsea$prot_list = prot_list
-      self$params$gsea$ont = ont
-      self$params$gsea$minGSSize = minGSSize
-      self$params$gsea$maxGSSize = maxGSSize
-      self$params$gsea$p_value_cutoff = p_value_cutoff
-      self$params$gsea$verbose = verbose
-      self$params$gsea$OrgDb = OrgDb
-      self$params$gsea$pAdjustMethod = pAdjustMethod
-      self$params$gsea$termsim_method = termsim_method
-      self$params$gsea$termsim_showcat = termsim_showcat
-    },
+    set_group_column = function(group_column,
+                                indexed_meta = self$tables$indexed_meta) {
 
-    param_overrepresentation = function(pval_cutoff_features, padjust_features, pval_cutoff, fc_threshold,
-                                        pAdjustMethod, ont, qval_cutoff, minGSSize, maxGSSize) {
-      self$params$overrepresentation$pval_cutoff_features = pval_cutoff_features
-      self$params$overrepresentation$padjust_features = padjust_features
-      self$params$overrepresentation$pval_cutoff = pval_cutoff
-      self$params$overrepresentation$pAdjustMethod = pAdjustMethod
-      self$params$overrepresentation$fc_threshold = fc_threshold
-      self$params$overrepresentation$ont = ont
-      self$params$overrepresentation$qval_cutoff = qval_cutoff
-      self$params$overrepresentation$minGSSize = minGSSize
-      self$params$overrepresentation$maxGSSize = maxGSSize
+      if (is.null(indexed_meta)) {
+        base::stop('Define an ID column before proceeding')
+      }
+
+      if (!(group_column %in% colnames(indexed_meta))) {
+        base::stop('Selected group column does not exist')
+      }
+
+      if (base::any(base::is.na(indexed_meta[,group_column]))) {
+        base::stop('Column for sample groups cannot contain missing values')
+      }
+
+      self$indices$group_column = group_column
 
     },
 
-    param_dot_plot = function(showCategory, mode, img_format) {
-      self$params$dot_plot$showCategory = showCategory
-      self$params$dot_plot$mode = mode
-      self$params$dot_plot$img_format = img_format
+    set_batch_column = function(batch_column = "None",
+                                indexed_meta = self$tables$indexed_meta) {
+
+      if (is.null(indexed_meta)) {
+        base::stop('Define an ID column before proceeding')
+      }
+
+      if (!(batch_column %in% colnames(indexed_meta))) {
+
+        base::warning('Undefined or unsupplied batch column, proceding without batches')
+        self$tables$indexed_meta$isoda_batch = 1
+        batch_column = "isoda_batch"
+
+      } else if (base::any(base::is.na(indexed_meta[,batch_column]))) {
+
+        base::stop('Column for batches cannot contain missing values')
+
+      }
+
+      self$indices$batch_column = batch_column
+
     },
 
-    param_ridge_plot = function(showCategory, img_format) {
-      self$params$ridge_plot$showCategory = showCategory
-      self$params$ridge_plot$img_format = img_format
+    set_blank_indices = function(blank_pattern = NULL,
+                                 indexed_meta = self$tables$indexed_meta,
+                                 type_column = self$indices$type_column) {
+      if (is.null(blank_pattern)) {
+        index_blanks = NULL
+      } else {
+        index_blanks = grep(pattern = blank_pattern,
+                            x = indexed_meta[,type_column],
+                            ignore.case = TRUE)
+        index_blanks = rownames(indexed_meta)[index_blanks]
+        if (length(index_blanks) == 0) {index_blanks = NULL}
+      }
+
+      self$indices$index_blanks = index_blanks
     },
 
-    param_cnet_plot = function(showCategory, displayed_labels, enable_physics) {
-      self$params$cnet_plot$showCategory = showCategory
-      self$params$cnet_plot$displayed_labels = displayed_labels
-      self$params$cnet_plot$enable_physics = enable_physics
+    set_qc_indices = function(qc_pattern = NULL,
+                              indexed_meta = self$tables$indexed_meta,
+                              type_column = self$indices$type_column) {
+      if (is.null(qc_pattern)) {
+        index_qcs = NULL
+      } else {
+        index_qcs = grep(pattern = qc_pattern,
+                         x = indexed_meta[,type_column],
+                         ignore.case = TRUE)
+        index_qcs = rownames(indexed_meta)[index_qcs]
+        if (length(index_qcs) == 0) {index_qcs = NULL}
+      }
+
+      self$indices$index_qcs = index_qcs
     },
 
-    param_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
-      self$params$emap_plot$showCategory = showCategory
-      self$params$emap_plot$color = color
-      self$params$emap_plot$size = size
-      self$params$emap_plot$score_threshold = score_threshold
-      self$params$emap_plot$similarity_score = similarity_score
-      self$params$emap_plot$edge_magnifier = edge_magnifier
-      self$params$emap_plot$node_magnifier = node_magnifier
-      self$params$emap_plot$enable_physics = enable_physics
+    set_pool_indices = function(pool_pattern = NULL,
+                                indexed_meta = self$tables$indexed_meta,
+                                type_column = self$indices$type_column) {
+      if (is.null(pool_pattern)) {
+        index_pools = NULL
+      } else {
+        index_pools = grep(pattern = pool_pattern,
+                           x = indexed_meta[,type_column],
+                           ignore.case = TRUE)
+        index_pools = rownames(indexed_meta)[index_pools]
+        if (length(index_pools) == 0) {index_pools = NULL}
+      }
+
+      self$indices$index_pools = index_pools
     },
 
-    param_or_dot_plot = function(showCategory, img_format) {
-      self$params$or_dot_plot$showCategory = showCategory
-      self$params$or_dot_plot$img_format = img_format
+    set_sample_indices = function(indexed_meta = self$tables$indexed_meta,
+                                  index_blanks = self$indices$index_blanks,
+                                  index_qcs = self$indices$index_qcs,
+                                  index_pools = self$indices$index_pools) {
+      index_samples = rownames(indexed_meta)[!(rownames(indexed_meta) %in% c(index_blanks, index_qcs, index_pools))]
+      self$indices$index_samples = index_samples
     },
 
-    param_or_bar_plot = function(x, color, showCategory, img_format) {
-      self$params$or_bar_plot$x = x
-      self$params$or_bar_plot$color = color
-      self$params$or_bar_plot$showCategory = showCategory
-      self$params$or_bar_plot$img_format = img_format
+    exclude_samples = function(indexed_meta = self$tables$indexed_meta,
+                               excluded_samples = self$indices$excluded_samples,
+                               manual_selection = NULL,
+                               select_blanks = F,
+                               select_qcs = F,
+                               select_pools = F,
+                               index_blanks = self$indices$index_blanks,
+                               index_qcs = self$indices$index_qcs,
+                               index_pools = self$indices$index_pools,
+                               exclude = TRUE) {
+
+      # Filter out from indexed_meta samples that were already excluded
+      if (!is.null(excluded_samples)) {
+        indexed_meta = indexed_meta[-which(rownames(indexed_meta) %in% excluded_samples),]
+      }
+
+      selected_samples = NULL
+
+      # Manual selection
+      if (!is.null(manual_selection)) {
+        selected_samples = c(selected_samples, rownames(indexed_meta)[rownames(indexed_meta) %in% manual_selection])
+      }
+
+      # Add blanks
+      if (select_blanks) {
+        selected_samples = c(selected_samples, index_blanks)
+      }
+
+      # Add qcs
+      if (select_qcs) {
+        selected_samples = c(selected_samples, index_qcs)
+      }
+
+      # Add pools
+      if (select_pools) {
+        selected_samples = c(selected_samples, index_pools)
+      }
+
+      if (exclude) {
+        excluded_samples = c(excluded_samples, selected_samples)
+      } else {
+        excluded_samples = c(excluded_samples, rownames(indexed_meta)[!(rownames(indexed_meta) %in% selected_samples)])
+      }
+
+      # Unique and sort
+      excluded_samples = base::sort(base::unique(excluded_samples))
+
+      self$indices$excluded_samples = excluded_samples
     },
 
-    param_or_cnet_plot = function(showCategory, displayed_labels, enable_physics) {
-      self$params$or_cnet_plot$showCategory = showCategory
-      self$params$or_cnet_plot$displayed_labels = displayed_labels
-      self$params$or_cnet_plot$enable_physics = enable_physics
+    reset_sample_exclusion = function() {
+      self$indices$excluded_samples = NULL
     },
 
-    param_or_emap_plot = function(showCategory, color, size, score_threshold, similarity_score, edge_magnifier, node_magnifier, enable_physics) {
-      self$params$or_emap_plot$showCategory = showCategory
-      self$params$or_emap_plot$color = color
-      self$params$or_emap_plot$size = size
-      self$params$or_emap_plot$score_threshold = score_threshold
-      self$params$or_emap_plot$similarity_score = similarity_score
-      self$params$or_emap_plot$edge_magnifier = edge_magnifier
-      self$params$or_emap_plot$node_magnifier = node_magnifier
-      self$params$or_emap_plot$enable_physics = enable_physics
+    feature_manual_exclusion = function(indexed_data = self$tables$indexed_data,
+                                        excluded_features = self$indices$excluded_features,
+                                        selection = NULL,
+                                        drop = T) {
+
+      if (!is.null(selection)) {
+        remaining_features = colnames(indexed_data)[!(colnames(indexed_data) %in% excluded_features)]
+        selected_features = selection[selection %in% remaining_features]
+        if (drop) {
+          excluded_features = c(excluded_features, selected_features)
+        } else {
+          excluded_features = c(excluded_features,
+                                remaining_features[!(remaining_features %in% selected_features)])
+        }
+        excluded_features = sort(unique(excluded_features))
+      }
+
+      self$indices$excluded_features = excluded_features
     },
 
+    reset_feature_exclusion = function() {
+      self$indices$excluded_features = NULL
+    },
 
     #-------------------------------------------------------- Table methods ----
 
-    set_raw_meta = function(){
-
-      if (!is.na(self$indices$id_col_meta) & !is.null(self$tables$imp_meta)){
-        data_table = self$tables$imp_meta
-        rownames(data_table) = data_table[,self$indices$id_col_meta]
-        data_table[,self$indices$id_col_meta] = NULL
-        self$tables$raw_meta = data_table
-      }
+    import_meta = function(path) {
+      imp_meta = soda_read_table(path)
+      self$tables$imp_meta = imp_meta
     },
 
-    set_raw_data = function(apply_imputation = T,
-                            impute_before = T,
-                            apply_filtering = T,
-                            imputation_function = 'median',
-                            val_threshold = 0.6,
-                            blank_multiplier = 0.8,
-                            sample_threshold = 0.8,
-                            group_threshold = 0.8,
-                            norm_col = "") {
+    import_data = function(path) {
+      imp_data = soda_read_table(path)
+      self$tables$imp_data = imp_data
+    },
 
-      if (!is.na(self$indices$id_col_data) & !is.null(self$tables$imp_data) & !is.null(self$tables$raw_meta)){
+    set_indexed_meta = function(id_col = self$indices$id_col_meta,
+                                imp_meta = self$tables$imp_meta) {
 
-        # Copy imported table
-        data_table = self$tables$imp_data
+      indexed_meta = get_indexed_table(id_col = id_col,
+                                       input_table = imp_meta)
 
-        # Set ID column
-        rownames(data_table) = data_table[,self$indices$id_col_data]
-        data_table[,self$indices$id_col_data] = NULL
-        data_table = as.matrix(data_table)
+      # Store
+      self$indices$id_col_meta = id_col
+      self$tables$indexed_meta = indexed_meta
 
-        # Keep only rows from raw_meta
-        data_table = data_table[rownames(self$tables$raw_meta),]
+    },
 
-        # Remove columns from exclusion list
-        if (!is.null(self$indices$excluded_cols)) {
-          data_table = drop_cols(data_table, self$indices$excluded_cols)
-        }
+    set_indexed_data = function(id_col,
+                                imp_data = self$tables$imp_data) {
 
-        # Remove empty columns
-        data_table = remove_empty_cols(data_table)
+      indexed_data = get_indexed_table(id_col = id_col,
+                                       input_table = imp_data)
 
-        # Imputation and filtering
-        if (apply_imputation & impute_before & apply_filtering) {
-          data_table = impute_na(method = imputation_function,
-                                 data_table = data_table,
-                                 meta_table = self$tables$raw_meta,
-                                 group_col = self$indices$group_col,
-                                 sample_rownames = self$indices$rownames_samples,
-                                 val_threshold = val_threshold)
+      # Store
+      self$indices$id_col_data = id_col
+      self$tables$indexed_data = as.matrix(indexed_data)
 
-          del_cols = lips_get_del_cols(data_table = data_table,
-                                       blank_table = self$tables$blank_table,
-                                       imp_meta = self$tables$imp_meta,
-                                       raw_meta = self$tables$raw_meta,
-                                       idx_blanks = self$indices$idx_blanks,
-                                       idx_samples = self$indices$idx_samples,
-                                       id_col_meta = self$indices$id_col_meta,
-                                       group_col = self$indices$group_col,
-                                       batch_col = self$indices$batch_col,
-                                       blank_multiplier = blank_multiplier,
-                                       sample_threshold = sample_threshold,
-                                       group_threshold = group_threshold)
+    },
 
-          data_table = drop_cols(data_table, del_cols)
-
-        } else if (apply_imputation & !impute_before & apply_filtering) {
-          del_cols = lips_get_del_cols(data_table = data_table,
-                                       blank_table = self$tables$blank_table,
-                                       imp_meta = self$tables$imp_meta,
-                                       raw_meta = self$tables$raw_meta,
-                                       idx_blanks = self$indices$idx_blanks,
-                                       idx_samples = self$indices$idx_samples,
-                                       id_col_meta = self$indices$id_col_meta,
-                                       group_col = self$indices$group_col,
-                                       batch_col = self$indices$batch_col,
-                                       blank_multiplier = blank_multiplier,
-                                       sample_threshold = sample_threshold,
-                                       group_threshold = group_threshold)
-
-          data_table = drop_cols(data_table, del_cols)
-
-          data_table = impute_na(method = imputation_function,
-                                 data_table = data_table,
-                                 meta_table = self$tables$raw_meta,
-                                 group_col = self$indices$group_col,
-                                 sample_rownames = self$indices$rownames_samples,
-                                 val_threshold = val_threshold)
-        } else if (apply_imputation & !apply_filtering) {
-          data_table = impute_na(method = imputation_function,
-                                 data_table = data_table,
-                                 meta_table = self$tables$raw_meta,
-                                 group_col = self$indices$group_col,
-                                 sample_rownames = self$indices$rownames_samples,
-                                 val_threshold = val_threshold)
-        } else if (!apply_imputation & apply_filtering) {
-          # Filtering alone
-          del_cols = lips_get_del_cols(data_table = data_table,
-                                       blank_table = self$tables$blank_table,
-                                       imp_meta = self$tables$imp_meta,
-                                       raw_meta = self$tables$raw_meta,
-                                       idx_blanks = self$indices$idx_blanks,
-                                       idx_samples = self$indices$idx_samples,
-                                       id_col_meta = self$indices$id_col_meta,
-                                       group_col = self$indices$group_col,
-                                       batch_col = self$indices$batch_col,
-                                       blank_multiplier = blank_multiplier,
-                                       sample_threshold = sample_threshold,
-                                       group_threshold = group_threshold)
-
-          data_table = drop_cols(data_table, del_cols)
-        }
-
-        if (norm_col != "") {
-          if (is_num_coercible(self$tables$raw_meta[,norm_col]) & !base::any(is.na(self$tables$raw_meta[,norm_col]))) {
-            print(paste0('Normalizing data by ', norm_col))
-            data_table = data_table/as.numeric(self$tables$raw_meta[,norm_col])
-          } else {
-            print('Warning: Normalization skipped, selected column contains either non numeric or missing data.')
-          }
-        }
-        self$tables$raw_data = data_table
+    set_raw_meta = function(indexed_meta = self$tables$indexed_meta,
+                            excluded_samples = self$indices$excluded_samples){
+      if (!is.null(excluded_samples)) {
+        indexed_meta = indexed_meta[-which(rownames(indexed_meta) %in% excluded_samples), ]
       }
+
+      if (nrow(indexed_meta) == 0) {
+        base::stop('Removed all samples, cannot proceed.')
+      }
+
+      self$tables$raw_meta = indexed_meta
+    },
+
+    set_raw_data = function(indexed_data = self$tables$indexed_data,
+                            indexed_meta = self$tables$indexed_meta,
+                            excluded_samples = self$indices$excluded_samples,
+                            excluded_features = self$indices$excluded_features,
+                            index_blanks = self$indices$index_blanks,
+                            index_qcs = self$indices$index_qcs,
+                            index_pools = self$indices$index_pools,
+                            batch_column = self$indices$batch_column,
+                            group_column = self$indices$group_column,
+                            operation_order = c("Imputation", "Batch correction", "Filtering"),
+                            blank_multiplier = 2, # 2
+                            sample_threshold = 0.8, # 0.8
+                            group_threshold = 0.8, # 0.8
+                            imputation_method = "None", # 'minimum', 'mean', 'median', 'max'
+                            batch_effect_correction = "None", # None, No controls, Pool, QC
+                            norm_col = "None"
+                            ) {
+
+      #Set raw_data, exclude samples and features
+      raw_data = indexed_data[rownames(indexed_meta), ]
+
+      if (!is.null(excluded_features)) {
+        raw_data = raw_data[, -which(colnames(raw_data) %in% excluded_features)]
+      }
+
+      if (!is.null(excluded_samples)) {
+        raw_data = raw_data[-which(rownames(raw_data) %in% excluded_samples),]
+      }
+
+      # Get non-sample tables
+      blank_table = indexed_data[index_blanks,]
+      qc_table = indexed_data[index_qcs,]
+      pool_table = indexed_data[index_pools,]
+
+      # Process raw_data
+      for (func_name in operation_order) {
+        if (func_name == "Imputation") {
+          if (imputation_method != "None") {
+            raw_data = impute_na(data_table = raw_data,
+                                 method = imputation_method)
+            blank_table = impute_na(data_table = blank_table,
+                                    method = imputation_method)
+            qc_table = impute_na(data_table = qc_table,
+                                 method = imputation_method)
+            pool_table = impute_na(data_table = pool_table,
+                                   method = imputation_method)
+          }
+        } else if (func_name == "Batch correction") {
+          if (batch_effect_correction != "None") {
+            corrected_data = batch_effect_correction_combat(
+              raw_data = raw_data,
+              batch_effect_correction = batch_effect_correction,
+              batch_column = batch_column,
+              indexed_meta = indexed_meta,
+              blank_table = blank_table,
+              qc_table = qc_table,
+              pool_table = pool_table)
+            raw_data = corrected_data$raw_data
+            blank_table = corrected_data$blank_table
+          }
+
+        } else if (func_name == "Filtering") {
+          raw_data = feature_signal_filtering(
+            raw_data = raw_data,
+            blank_table = blank_table,
+            indexed_meta = indexed_meta,
+            batch_column = batch_column,
+            group_column = group_column,
+            blank_multiplier = blank_multiplier,
+            sample_threshold = sample_threshold,
+            group_threshold = group_threshold)
+        } else {
+          base::stop(paste0('Requested process does not exist: ', func_name))
+        }
+      }
+
+      # Normalization
+      if (norm_col != "None") {
+        indexed_meta = indexed_meta[rownames(raw_data),]
+        if (is_num_coercible(indexed_meta[,norm_col]) & !base::any(is.na(indexed_meta[,norm_col]))) {
+          raw_data = raw_data/as.numeric(indexed_meta[,norm_col])
+        } else {
+          base::warning("Normalization skipped, selected column contains either non numeric or missing data.")
+        }
+      }
+
+      self$tables$raw_data = raw_data
+
     },
 
     add_go_data = function(name,
@@ -855,7 +1541,7 @@ Omics_exp = R6::R6Class(
                             pvalueCutoff = pvalueCutoff)
 
       if (is.null(go_data)) {
-        print('No GO enrichment with used parameters.')
+        print_tm(self$name, 'No GO enrichment with used parameters.')
         return()
       }
 
@@ -973,14 +1659,6 @@ Omics_exp = R6::R6Class(
       }
     },
 
-    get_blank_table = function() {
-      blank_idx = which(self$tables$imp_data[,self$indices$id_col_meta] %in% self$tables$imp_meta[self$indices$idx_blanks,self$indices$id_col_data])
-      blank_table = self$tables$imp_data[blank_idx,]
-      rownames(blank_table) = blank_table[,self$indices$id_col_data]
-      blank_table[,self$indices$id_col_data] = NULL
-      self$tables$blank_table = as.matrix(blank_table)
-    },
-
     # Class normalisation
     normalise_class = function(){
       self$tables$class_norm_data = normalise_lipid_class(self$tables$raw_data)
@@ -1029,16 +1707,16 @@ Omics_exp = R6::R6Class(
     get_group_summary_species = function() {
       self$tables$summary_species_table = get_group_median_table(data_table = self$tables$raw_data,
                                                                  meta_table = self$tables$raw_meta,
-                                                                 group_col = self$indices$group_col)
+                                                                 group_col = self$indices$group_column)
     },
 
     get_group_summary_classes = function() {
       self$tables$summary_class_table = get_group_median_table(data_table = self$tables$class_table,
                                                                meta_table = self$tables$raw_meta,
-                                                               group_col = self$indices$group_col)
+                                                               group_col = self$indices$group_column)
     },
 
-    derive_data_tables = function(params_list) {
+    derive_data_tables = function(params_list = NULL) {
       # Derive tables
       self$get_feature_table()
       self$update_feature_table()
@@ -1060,513 +1738,524 @@ Omics_exp = R6::R6Class(
       # Set plotting parameters
       self$indices$feature_id_type = 'SYMBOL'
 
-      self$param_class_distribution(dataset = 'Class table total normalized',
-                                    group_col = self$indices$group_col,
+      self$param_dendrogram(auto_refresh = F,
+                            dataset = 'Z-scored table',
+                            annotations = self$indices$group_column,
+                            distance_method = "euclidean",
+                            p = 2,
+                            clustering_method = "ward.D2",
+                            k_clusters = NULL,
+                            color_palette = "Spectral",
+                            x_tick_font_size = 0,
+                            y_label_font_size = 12,
+                            y_tick_font_size = 15,
+                            img_format = "png")
+
+      self$param_class_distribution(auto_refresh = F,
+                                    dataset = 'Class table total normalized',
+                                    group_col = self$indices$group_column,
                                     color_palette = 'Spectral',
+                                    title_font_size = 0,
+                                    y_label_font_size = 20,
+                                    y_tick_font_size = 15,
+                                    x_label_font_size = 0,
+                                    x_tick_font_size = 15,
+                                    legend_font_size = 15,
                                     img_format = "png")
 
-      self$param_class_comparison(dataset = 'Class table total normalized',
-                                  group_col = self$indices$group_col,
+      self$param_class_comparison(auto_refresh = F,
+                                  dataset = 'Class table total normalized',
+                                  group_col = self$indices$group_column,
                                   color_palette = 'Spectral',
+                                  title_font_size = 16,
+                                  y_label_font_size = 20,
+                                  y_tick_font_size = 15,
+                                  x_tick_font_size = 15,
+                                  legend_font_size = 15,
                                   img_format = "png")
 
-      self$param_pca(auto_refresh = T,
-                     data_table = 'z_scored_total_norm_data',
-                     sample_groups_col = self$indices$group_col,
+      self$param_pca(auto_refresh = F,
+                     data_table = 'Z-scored total normalized table',
+                     sample_groups_col = self$indices$group_column,
                      feature_groups_col = NULL,
+                     impute_median = F,
                      apply_da = FALSE,
+                     sample_groups_da = self$indices$group_column,
                      alpha_da = 0.8,
-                     pca_method = 'svd',
-                     nPcs = 10,
+                     seed_da = 1,
+                     pca_method = 'nipals',
+                     nPcs = 2,
                      displayed_pc_1 = 1,
                      displayed_pc_2 = 2,
                      completeObs = F,
-                     displayed_plots = 'both',
+                     displayed_plots = 'scores',
                      colors_palette = 'Spectral',
+                     marker_size = 10,
+                     opacity = 1,
+                     title_font_size = 16,
+                     y_label_font_size = 20,
+                     y_tick_font_size = 15,
+                     x_label_font_size = 20,
+                     x_tick_font_size = 15,
+                     legend_font_size = 15,
                      img_format = "png")
 
-      self$param_volcano_plot(auto_refresh = T,
-                              data_table = 'Total normalized table',
-                              adjustment = "BH",
-                              group_col = self$indices$group_col,
-                              group_1 = unique(self$tables$raw_meta[,self$indices$group_col])[1],
-                              group_2 = unique(self$tables$raw_meta[,self$indices$group_col])[2],
-                              feature_metadata = 'None',
-                              keep_significant = F,
-                              displayed_plot = 'main',
-                              p_val_threshold = 0.05,
-                              fc_threshold = 2,
-                              marker_size = 6,
-                              opacity = 1,
-                              color_palette = 'Spectral',
-                              selected_function = "mean",
-                              selected_test = "t-Test",
-                              img_format = "png")
+      self$param_volcano_plot_comparison(
+        data_table = 'Total normalized table',
+        group_col = self$indices$group_column,
+        group_1 = unique(self$tables$raw_meta[,self$indices$group_column])[1],
+        group_2 = unique(self$tables$raw_meta[,self$indices$group_column])[2],
+        fc_function = 'mean',
+        statistical_test = 't-Test',
+        adjustment_method = 'none')
 
-      self$param_heatmap(auto_refresh = T,
+      self$param_volcano_plot(
+        auto_refresh = F,
+        feature_metadata = 'None',
+        keep_significant = F,
+        displayed_plot = 'main',
+        p_val_threshold = 0.05,
+        fc_threshold = 2,
+        marker_size = 10,
+        opacity = 1,
+        color_palette = 'Spectral',
+        reverse_palette = F,
+        title_font_size = 16,
+        y_label_font_size = 20,
+        y_tick_font_size = 15,
+        x_label_font_size = 20,
+        x_tick_font_size = 15,
+        legend_font_size = 15,
+        img_format = "png")
+
+      self$param_heatmap(auto_refresh = F,
                          dataset = 'Z-scored total normalized table',
-                         impute = T,
-                         cluster_samples = T,
-                         cluster_features = T,
+                         distance_method = "euclidian",
+                         clustering_method = "ward.D2",
+                         impute_min = T,
+                         center = F,
+                         apply_clustering = T,
+                         k_clusters_samples = 1,
+                         k_clusters_features = 1,
                          map_sample_data = NULL,
                          map_feature_data = NULL,
                          map_feature_terms = NULL,
                          multival_cols = "None",
-                         group_column_da = self$indices$group_col,
+                         group_column_da = self$indices$group_column,
                          apply_da = T,
                          alpha_da = 0.8,
+                         seed_da = 1,
                          color_palette = 'RdYlBu',
-                         reverse_palette = F,
+                         reverse_palette = T,
+                         title_font_size = 0,
+                         y_label_font_size = 17,
+                         x_label_font_size = 17,
+                         x_tick_font_size = 0,
+                         y_tick_font_size = 0,
                          img_format = "png")
 
 
-      self$param_samples_correlation(auto_refresh = T,
+      self$param_samples_correlation(auto_refresh = F,
                                      dataset = 'Z-scored total normalized table',
                                      correlation_method = "pearson",
                                      use = 'pairwise.complete.obs',
-                                     cluster_cols = T,
-                                     cluster_rows = T,
-                                     row_annotations = 'Group_type',
-                                     col_annotations = 'Group_type',
+                                     distance_method = "euclidian",
+                                     clustering_method = "ward.D2",
+                                     k_clusters = 1,
+                                     apply_clustering = T,
+                                     center = F,
+                                     row_annotations = self$indices$group_column,
+                                     col_annotations = NULL,
                                      color_palette = 'RdYlBu',
-                                     reverse_palette = F,
+                                     reverse_palette = T,
+                                     title_font_size = 0,
+                                     y_label_font_size = 0,
+                                     y_tick_font_size = 0,
+                                     x_label_font_size = 0,
+                                     x_tick_font_size = 0,
                                      img_format = "png"
       )
 
       self$param_feature_correlation(
-        auto_refresh = T,
+        auto_refresh = F,
         dataset = 'Z-scored total normalized table',
         multival_cols = 'None',
         map_feature_terms = NULL,
         correlation_method = "pearson",
         use = 'pairwise.complete.obs',
-        cluster_cols = T,
-        cluster_rows = T,
+        distance_method = "euclidian",
+        clustering_method = "ward.D2",
+        k_clusters = 1,
+        apply_clustering = T,
+        center = F,
         row_annotations = NULL,
         col_annotations = NULL,
         roh_threshold = 0.95,
-        top_features = 300,
+        top_features = 400,
         color_palette = 'RdYlBu',
-        reverse_palette = F,
+        reverse_palette = T,
+        title_font_size = 0,
+        y_label_font_size = 0,
+        y_tick_font_size = 0,
+        x_label_font_size = 0,
+        x_tick_font_size = 0,
         img_format = "png"
       )
 
-      self$param_db_plot(dataset = "Total normalized table",
-                         adjustment = "Benjamini-Hochberg",
-                         group_column = self$indices$group_col,
-                         selected_groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
-                         selected_lipid_class = NULL,
-                         selected_carbon_chain = 'Carbon count (chain 1)',
-                         selected_unsat = 'Double bonds (chain 1)',
-                         selected_function = "median",
-                         selected_test = "t-Test",
-                         fc_range = c(-5, 5),
-                         fc_values = c(-1, 1),
-                         pval_range = c(0, 5),
-                         pval_values = c(1, 5),
-                         img_format = "png")
 
-      self$param_gsea(data_table = 'Raw data table',
-                      meta_table = 'Raw metadata table',
-                      group_col = self$indices$group_col,
-                      groups = unique(self$tables$raw_meta[,self$indices$group_col])[c(1,2)],
-                      used_function = "median",
-                      test = "t-Test",
-                      p_value_cutoff_prep = 0.05,
-                      prot_list = 'GSEA prot list',
-                      ont = 'Gene ontology (ALL)',
-                      minGSSize = 3,
-                      maxGSSize = 800,
-                      p_value_cutoff = 0.05,
-                      verbose = TRUE,
-                      OrgDb = "org.Hs.eg.db",
-                      pAdjustMethod = 'BH',
-                      termsim_method = 'JC',
-                      termsim_showcat = 200)
 
-      self$param_overrepresentation(pval_cutoff_features = 0.05,
-                                    padjust_features = 'Benjamini-Hochberg',
-                                    pval_cutoff = 0.05,
-                                    pAdjustMethod = "BH",
-                                    fc_threshold = 2,
-                                    ont = "Gene ontology (ALL)",
-                                    qval_cutoff = 0.05,
-                                    minGSSize = 10,
-                                    maxGSSize = 500)
+      self$param_double_bonds_comparison(data_table = "Total normalized table",
+                                         group_col = self$indices$group_column,
+                                         group_1 = unique(self$tables$raw_meta[,self$indices$group_column])[1],
+                                         group_2 = unique(self$tables$raw_meta[,self$indices$group_column])[2],
+                                         fc_function = 'mean',
+                                         statistical_test = 't-Test',
+                                         adjustment_method = 'none')
 
-      self$param_dot_plot(showCategory = 10,
-                          mode = "Both",
-                          img_format = "png")
+      self$param_double_bonds_plot(auto_refresh = F,
+                                   carbon_selection = "Carbon count (chain 1)",
+                                   unsat_selection = "Double bonds (chain 1)",
+                                   lipid_class = "CE",
+                                   min_fc = 0,
+                                   max_pval = 1,
+                                   remove_missing_pval = T,
+                                   remove_infitive_fc = T,
+                                   color_palette = 'RdBu',
+                                   reverse_palette = T,
+                                   marker_size = 1,
+                                   marker_opacity = 0.5,
+                                   title_font_size = 16,
+                                   y_label_font_size = 20,
+                                   y_tick_font_size = 15,
+                                   x_label_font_size = 20,
+                                   x_tick_font_size = 15,
+                                   legend_font_size = 15,
+                                   img_format = "png")
 
-      self$param_ridge_plot(showCategory = 30,
-                            img_format = "png")
+      self$param_ea_selection(
+        table = 'Total normalized table',
+        group_col = self$indices$group_column,
+        group_1 = unique(self$tables$raw_meta[,self$indices$group_column])[1],
+        group_2 = unique(self$tables$raw_meta[,self$indices$group_column])[2],
+        fc_function = "mean",
+        statistical_test = "t-Test",
+        adjustment_method = "none"
+      )
+
+      self$param_ora_selection(
+        group_col = self$indices$group_column,
+        group_1 = unique(self$tables$raw_meta[,self$indices$group_column])[1],
+        group_2 = unique(self$tables$raw_meta[,self$indices$group_column])[2],
+        fc_function = "mean",
+        statistical_test = "t-Test",
+        adjustment_method = "none"
+      )
+
+      self$param_ea_process(
+        custom_col = NULL,
+        selected_features = NULL,
+        ont = "ALL",
+        minGSSize = 3,
+        maxGSSize = 800,
+        terms_p_value_cutoff = 0.05,
+        terms_pAdjustMethod = "none",
+        verbose = TRUE,
+        OrgDb = "org.Hs.eg.db",
+        seed = 1
+      )
+
+      self$param_ora_process(
+        custom_col = NULL,
+        selected_features = NULL,
+        pval_cutoff_features = 0.05,
+        padjust_features = "none",
+        pval_cutoff = 0.05,
+        pAdjustMethod = "none",
+        fc_threshold = 2,
+        ont = "ALL",
+        qval_cutoff = 0.05,
+        minGSSize = 10,
+        maxGSSize  = 500,
+        seed = 1
+      )
 
     },
 
     #--------------------------------------------------- Plot table methods ----
 
     # Volcano table
-    get_volcano_table = function(data_table = self$tables$raw_data,
-                                 volcano_table = self$tables$feature_table,
-                                 group_col = self$params$volcano_plot$group_col,
-                                 used_function = self$params$volcano_plot$selected_function,
-                                 test = self$params$volcano_plot$selected_test,
-                                 group_1 = self$params$volcano_plot$group_1,
-                                 group_2 = self$params$volcano_plot$group_2) {
+    get_volcano_table = function(data_table = self$params$volcano_plot_comparison$data_table,
+                                 sample_table = self$tables$raw_meta,
+                                 feature_table = self$tables$feature_table,
+                                 group_col = self$params$volcano_plot_comparison$group_col,
+                                 group_1 = self$params$volcano_plot_comparison$group_1,
+                                 group_2 = self$params$volcano_plot_comparison$group_2,
+                                 fc_function = self$params$volcano_plot_comparison$fc_function,
+                                 statistical_test = self$params$volcano_plot_comparison$statistical_test,
+                                 adjustment_method = self$params$volcano_plot_comparison$adjustment_method) {
 
-
-      rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_1]
-      rownames_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, group_col] == group_2]
-      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
-
-      # Filter data to keep only the two groups
-      data_table = data_table[all_rownames,]
-
-      # Get the indices for each group
-      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
-      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
-
-
-      # Remove empty columns
-      dead_features = colnames(data_table)
-      data_table = remove_empty_cols(table = data_table)
-      dead_features = setdiff(dead_features, colnames(data_table))
-
-      if (length(dead_features) > 0) {
-        dead_features = which(rownames(volcano_table) %in% dead_features)
-        volcano_table = volcano_table[-dead_features,]
+      if (class(data_table)[1] == 'character'){
+        data_table = self$table_switch_local(table_name = data_table)
       }
 
 
-      # Collect fold change and p-values
-      volcano_table$fold_change = get_fold_changes(data_table = data_table,
-                                                   idx_group_1 = idx_group_1,
-                                                   idx_group_2 = idx_group_2,
-                                                   used_function = used_function,
-                                                   impute_inf = F)
-
-
-      volcano_table$p_val = get_p_val(data_table = data_table,
-                                      idx_group_1 = idx_group_1,
-                                      idx_group_2 = idx_group_2,
-                                      used_function = test,
-                                      impute_na = F)
-      volcano_table$q_val_bh = stats::p.adjust(volcano_table$p_val, method = "BH")
-
-      volcano_table$minus_log10_p_value = -log10(volcano_table$p_val)
-      volcano_table$log2_fold_change = log2(volcano_table$fold_change)
-      volcano_table$minus_log10_p_value_bh_adj = -log10(volcano_table$q_val_bh)
+      volcano_table = get_comparison_table(data_table = data_table,
+                                           sample_table = sample_table,
+                                           feature_table = feature_table,
+                                           group_col = group_col,
+                                           group_1 = group_1,
+                                           group_2 = group_2,
+                                           fc_function = fc_function,
+                                           statistical_test = statistical_test,
+                                           adjustment_method = adjustment_method)
 
       self$tables$volcano_table = volcano_table
     },
 
-    # Double bond plot table
-    get_dbplot_table_single = function(data_table = self$tables[[self$params$db_plot$dataset]],
-                                       dbplot_table = self$tables$feature_table,
-                                       col_group = self$params$db_plot$group_column,
-                                       used_function = self$params$db_plot$selected_function,
-                                       group_1 = self$params$db_plot$selected_groups[1]){
-
-      # Set the averaging function
-      if (used_function == "median") {
-        av_function = function(x) {return(median(x, na.rm = T))}
-      } else {
-        av_function = function(x) {return(mean(x, na.rm = T))}
-      }
-
-      # Get the rownames for each group
-      idx_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_1]
-
-      # Remove empty columns
-      dead_features = colnames(data_table)
-      data_table = remove_empty_cols(table = data_table)
-      dead_features = setdiff(dead_features, colnames(data_table))
-
-      if (length(dead_features) > 0) {
-        dead_features = which(rownames(dbplot_table) %in% dead_features)
-        dbplot_table = dbplot_table[-dead_features,]
-      }
-
-
-      averages = apply(data_table,2,av_function)
-      dbplot_table[, "averages"] = averages
-
-      lips = rownames(dbplot_table)
-      txt_medians = as.character(round(dbplot_table[,"averages"],5))
-      dbplot_table$text = paste0(lips, " | ", used_function, ": ", txt_medians)
-
-      self$tables$dbplot_table = dbplot_table
+    push_volcano_to_meta = function() {
+      self$tables$feature_table$volcano_plot_expression = "None"
+      self$tables$feature_table[rownames(self$tables$volcano_plot), "volcano_plot_expression"] = self$tables$volcano_plot[, "expression"]
     },
 
-    get_dbplot_table_double = function(data_table,
-                                       dbplot_table = self$tables$feature_table,
-                                       col_group = self$params$db_plot$group_column,
-                                       used_function = self$params$db_plot$selected_function,
-                                       test = self$params$db_plot$selected_test,
-                                       group_1 = self$params$db_plot$selected_groups[1],
-                                       group_2 = self$params$db_plot$selected_groups[2]) {
+    # Double bond plot table
+    get_double_bonds_table = function(data_table = self$params$double_bonds_comparison$data_table,
+                                      sample_table = self$tables$raw_meta,
+                                      feature_table = self$tables$feature_table,
+                                      group_col = self$params$double_bonds_comparison$group_col,
+                                      group_1 = self$params$double_bonds_comparison$group_1,
+                                      group_2 = self$params$double_bonds_comparison$group_2,
+                                      fc_function = self$params$double_bonds_comparison$fc_function,
+                                      statistical_test = self$params$double_bonds_comparison$statistical_test,
+                                      adjustment_method = self$params$double_bonds_comparison$adjustment_method) {
 
-
-      rownames_group_1 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_1]
-      rownames_group_2 = rownames(self$tables$raw_meta)[self$tables$raw_meta[, col_group] == group_2]
-      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
-
-      # Filter data to keep only the two groups
-      data_table = data_table[all_rownames,]
-
-      # Get the indices for each group
-      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
-      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
-
-      # Get all row names from both groups
-      idx_all = c(idx_group_1, idx_group_2)
-      idx_all = sort(unique(idx_all))
-
-      # Filter data to keep only the two groups
-      data_table = data_table[idx_all,]
-
-      # Remove empty columns
-      dead_features = colnames(data_table)
-      data_table = remove_empty_cols(table = data_table)
-      dead_features = setdiff(dead_features, colnames(data_table))
-
-      if (length(dead_features) > 0) {
-        dead_features = which(rownames(dbplot_table) %in% dead_features)
-        dbplot_table = dbplot_table[-dead_features,]
+      if (class(data_table)[1] == 'character') {
+        data_table = self$table_switch_local(table_name = data_table)
       }
 
-
-      # Collect fold change and p-values
-      dbplot_table$fold_change = get_fold_changes(data_table = data_table,
-                                                  idx_group_1 = idx_group_1,
-                                                  idx_group_2 = idx_group_2,
-                                                  used_function = used_function)
-
-
-      dbplot_table$p_val = get_p_val(data_table = data_table,
-                                     idx_group_1 = idx_group_1,
-                                     idx_group_2 = idx_group_2,
-                                     used_function = test)
-      dbplot_table$q_val_bh = stats::p.adjust(dbplot_table$p_val, method = "BH")
-
-      dbplot_table$minus_log10_p_value = -log10(dbplot_table$p_val)
-      dbplot_table$log2_fold_change = log2(dbplot_table$fold_change)
-      dbplot_table$minus_log10_p_value_bh_adj = -log10(dbplot_table$q_val_bh)
-
-      lips = rownames(dbplot_table)
-      fc = as.character(round(dbplot_table[,"log2_fold_change"],2))
-      pval = as.character(round(dbplot_table[,"minus_log10_p_value_bh_adj"],2))
-      dbplot_table$text = paste0(lips, " | log2(fc): ", fc, " | -log10(bh(pval)): ", pval)
+      double_bonds_table = get_comparison_table(data_table = data_table,
+                                                sample_table = sample_table,
+                                                feature_table = feature_table,
+                                                group_col = group_col,
+                                                group_1 = group_1,
+                                                group_2 = group_2,
+                                                fc_function = fc_function,
+                                                statistical_test = statistical_test,
+                                                adjustment_method = adjustment_method)
 
 
 
-      self$tables$dbplot_table = dbplot_table
+      self$tables$double_bonds_table = double_bonds_table
     },
 
     #---------------------------------------------------- GSEA & OR methods ----
 
-    # GSEA table
-    get_prot_list = function(data_table = self$table_switch_local(self$params$gsea$data_table),
-                             meta_table = self$table_switch_local(self$params$gsea$meta_table),
-                             group_col = self$params$gsea$group_col,
-                             group_1 = self$params$gsea$groups[1],
-                             group_2 = self$params$gsea$groups[2],
-                             used_function = self$params$gsea$used_function,
-                             test = self$params$gsea$test,
-                             context = 'gsea'
-    ) {
+    # EA feature table
+    get_ea_feature_table = function(data_table = self$tables$total_norm_data,
+                                    sample_table = self$tables$raw_meta,
+                                    feature_table = self$tables$feature_table,
+                                    group_col = self$params$ea_selection$group_col,
+                                    group_1 = self$params$ea_selection$group_1,
+                                    group_2 = self$params$ea_selection$group_2,
+                                    fc_function = self$params$ea_selection$fc_function,
+                                    statistical_test = self$params$ea_selection$statistical_test,
+                                    adjustment_method = self$params$ea_selection$adjustment_method) {
 
-      rownames_group_1 = rownames(meta_table)[meta_table[, group_col] == group_1]
-      rownames_group_2 = rownames(meta_table)[meta_table[, group_col] == group_2]
-      all_rownames = sort(unique(c(rownames_group_1, rownames_group_2)))
-
-      # Filter data to keep only the two groups
-      data_table = data_table[all_rownames,]
-
-      # Get the indices for each group
-      idx_group_1 = which(rownames(data_table) %in% rownames_group_1)
-      idx_group_2 = which(rownames(data_table) %in% rownames_group_2)
-
-
-      # Remove empty columns
-      data_table = remove_empty_cols(table = data_table)
-
-
-      prot_list = data.frame(row.names = colnames(data_table))
-
-
-      # Collect fold changes
-      prot_list$fold_change = get_fold_changes(data_table = data_table,
-                                               idx_group_1 = idx_group_1,
-                                               idx_group_2 = idx_group_2,
-                                               used_function = used_function)
-
-
-      prot_list$log2_fold_change = log2(prot_list$fold_change)
-
-      # Collect p-values
-      prot_list$p_val = get_p_val(data_table = data_table,
-                                  idx_group_1 = idx_group_1,
-                                  idx_group_2 = idx_group_2,
-                                  used_function = test)
-
-      prot_list$minus_log10_p_value = -log10(prot_list$p_val)
-      prot_list$p_val_bh = stats::p.adjust(prot_list$p_val, method = "BH")
-      prot_list$minus_log10_p_value_bh_adj = -log10(prot_list$p_val_bh)
-
-      if (context == 'gsea') {
-        self$tables$gsea_prot_list = prot_list
-      } else if (context == 'ora') {
-        self$tables$ora_prot_list = prot_list
+      if (class(data_table)[1] == "character") {
+        data_table = self$table_switch_local(data_table)
       }
+
+      ea_feature_table = get_comparison_table(data_table = data_table,
+                                              sample_table = sample_table,
+                                              feature_table = feature_table,
+                                              group_col = group_col,
+                                              group_1 = group_1,
+                                              group_2 = group_2,
+                                              fc_function = fc_function,
+                                              statistical_test = statistical_test,
+                                              adjustment_method = adjustment_method)
+
+      self$tables$ea_feature_table = ea_feature_table
     },
 
-    # GSEA object
-    get_gsea_object = function(prot_list = self$table_switch_local(self$params$gsea$prot_list),
-                               custom_col = NULL,
-                               feature_table = self$tables$feature_table,
-                               keyType = self$indices$feature_id_type,
-                               ont = self$params$gsea$ont,
-                               minGSSize = self$params$gsea$minGSSize,
-                               maxGSSize = self$params$gsea$maxGSSize,
-                               p_value_cutoff = self$params$gsea$p_value_cutoff,
-                               verbose = self$params$gsea$verbose,
-                               OrgDb = self$params$gsea$OrgDb,
-                               pAdjustMethod = self$params$gsea$pAdjustMethod,
-                               termsim_method = self$params$gsea$termsim_method,
-                               termsim_showcat = self$params$gsea$termsim_showcat) {
+    # ORA feature table
+    get_ora_feature_table = function(data_table = self$tables$total_norm_data,
+                                     sample_table = self$tables$raw_meta,
+                                     feature_table = self$tables$feature_table,
+                                     group_col = self$params$ora_selection$group_col,
+                                     group_1 = self$params$ora_selection$group_1,
+                                     group_2 = self$params$ora_selection$group_2,
+                                     fc_function = self$params$ora_selection$fc_function,
+                                     statistical_test = self$params$ora_selection$statistical_test,
+                                     adjustment_method = self$params$ora_selection$adjustment_method) {
 
-      # Checks
-      if (is.null(ont) & is.null(custom_col)) {
-        print('No ontology nor custom col provided: returning Null')
-        return()
+      if (class(data_table)[1] == "character") {
+        data_table = self$table_switch_local(data_table)
       }
 
-      prot_names = rownames(prot_list)
-      prot_list = prot_list$log2_fold_change
-      names(prot_list) = prot_names
+      ora_feature_table = get_comparison_table(data_table = data_table,
+                                               sample_table = sample_table,
+                                               feature_table = feature_table,
+                                               group_col = group_col,
+                                               group_1 = group_1,
+                                               group_2 = group_2,
+                                               fc_function = fc_function,
+                                               statistical_test = statistical_test,
+                                               adjustment_method = adjustment_method)
 
-      # NA omit and sort
-      prot_list = na.omit(prot_list)
-      prot_list = sort(prot_list, decreasing = TRUE)
-
-      if (!is.null(custom_col)) {
-        term2gene = get_term2gene(feature_table = feature_table,
-                                  column = custom_col,
-                                  sep = "\\|")
-        gsea = custom_gsea(geneList = prot_list,
-                           minGSSize = minGSSize,
-                           maxGSSize = maxGSSize,
-                           pvalueCutoff = p_value_cutoff,
-                           verbose = verbose,
-                           pAdjustMethod = pAdjustMethod,
-                           term2gene = term2gene)
-      } else {
-        gsea = clusterProfiler::gseGO(geneList=prot_list,
-                                      ont = ont,
-                                      keyType = keyType,
-                                      minGSSize = minGSSize,
-                                      maxGSSize = maxGSSize,
-                                      pvalueCutoff = p_value_cutoff,
-                                      verbose = verbose,
-                                      OrgDb = OrgDb,
-                                      pAdjustMethod = pAdjustMethod)
-      }
-
-
-
-      if (nrow(gsea@result) > 0) {
-        gsea = enrichplot::pairwise_termsim(gsea, method = termsim_method, semData = NULL, showCategory = termsim_showcat)
-      }
-      self$tables$gsea_object = gsea
-
+      self$tables$ora_feature_table = ora_feature_table
     },
 
-    over_representation_analysis = function(prot_list = self$tables$ora_prot_list,
-                                            custom_col = NULL,
-                                            feature_table = self$tables$feature_table,
-                                            pval_cutoff_features = self$params$overrepresentation$pval_cutoff_features,
-                                            padjust_features = self$params$overrepresentation$padjust_features,
-                                            pval_cutoff = self$params$overrepresentation$pval_cutoff,
-                                            pAdjustMethod = self$params$overrepresentation$pAdjustMethod,
-                                            fc_threshold = self$params$overrepresentation$fc_threshold,
-                                            keyType = self$indices$feature_id_type,
-                                            ont = self$params$overrepresentation$ont,
-                                            qval_cutoff = self$params$overrepresentation$qval_cutoff,
-                                            minGSSize = self$params$overrepresentation$minGSSize,
-                                            maxGSSize  = self$params$overrepresentation$maxGSSize) {
-      # Checks
-      if (is.null(ont) & is.null(custom_col)) {
-        print('No ontology nor custom col provided: returning Null')
-        return()
-      }
 
-      # Get universe (all features)
-      universe = prot_list$log2_fold_change
-      names(universe) = rownames(prot_list)
-      universe = na.omit(universe)
-      universe = sort(universe, decreasing = TRUE)
-      universe = names(universe)
+    # Get EA object
+    get_ea_object = function(ea_feature_table = self$tables$ea_feature_table,
+                             feature_table = self$tables$feature_table,
+                             keyType = self$indices$feature_id_type,
+                             custom_col = self$params$ea_process$custom_col,
+                             selected_features = self$params$ea_process$selected_features,
+                             ont = self$params$ea_process$ont,
+                             minGSSize = self$params$ea_process$minGSSize,
+                             maxGSSize = self$params$ea_process$maxGSSize,
+                             terms_p_value_cutoff = self$params$ea_process$terms_p_value_cutoff,
+                             terms_pAdjustMethod = self$params$ea_process$terms_pAdjustMethod,
+                             verbose = self$params$ea_process$verbose,
+                             OrgDb = self$params$ea_process$OrgDb,
+                             seed = self$params$ea_process$seed) {
 
-      # Get significant features
-      if (padjust_features == "Benjamini-Hochberg") {
-        features = prot_list[prot_list$p_val_bh <= pval_cutoff_features,]
-      } else {
-        features = prot_list[prot_list$p_val <= pval_cutoff_features,]
-      }
-      features = features[abs(features$log2_fold_change) >= log2(fc_threshold),]
+      ea_object = get_ea_object(ea_feature_table = ea_feature_table,
+                                custom_col = custom_col,
+                                selected_features = selected_features,
+                                feature_table = feature_table,
+                                keyType = keyType,
+                                ont = ont,
+                                minGSSize = minGSSize,
+                                maxGSSize = maxGSSize,
+                                p_value_cutoff = terms_p_value_cutoff,
+                                verbose = verbose,
+                                OrgDb = OrgDb,
+                                pAdjustMethod = terms_pAdjustMethod,
+                                seed = seed)
 
-      if (nrow(features) == 0) {
-        return()
-      }
+      self$tables$ea_object = ea_object
+    },
 
-      # Sort feature table
-      features = features[order(-features$log2_fold_change),]
+    # Get ORA object
+    get_ora_object = function(ora_feature_table = self$tables$ora_feature_table,
+                              custom_col = self$params$ora_process$custom_col,
+                              selected_features = self$params$ora_process$selected_features,
+                              feature_table = self$tables$feature_table,
+                              pval_cutoff_features = self$params$ora_process$pval_cutoff_features,
+                              padjust_features = self$params$ora_process$padjust_features,
+                              pval_cutoff = self$params$ora_process$pval_cutoff,
+                              pAdjustMethod = self$params$ora_process$pAdjustMethod,
+                              fc_threshold = self$params$ora_process$fc_threshold,
+                              keyType = self$indices$feature_id_type,
+                              ont = self$params$ora_process$ont,
+                              qval_cutoff = self$params$ora_process$qval_cutoff,
+                              minGSSize = self$params$ora_process$minGSSize,
+                              maxGSSize  = self$params$ora_process$maxGSSize,
+                              seed = self$params$ora_process$seed) {
 
-      if (!is.null(custom_col)) {
-        term2gene = get_term2gene(feature_table = feature_table,
-                                  column = custom_col,
-                                  sep = "\\|")
-        go_enrich = custom_ora(geneList = rownames(features),
-                               pvalueCutoff = pval_cutoff,
-                               pAdjustMethod = pAdjustMethod,
-                               qvalueCutoff = qval_cutoff,
-                               minGSSize = minGSSize,
-                               maxGSSize = maxGSSize,
-                               term2gene = term2gene)
-      } else {
-        go_enrich = clusterProfiler::enrichGO(gene = rownames(features),
-                                              universe = universe,
-                                              OrgDb = 'org.Hs.eg.db',
-                                              keyType = keyType,
-                                              readable = T,
-                                              ont = ont,
-                                              pvalueCutoff = pval_cutoff,
-                                              pAdjustMethod = pAdjustMethod,
-                                              qvalueCutoff = qval_cutoff,
-                                              minGSSize = minGSSize,
-                                              maxGSSize  = maxGSSize)
-      }
+      ora_object = get_ora_object(ora_feature_table = ora_feature_table,
+                                  custom_col = custom_col,
+                                  selected_features = selected_features,
+                                  feature_table = feature_table,
+                                  pval_cutoff_features = pval_cutoff_features,
+                                  padjust_features = padjust_features,
+                                  pval_cutoff = pval_cutoff,
+                                  pAdjustMethod = pAdjustMethod,
+                                  fc_threshold = fc_threshold,
+                                  keyType = keyType,
+                                  ont = ont,
+                                  qval_cutoff = qval_cutoff,
+                                  minGSSize = minGSSize,
+                                  maxGSSize  = maxGSSize,
+                                  seed = seed)
 
-      self$tables$go_enrich = go_enrich
+      self$tables$ora_object = ora_object
     },
 
     #----------------------------------------------------- Plotting methods ----
+
+    # Dendrogram
+    plot_dendrogram = function(dataset = self$params$dendrogram$dataset,
+                               meta_table = self$tables$raw_meta,
+                               annotations = self$params$dendrogram$annotations,
+                               distance_method = self$params$dendrogram$distance_method,
+                               p = self$params$dendrogram$p,
+                               clustering_method = self$params$dendrogram$clustering_method,
+                               k_clusters = self$params$dendrogram$k_clusters,
+                               color_palette = self$params$dendrogram$color_palette,
+                               x_tick_font_size = self$params$dendrogram$x_tick_font_size,
+                               y_label_font_size = self$params$dendrogram$y_label_font_size,
+                               y_tick_font_size = self$params$dendrogram$y_tick_font_size,
+                               width = NULL,
+                               height = NULL){
+
+      # Checks
+      data_table = self$table_check_convert(dataset)
+
+      p = as.numeric(p)
+
+      if (!is.null(k_clusters)) {
+        if (is_coercible_to_numeric(k_clusters)) {
+          k_clusters = as.numeric(k_clusters)
+        } else {
+          k_clusters = NULL
+        }
+      }
+
+
+      output = plot_dendrogram(data_table = data_table,
+                               meta_table = meta_table,
+                               annotations = annotations,
+                               distance_method = distance_method,
+                               p = p,
+                               clustering_method = clustering_method,
+                               k_clusters = k_clusters,
+                               color_palette = color_palette,
+                               y_label_font_size = y_label_font_size,
+                               y_tick_font_size = y_tick_font_size,
+                               x_tick_font_size = x_tick_font_size,
+                               width = width,
+                               height = height)
+
+      self$plots$dendrogram = output$plot
+      self$tables$dendrogram = output$data_table
+    },
+
     # Class distribution
     plot_class_distribution = function(table = self$params$class_distribution$dataset,
                                        meta_table = self$tables$raw_meta,
                                        group_col = self$params$class_distribution$group_col,
                                        color_palette = self$params$class_distribution$color_palette,
+                                       title_font_size = self$params$class_distribution$title_font_size,
+                                       y_label_font_size = self$params$class_distribution$y_label_font_size,
+                                       y_tick_font_size = self$params$class_distribution$y_tick_font_size,
+                                       x_label_font_size = self$params$class_distribution$x_label_font_size,
+                                       x_tick_font_size = self$params$class_distribution$x_tick_font_size,
+                                       legend_font_size = self$params$class_distribution$legend_font_size,
                                        width = NULL,
                                        height = NULL){
 
+      # Get table
       table = self$table_check_convert(table)
 
+      # Process fonts
+      xtick_show = base::ifelse(x_tick_font_size > 0, T, F)
+      ytick_show = base::ifelse(y_tick_font_size > 0, T, F)
+      legend_show = base::ifelse(legend_font_size > 0, T, F)
+      x_axis_title = base::ifelse(x_label_font_size > 0, "Lipid class", "")
+      y_axis_title = base::ifelse(y_label_font_size > 0, "Concentration", "")
+      title = base::ifelse(title_font_size > 0, "Class distribution", "")
+
+
+      meta_table = meta_table[!is.na(meta_table[,group_col]),]
+      group_list = as.character(sort(unique(meta_table[,group_col])))
+      meta_table[,group_col] = as.character(meta_table[,group_col])
 
       # Produce the class x group table
       samp_list = rownames(table)
       class_list = colnames(table)
-      group_list = sort(unique(meta_table[,group_col]))
 
       plot_table = data.frame(matrix(data = 0.0,
                                      nrow = length(class_list),
@@ -1585,20 +2274,50 @@ Omics_exp = R6::R6Class(
       # Store the plot_table
       self$tables$class_distribution_table = plot_table
 
-      colors = brewer.pal(as.numeric(colors_switch(color_palette)), color_palette)
-      colors = colorRampPalette(colors)(length(group_list))
-      colors = setNames(colors, group_list)
+      # Colors
+      color_palette = get_colors(color_count = colors_switch(color_palette), color_palette = color_palette)
+      # color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = colorRampPalette(color_palette)(length(group_list))
+      color_palette = setNames(color_palette, group_list)
 
       # Produce the plot
-      i = 1
-      fig = plotly::plot_ly(colors = unname(colors), width = width, height = height)
+      fig = plotly::plot_ly(colors = unname(color_palette), width = width, height = height)
       for (col in colnames(plot_table)) {
-        fig = fig %>% add_trace(x = rownames(plot_table), y = plot_table[,col],
-                                name = col, color = colors[col], type  = "bar")
-        fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
-                             yaxis = list(title = "Concentration"))
-        i = i + 1
+
+        fig = plotly::add_trace(p = fig,
+                                x = rownames(plot_table),
+                                y = plot_table[,col],
+                                name = col,
+                                color = color_palette[col],
+                                showlegend = legend_show,
+                                type  = "bar")
       }
+
+      fig = plotly::layout(p = fig,
+
+                           title = list(text = title,
+                                        # xref = "paper",
+                                        font = list(size = title_font_size)),
+
+                           xaxis = list(title = list(text = x_axis_title,
+                                                     font = list(size = x_label_font_size)),
+                                        showticklabels = xtick_show,
+                                        tickfont = list(size = x_tick_font_size)
+                                        ),
+
+                           yaxis = list(title = list(text = y_axis_title,
+                                                     font = list(size = y_label_font_size)),
+                                        showticklabels = ytick_show,
+                                        tickfont = list(size = y_tick_font_size)
+                           ),
+
+                           legend = list(orientation = 'h',
+                                         xanchor = "center",
+                                         x = 0.5,
+                                         font = list(size = legend_font_size)),
+                           plot_bgcolor='rgba(0,0,0,0)',
+                           paper_bgcolor='rgba(0,0,0,0)'
+                           )
 
       self$plots$class_distribution = fig
     },
@@ -1608,13 +2327,27 @@ Omics_exp = R6::R6Class(
                                      meta_table = self$tables$raw_meta,
                                      group_col = self$params$class_comparison$group_col,
                                      color_palette = self$params$class_comparison$color_palette,
+                                     title_font_size = self$params$class_comparison$title_font_size,
+                                     y_label_font_size = self$params$class_comparison$y_label_font_size,
+                                     y_tick_font_size = self$params$class_comparison$y_tick_font_size,
+                                     x_tick_font_size = self$params$class_comparison$x_tick_font_size,
+                                     legend_font_size = self$params$class_comparison$legend_font_size,
                                      width = NULL,
                                      height = NULL){
-
+      # Get table
       data_table = self$table_check_convert(data_table)
 
+      # Process fonts
+      xtick_show = base::ifelse(x_tick_font_size > 0, T, F)
+      ytick_show = base::ifelse(y_tick_font_size > 0, T, F)
+      legend_show = base::ifelse(legend_font_size > 0, T, F)
+      y_axis_title = base::ifelse(y_label_font_size > 0, "Concentration", "")
+      title = base::ifelse(title_font_size > 0, "Class comparison", "")
+
       # Get sample groups and the list of classes
-      groups = sort(unique(meta_table[,group_col]))
+      meta_table = meta_table[!is.na(meta_table[,group_col]),]
+      groups = as.character(sort(unique(meta_table[,group_col])))
+      meta_table[,group_col] = as.character(meta_table[,group_col])
       class_list = colnames(data_table)
 
       x_dim = ceiling(sqrt(length(class_list)))
@@ -1633,7 +2366,8 @@ Omics_exp = R6::R6Class(
         tmp_ann = list(
           x = x,
           y = y,
-          text = c,
+          text = ifelse(x_tick_font_size > 0, c, ''),
+          font = list(size = x_tick_font_size),
           xref = "paper",
           yref = "paper",
           xanchor = "center",
@@ -1646,14 +2380,17 @@ Omics_exp = R6::R6Class(
           x = x_step/2
           y = y - y_step}
       }
-      annotations[[i]] = list(x = -0.08, y = 0.5, text = "Concentration",
-                              font = list(size = 10),
+      annotations[[i]] = list(x = -0.08, y = 0.5, text = y_axis_title,
+                              font = list(size = y_label_font_size),
                               textangle = 270, showarrow = FALSE, xref='paper',
                               yref='paper')
 
-      colors = brewer.pal(as.numeric(colors_switch(color_palette)), color_palette)
-      colors = colorRampPalette(colors)(length(groups))
-      colors = setNames(colors, groups)
+
+      # Colors
+      color_palette = get_colors(color_count = colors_switch(color_palette), color_palette = color_palette)
+      # color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
+      color_palette = colorRampPalette(color_palette)(length(groups))
+      color_palette = setNames(color_palette, groups)
 
       # Plot list will be the list of subplots
       plot_list = c()
@@ -1662,13 +2399,12 @@ Omics_exp = R6::R6Class(
       cleared_groups = c()
       j = 1
       for (c in class_list) {
-        i = 1
-        subplot = plot_ly(colors = unname(colors), width = width, height = height)
+        subplot = plot_ly(colors = unname(color_palette), width = width, height = height)
         for (g in groups){
           if (g %in% cleared_groups) {
             first_bool = FALSE
           }else{
-            first_bool = TRUE
+            first_bool = legend_show
             cleared_groups = c(cleared_groups, g)
           }
 
@@ -1678,38 +2414,79 @@ Omics_exp = R6::R6Class(
           m = mean(d) # Get the mean concentration for samples s for class c
 
           # Subplot for the bar chart displaying the mean concentration
-          subplot = subplot %>% add_trace(x = g, y = m, type  = "bar", name = g,
-                                          color = colors[g], alpha = 1,
-                                          legendgroup=i, showlegend = first_bool)
+          subplot = plotly::add_trace(p = subplot,
+                                      x = g,
+                                      y = m,
+                                      type  = "bar",
+                                      name = g,
+                                      color = color_palette[g],
+                                      alpha = 1,
+                                      legendgroup=g,
+                                      showlegend = first_bool)
 
           # Subplot for boxplots displaying the median and all datapoints
-          subplot = subplot %>% add_trace(x = g, y = d, type  = "box", boxpoints = "all",
-                                          pointpos = 0, name = g, color = colors[g],
-                                          line = list(color = 'rgb(100,100,100)'),
-                                          marker = list(color = 'rgb(100,100,100)'), alpha = 1,
-                                          legendgroup=i, showlegend = FALSE,
-                                          text = s,
-                                          hoverinfo = "text")
-          subplot = subplot %>% layout(xaxis= list(showticklabels = FALSE),
-                                       yaxis = list(tickfont = list(size = 8)))
-          i = i + 1
+          subplot = plotly::add_trace(p = subplot,
+                                      x = g,
+                                      y = d,
+                                      type  = "box",
+                                      boxpoints = "all",
+                                      pointpos = 0,
+                                      name = g,
+                                      color = color_palette[g],
+                                      line = list(color = 'rgb(100,100,100)'),
+                                      marker = list(color = 'rgb(100,100,100)'),
+                                      alpha = 1,
+                                      legendgroup=g,
+                                      showlegend = FALSE,
+                                      text = s,
+                                      hoverinfo = "text")
         }
+
+        subplot = plotly::layout(
+          p = subplot,
+          xaxis= list(showticklabels = FALSE),
+          yaxis = list(showticklabels = xtick_show,
+                       tickfont = list(size = y_tick_font_size)
+          )
+        )
+
         plot_list[[j]] = plotly_build(subplot)
         j = j + 1
       }
 
       fig = subplot(plot_list, nrows = y_dim, margin = 0.035, titleX = TRUE)
-      fig = fig %>% layout(legend = list(orientation = 'h', xanchor = "center", x = 0.5),
-                           annotations = annotations)
+
+      fig = plotly::layout(p = fig,
+
+                           title = list(text = title,
+                                        font = list(size = title_font_size)),
+
+                           annotations = annotations,
+
+                           legend = list(orientation = 'h',
+                                         xanchor = "center",
+                                         x = 0.5,
+                                         font = list(size = legend_font_size)),
+                           plot_bgcolor='rgba(0,0,0,0)',
+                           paper_bgcolor='rgba(0,0,0,0)'
+      )
+
+
+
 
       self$plots$class_comparison = fig
     },
 
+
+
+
+
+
     ## Volcano plot
     plot_volcano = function(data_table = self$tables$volcano_table,
-                            adjustment = self$params$volcano_plot$adjustment,
-                            group_1 = self$params$volcano_plot$group_1,
-                            group_2 = self$params$volcano_plot$group_2,
+                            adjustment = self$params$volcano_plot_comparison$adjustment,
+                            group_1 = self$params$volcano_plot_comparison$group_1,
+                            group_2 = self$params$volcano_plot_comparison$group_2,
                             feature_metadata = self$params$volcano_plot$feature_metadata,
                             keep_significant = self$params$volcano_plot$keep_significant,
                             displayed_plot = self$params$volcano_plot$displayed_plot,
@@ -1718,144 +2495,220 @@ Omics_exp = R6::R6Class(
                             marker_size = self$params$volcano_plot$marker_size,
                             opacity = self$params$volcano_plot$opacity,
                             color_palette = self$params$volcano_plot$color_palette,
+                            reverse_palette = self$params$volcano_plot$reverse_palette,
+                            title_font_size = self$params$volcano_plot$title_font_size,
+                            y_label_font_size = self$params$volcano_plot$y_label_font_size,
+                            y_tick_font_size = self$params$volcano_plot$y_tick_font_size,
+                            x_label_font_size = self$params$volcano_plot$x_label_font_size,
+                            x_tick_font_size = self$params$volcano_plot$x_tick_font_size,
+                            legend_font_size = self$params$volcano_plot$legend_font_size,
                             width = NULL,
                             height = NULL){
 
-      data_table = self$table_check_convert(data_table)
+      if (class(data_table)[1] == 'character') {
+        data_table = self$table_check_convert(data_table)
+      }
 
       p_val_threshold = as.numeric(p_val_threshold)
       fc_threshold = as.numeric(fc_threshold)
       marker_size = as.numeric(marker_size)
       opacity = as.numeric(opacity)
 
-      if (adjustment == 'BH') {
-        if (keep_significant) {
-          data_table = data_table[data_table$q_val_bh <= p_val_threshold,]
-          data_table = data_table[(data_table$log2_fold_change >= log2(fc_threshold)) | (data_table$log2_fold_change <= -log2(fc_threshold)),]
-        }
-        p_vals = data_table$q_val_bh
-        y_label = '-Log10(BH(p-value))'
-      } else {
-        if (keep_significant) {
-          data_table = data_table[data_table$p_val <= p_val_threshold,]
-          data_table = data_table[(data_table$log2_fold_change >= log2(fc_threshold)) | (data_table$log2_fold_change <= -log2(fc_threshold)),]
-        }
-        p_vals = data_table$p_val
+      if (adjustment == 'none') {
+        p_val_label = "p-value"
+        log_p_val_label =  "-Log10(p-value)"
         y_label = '-Log10(p-value)'
+      }else{
+        p_val_label = "p-adjusted"
+        log_p_val_label = "-Log10(p-adjusted)"
+        y_label = paste0('-Log10(', adjustment, '(p-value))')
+      }
+
+      if (keep_significant) {
+        data_table = data_table[(data_table$`Log2(fold change)` >= log2(fc_threshold)) | (data_table$`Log2(fold change)` <= -log2(fc_threshold)),]
+        data_table = data_table[data_table[,p_val_label] <= p_val_threshold,]
       }
 
       if (!is.null(feature_metadata)) {
-        if (feature_metadata %in% colnames(data_table)) {
-          feature_metadata = data_table[,feature_metadata]
+        if (length(feature_metadata) == 1) {
+          if (feature_metadata %in% colnames(data_table)) {
+            groups = data_table[,feature_metadata]
+          } else {
+            groups = NULL
+          }
+        } else if (length(feature_metadata) > 1) {
+          groups = feature_metadata[rownames(data_table)]
         } else {
-          feature_metadata = NULL
+          groups = NULL
         }
       }
 
-      displayed_text = paste0(paste0(rownames(data_table), '\n'),
-                              paste0('p-value: ', round(p_vals, 3), '\n'),
-                              paste0('FC: ', round(data_table$fold_change, 2)))
 
-      fig = volcano_main(fc_vals = data_table$fold_change,
-                         p_vals = p_vals,
-                         names = displayed_text,
-                         y_label = y_label,
-                         left_label = group_1,
-                         right_label = group_2,
-                         groups = feature_metadata,
-                         displayed_plot = displayed_plot,
-                         color_palette = color_palette,
-                         p_val_threshold = p_val_threshold,
-                         fc_threshold = fc_threshold,
-                         marker_size = marker_size,
-                         opacity = opacity)
+      displayed_text = paste0(rownames(data_table),
+                              '\n',
+                              p_val_label,
+                              ': ',
+                              format_values(values = data_table[,p_val_label]),
+                              '\nFold change: ',
+                              format_values(data_table$`Fold change`)
+      )
 
 
-      self$plots$volcano_plot = fig
+      plot = volcano_main(fc_vals = data_table$`Fold change`,
+                          p_vals = data_table[,p_val_label],
+                          names = displayed_text,
+                          y_label = y_label,
+                          left_label = group_1,
+                          right_label = group_2,
+                          groups = groups,
+                          displayed_plot = displayed_plot,
+                          color_palette = color_palette,
+                          reverse_palette = reverse_palette,
+                          p_val_threshold = p_val_threshold,
+                          fc_threshold = fc_threshold,
+                          marker_size = marker_size,
+                          opacity = opacity,
+                          title_font_size = title_font_size,
+                          y_label_font_size = y_label_font_size,
+                          y_tick_font_size = y_tick_font_size,
+                          x_label_font_size = x_label_font_size,
+                          x_tick_font_size = x_tick_font_size,
+                          legend_font_size = legend_font_size)
+
+      volcano_plot_table = data_table[, c('Log2(fold change)', log_p_val_label)]
+      volcano_plot_table$expression = NA
+
+      if (!is.null(groups)) {
+        if (length(feature_metadata) == 1) {
+          volcano_plot_table[,feature_metadata] = groups
+        } else if (length(feature_metadata) > 1){
+          volcano_plot_table[,'feature_annotations'] = groups
+        }
+
+      }
+
+
+      log_p_val_threshold = -log10(p_val_threshold)
+      volcano_plot_table$expression = 'Inconclusive'
+      volcano_plot_table$expression[(volcano_plot_table[,log_p_val_label] <= log_p_val_threshold) & (volcano_plot_table$`Log2(fold change)` < log2(fc_threshold)) & (volcano_plot_table$`Log2(fold change)` > -log2(fc_threshold))] = 'Not significant'
+      volcano_plot_table$expression[((volcano_plot_table[,log_p_val_label] >= log_p_val_threshold) | (is.na(volcano_plot_table[,log_p_val_label]))) & (volcano_plot_table$`Log2(fold change)` > log2(fc_threshold))] = "Overexpressed"
+      volcano_plot_table$expression[((volcano_plot_table[,log_p_val_label] >= log_p_val_threshold) | (is.na(volcano_plot_table[,log_p_val_label]))) & (volcano_plot_table$`Log2(fold change)` < -log2(fc_threshold))] = "Underexpressed"
+      rownames(volcano_plot_table) = rownames(data_table)
+      volcano_plot_table = volcano_plot_table[!(is.na(volcano_plot_table[,log_p_val_label]) & is.infinite(volcano_plot_table$`Log2(fold change)`)), ]
+
+      self$plots$volcano_plot = plot
+      self$tables$volcano_plot = volcano_plot_table
     },
 
     ## Heatmap plot
-    plot_heatmap = function(data_table = self$params$heatmap$dataset,
-                            impute = self$params$heatmap$impute,
+    plot_heatmap = function(dataset = self$params$heatmap$dataset,
+                            distance_method = self$params$heatmap$distance_method,
+                            clustering_method = self$params$heatmap$clustering_method,
+                            impute_min = self$params$heatmap$impute_min,
+                            center = self$params$heatmap$center,
                             meta_table = self$tables$raw_meta,
                             meta_table_features = self$tables$feature_table,
-                            cluster_rows = self$params$heatmap$cluster_samples,
-                            cluster_cols = self$params$heatmap$cluster_features,
+                            apply_clustering = self$params$heatmap$apply_clustering,
+                            k_clusters_samples = self$params$heatmap$k_clusters_samples,
+                            k_clusters_features = self$params$heatmap$k_clusters_features,
                             row_annotations = self$params$heatmap$map_sample_data,
                             col_annotations = self$params$heatmap$map_feature_data,
                             map_feature_terms = self$params$heatmap$map_feature_terms,
                             apply_da = self$params$heatmap$apply_da,
                             group_column_da = self$params$heatmap$group_column_da,
                             alpha_da = self$params$heatmap$alpha_da,
+                            seed_da = self$params$heatmap$seed_da,
                             color_palette = self$params$heatmap$color_palette,
                             reverse_palette = self$params$heatmap$reverse_palette,
+                            title_font_size = self$params$heatmap$title_font_size,
+                            y_label_font_size = self$params$heatmap$y_label_font_size,
+                            x_label_font_size = self$params$heatmap$x_label_font_size,
+                            x_tick_font_size = self$params$heatmap$x_tick_font_size,
+                            y_tick_font_size = self$params$heatmap$y_tick_font_size,
                             width = NULL,
                             height = NULL) {
 
-      data_table = self$table_check_convert(data_table)
+      data_table = self$table_check_convert(dataset)
+
+      xtick_show = base::ifelse(x_tick_font_size > 0, T, F)
+      ytick_show = base::ifelse(y_tick_font_size > 0, T, F)
+      x_axis_title = base::ifelse(x_label_font_size > 0, paste0('<span style="font-size: ', x_label_font_size, 'px;">Samples</span>'), "")
+      y_axis_title = base::ifelse(y_label_font_size > 0, paste0('<span style="font-size: ', y_label_font_size, 'px;">Features</span>'), "")
+      title = base::ifelse(title_font_size > 0, paste0('<span style="font-size: ', title_font_size, 'px;">Heatmap</span>'), "")
+
+
+
+      # Impute missing values
+      if (impute_min) {
+        data_table[is.na(data_table)] = min(data_table, na.rm = TRUE)
+      }
 
       if (apply_da) {
         data_table = apply_discriminant_analysis(data_table = data_table,
                                                  group_list = meta_table[,group_column_da],
                                                  nlambda = 100,
-                                                 alpha = alpha_da)
+                                                 alpha = alpha_da,
+                                                 seed = seed_da)
 
-        meta_table_features = meta_table_features[colnames(data_table),]
+        meta_table = meta_table[rownames(data_table), , drop = F]
+        meta_table_features = meta_table_features[colnames(data_table), , drop = F]
+
       }
-
-
-      # Save table as heatmap table
-      self$tables$heatmap_table = data_table
 
       # Set the clustering
-      if (cluster_rows & cluster_cols) {
-        dendrogram_list = "both"
-      } else if (cluster_rows) {
-        dendrogram_list = "column" # Because of the transpose, rows => cols
-      } else if (cluster_cols) {
-        dendrogram_list = "row" # Because of the transpose, cols => rows
+      if (apply_clustering) {
+        dendrogram = "both"
+        Colv= stats::hclust(d = stats::dist(x = data_table,
+                                            method = distance_method),
+                            method = clustering_method)
+        Rowv = stats::hclust(d = stats::dist(x = t(data_table),
+                                             method = distance_method),
+                             method = clustering_method)
       } else {
-        dendrogram_list = "none"
+        dendrogram = "none"
+        Colv= NULL
+        Rowv = NULL
       }
 
+
       # Set zmax and zmin
-      val_list = as.vector(data_table)
-      val_list = na.omit(val_list)
-      val_list = sort(val_list)
-
-      zmax = min(c(abs(min(val_list)), max(val_list)))
-      zmin = -zmax
-
-      # Filter out the data
-      data_table[data_table > zmax] = zmax
-      data_table[data_table < zmin] = zmin
+      if (center) {
+        if (min(data_table, na.rm = T) < 0) {
+          zmax = min(c(max(data_table, na.rm = T), - min(data_table, na.rm = T)))
+          zmin = -zmax
+          data_table[data_table > zmax] = zmax
+          data_table[data_table < zmin] = zmin
+        } else {
+          zmax = max(data_table, na.rm = T)
+          zmin = min(data_table, na.rm = T)
+        }
+      } else {
+        zmax = max(data_table, na.rm = T)
+        zmin = min(data_table, na.rm = T)
+      }
 
       # Annotations
       if (!is.null(row_annotations)) {
-        if (length(row_annotations) > 1) {
-          row_annotations = meta_table[, row_annotations]
-          colnames(row_annotations) = stringr::str_replace_all(colnames(row_annotations), "_", " ")
-        } else {
-          row_names = row_annotations
-          row_annotations = as.data.frame(meta_table[, row_annotations],
-                                          row.names = rownames(meta_table))
-          colnames(row_annotations) = stringr::str_replace_all(row_names, "_", " ")
-        }
+        row_annotations = meta_table[, row_annotations, drop = FALSE]
       }
 
       # Reorder the feature metadata according to the data_table order
-      meta_table_features = meta_table_features[c(colnames(data_table)),]
+      meta_table_features = meta_table_features[colnames(data_table), , drop = F]
 
       if (!is.null(col_annotations)) {
-        clean_names = sub("^(.)", "\\U\\1", tolower(str_replace_all(col_annotations, '_', ' ')), perl = TRUE)
-        if (length(col_annotations) == 1) {
-          col_annotations = as.data.frame(meta_table_features[, col_annotations],
-                                          row.names = rownames(meta_table_features))
-          colnames(col_annotations) = clean_names
-        } else {
-          col_annotations = meta_table_features[, col_annotations]
-          colnames(col_annotations) = clean_names
-        }
+        col_annotations = meta_table_features[, col_annotations, drop = FALSE]
+      }
+
+      # Save k clusters
+      if (!is.null(Colv)) {
+        clusters = stats::cutree(tree = Colv, k = k_clusters_samples)
+        clusters = paste0('k', clusters)
+        meta_table[,'k_clusters_heatmap'] = clusters
+      }
+      if (!is.null(Rowv)) {
+        clusters = stats::cutree(tree = Rowv, k = k_clusters_features)
+        clusters = paste0('k', clusters)
+        meta_table_features[,'k_clusters_heatmap'] = clusters
       }
 
       # Add multivalue annotations
@@ -1867,83 +2720,153 @@ Omics_exp = R6::R6Class(
           col_annotations[[name]] = map_feature_terms[[name]][rownames(col_annotations)]
       }
 
-
-      # Impute missing values
-      if (impute) {
-        data_table[is.na(data_table)] = zmin
-      }
-
       # Get the color palette
       color_count = colors_switch(color_palette)
-      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
-      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      colors = get_colors(color_count = color_count, color_palette = color_palette)
       if (reverse_palette) {
-        color_palette = base::rev(color_palette)
+        colors = base::rev(colors)
       }
 
       # Plot the data
-      self$plots$heatmap = heatmaply::heatmaply(x = t(data_table),
-                                                scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                                  low = color_palette[3],
-                                                  mid = color_palette[2],
-                                                  high = color_palette[1],
-                                                  midpoint = 0,
-                                                  limits = c(zmin, zmax)
-                                                ),
-                                                width = width,
-                                                height = height,
-                                                limits = c(zmin, zmax),
-                                                col_side_colors = row_annotations,
-                                                row_side_colors = col_annotations,
-                                                dendrogram = dendrogram_list)
+      plot = heatmaply::heatmaply(x = t(data_table),
+                                  colors = colors,
+                                  plot_method = "ggplot", # plotly
+                                  # colorbar_len = 0.5,
+                                  # colorbar_yanchor = "top",
+                                  # colorbar_xpos = 1.15,
+                                  # colorbar_ypos = 0.7,
+                                  # subplot_widths = c(0.7, 0.05, 0.1),
+                                  k_col = k_clusters_samples,
+                                  k_row = k_clusters_features,
+                                  limits = c(zmin, zmax),
+                                  Colv= Colv,
+                                  Rowv = Rowv,
+                                  width = width,
+                                  height = height,
+                                  col_side_colors = row_annotations,
+                                  row_side_colors = col_annotations,
+                                  xlab = x_axis_title,
+                                  ylab = y_axis_title,
+                                  main = title,
+                                  label_names = c("Feature", "Sample", "Value"),
+                                  fontsize_row = x_tick_font_size,
+                                  fontsize_col = y_tick_font_size,
+                                  showticklabels = c(xtick_show, ytick_show),
+                                  dendrogram = dendrogram)
 
+      plot = plotly::layout(
+        p = plot,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+      )
+
+
+
+
+
+      meta_table_features = meta_table_features[, 'k_clusters_heatmap', drop = F]
+      meta_table = meta_table[, 'k_clusters_heatmap', drop = F]
+      self$tables$heatmap = list(data_table = data_table,
+                                 feature_clusters = meta_table_features,
+                                 sample_clusters = meta_table)
+      self$plots$heatmap = plot
     },
 
     ## Sample correlation plot
-    plot_samples_correlation = function(data_table = self$params$samples_correlation$dataset,
+    plot_samples_correlation = function(dataset = self$params$samples_correlation$dataset,
                                         meta_table = self$tables$raw_meta,
                                         correlation_method = self$params$samples_correlation$correlation_method,
                                         use = self$params$samples_correlation$use,
-                                        cluster_cols = self$params$samples_correlation$cluster_cols,
-                                        cluster_rows = self$params$samples_correlation$cluster_rows,
+                                        distance_method = self$params$samples_correlation$distance_method,
+                                        clustering_method = self$params$samples_correlation$clustering_method,
+                                        k_clusters = self$params$samples_correlation$k_clusters,
+                                        apply_clustering = self$params$samples_correlation$apply_clustering,
+                                        center = self$params$samples_correlation$center,
                                         row_annotations = self$params$samples_correlation$row_annotations,
                                         col_annotations = self$params$samples_correlation$col_annotations,
                                         color_palette = self$params$samples_correlation$color_palette,
                                         reverse_palette = self$params$samples_correlation$reverse_palette,
+                                        title_font_size = self$params$samples_correlation$title_font_size,
+                                        y_label_font_size = self$params$samples_correlation$y_label_font_size,
+                                        y_tick_font_size = self$params$samples_correlation$y_tick_font_size,
+                                        x_label_font_size = self$params$samples_correlation$x_label_font_size,
+                                        x_tick_font_size = self$params$samples_correlation$x_tick_font_size,
                                         width = NULL,
                                         height = NULL) {
 
-      data_table = self$table_check_convert(data_table)
-
-      # Set the clustering
-      if (cluster_rows & cluster_cols) {
-        dendrogram_list = "both"
-      } else if (cluster_rows) {
-        dendrogram_list = "column" # Because of the transpose, rows => cols
-      } else if (cluster_cols) {
-        dendrogram_list = "row" # Because of the transpose, cols => rows
-      } else {
-        dendrogram_list = "none"
+      # Checks
+      if (!is.null(k_clusters)) {
+        if (is_coercible_to_numeric(k_clusters)) {
+          k_clusters = as.numeric(k_clusters)
+        } else {
+          k_clusters = NULL
+        }
+      }
+      if (is.null(k_clusters)) {
+        k_clusters = 1
       }
 
+      data_table = self$table_check_convert(dataset)
+
+      xtick_show = base::ifelse(x_tick_font_size > 0, T, F)
+      ytick_show = base::ifelse(y_tick_font_size > 0, T, F)
+      x_axis_title = base::ifelse(x_label_font_size > 0, paste0('<span style="font-size: ', x_label_font_size, 'px;">Samples</span>'), "")
+      y_axis_title = base::ifelse(y_label_font_size > 0, paste0('<span style="font-size: ', y_label_font_size, 'px;">Samples</span>'), "")
+      title = base::ifelse(title_font_size > 0, paste0('<span style="font-size: ', title_font_size, 'px;">Sample correlation</span>'), "")
+
+      # R fast version
+      # sample_names = rownames(data_table)
+      # data_table = faster_cor(data_table = t(data_table),
+      #                         method = correlation_method)
+      # rownames(data_table) = sample_names
+      # colnames(data_table) = sample_names
+
+      # stats version
       data_table = stats::cor(x = t(data_table),
-                              y = NULL,
                               use = use,
                               method = correlation_method)
 
-      # diag(data_table) = 0
+      # Set the clustering
+      if (apply_clustering) {
+        dendrogram = "both"
+        Colv= stats::hclust(d = stats::dist(x = data_table,
+                                            method = distance_method),
+                            method = clustering_method)
+        Rowv = stats::hclust(d = stats::dist(x = data_table,
+                                             method = distance_method),
+                             method = clustering_method)
+      } else {
+        dendrogram = "none"
+        Colv= NULL
+        Rowv = NULL
+      }
+      diag(data_table) = NA
+
 
       # Set zmax and zmin
-      val_list = as.vector(data_table)
-      val_list = na.omit(val_list)
-      val_list = sort(val_list)
+      if (center) {
+        if (min(data_table, na.rm = T) < 0) {
+          zmax = min(c(max(data_table, na.rm = T), - min(data_table, na.rm = T)))
+          zmin = -zmax
+          data_table[data_table > zmax] = zmax
+          data_table[data_table < zmin] = zmin
+        } else {
+          zmax = max(data_table, na.rm = T)
+          zmin = min(data_table, na.rm = T)
+        }
+      } else {
+        zmax = max(data_table, na.rm = T)
+        zmin = min(data_table, na.rm = T)
+      }
+      diag(data_table) = zmax
 
-      zmax = min(c(abs(min(val_list)), max(val_list)))
-      zmin = -zmax
 
-      # Filter out the data
-      data_table[data_table > zmax] = zmax
-      data_table[data_table < zmin] = zmin
+      if (!is.null(Colv)) {
+        clusters = stats::cutree(tree = Colv, k = k_clusters)
+        clusters = paste0('k', clusters)
+        meta_table[,'k_clusters'] = clusters
+      }
+
 
       # Annotations
       if (!is.null(row_annotations)) {
@@ -1971,92 +2894,158 @@ Omics_exp = R6::R6Class(
       }
 
       # Save table as heatmap table
+      meta_table = meta_table[Colv$order, ]
       self$tables$samples_correlation = data_table
+      self$tables$samples_correlation_clusters = meta_table
 
       # Get the color palette
       color_count = colors_switch(color_palette)
-      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
-      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      colors = get_colors(color_count = color_count, color_palette = color_palette)
       if (reverse_palette) {
-        color_palette = base::rev(color_palette)
+        colors = base::rev(colors)
       }
 
       # Plot the data
-      self$plots$samples_correlation = heatmaply::heatmaply(x = t(data_table),
-                                                            scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                                              low = color_palette[3],
-                                                              mid = color_palette[2],
-                                                              high = color_palette[1],
-                                                              midpoint = 0,
-                                                              limits = c(zmin, zmax)
-                                                            ),
-                                                            width = width,
-                                                            height = height,
-                                                            limits = c(zmin, zmax),
-                                                            col_side_colors = row_annotations,
-                                                            row_side_colors = col_annotations,
-                                                            dendrogram = dendrogram_list)
+      plot = heatmaply::heatmaply(x = t(data_table),
+                                  colors = colors,
+                                  limits = c(zmin, zmax),
+                                  Colv = Colv,
+                                  Rowv = Rowv,
+                                  k_col = k_clusters,
+                                  k_row = k_clusters,
+                                  # Aesthetics
+                                  width = width,
+                                  height = height,
+                                  col_side_colors = row_annotations,
+                                  row_side_colors = col_annotations,
+                                  xlab = x_axis_title,
+                                  ylab = y_axis_title,
+                                  main = title,
+                                  fontsize_row = x_tick_font_size,
+                                  fontsize_col = y_tick_font_size,
+                                  showticklabels = c(xtick_show, ytick_show),
+                                  dendrogram = dendrogram)
+
+      plot = plotly::layout(
+        p = plot,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+      )
+
+      self$plots$samples_correlation = plot
 
     },
 
     ## Feature correlation plot
-    plot_feature_correlation = function(data_table = self$params$feature_correlation$dataset,
+    plot_feature_correlation = function(dataset = self$params$feature_correlation$dataset,
                                         meta_table = self$tables$feature_table,
                                         map_feature_terms = self$params$feature_correlation$map_feature_terms,
                                         correlation_method = self$params$feature_correlation$correlation_method,
                                         use = self$params$feature_correlation$use,
-                                        cluster_cols = self$params$feature_correlation$cluster_cols,
-                                        cluster_rows = self$params$feature_correlation$cluster_rows,
+                                        distance_method = self$params$feature_correlation$distance_method,
+                                        clustering_method = self$params$feature_correlation$clustering_method,
+                                        k_clusters = self$params$feature_correlation$k_clusters,
+                                        apply_clustering = self$params$feature_correlation$apply_clustering,
+                                        center = self$params$feature_correlation$center,
                                         row_annotations = self$params$feature_correlation$row_annotations,
                                         col_annotations = self$params$feature_correlation$col_annotations,
                                         roh_threshold = self$params$feature_correlation$roh_threshold,
                                         top_features = self$params$feature_correlation$top_features,
                                         color_palette = self$params$feature_correlation$color_palette,
                                         reverse_palette = self$params$feature_correlation$reverse_palette,
+                                        title_font_size = self$params$feature_correlation$title_font_size,
+                                        y_label_font_size = self$params$feature_correlation$y_label_font_size,
+                                        y_tick_font_size = self$params$feature_correlation$y_tick_font_size,
+                                        x_label_font_size = self$params$feature_correlation$x_label_font_size,
+                                        x_tick_font_size = self$params$feature_correlation$x_tick_font_size,
+                                        legend_font_size = self$params$feature_correlation$legend_font_size,
                                         width = NULL,
                                         height = NULL) {
 
-      data_table = self$table_check_convert(data_table)
-
-      # Set the clustering
-      if (cluster_rows & cluster_cols) {
-        dendrogram_list = "both"
-      } else if (cluster_rows) {
-        dendrogram_list = "column" # Because of the transpose, rows => cols
-      } else if (cluster_cols) {
-        dendrogram_list = "row" # Because of the transpose, cols => rows
-      } else {
-        dendrogram_list = "none"
+      # Checks
+      if (!is.null(k_clusters)) {
+        if (is_coercible_to_numeric(k_clusters)) {
+          k_clusters = as.numeric(k_clusters)
+        } else {
+          k_clusters = NULL
+        }
+      }
+      if (is.null(k_clusters)) {
+        k_clusters = 1
       }
 
+      data_table = self$table_check_convert(dataset)
+
+      xtick_show = base::ifelse(x_tick_font_size > 0, T, F)
+      ytick_show = base::ifelse(y_tick_font_size > 0, T, F)
+      x_axis_title = base::ifelse(x_label_font_size > 0, paste0('<span style="font-size: ', x_label_font_size, 'px;">Features</span>'), "")
+      y_axis_title = base::ifelse(y_label_font_size > 0, paste0('<span style="font-size: ', y_label_font_size, 'px;">Features</span>'), "")
+      title = base::ifelse(title_font_size > 0, paste0('<span style="font-size: ', title_font_size, 'px;">Feature correlation</span>'), "")
+
+      # R fast version
+      # feature_names = colnames(data_table)
+      # data_table = faster_cor(data_table = data_table,
+      #                         method=correlation_method)
+      # rownames(data_table) = feature_names
+      # colnames(data_table) = feature_names
+
+      # stats version
       data_table = stats::cor(x = data_table,
-                              y = NULL,
                               use = use,
                               method = correlation_method)
 
-      diag(data_table) = 0
+
+      diag(data_table) = NA
       max_abs_values = apply(data_table, 1, function(x) max(abs(x), na.rm = T))
       roh_filter = unname(which(max_abs_values >= roh_threshold))
-      diag(data_table) = 1
+
 
       if (length(roh_filter) > top_features) {
         best_hits = names(sort(rowSums(abs(data_table), na.rm = T), decreasing = T)[1:top_features])
         roh_filter = which((rownames(data_table) %in% best_hits))
       }
       data_table = data_table[roh_filter, roh_filter]
-      meta_table = meta_table[rownames(data_table),]
+
+      meta_table = meta_table[rownames(data_table), , drop = F]
 
       # Set zmax and zmin
-      val_list = as.vector(data_table)
-      val_list = na.omit(val_list)
-      val_list = sort(val_list)
+      if (center) {
+        if (min(data_table, na.rm = T) < 0) {
+          zmax = min(c(max(data_table, na.rm = T), - min(data_table, na.rm = T)))
+          zmin = -zmax
+          data_table[data_table > zmax] = zmax
+          data_table[data_table < zmin] = zmin
+        } else {
+          zmax = max(data_table, na.rm = T)
+          zmin = min(data_table, na.rm = T)
+        }
+      } else {
+        zmax = max(data_table, na.rm = T)
+        zmin = min(data_table, na.rm = T)
+      }
+      diag(data_table) = zmax
 
-      zmax = min(c(abs(min(val_list)), max(val_list)))
-      zmin = -zmax
 
-      # Filter out the data
-      data_table[data_table > zmax] = zmax
-      data_table[data_table < zmin] = zmin
+      # Set the clustering
+      if (apply_clustering) {
+        dendrogram = "both"
+        Colv= stats::hclust(d = stats::dist(x = t(data_table),
+                                            method = distance_method),
+                            method = clustering_method)
+        Rowv = stats::hclust(d = stats::dist(x = t(data_table),
+                                             method = distance_method),
+                             method = clustering_method)
+      } else {
+        dendrogram = "none"
+        Colv= NULL
+        Rowv = NULL
+      }
+
+      if (!is.null(Colv)) {
+        clusters = stats::cutree(tree = Colv, k = k_clusters)
+        clusters = paste0('k', clusters)
+        meta_table[,'k_clusters'] = clusters
+      }
 
       # Annotations
       if (!is.null(row_annotations)) {
@@ -2093,31 +3082,45 @@ Omics_exp = R6::R6Class(
       }
 
       # Save table as heatmap table
-      self$tables$feature_correlation = data_table
+      meta_table = meta_table[rownames(meta_table)[Colv$order], , drop = F]
 
       # Get the color palette
       color_count = colors_switch(color_palette)
-      color_palette = RColorBrewer::brewer.pal(color_count, color_palette)
-      color_palette = c(color_palette[1], color_palette[round(color_count/2)] , color_palette[color_count])
+      colors = get_colors(color_count = color_count, color_palette = color_palette)
       if (reverse_palette) {
-        color_palette = base::rev(color_palette)
+        colors = base::rev(colors)
       }
 
+
       # Plot the data
-      self$plots$feature_correlation = heatmaply::heatmaply(x = data_table,
-                                                            scale_fill_gradient_fun = ggplot2::scale_fill_gradient2(
-                                                              low = color_palette[3],
-                                                              mid = color_palette[2],
-                                                              high = color_palette[1],
-                                                              midpoint = 0,
-                                                              limits = c(zmin, zmax)
-                                                            ),
-                                                            width = width,
-                                                            height = height,
-                                                            limits = c(zmin, zmax),
-                                                            col_side_colors = row_annotations,
-                                                            row_side_colors = col_annotations,
-                                                            dendrogram = dendrogram_list)
+      plot = heatmaply::heatmaply(x = data_table,
+                                  colors = colors,
+                                  limits = c(zmin, zmax),
+                                  Colv = Colv,
+                                  Rowv = Rowv,
+                                  k_col = k_clusters,
+                                  k_row = k_clusters,
+                                  width = width,
+                                  height = height,
+                                  col_side_colors = row_annotations,
+                                  row_side_colors = col_annotations,
+                                  xlab = x_axis_title,
+                                  ylab = y_axis_title,
+                                  main = title,
+                                  fontsize_row = x_tick_font_size,
+                                  fontsize_col = y_tick_font_size,
+                                  showticklabels = c(xtick_show, ytick_show),
+                                  dendrogram = dendrogram)
+
+      plot = plotly::layout(
+        p = plot,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
+      )
+
+      self$plots$feature_correlation = plot
+      self$tables$feature_correlation = data_table
+      self$tables$feature_correlation_clusters = meta_table
 
     },
 
@@ -2127,8 +3130,11 @@ Omics_exp = R6::R6Class(
                         feature_table = self$tables$feature_table,
                         sample_groups_col = self$params$pca$sample_groups_col,
                         feature_groups_col = self$params$pca$feature_groups_col,
+                        impute_median = self$params$pca$impute_median,
                         apply_da = self$params$pca$apply_da,
+                        sample_groups_da = self$params$pca$sample_groups_da,
                         alpha_da = self$params$pca$alpha_da,
+                        seed_da = self$params$pca$seed_da,
                         pca_method = self$params$pca$pca_method,
                         nPcs = self$params$pca$nPcs,
                         displayed_pc_1 = self$params$pca$displayed_pc_1,
@@ -2136,34 +3142,53 @@ Omics_exp = R6::R6Class(
                         completeObs = self$params$pca$completeObs,
                         displayed_plots = self$params$pca$displayed_plots,
                         colors_palette = self$params$pca$colors_palette,
+                        marker_size = self$params$pca$marker_size,
+                        opacity = self$params$pca$opacity,
+                        title_font_size = self$params$pca$title_font_size,
+                        y_label_font_size = self$params$pca$y_label_font_size,
+                        y_tick_font_size = self$params$pca$y_tick_font_size,
+                        x_label_font_size = self$params$pca$x_label_font_size,
+                        x_tick_font_size = self$params$pca$x_tick_font_size,
+                        legend_font_size = self$params$pca$legend_font_size,
                         return_data = TRUE,
                         width = NULL,
                         height = NULL) {
 
+
+
       data_table = self$table_check_convert(data_table)
+      data_table = remove_empty_cols(table = data_table)
 
       alpha_da = as.numeric(alpha_da)
       nPcs= as.numeric(nPcs)
       displayed_pc_1 = as.numeric(displayed_pc_1)
       displayed_pc_2 = as.numeric(displayed_pc_2)
+      marker_size = as.numeric(marker_size)
+      opacity = as.numeric(opacity)
 
       if (is.character(data_table)) {
         data_table = self$tables[[data_table]]
       }
 
       sample_groups = meta_table[rownames(data_table),sample_groups_col]
+      da_groups = meta_table[rownames(data_table),sample_groups_col]
+
+      if (impute_median) {
+        for (col in colnames(data_table)) {
+          data_table[is.na(data_table[,col]),col] = stats::median(data_table[,col], na.rm = T)
+        }
+      }
+
       if (apply_da) {
         data_table = apply_discriminant_analysis(data_table = data_table,
-                                                 group_list = sample_groups,
+                                                 group_list = da_groups,
                                                  nlambda = 100,
-                                                 alpha = alpha_da)}
+                                                 alpha = alpha_da,
+                                                 seed = seed_da)
 
-      ncol_1 = ncol(data_table)
-      data_table = data_table[,!is.na(colSums(data_table, na.rm = T))]
-      ncol_2 = ncol(data_table)
-      if(ncol_2 != ncol_1) {
-        print_time(paste0("PCA : dropped ", ncol_1 - ncol_2, " features with no signal variation."))
+        sample_groups = meta_table[rownames(data_table),sample_groups_col]
       }
+
 
       if (!is.null(feature_groups_col) & !is.null(feature_table)) {
         if (length(feature_groups_col) == 1) {
@@ -2179,7 +3204,6 @@ Omics_exp = R6::R6Class(
           }
         } else {
           feature_groups = feature_groups_col[colnames(data_table)]
-          print(feature_groups)
         }
       } else {
         feature_groups = NULL
@@ -2196,6 +3220,14 @@ Omics_exp = R6::R6Class(
                          completeObs = completeObs,
                          displayed_plots = displayed_plots,
                          colors_palette = colors_palette,
+                         marker_size = marker_size,
+                         opacity = opacity,
+                         title_font_size = title_font_size,
+                         y_label_font_size = y_label_font_size,
+                         y_tick_font_size = y_tick_font_size,
+                         x_label_font_size = x_label_font_size,
+                         x_tick_font_size = x_tick_font_size,
+                         legend_font_size = legend_font_size,
                          return_data = return_data)
 
 
@@ -2208,693 +3240,562 @@ Omics_exp = R6::R6Class(
     },
 
     ## Double bond plot
-    plot_doublebonds_single = function(data_table = self$params$db_plot$dataset,
-                                       lipid_class = self$params$db_plot$selected_lipid_class,
-                                       carbon_selection = self$params$db_plot$selected_carbon_chain,
-                                       unsat_selection = self$params$db_plot$selected_unsat,
-                                       group_1 = self$params$db_plot$selected_groups[1],
-                                       width = NULL,
-                                       height = NULL){
+    plot_double_bonds_plot = function(data_table = self$tables$double_bonds_table,
+                                      adjustment = self$params$double_bonds_comparison$adjustment,
+                                      group_1 = self$params$double_bonds_comparison$group_1,
+                                      group_2 = self$params$double_bonds_comparison$group_2,
+                                      carbon_selection = self$params$double_bonds_plot$selected_carbon_chain,
+                                      unsat_selection = self$params$double_bonds_plot$selected_unsat,
+                                      lipid_class = self$params$double_bonds_plot$selected_lipid_class,
+                                      min_fc = self$params$double_bonds_plot$min_fc,
+                                      max_pval = self$params$double_bonds_plot$max_pval,
+                                      remove_missing_pval = self$params$double_bonds_plot$remove_missing_pval,
+                                      remove_infitive_fc = self$params$double_bonds_plot$remove_infitive_fc,
+                                      color_palette = self$params$double_bonds_plot$color_palette,
+                                      reverse_palette = self$params$double_bonds_plot$reverse_palette,
+                                      marker_size = self$params$double_bonds_plot$marker_size,
+                                      marker_opacity = self$params$double_bonds_plot$marker_opacity,
+                                      title_font_size = self$params$double_bonds_plot$title_font_size,
+                                      y_label_font_size = self$params$double_bonds_plot$y_label_font_size,
+                                      y_tick_font_size = self$params$double_bonds_plot$y_tick_font_size,
+                                      x_label_font_size = self$params$double_bonds_plot$x_label_font_size,
+                                      x_tick_font_size = self$params$double_bonds_plot$x_tick_font_size,
+                                      legend_font_size = self$params$double_bonds_plot$legend_font_size,
+                                      width = NULL,
+                                      height = NULL){
 
-      data_table = self$table_check_convert(data_table)
+      # Font sizes
+      xtick_show = base::ifelse(x_tick_font_size > 0, T, F)
+      ytick_show = base::ifelse(y_tick_font_size > 0, T, F)
+      legend_show = base::ifelse(legend_font_size > 0, T, F)
+      x_axis_title = base::ifelse(x_label_font_size > 0, carbon_selection, "")
+      y_axis_title = base::ifelse(y_label_font_size > 0, unsat_selection, "")
+      title = base::ifelse(title_font_size > 0, paste0("Comparison in ", lipid_class, " - ", group_1, " (low FC), ", group_2, " (high FC)"), "")
 
-      x_label = carbon_selection
-      y_label = unsat_selection
-      carbon_selection = feature_table_cols_switch(carbon_selection)
-      unsat_selection = feature_table_cols_switch(unsat_selection)
-      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
-      data_table = data_table[selected_rows,]
+      if (adjustment == 'none') {
+        pval_col = "p-value"
+      } else {
+        pval_col = "p-adjusted"
+      }
+
+      if (max_pval <= 0) {
+        stop('max p-value must be > 0')
+      }
+
+      data_table = data_table[which(data_table["Lipid class"] == lipid_class),]
+
       x_lims = c(min(data_table[,carbon_selection]) -1, max(data_table[,carbon_selection]) +1)
       y_lims = c(min(data_table[,unsat_selection]) -0.5, max(data_table[,unsat_selection]) +1)
 
-      fig = plotly::plot_ly(data_table,
-                            x = data_table[,carbon_selection],
-                            y = data_table[,unsat_selection],
-                            type = "scatter",
-                            mode = "markers",
-                            size = ~averages,
-                            sizes = ~c(5,40),
-                            marker = list(sizemode ='diameter',
-                                          opacity = 0.5,
-                                          sizeref=1
-                            ),
-                            text = data_table$text,
-                            hoverinfo = "text",
-                            width = width,
-                            height = height)
+
+      if (min_fc > 0) {
+        min_fc = log2(abs(min_fc))
+        min_fc = c(-min_fc, min_fc)
+        data_table = data_table[(data_table[,"Log2(fold change)"] <= min_fc[1]) | (data_table[,"Log2(fold change)"] >= min_fc[2]),]
+      }
+
+      pval_filter = data_table[,pval_col] <= max_pval
+      pval_filter[is.na(pval_filter)] = T
+      data_table = data_table[pval_filter, ]
 
 
-      fig = fig %>% layout(
-        title = paste0("Lipids in class ", lipid_class, " - ", group_1),
-        xaxis = list(title = x_label,
+      if (nrow(data_table) == 0) {
+        base::stop('No features found within the selected p-value and fold change boundaries.')
+      }
+
+      data_table$hover = paste0(
+        rownames(data_table),
+        '\nFold change: ',
+        format_values(values = data_table$`Fold change`),
+        '\nLog2(fold change): ',
+        format_values(data_table$`Log2(fold change)`),
+        '\n',
+        pval_col,
+        ': ',
+        format_values(data_table[,pval_col]),
+        '\n',
+        carbon_selection,
+        ': ',
+        format_values(data_table[,carbon_selection]),
+        '\n',
+        unsat_selection,
+        ': ',
+        format_values(data_table[,unsat_selection])
+      )
+
+      color_scale = get_color_palette(groups = data_table$`Log2(fold change)`,
+                                      color_palette = color_palette,
+                                      reverse_color_palette = reverse_palette,
+                                      force_scale = T,
+                                      force_list = F)
+
+      # Impute NA and Inf
+      if (remove_missing_pval) {
+        data_table = data_table[!is.na(data_table[,pval_col]),]
+      } else {
+        data_table[is.na(data_table[,pval_col]), pval_col] = min(data_table[,pval_col], na.rm = T)
+      }
+
+      if (remove_infitive_fc) {
+        data_table = data_table[base::is.finite(data_table$`Log2(fold change)`),]
+      } else {
+        finite_fc = data_table$`Log2(fold change)`
+        finite_fc = finite_fc[base::is.finite(finite_fc)]
+        data_table[data_table$`Log2(fold change)` == Inf, "Log2(fold change)"] = max(finite_fc)
+        data_table[data_table$`Log2(fold change)` == -Inf, "Log2(fold change)"] = min(finite_fc)
+      }
+
+
+      # Plot
+      plot = plotly::plot_ly(width = width, height = height)
+
+      plot = plotly::add_trace(
+        p = plot,
+        x = data_table[,carbon_selection],
+        y = data_table[,unsat_selection],
+        type = "scatter",
+        mode = "markers",
+        size = -log10(data_table[,pval_col]),
+        sizes = ~c(5,40),
+        marker = list(color = data_table$`Log2(fold change)`,
+                      sizemode ='diameter',
+                      opacity = marker_opacity,
+                      sizeref=1/marker_size,
+                      colorscale = color_scale,
+                      cmax = max(abs(data_table[, "Log2(fold change)"])),
+                      cmin = -max(abs(data_table[, "Log2(fold change)"])),
+                      colorbar=list(
+                        title='Log2(fold change)',
+                        tickfont = list(size = legend_font_size)
+                      ),
+                      showscale = legend_show,
+                      line = list(width = 0,
+                                  color = 'black')
+        ),
+        text = data_table$hover,
+        hoverinfo = "text"
+      )
+
+      plot = plotly::layout(
+        p = plot,
+
+        title = list(text = title,
+                     xref = "paper",
+                     font = list(size = title_font_size)),
+
+        xaxis = list(title = list(text = x_axis_title,
+                                  font = list(size = x_label_font_size)),
+                     showticklabels = xtick_show,
+                     tickfont = list(size = x_tick_font_size),
                      range = x_lims
         ),
-        yaxis = list(title = y_label,
+        yaxis = list(title = list(text = y_axis_title,
+                                  font = list(size = y_label_font_size)),
+                     showticklabels = ytick_show,
+                     tickfont = list(size = y_tick_font_size),
                      range = y_lims
-        )
-      )
-      self$plots$double_bond_plot = fig
-    },
-
-    plot_doublebonds_double = function(data_table = self$tables$dbplot_table,
-                                       adjustment = self$params$db_plot$adjustment,
-                                       carbon_selection = self$params$db_plot$selected_carbon_chain,
-                                       unsat_selection = self$params$db_plot$selected_unsat,
-                                       lipid_class = self$params$db_plot$selected_lipid_class,
-                                       fc_limits = self$params$db_plot$fc_values,
-                                       pval_limits = self$params$db_plot$pval_values,
-                                       group_1 = self$params$db_plot$selected_groups[1],
-                                       group_2 = self$params$db_plot$selected_groups[2],
-                                       width = NULL,
-                                       height = NULL){
-
-      x_label = carbon_selection
-      y_label = unsat_selection
-      carbon_selection = feature_table_cols_switch(carbon_selection)
-      unsat_selection = feature_table_cols_switch(unsat_selection)
-      selected_rows = rownames(data_table)[data_table["lipid_class"] == lipid_class]
-      data_table = data_table[selected_rows,]
-      x_lims = c(min(data_table[,carbon_selection]) -1, max(data_table[,carbon_selection]) +1)
-      y_lims = c(min(data_table[,unsat_selection]) -0.5, max(data_table[,unsat_selection]) +1)
-      data_table = data_table[!dplyr::between(data_table[,"log2_fold_change"], fc_limits[1], fc_limits[2]),]
-      data_table = data_table[dplyr::between(data_table[,adjustment], pval_limits[1], pval_limits[2]),]
-      if (nrow(data_table) > 0) {
-        fig = plotly::plot_ly(data_table,
-                              x = data_table[,carbon_selection],
-                              y = data_table[,unsat_selection],
-                              type = "scatter",
-                              mode = "markers",
-                              size = data_table[,adjustment],
-                              sizes = ~c(5,40),
-                              marker = list(color = ~log2_fold_change,
-                                            sizemode ='diameter',
-                                            opacity = 0.5,
-                                            sizeref=1,
-                                            colorscale = 'RdBu',
-                                            cmax = max(abs(data_table[, "log2_fold_change"])),
-                                            cmin = -max(abs(data_table[, "log2_fold_change"])),
-                                            colorbar=list(
-                                              title='Log2(fold change)'
-                                            ),
-                                            line = list(width = 0)
-                              ),
-                              text = data_table$text,
-                              hoverinfo = "text",
-                              width = width,
-                              height = height)
-      } else {
-        fig = plotly::plot_ly(data_table,
-                              x = data_table[,carbon_selection],
-                              y = data_table[,unsat_selection],
-                              type = "scatter",
-                              mode = "markers",
-                              width = width,
-                              height = height)
-      }
-
-      fig = fig %>% layout(
-        legend= list(itemsizing='constant'),
-        title = paste0("Comparison in ", lipid_class, " - ", group_1, " (blue), ", group_2, " (red)"),
-        xaxis = list(title = x_label,
-                     range = x_lims
         ),
-        yaxis = list(title = y_label,
-                     range = y_lims
-        )
-      )
-      self$plots$double_bond_plot = fig
-    },
-
-    plot_dot_plot = function(object = self$tables$gsea_object,
-                             x = "GeneRatio",
-                             color = "p.adjust",
-                             showCategory = self$params$dot_plot$showCategory,
-                             size = NULL,
-                             split = ".sign",
-                             orderBy="x",
-                             mode = self$params$dot_plot$mode,
-                             width = NULL,
-                             height = NULL){
-
-      if (is.na(showCategory)) {
-        base::warning("Invalid showCategory, setting to 10 by default")
-        showCategory = 10
-      }
-
-      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
-      if (x == "geneRatio" || x == "GeneRatio") {
-        x <- "GeneRatio"
-        if (is.null(size))
-          size <- "Count"
-      } else if (x == "count" || x == "Count") {
-        x <- "Count"
-        if (is.null(size))
-          size <- "GeneRatio"
-      } else if (is(x, "formula")) {
-        x <- as.character(x)[2]
-        if (is.null(size))
-          size <- "Count"
-      } else {
-        if (is.null(size))
-          size  <- "Count"
-      }
-
-      if (inherits(object, c("enrichResultList", "gseaResultList"))) {
-        ldf <- lapply(object, fortify, showCategory=showCategory, split=split)
-        df <- dplyr::bind_rows(ldf, .id="category")
-        df$category <- factor(df$category, levels=names(object))
-      } else {
-        df <- fortify(object, showCategory = showCategory, split=split)
-      }
-
-      if (orderBy !=  'x' && !orderBy %in% colnames(df)) {
-        message('wrong orderBy parameter; set to default `orderBy = "x"`')
-        orderBy <- "x"
-      }
-
-      if (orderBy == "x") {
-        df <- dplyr::mutate(df, x = eval(parse(text=x)))
-      }
-
-      df$hover = paste0(
-        paste0(df[,"Description"], "\n"),
-        paste0("GeneRatio:", as.character(round(df[,"x"],2)), "\n"),
-        paste0(size, ": ", as.character(df[,size]), "\n"),
-        paste0(colorBy, ": ", as.character(round(df[,colorBy],5)), "\n"),
-        df$.sign
-      )
-
-      df[,"Description"] = as.character(df[,"Description"])
-
-      if (mode == "Activated") {
-        df = df[df$.sign == "activated",]
-        trace_hline = FALSE
-      } else if (mode == "Suppressed") {
-        df = df[df$.sign == "suppressed",]
-        trace_hline = FALSE
-      } else if (mode == "Both") {
-        mode = "Activated (top) - Suppressed (bottom)"
-        trace_hline = TRUE
-      } else {
-        warning("Invalid mode, setting to 'Both' by default")
-        mode = "Activated (top) - Suppressed (bottom)"
-        trace_hline = TRUE
-      }
-
-
-      fig = plotly::plot_ly(data = df,
-                            x = ~x,
-                            y = df[,"Description"],
-                            size = df[,size],
-                            type = "scatter",
-                            mode = "markers",
-                            marker = list(color = df[,colorBy],
-                                          sizemode ='diameter',
-                                          opacity = 0.5,
-                                          sizeref=1,
-                                          colorscale = 'RdBu',
-                                          colorbar=list(
-                                            title=colorBy
-                                          ),
-                                          line = list(width = 0),
-                                          cmax = max(df[, colorBy]),
-                                          cmin = min(df[, colorBy])
-                            ),
-                            text = df$hover,
-                            hoverinfo = "text",
-                            width = width,
-                            height = height
-      )
-      fig = fig %>% layout(
         legend= list(itemsizing='constant'),
-        title = mode,
-        xaxis = list(title = 'GeneRatio'),
-        yaxis = list(title =  NA,
-                     categoryorder = "array",
-                     categoryarray = base::rev(df[,"Description"]))
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)'
       )
-      if (trace_hline) {
-        fig = fig %>% layout(
-          shapes = list(hline(showCategory - 0.5))
-        )
-      }
-      print_tm(self$name, "Dot plot completed")
-      self$plots$dotplot = fig
+
+      self$plots$double_bonds_plot = plot
+      self$tables$double_bonds_plot = data_table
     },
 
-    plot_or_dot_plot = function(object = self$tables$go_enrich,
-                                x = "GeneRatio",
-                                color = "p.adjust",
-                                showCategory = self$params$or_dot_plot$showCategory,
-                                size = NULL,
-                                split = NULL,
-                                orderBy="x",
+    plot_ea_dot_plot = function(object = self$tables$ea_object,
+                                x = self$params$ea_dot_plot$x,
+                                y = self$params$ea_dot_plot$y,
+                                color = self$params$ea_dot_plot$color,
+                                show_categories = self$params$ea_dot_plot$show_categories,
+                                size = self$params$ea_dot_plot$size,
+                                order_by = self$params$ea_dot_plot$order_by,
+                                reverse_order = self$params$ea_dot_plot$reverse_order,
+                                mode = self$params$ea_dot_plot$mode,
+                                marker_opacity = self$params$ea_dot_plot$marker_opacity,
+                                color_palette = self$params$ea_dot_plot$color_palette,
+                                reverse_palette = self$params$ea_dot_plot$reverse_palette,
+                                show_legend = self$params$ea_dot_plot$show_legend,
+                                legend_size = self$params$ea_dot_plot$legend_size,
+                                size_ref = self$params$ea_dot_plot$size_ref,
+                                yaxis_word_split = self$params$ea_dot_plot$yaxis_word_split,
+                                title_size = self$params$ea_dot_plot$title_size,
+                                xlabel_size = self$params$ea_dot_plot$xlabel_size,
+                                xtick_size = self$params$ea_dot_plot$xtick_size,
+                                ytick_size = self$params$ea_dot_plot$ytick_size,
                                 width = NULL,
                                 height = NULL){
 
-      colorBy <- match.arg(color, c("pvalue", "p.adjust", "qvalue"))
-      if (x == "geneRatio" || x == "GeneRatio") {
-        x <- "GeneRatio"
-        if (is.null(size))
-          size <- "Count"
-      } else if (x == "count" || x == "Count") {
-        x <- "Count"
-        if (is.null(size))
-          size <- "GeneRatio"
-      } else if (is(x, "formula")) {
-        x <- as.character(x)[2]
-        if (is.null(size))
-          size <- "Count"
-      } else {
-        ## message("invalid x, setting to 'GeneRatio' by default")
-        ## x <- "GeneRatio"
-        ## size <- "Count"
-        if (is.null(size))
-          size  <- "Count"
-      }
 
-      if (inherits(object, c("enrichResultList", "gseaResultList"))) {
-        ldf <- lapply(object, fortify, showCategory=showCategory, split=split)
-        df <- dplyr::bind_rows(ldf, .id="category")
-        df$category <- factor(df$category, levels=names(object))
-      } else {
-        # df = get_cp_results(object, showCategory)
-        df <- fortify(object, showCategory = showCategory, split=split)
-        ## already parsed in fortify
-        ## df$GeneRatio <- parse_ratio(df$GeneRatio)
-      }
+      out_data = plot_fa_dot_plot(object = object,
+                                  x = x,
+                                  y = y,
+                                  color = color,
+                                  show_categories = show_categories,
+                                  size = size,
+                                  order_by = order_by,
+                                  reverse_order = reverse_order,
+                                  mode = mode,
+                                  marker_opacity = marker_opacity,
+                                  color_palette = color_palette,
+                                  reverse_palette = reverse_palette,
+                                  show_legend = show_legend,
+                                  legend_size = legend_size,
+                                  size_ref = size_ref,
+                                  yaxis_word_split = yaxis_word_split,
+                                  title_size = title_size,
+                                  xlabel_size = xlabel_size,
+                                  xtick_size = xtick_size,
+                                  ytick_size = ytick_size,
+                                  width = width,
+                                  height = height)
 
-      if (orderBy !=  'x' && !orderBy %in% colnames(df)) {
-        message('wrong orderBy parameter; set to default `orderBy = "x"`')
-        orderBy <- "x"
-      }
-
-      if (orderBy == "x") {
-        df <- dplyr::mutate(df, x = eval(parse(text=x)))
-      }
-
-
-      df$hover = paste0(
-        paste0(df[,"Description"], "\n"),
-        paste0(x, ":", as.character(round(df[,x],2)), "\n"),
-        paste0(size, ": ", as.character(df[,size]), "\n"),
-        paste0(colorBy, ": ", as.character(round(df[,colorBy],5)), "\n"),
-        df$.sign
-      )
-
-      df[,"Description"] = as.character(df[,"Description"])
-
-
-
-      fig = plotly::plot_ly(data = df,
-                            x = df$GeneRatio,
-                            y = df[,"Description"],
-                            size = df[,size],
-                            type = "scatter",
-                            mode = "markers",
-                            marker = list(color = df[,colorBy],
-                                          sizemode ='diameter',
-                                          opacity = 0.5,
-                                          sizeref=1,
-                                          colorscale = 'RdBu',
-                                          colorbar=list(
-                                            title=colorBy
-                                          ),
-                                          line = list(width = 0),
-                                          cmax = max(df[, colorBy]),
-                                          cmin = min(df[, colorBy])
-                            ),
-                            text = df$hover,
-                            hoverinfo = "text",
-                            width = width,
-                            height = height
-      )
-      fig = fig %>% layout(
-        legend= list(itemsizing='constant'),
-        title = mode,
-        xaxis = list(title = 'GeneRatio'),
-        yaxis = list(title =  NA,
-                     categoryorder = "array",
-                     categoryarray = base::rev(df[,"Description"]))
-      )
-      self$plots$or_dotplot = fig
-
+      self$plots$ea_dot_plot = out_data$plot
+      self$tables$ea_dot_plot = out_data$table
     },
 
-    plot_cnet_plot = function(x = self$tables$gsea_object,
-                              showCategory = self$params$cnet_plot$showCategory,
-                              displayed_labels = self$params$cnet_plot$displayed_labels,
-                              enable_physics = self$params$cnet_plot$enable_physics,
-                              context = "gsea") {
-
-      showCategory = as.numeric(showCategory)
-
-      if (context == 'gsea') {
-        prot_list = self$tables$gsea_prot_list
-      } else if (context == 'ora') {
-        prot_list = self$tables$ora_prot_list
-      }
-
-      # df = get_cp_results(object = x, showCategory = showCategory)
-      geneSets = enrichplot:::extract_geneSets(x, showCategory)
-      # df <- fortify(x, showCategory = showCategory)
-      # geneSets = geneInCategory(x)
-      # geneSets = geneSets[1:min(showCategory, length(geneSets))]
-
-      if (displayed_labels == 'Description') {
-        main_nodes = names(geneSets)
-      } else if (displayed_labels == 'IDs') {
-        main_nodes = x@result$ID[1:showCategory]
-      } else if (displayed_labels == 'IDs and Description') {
-        main_nodes = paste0(x@result$ID[1:showCategory], '\n', names(geneSets))
-      } else {
-        stop("displayed_labels must be in ['Description', 'IDs', 'IDs and Description']")
-      }
-      names(geneSets) = main_nodes
-
-
-      secondary_nodes = sort(unique(unlist(unname(geneSets))))
-      all_nodes = c(main_nodes, secondary_nodes)
-
-      node_table = data.frame(matrix(nrow = length(all_nodes), ncol = 1))
-      colnames(node_table) = c("id")
-      node_table$id = all_nodes
-      node_table$label = all_nodes
-      node_table$shape = rep("dot", nrow(node_table))
-
-      feature_values = prot_list[all_nodes,]
-      rownames(feature_values) = rownames(node_table)
-
-      node_table = base::cbind(node_table, feature_values)
-
-      normalized_values = scales::rescale(feature_values$log2_fold_change, to = c(0, 1))
-
-      color_gradient = grDevices::colorRampPalette(c("blue", "white", "red"))
-      hex_colors = color_gradient(100)[round(normalized_values * 99) + 1]
-      hex_colors[which(is.na(hex_colors))] = "#FFD800"
-      node_table$color = hex_colors
-
-      source_nodes = c()
-      target_nodes = c()
-      for (n in main_nodes) {
-        target_nodes = c(target_nodes, geneSets[[n]])
-        source_nodes = c(source_nodes, rep(n, length(geneSets[[n]])))
-      }
-
-      edge_table = data.frame(matrix(nrow = length(target_nodes), ncol = 2))
-      colnames(edge_table) = c("from", "to")
-      edge_table$from = source_nodes
-      edge_table$to = target_nodes
-      edge_table$width = rep(1, nrow(edge_table))
-
-      plot = visNetwork::visNetwork(node_table, edge_table)
-      plot = visNetwork::visPhysics(plot, enabled = enable_physics)
-
-      if (context == "gsea") {
-        self$plots$cnetplot = plot
-      } else if (context == "ora") {
-        self$plots$or_cnetplot = plot
-      }
-    },
-
-    plot_ridge_plot = function(x = self$tables$gsea_object,
-                               showCategory = self$params$dot_plot$showCategory,
-                               fill="p.adjust",
-                               core_enrichment = TRUE,
-                               orderBy = "NES",
-                               decreasing = FALSE,
-                               width = NULL,
-                               height = NULL) {
-
-      print_tm(self$name, "Ridgeplot initiated")
-
-      if (is.na(showCategory)) {
-        base::warning("Invalid showCategory, setting to 30 by default")
-        showCategory = 30
-      }
-
-      n = showCategory
-      if (core_enrichment) {
-        gs2id = geneInCategory(x)[seq_len(n)]
-      } else {
-        gs2id = x@geneSets[x$ID[seq_len(n)]]
-      }
-
-      if (x@readable && length(x@gene2Symbol) > 0) {
-        id = match(names(x@geneList), names(x@gene2Symbol))
-        names(x@geneList) = x@gene2Symbol[id]
-      }
-
-      gs2val = lapply(gs2id, function(id) {
-        res = x@geneList[id]
-        res = res[!is.na(res)]
-      })
-
-      nn = names(gs2val)
-      i = match(nn, x$ID)
-      nn = x$Description[i]
-
-      j = order(x@result[[orderBy]][i], decreasing = decreasing)
-      len = sapply(gs2val, length)
-      gs2val.df = data.frame(category = rep(nn, times=len),
-                             color = rep(x[i, fill], times=len),
-                             value = unlist(gs2val))
-
-      colnames(gs2val.df)[2] = fill
-      gs2val.df$category = factor(gs2val.df$category, levels=nn[j])
-
-      xdata = na.omit(data.frame(x=gs2val.df$value, group=gs2val.df$category))
-      xs = split(xdata$x, xdata$group)
-      xs_mask = vapply(xs, length, numeric(1)) > 1
-      bws = vapply(xs[xs_mask], bw.nrd0, numeric(1))
-      bw = mean(bws, na.rm = TRUE)
-
-      all_traces = levels(gs2val.df$category)
-      total_seq = seq(floor(min(gs2val.df$value)),ceiling(max(gs2val.df$value)), by=bw)
-
-      col_values_hex = grDevices::colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = 'YlOrRd'))(length(unique(gs2val.df[,"p.adjust"])))
-      col_values = c()
-      for (col in col_values_hex){
-        col_values = c(col_values, paste0("rgba(",paste(as.vector(col2rgb(col)), collapse = ","), ",0.5)"))
-      }
-      names(col_values) = seq(1, length(col_values), by = 1)
-      col_pvals = sort(unique(gs2val.df[,"p.adjust"]))
-
-      p = plotly::plot_ly(width = width,
-                          height = height)
-      incr = 0
-      for (trace in all_traces) {
-        tmp_table = gs2val.df[gs2val.df[,"category"] == trace,]
-        fill_value = tmp_table[1, "p.adjust"]
-        fill_col = col_values[which(col_pvals == fill_value)]
-
-        tmp_table = as.data.frame(table(cut(tmp_table$value, breaks=total_seq)))
-        tmp_table$Var1 = gsub("\\(|]", "", levels(tmp_table$Var1))
-        x_values = c()
-        for (l in tmp_table$Var1) {
-          x_values = c(x_values, mean(as.numeric(stringr::str_split(l, ",")[[1]])))
-        }
-        tmp_table$Var1 = x_values
-
-        tmp_table$text = paste0(trace, ":\n", "Count: ", tmp_table$Freq, "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1,2))
-
-        tmp_table$Freq = tmp_table$Freq / max(tmp_table$Freq) + incr
-
-
-        # if ((tmp_table$Freq[nrow(tmp_table)] - incr) > 0) {
-        #   tmp_table = base::rbind(tmp_table, c(tmp_table$Var1[tmp_table] +0.5, incr, paste0(trace, ":\n", "Count: ", "0", "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1[1] -1,2))))
-        # }
-        # if ((tmp_table$Freq[1] - incr) > 0) {
-        #   tmp_table = rbind(c(tmp_table$Var1[1] -0.5, incr, paste0(trace, ":\n", "Count: ", "0", "\n", fill, ": ", fill_value, "\n", "x: ", round(tmp_table$Var1[1] -1,2))),
-        #                     tmp_table)
-        # }
-
-
-
-        p = add_trace(p,
-                      line = list(
-                        color = "#FFFFFF",
-                        width = 0.1
-                      ),
-                      mode = "lines",
-                      type = "scatter",
-                      x = c(0, max(gs2val.df$value)),
-                      y = c(incr-0.01, incr-0.01),
-                      legendgroup=0,
-                      showlegend = F)
-
-        incr = incr + 1
-
-        p = add_trace(p,
-                      fill = "tonexty",
-                      line = list(color = "#000000",
-                                  width = 0.5,
-                                  shape = "spline",
-                                  smoothing = 1.3),
-                      mode = "lines",
-                      type = "scatter",
-                      x=tmp_table$Var1,
-                      y=tmp_table$Freq,
-                      name = trace,
-                      fillcolor = fill_col,
-                      text = tmp_table$text,
-                      hoverinfo = "text",
-                      legendgroup=0,
-                      showlegend = F)
-
-      }
-
-      p = add_trace(p,
-                    x = col_pvals,
-                    y = col_pvals,
-                    type = "scatter",
-                    mode = "markers",
-                    marker = list(
-                      color = col_pvals,
-                      colorscale = "YlOrRd",
-                      colorbar=list(title = fill),
-                      size = 1,
-                      opacity = 0.1),
-                    legendgroup=0,
-                    showlegend = F
-      )
-
-
-      p = layout(p ,
-                 showlegend = T,
-                 yaxis = list(
-                   type = "linear",
-                   range = c(0, length(all_traces)),
-                   ticklen = 4,
-                   showgrid = TRUE,
-                   showline = FALSE,
-                   ticktext = all_traces,
-                   tickvals = seq(from = 0, to = length(all_traces)-1, by = 1),
-                   zeroline = FALSE,
-                   gridcolor = "rgb(255,255,255)",
-                   gridwidth = 1
-                 ),
-                 xaxis = list(title = "Log2(fold change)"))
-
-      self$plots$ridgeplot = p
-    },
-
-    plot_emap_plot = function(x = self$tables$gsea_object,
-                              showCategory = self$params$or_emap_plot$showCategory,
-                              color = self$params$or_emap_plot$color,
-                              size = self$params$or_emap_plot$size,
-                              score_threshold = self$params$or_emap_plot$score_threshold,
-                              similarity_score = self$params$or_emap_plot$similarity_score,
-                              edge_magnifier = self$params$or_emap_plot$edge_magnifier,
-                              node_magnifier = self$params$or_emap_plot$node_magnifier,
-                              enable_physics = self$params$or_emap_plot$enable_physics,
-                              context = "gsea") {
-      # Format data
-      showCategory = as.numeric(showCategory)
-      score_threshold = as.numeric(score_threshold)
-      edge_magnifier = as.numeric(edge_magnifier)
-      node_magnifier = as.numeric(node_magnifier)
-
-      # check if showCategory appropriate
-      if (showCategory > nrow(x@result)) {
-        showCategory = nrow(x@result)
-      }
-
-      # Adding data based on GSEA or ORA
-      if (context == 'gsea') {
-        total_count = x@result$setSize
-        count = lapply(x@result$core_enrichment, function(x) {
-          elements = unlist(strsplit(x, "/"))
-          length(elements)
-        })
-        count = unlist(count)
-        x@result$Count = count
-        x@result$total_count = total_count
-        x@result$gene_ratio = round(count/total_count, 2)
-      } else if (context == 'or') {
-        total_count = base::strsplit(x@result$GeneRatio, '/')
-        total_count = as.numeric(sapply(total_count, "[[", 2))
-        x@result$total_count = total_count
-        x@result$gene_ratio = round(x@result$Count / x@result$total_count, 2)
-      }
-
-
-      # Calculate similarities
-      x = enrichplot::pairwise_termsim(x= x,
-                                       method = similarity_score,
-                                       semData = NULL,
-                                       showCategory = showCategory)
-
-      # Get the igraph object
-      g = enrichplot:::get_igraph(x=x,
-                                  nCategory=showCategory,
-                                  color=color,
-                                  cex_line=edge_magnifier,
-                                  min_edge=score_threshold)
-
-
-      # Extract data from the igraph object
-      edge_table = igraph::as_data_frame(g, what = "edges")
-      if (length(edge_table) > 0) {
-        edge_table$color = "gray"
-      }
-      node_table = igraph::as_data_frame(g, what = "vertices")
-      node_table = cbind(node_table$name, node_table)
-      colnames(node_table) = c("id", "label", "size", "color_values")
-      node_table$size = x@result[[size]][1:showCategory]
-      node_table$shape = "dot"
-      rownames(node_table) = 1:nrow(node_table)
-      node_table$size = node_table$size * node_magnifier
-
-      # Setting the color gradient
-      normalized_values = scales::rescale(node_table$color_values , to = c(0, 1))
-      color_gradient = grDevices::colorRampPalette(c("red", "white", "blue"))
-      hex_colors = color_gradient(100)[round(normalized_values * 99) + 1]
-      node_table$color = hex_colors
-
-      # Produce the network object
-      plot = visNetwork::visNetwork(node_table, edge_table)
-      plot = visNetwork::visPhysics(plot, enabled = enable_physics)
-
-      ### Store the network object
-      if (context == "gsea") {
-        self$plots$emap_plot = plot
-      } else if (context == "or") {
-        self$plots$or_emap_plot = plot
-      }
-    },
-
-    plot_or_bar_plot = function(object = self$tables$go_enrich,
-                                x = self$params$or_bar_plot$x,
-                                color = self$params$or_bar_plot$color,
-                                showCategory = self$params$or_bar_plot$showCategory,
+    plot_ora_dot_plot = function(object = self$tables$ora_object,
+                                x = self$params$ora_dot_plot$x,
+                                y = self$params$ora_dot_plot$y,
+                                color = self$params$ora_dot_plot$color,
+                                show_categories = self$params$ora_dot_plot$show_categories,
+                                size = self$params$ora_dot_plot$size,
+                                order_by = self$params$ora_dot_plot$order_by,
+                                reverse_order = self$params$ora_dot_plot$reverse_order,
+                                marker_opacity = self$params$ora_dot_plot$marker_opacity,
+                                color_palette = self$params$ora_dot_plot$color_palette,
+                                reverse_palette = self$params$ora_dot_plot$reverse_palette,
+                                show_legend = self$params$ora_dot_plot$show_legend,
+                                size_ref = self$params$ora_dot_plot$size_ref,
+                                legend_size = self$params$ora_dot_plot$legend_size,
+                                yaxis_word_split = self$params$ora_dot_plot$yaxis_word_split,
+                                title_size = self$params$ora_dot_plot$title_size,
+                                xlabel_size = self$params$ora_dot_plot$xlabel_size,
+                                xtick_size = self$params$ora_dot_plot$xtick_size,
+                                ytick_size = self$params$ora_dot_plot$ytick_size,
                                 width = NULL,
-                                height = NULL) {
+                                height = NULL){
 
-      colorBy = match.arg(color, c("pvalue", "p.adjust", "qvalue"))
-      if (x == "geneRatio" || x == "GeneRatio") {
-        x = "GeneRatio"
-      } else if (x == "count" || x == "Count") {
-        x = "Count"
-      }
 
-      # df = get_cp_results(object, showCategory)
-      df = fortify(object, showCategory=showCategory, by=x)
+      out_data = plot_fa_dot_plot(object = object,
+                                  x = x,
+                                  y = y,
+                                  color = color,
+                                  show_categories = show_categories,
+                                  size = size,
+                                  order_by = order_by,
+                                  reverse_order = reverse_order,
+                                  mode = "Both",
+                                  marker_opacity = marker_opacity,
+                                  color_palette = color_palette,
+                                  reverse_palette = reverse_palette,
+                                  show_legend = show_legend,
+                                  size_ref = size_ref,
+                                  legend_size = legend_size,
+                                  yaxis_word_split = yaxis_word_split,
+                                  title_size = title_size,
+                                  xlabel_size = xlabel_size,
+                                  xtick_size = xtick_size,
+                                  ytick_size = ytick_size,
+                                  width = width,
+                                  height = height)
 
-      fig = plotly::plot_ly(df,
-                            x = df[,x],
-                            y = df$Description,
-                            type = 'bar',
-                            orientation = 'h',
-                            marker = list(
-                              colorscale = list(c(0,1), c("red", "blue")),
-                              colorbar = list(title = "p.adjust"),
-                              color = ~p.adjust),
-                            width = width,
-                            height = height) %>%
-        layout(xaxis = list(title = 'Count')
-        )
-      self$plots$or_barplot = fig
+      self$plots$ora_dot_plot = out_data$plot
+      self$tables$ora_dot_plot = out_data$table
+    },
+
+    plot_ea_cnet_plot = function(x = self$tables$ea_object,
+                                 ea_feature_table = self$tables$ea_feature_table,
+                                 show_category = self$params$ea_cnet_plot$show_category,
+                                 displayed_labels = self$params$ea_cnet_plot$displayed_labels,
+                                 set_node_annotations = self$params$ea_cnet_plot$set_node_annotations,
+                                 feature_node_annotations = self$params$ea_cnet_plot$feature_node_annotations,
+                                 set_node_color_palette = self$params$ea_cnet_plot$set_node_color_palette,
+                                 reverse_set_palette = self$params$ea_cnet_plot$reverse_set_palette,
+                                 feature_node_color_palette = self$params$ea_cnet_plot$feature_node_color_palette,
+                                 reverse_feature_palette = self$params$ea_cnet_plot$reverse_feature_palette,
+                                 label_font_size = self$params$ea_cnet_plot$label_font_size,
+                                 static_network = self$params$ea_cnet_plot$static_network,
+                                 solver = self$params$ea_cnet_plot$solver,
+                                 gravitationalConstant = self$params$ea_cnet_plot$gravitationalConstant,
+                                 nodeDistance = self$params$ea_cnet_plot$nodeDistance,
+                                 centralGravity = self$params$ea_cnet_plot$centralGravity,
+                                 springLength = self$params$ea_cnet_plot$springLength,
+                                 springConstant = self$params$ea_cnet_plot$springConstant,
+                                 width = NULL,
+                                 height = NULL) {
+
+      out_data = plot_fa_cnet_plot(x = x,
+                                   prot_list = ea_feature_table,
+                                   show_category = show_category,
+                                   displayed_labels = displayed_labels,
+                                   set_node_annotations = set_node_annotations,
+                                   feature_node_annotations = feature_node_annotations,
+                                   set_node_color_palette = set_node_color_palette,
+                                   reverse_set_palette = reverse_set_palette,
+                                   feature_node_color_palette = feature_node_color_palette,
+                                   reverse_feature_palette = reverse_feature_palette,
+                                   label_font_size = label_font_size,
+                                   static_network = static_network,
+                                   solver = solver,
+                                   gravitationalConstant = gravitationalConstant,
+                                   nodeDistance = nodeDistance,
+                                   centralGravity = centralGravity,
+                                   springLength = springLength,
+                                   springConstant = springConstant,
+                                   width = width,
+                                   height = height)
+
+      self$plots$ea_cnet_plot = out_data$plot
+      self$tables$ea_cnet_plot = out_data$table
+    },
+
+    plot_ora_cnet_plot = function(x = self$tables$ora_object,
+                                  ora_feature_table = self$tables$ora_feature_table,
+                                  show_category = self$params$ora_cnet_plot$show_category,
+                                  displayed_labels = self$params$ora_cnet_plot$displayed_labels,
+                                  set_node_annotations = self$params$ora_cnet_plot$set_node_annotations,
+                                  feature_node_annotations = self$params$ora_cnet_plot$feature_node_annotations,
+                                  set_node_color_palette = self$params$ora_cnet_plot$set_node_color_palette,
+                                  reverse_set_palette = self$params$ora_cnet_plot$reverse_set_palette,
+                                  feature_node_color_palette = self$params$ora_cnet_plot$feature_node_color_palette,
+                                  reverse_feature_palette = self$params$ora_cnet_plot$reverse_feature_palette,
+                                  label_font_size = self$params$ora_cnet_plot$label_font_size,
+                                  static_network = self$params$ora_cnet_plot$static_network,
+                                  solver = self$params$ora_cnet_plot$solver,
+                                  gravitationalConstant = self$params$ora_cnet_plot$gravitationalConstant,
+                                  nodeDistance = self$params$ora_cnet_plot$nodeDistance,
+                                  centralGravity = self$params$ora_cnet_plot$centralGravity,
+                                  springLength = self$params$ora_cnet_plot$springLength,
+                                  springConstant = self$params$ora_cnet_plot$springConstant,
+                                  width = NULL,
+                                  height = NULL) {
+
+      out_data = plot_fa_cnet_plot(x = x,
+                                   prot_list = ora_feature_table,
+                                   show_category = show_category,
+                                   displayed_labels = displayed_labels,
+                                   set_node_annotations = set_node_annotations,
+                                   feature_node_annotations = feature_node_annotations,
+                                   set_node_color_palette = set_node_color_palette,
+                                   reverse_set_palette = reverse_set_palette,
+                                   feature_node_color_palette = feature_node_color_palette,
+                                   reverse_feature_palette = reverse_feature_palette,
+                                   label_font_size = label_font_size,
+                                   static_network = static_network,
+                                   solver = solver,
+                                   gravitationalConstant = gravitationalConstant,
+                                   nodeDistance = nodeDistance,
+                                   centralGravity = centralGravity,
+                                   springLength = springLength,
+                                   springConstant = springConstant,
+                                   width = width,
+                                   height = height)
+
+      self$plots$ora_cnet_plot = out_data$plot
+      self$tables$ora_cnet_plot = out_data$table
+    },
+
+    plot_ea_ridge_plot = function(object = self$tables$ea_object,
+                                  show_category = self$params$ea_ridge_plot$show_category,
+                                  fill = self$params$ea_ridge_plot$fill,
+                                  core_enrichment = self$params$ea_ridge_plot$core_enrichment,
+                                  color_palette = self$params$ea_ridge_plot$color_palette,
+                                  reverse_palette = self$params$ea_ridge_plot$reverse_palette,
+                                  displayed_label = self$params$ea_ridge_plot$displayed_label,
+                                  orderBy = self$params$ea_ridge_plot$orderBy,
+                                  decreasing = self$params$ea_ridge_plot$decreasing,
+                                  title_font_size = self$params$ea_ridge_plot$title_font_size,
+                                  yaxis_word_split = self$params$ea_ridge_plot$yaxis_word_split,
+                                  y_label_font_size = self$params$ea_ridge_plot$y_label_font_size,
+                                  y_tick_font_size = self$params$ea_ridge_plot$y_tick_font_size,
+                                  x_label_font_size = self$params$ea_ridge_plot$x_label_font_size,
+                                  x_tick_font_size = self$params$ea_ridge_plot$x_tick_font_size,
+                                  legend_font_size = self$params$ea_ridge_plot$legend_font_size,
+                                  width = NULL,
+                                  height = NULL) {
+
+      out_data = plot_fa_ridge_plot(object = object,
+                                    show_category = show_category,
+                                    fill = fill,
+                                    core_enrichment = core_enrichment,
+                                    color_palette = color_palette,
+                                    reverse_palette = reverse_palette,
+                                    displayed_label = displayed_label,
+                                    orderBy = orderBy,
+                                    decreasing = decreasing,
+                                    title_font_size = title_font_size,
+                                    yaxis_word_split = yaxis_word_split,
+                                    y_label_font_size = y_label_font_size,
+                                    y_tick_font_size = y_tick_font_size,
+                                    x_label_font_size = x_label_font_size,
+                                    x_tick_font_size = x_tick_font_size,
+                                    legend_font_size = legend_font_size,
+                                    width = width,
+                                    height = height)
+
+      self$plots$ea_ridge_plot = out_data$plot
+      self$tables$ea_ridge_plot = out_data$table
+    },
+
+    plot_ea_emap_plot = function(x = self$tables$ea_object,
+                                 show_category = self$params$ea_emap_plot$show_category,
+                                 color = self$params$ea_emap_plot$color,
+                                 size = self$params$ea_emap_plot$size,
+                                 displayed_labels = self$params$ea_emap_plot$displayed_labels,
+                                 mode = self$params$ea_emap_plot$mode,
+                                 score_threshold = self$params$ea_emap_plot$score_threshold,
+                                 similarity_score = self$params$ea_emap_plot$similarity_score,
+                                 node_color_palette = self$params$ea_emap_plot$node_color_palette,
+                                 reverse_node_palette = self$params$ea_emap_plot$reverse_node_palette,
+                                 edge_width = self$params$ea_emap_plot$edge_width,
+                                 edge_color = self$params$ea_emap_plot$edge_color,
+                                 edge_color_palette = self$params$ea_emap_plot$edge_color_palette,
+                                 reverse_edge_palette = self$params$ea_emap_plot$reverse_edge_palette,
+                                 edge_magnifier = self$params$ea_emap_plot$edge_magnifier,
+                                 node_magnifier = self$params$ea_emap_plot$node_magnifier,
+                                 label_font_size = self$params$ea_emap_plot$label_font_size,
+                                 static_network = self$params$ea_emap_plot$static_network,
+                                 solver = self$params$ea_emap_plot$solver,
+                                 gravitationalConstant = self$params$ea_emap_plot$gravitationalConstant,
+                                 nodeDistance = self$params$ea_emap_plot$nodeDistance,
+                                 centralGravity = self$params$ea_emap_plot$centralGravity,
+                                 springLength = self$params$ea_emap_plot$springLength,
+                                 springConstant = self$params$ea_emap_plot$springConstant,
+                                 width = NULL,
+                                 height = NULL) {
+
+      out_data = plot_fa_emap_plot(x = x,
+                                   show_category = show_category,
+                                   color = color,
+                                   size = size,
+                                   displayed_labels = displayed_labels,
+                                   score_threshold = score_threshold,
+                                   similarity_score =similarity_score,
+                                   node_color_palette = node_color_palette,
+                                   reverse_node_palette = reverse_node_palette,
+                                   edge_width = edge_width,
+                                   edge_color = edge_color,
+                                   edge_color_palette = edge_color_palette,
+                                   reverse_edge_palette = reverse_edge_palette,
+                                   edge_magnifier = edge_magnifier,
+                                   node_magnifier = node_magnifier,
+                                   label_font_size = label_font_size,
+                                   static_network = static_network,
+                                   solver = solver,
+                                   gravitationalConstant = gravitationalConstant,
+                                   nodeDistance = nodeDistance,
+                                   centralGravity = centralGravity,
+                                   springLength = springLength,
+                                   springConstant = springConstant,
+                                   width = width,
+                                   height = height)
+
+      self$plots$ea_emap_plot = out_data$plot
+      self$tables$ea_emap_plot = out_data$table
+
+
+    },
+
+    plot_ora_emap_plot = function(x = self$tables$ora_object,
+                                 show_category = self$params$ora_emap_plot$show_category,
+                                 color = self$params$ora_emap_plot$color,
+                                 size = self$params$ora_emap_plot$size,
+                                 displayed_labels = self$params$ora_emap_plot$displayed_labels,
+                                 score_threshold = self$params$ora_emap_plot$score_threshold,
+                                 similarity_score = self$params$ora_emap_plot$similarity_score,
+                                 node_color_palette = self$params$ora_emap_plot$node_color_palette,
+                                 reverse_node_palette = self$params$ora_emap_plot$reverse_node_palette,
+                                 edge_width = self$params$ora_emap_plot$edge_width,
+                                 edge_color = self$params$ora_emap_plot$edge_color,
+                                 edge_color_palette = self$params$ora_emap_plot$edge_color_palette,
+                                 reverse_edge_palette = self$params$ora_emap_plot$reverse_edge_palette,
+                                 edge_magnifier = self$params$ora_emap_plot$edge_magnifier,
+                                 node_magnifier = self$params$ora_emap_plot$node_magnifier,
+                                 label_font_size = self$params$ora_emap_plot$label_font_size,
+                                 static_network = self$params$ora_emap_plot$static_network,
+                                 solver = self$params$ora_emap_plot$solver,
+                                 gravitationalConstant = self$params$ora_emap_plot$gravitationalConstant,
+                                 nodeDistance = self$params$ora_emap_plot$nodeDistance,
+                                 centralGravity = self$params$ora_emap_plot$centralGravity,
+                                 springLength = self$params$ora_emap_plot$springLength,
+                                 springConstant = self$params$ora_emap_plot$springConstant,
+                                 width = NULL,
+                                 height = NULL) {
+
+      out_data = plot_fa_emap_plot(x = x,
+                                   show_category = show_category,
+                                   color = color,
+                                   size = size,
+                                   displayed_labels = displayed_labels,
+                                   score_threshold = score_threshold,
+                                   similarity_score =similarity_score,
+                                   node_color_palette = node_color_palette,
+                                   reverse_node_palette = reverse_node_palette,
+                                   edge_width = edge_width,
+                                   edge_color = edge_color,
+                                   edge_color_palette = edge_color_palette,
+                                   reverse_edge_palette = reverse_edge_palette,
+                                   edge_magnifier = edge_magnifier,
+                                   node_magnifier = node_magnifier,
+                                   label_font_size = label_font_size,
+                                   static_network = static_network,
+                                   solver = solver,
+                                   gravitationalConstant = gravitationalConstant,
+                                   nodeDistance = nodeDistance,
+                                   centralGravity = centralGravity,
+                                   springLength = springLength,
+                                   springConstant = springConstant,
+                                   width = width,
+                                   height = height)
+
+      self$plots$ora_emap_plot = out_data$plot
+      self$tables$ora_emap_plot = out_data$table
+
+
+    },
+
+    plot_ora_bar_plot = function(object = self$tables$ora_object,
+                                 x = self$params$ora_bar_plot$x,
+                                 color = self$params$ora_bar_plot$color,
+                                 show_category = self$params$ora_bar_plot$show_category,
+                                 displayed_label = self$params$ora_bar_plot$displayed_label,
+                                 order_by = self$params$ora_bar_plot$order_by,
+                                 order_decreasing = self$params$ora_bar_plot$order_decreasing,
+                                 color_palette = self$params$ora_bar_plot$color_palette,
+                                 reverse_palette = self$params$ora_bar_plot$reverse_palette,
+                                 title_font_size = self$params$ora_bar_plot$title_font_size,
+                                 yaxis_word_split = self$params$ora_bar_plot$yaxis_word_split,
+                                 y_label_font_size = self$params$ora_bar_plot$y_label_font_size,
+                                 y_tick_font_size = self$params$ora_bar_plot$y_tick_font_size,
+                                 x_label_font_size = self$params$ora_bar_plot$x_label_font_size,
+                                 x_tick_font_size = self$params$ora_bar_plot$x_tick_font_size,
+                                 legend_font_size = self$params$ora_bar_plot$legend_font_size,
+                                 width = NULL,
+                                 height = NULL) {
+
+      out_data = plot_fa_bar_plot(object = object,
+                                  x = x,
+                                  color = color,
+                                  show_category = show_category,
+                                  displayed_label = displayed_label,
+                                  order_by = order_by,
+                                  order_decreasing = order_decreasing,
+                                  color_palette = color_palette,
+                                  reverse_palette = reverse_palette,
+                                  title_font_size = title_font_size,
+                                  yaxis_word_split = yaxis_word_split,
+                                  y_label_font_size = y_label_font_size,
+                                  y_tick_font_size = y_tick_font_size,
+                                  x_label_font_size = x_label_font_size,
+                                  x_tick_font_size = x_tick_font_size,
+                                  legend_font_size = legend_font_size,
+                                  width = width,
+                                  height = height)
+
+      self$plots$ora_bar_plot = out_data$plot
+      self$tables$ora_bar_plot = out_data$table
     }
     #------------------------------------------------------------------ END ----
   )
